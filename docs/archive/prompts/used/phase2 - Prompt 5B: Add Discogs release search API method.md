@@ -1,4 +1,4 @@
-## Prompt 5B: Add Discogs release search API method
+## phase2 - Prompt 5B: Add Discogs release search API method
 
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 
