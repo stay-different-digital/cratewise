@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3 add to collection button] — 2026-05-31
+
+### Added
+- "Add to Collection" `FilledButton.icon` in a sticky `bottomNavigationBar` on `ReleaseDetailScreen`, visible only when release is loaded
+- Button states: idle ("Add to Collection"), adding ("Adding…" / disabled), in-collection ("In Collection" with check / disabled)
+- `SnackBar` feedback: "Added to your collection" on success, "Already in your collection" on duplicate
+- `ReleaseDetailScreen` accepts optional `AddToCollectionUseCase` parameter; creates a default `LocalCollectionRepository(AppDatabase(openAppDatabase()))` when none is injected; disposes the owned database in `dispose()`
+- 8 widget tests for add-to-collection behaviour
+
+---
+
 ## [Unreleased — Phase 3 add to collection use case] — 2026-05-31
 
 ### Added

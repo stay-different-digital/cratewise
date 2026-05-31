@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../application/services/discogs_release_detail_service.dart';
+import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../domain/models/release_detail.dart';
+import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../shared/errors/app_error.dart';
 
 // ---------------------------------------------------------------------------
@@ -27,6 +30,12 @@ class _DetailError extends _DetailState {
 }
 
 // ---------------------------------------------------------------------------
+// Add state
+// ---------------------------------------------------------------------------
+
+enum _AddState { idle, adding, added, duplicate }
+
+// ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
 
@@ -35,10 +44,12 @@ class ReleaseDetailScreen extends StatefulWidget {
     super.key,
     required this.releaseId,
     this.detailService,
+    this.addToCollectionUseCase,
   });
 
   final int releaseId;
   final DiscogsReleaseDetailService? detailService;
+  final AddToCollectionUseCase? addToCollectionUseCase;
 
   @override
   State<ReleaseDetailScreen> createState() => _ReleaseDetailScreenState();
@@ -46,13 +57,30 @@ class ReleaseDetailScreen extends StatefulWidget {
 
 class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   late final DiscogsReleaseDetailService _service;
+  late final AddToCollectionUseCase _addUseCase;
+  AppDatabase? _ownedDb;
+
   _DetailState _state = const _Loading();
+  _AddState _addState = _AddState.idle;
 
   @override
   void initState() {
     super.initState();
     _service = widget.detailService ?? DiscogsReleaseDetailService();
+    if (widget.addToCollectionUseCase != null) {
+      _addUseCase = widget.addToCollectionUseCase!;
+    } else {
+      final db = AppDatabase(openAppDatabase());
+      _ownedDb = db;
+      _addUseCase = AddToCollectionUseCase(LocalCollectionRepository(db));
+    }
     _fetch();
+  }
+
+  @override
+  void dispose() {
+    _ownedDb?.close();
+    super.dispose();
   }
 
   Future<void> _fetch() async {
@@ -69,6 +97,25 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   void _retry() {
     setState(() => _state = const _Loading());
     _fetch();
+  }
+
+  Future<void> _handleAdd() async {
+    final detail = (_state as _Loaded).detail;
+    setState(() => _addState = _AddState.adding);
+    final result = await _addUseCase.execute(detail);
+    if (!mounted) return;
+    switch (result) {
+      case AddToCollectionSuccess():
+        setState(() => _addState = _AddState.added);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Added to your collection')),
+        );
+      case AddToCollectionDuplicate():
+        setState(() => _addState = _AddState.duplicate);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Already in your collection')),
+        );
+    }
   }
 
   static bool _isRetriable(AppError e) =>
@@ -93,6 +140,60 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
           ),
         _Loaded(:final detail) => _DetailBody(detail: detail),
       },
+      bottomNavigationBar: state is _Loaded
+          ? _AddToCollectionBar(
+              addState: _addState,
+              onAdd: _handleAdd,
+            )
+          : null,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Add to collection bar
+// ---------------------------------------------------------------------------
+
+class _AddToCollectionBar extends StatelessWidget {
+  const _AddToCollectionBar({required this.addState, required this.onAdd});
+
+  final _AddState addState;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget icon;
+    final String label;
+    final VoidCallback? onPressed;
+
+    switch (addState) {
+      case _AddState.idle:
+        icon = const Icon(Icons.add);
+        label = 'Add to Collection';
+        onPressed = onAdd;
+      case _AddState.adding:
+        icon = const Icon(Icons.add);
+        label = 'Adding…';
+        onPressed = null;
+      case _AddState.added || _AddState.duplicate:
+        icon = const Icon(Icons.check);
+        label = 'In Collection';
+        onPressed = null;
+    }
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            key: const Key('add-to-collection-button'),
+            onPressed: onPressed,
+            icon: icon,
+            label: Text(label),
+          ),
+        ),
+      ),
     );
   }
 }
