@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../shared/errors/app_error.dart';
 import 'dto/discogs_identity.dart';
+import 'dto/discogs_search_result.dart';
 
 const _baseUrl = 'https://api.discogs.com';
 const _userAgent = 'Cratewise/1.0';
@@ -24,8 +25,32 @@ class DiscogsApiClient {
     return DiscogsIdentity.fromJson(json);
   }
 
-  Future<http.Response> _get(String path, String token) async {
-    final uri = Uri.parse('$_baseUrl$path');
+  /// Searches Discogs releases by [query] text.
+  Future<List<DiscogsSearchResultDto>> searchReleases(
+    String query,
+    String token,
+  ) async {
+    final response = await _get(
+      '/database/search',
+      token,
+      queryParameters: {'q': query, 'type': 'release'},
+    );
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final results = json['results'] as List<dynamic>? ?? [];
+    return results
+        .map((e) => DiscogsSearchResultDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<http.Response> _get(
+    String path,
+    String token, {
+    Map<String, String>? queryParameters,
+  }) async {
+    var uri = Uri.parse('$_baseUrl$path');
+    if (queryParameters != null) {
+      uri = uri.replace(queryParameters: queryParameters);
+    }
     final http.Response response;
     try {
       response = await _client.get(uri, headers: _headers(token));

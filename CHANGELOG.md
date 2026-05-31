@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 search API method] — 2026-05-31
+
+### Added
+
+- `DiscogsSearchResultDto` in `lib/infrastructure/discogs/dto/discogs_search_result.dart` — parses a single Discogs search result from JSON: splits the API's combined `"Artist - Title"` field into separate `artist` and `title`, takes the first entry from the `format` and `label` arrays, parses `year` from string to `int?`, normalises an empty `thumb` string to `null`.
+- `DiscogsApiClient.searchReleases(query, token)` — calls `GET /database/search?q=…&type=release`; returns `List<DiscogsSearchResultDto>`; reuses the existing typed error hierarchy (`InvalidTokenError`, `RateLimitedError`, `DiscogsUnavailableError`, `NetworkError`); token is passed in headers only and never stored or logged.
+- Twelve unit tests added to `test/infrastructure/discogs/discogs_api_client_test.dart` covering: happy-path field parsing (artist, title, format, label, year, country, id, thumbUrl), empty-thumb normalisation, missing-field graceful handling, empty results list, URL query-parameter encoding, all four error status codes, network failure, and token absence from errors.
+
+---
+
 ## [Unreleased — Phase 2 search UI] — 2026-05-31
 
 ### Added
