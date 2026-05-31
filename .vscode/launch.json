@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Cratewise Android",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "android"
+    },
+    {
+      "name": "Cratewise Windows",
+      "request": "launch",
+      "type": "dart",
+      "deviceId": "windows"
+    }
+  ]
+}
