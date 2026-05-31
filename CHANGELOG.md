@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 search UI] — 2026-05-31
+
+### Added
+
+- `ReleaseSearchResult` model in `lib/domain/models/release_search_result.dart` — `id`, `title`, `artist`, `format`, `label`, `country`, nullable `year`, nullable `coverUrl`.
+- `ReleaseSearchResultCard` widget in `lib/presentation/widgets/release_search_result_card.dart` — horizontal card showing cover placeholder (72×72 `Icons.album`), artist, title, format · label, year · country, and `#id`.
+- `SearchScreen` replaced — pill-shaped search `TextField` with prefix search icon and clear button; empty state (large search icon + "Search Discogs" heading + prompt text) shown when query is empty; scrollable `ListView` of `ReleaseSearchResultCard` widgets shown when query is non-empty.
+- Five hardcoded placeholder releases (Miles Davis, The Beatles, Daft Punk, Amy Winehouse, Boards of Canada) displayed for any non-empty query — no API call, no token used.
+- Twelve widget tests in `test/presentation/screens/search_screen_test.dart` covering empty state content, results on query entry, each card field (artist, title, format/label, year/country, release ID, cover icon), clear button behaviour.
+
+---
+
 ## [Unreleased — Phase 2 iOS Keychain diagnostics] — 2026-05-31
 
 ### Changed
