@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3 collection data model] — 2026-05-31
+
+### Added
+- `CollectionItem` domain model with all vinyl collection fields: local ID, Discogs release ID, artist, title, label, catno, format, country, year, cover URL, media condition, sleeve condition, notes, tags, storage location, created/updated timestamps
+- `RecordCondition` enum with all eight standard Discogs vinyl grades (M through P); each grade exposes `.label` and `.abbreviation`
+- `CollectionRepository` abstract interface with `getAll`, `getById`, `add`, `update`, `remove`
+- 9 unit tests for `CollectionItem` and `RecordCondition`
+
+---
+
 ## [Unreleased — Phase 2 release detail states and iPad polish] — 2026-05-31
 
 ### Changed
