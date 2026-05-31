@@ -1,6 +1,13 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:cratewise/application/services/token_validation_service.dart';
+import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/presentation/widgets/discogs_token_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 Widget _buildApp(Widget child) => MaterialApp(
       theme: ThemeData(useMaterial3: true),
@@ -110,6 +117,169 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+  });
+
+  group('DiscogsTokenSection validation', () {
+    TokenValidationService makeService(http.Client httpClient) {
+      return TokenValidationService(
+        apiClient: DiscogsApiClient(httpClient: httpClient),
+      );
+    }
+
+    const identity = {
+      'username': 'vinyl_fan',
+      'resource_url': 'https://api.discogs.com/users/vinyl_fan',
+    };
+
+    testWidgets('shows loading indicator while awaiting response',
+        (tester) async {
+      final completer = Completer<http.Response>();
+      final service = makeService(MockClient((_) => completer.future));
+
+      await tester.pumpWidget(
+          _buildApp(DiscogsTokenSection(validationService: service)));
+      await tester.enterText(find.byType(TextField), 'some_token');
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Validate token'));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Validating…'), findsOneWidget);
+
+      completer.complete(http.Response(jsonEncode(identity), 200));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('shows success message with username on valid token',
+        (tester) async {
+      final service = makeService(
+        MockClient((_) async => http.Response(jsonEncode(identity), 200)),
+      );
+
+      await tester.pumpWidget(
+          _buildApp(DiscogsTokenSection(validationService: service)));
+      await tester.enterText(find.byType(TextField), 'valid_token');
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Validate token'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Connected as @vinyl_fan'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('shows error message when token is rejected', (tester) async {
+      final service =
+          makeService(MockClient((_) async => http.Response('', 401)));
+
+      await tester.pumpWidget(
+          _buildApp(DiscogsTokenSection(validationService: service)));
+      await tester.enterText(find.byType(TextField), 'bad_token');
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Validate token'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Token not recognised'), findsOneWidget);
+    });
+
+    testWidgets('shows rate limit message on 429', (tester) async {
+      final service =
+          makeService(MockClient((_) async => http.Response('', 429)));
+
+      await tester.pumpWidget(
+          _buildApp(DiscogsTokenSection(validationService: service)));
+      await tester.enterText(find.byType(TextField), 'some_token');
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Validate token'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Too many requests'), findsOneWidget);
+    });
+
+    testWidgets('shows network error message when request fails',
+        (tester) async {
+      final service = makeService(
+        MockClient((_) async => throw Exception('no internet')),
+      );
+
+      await tester.pumpWidget(
+          _buildApp(DiscogsTokenSection(validationService: service)));
+      await tester.enterText(find.byType(TextField), 'some_token');
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Validate token'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('No internet'), findsOneWidget);
+    });
+
+    testWidgets('Validate button is disabled while loading', (tester) async {
+      final completer = Completer<http.Response>();
+      final service = makeService(MockClient((_) => completer.future));
+
+      await tester.pumpWidget(
+          _buildApp(DiscogsTokenSection(validationService: service)));
+      await tester.enterText(find.byType(TextField), 'some_token');
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Validate token'));
+      await tester.pump();
+
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Validate token'),
+      );
+      expect(button.onPressed, isNull);
+
+      completer.complete(http.Response('', 401));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('success status clears when Remove token is tapped',
+        (tester) async {
+      final service = makeService(
+        MockClient((_) async => http.Response(jsonEncode(identity), 200)),
+      );
+
+      await tester.pumpWidget(
+          _buildApp(DiscogsTokenSection(validationService: service)));
+      await tester.enterText(find.byType(TextField), 'valid_token');
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Validate token'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Connected as @vinyl_fan'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Remove token'));
+      await tester.pump();
+
+      expect(find.text('Connected as @vinyl_fan'), findsNothing);
+    });
+
+    testWidgets('error message does not contain the token value',
+        (tester) async {
+      const sensitiveToken = 'super_secret_token_xyz_123';
+      final service =
+          makeService(MockClient((_) async => http.Response('', 401)));
+
+      await tester.pumpWidget(
+          _buildApp(DiscogsTokenSection(validationService: service)));
+      await tester.enterText(find.byType(TextField), sensitiveToken);
+      await tester.pump();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Validate token'));
+      await tester.pumpAndSettle();
+
+      // Check rendered Text widgets only — EditableText stores the raw value
+      // even when obscured, but Text widgets carry only what is visible to users.
+      final tokenInRenderedText = tester
+          .widgetList<Text>(find.byType(Text))
+          .where((w) => w.data?.contains(sensitiveToken) == true);
+      expect(tokenInRenderedText, isEmpty);
     });
   });
 }

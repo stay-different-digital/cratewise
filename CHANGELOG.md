@@ -7,6 +7,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 token validation UI] — 2026-05-31
+
+### Added
+
+- `TokenValidationService` in `lib/application/services/token_validation_service.dart` — wraps `DiscogsApiClient.fetchIdentity`; keeps API calls out of the widget layer.
+- `_ValidationStatus` enum (`idle`, `loading`, `success`, `failure`) and async `_validate()` method in `DiscogsTokenSection` — calls the service, guards with `!mounted` after await, maps each `AppError` subtype to a user-friendly message.
+- Loading indicator (`CircularProgressIndicator` + "Validating…" label) shown while the request is in flight.
+- Success row ("Connected as @username") shown on 200 response.
+- Error row with friendly message for each failure case: `InvalidTokenError` → "Token not recognised…", `RateLimitedError` → "Too many requests…", `NetworkError` → "No internet connection…", other `AppError` → "Could not reach Discogs…".
+- Validate and Remove buttons both disabled while loading.
+- Remove clears validation status in addition to clearing the text field.
+- Eight new widget tests: loading indicator, success message with username, each error path (401, 429, network), button disabled during load, status clears on Remove, and token value absent from all rendered `Text` widgets.
+
+---
+
 ## [Unreleased — Phase 2 Discogs API client] — 2026-05-31
 
 ### Added
