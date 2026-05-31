@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../shared/errors/app_error.dart';
 import 'dto/discogs_identity.dart';
+import 'dto/discogs_release.dart';
 import 'dto/discogs_search_result.dart';
 
 const _baseUrl = 'https://api.discogs.com';
@@ -23,6 +24,13 @@ class DiscogsApiClient {
     final response = await _get('/oauth/identity', token);
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return DiscogsIdentity.fromJson(json);
+  }
+
+  /// Fetches full details for a Discogs release by its [id].
+  Future<DiscogsReleaseDto> fetchRelease(int id, String token) async {
+    final response = await _get('/releases/$id', token);
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return DiscogsReleaseDto.fromJson(json);
   }
 
   /// Searches Discogs releases by [query] text.

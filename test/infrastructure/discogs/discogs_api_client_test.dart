@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_identity.dart';
+import 'package:cratewise/infrastructure/discogs/dto/discogs_release.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_search_result.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -276,6 +277,283 @@ void main() {
       final client = DiscogsApiClient(httpClient: _mockClient(401));
       try {
         await client.searchReleases('test', _fakeToken);
+        fail('expected InvalidTokenError');
+      } on InvalidTokenError {
+        // Pass — typed error carries no message containing the token.
+      }
+    });
+  });
+
+  group('DiscogsApiClient.fetchRelease', () {
+    final kindOfBlueRelease = {
+      'id': 249504,
+      'title': 'Kind Of Blue',
+      'artists': [
+        {'name': 'Miles Davis', 'id': 15885},
+      ],
+      'labels': [
+        {'name': 'Columbia', 'catno': 'CL 1355'},
+      ],
+      'formats': [
+        {
+          'name': 'Vinyl',
+          'qty': '1',
+          'descriptions': ['LP', 'Album'],
+        },
+      ],
+      'genres': ['Jazz'],
+      'styles': ['Modal', 'Bop'],
+      'year': 1959,
+      'country': 'US',
+      'notes': 'A seminal jazz album.',
+      'images': [
+        {
+          'type': 'primary',
+          'uri': 'https://i.discogs.com/kind_of_blue.jpg',
+          'uri150': 'https://i.discogs.com/kind_of_blue_150.jpg',
+        },
+      ],
+      'tracklist': [
+        {
+          'position': 'A1',
+          'type_': 'track',
+          'title': 'So What',
+          'duration': '9:22',
+        },
+        {
+          'position': 'A2',
+          'type_': 'track',
+          'title': 'Freddie Freeloader',
+          'duration': '9:46',
+        },
+        {
+          'position': '',
+          'type_': 'heading',
+          'title': 'Side B',
+          'duration': '',
+        },
+        {
+          'position': 'B1',
+          'type_': 'track',
+          'title': 'Blue In Green',
+          'duration': '5:37',
+        },
+      ],
+      'identifiers': [
+        {'type': 'Barcode', 'value': '074643602222'},
+        {'type': 'Matrix / Runout', 'value': 'XLP 55328'},
+      ],
+    };
+
+    test('returns DiscogsReleaseDto on 200', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release, isA<DiscogsReleaseDto>());
+    });
+
+    test('parses id, title, and artist', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.id, 249504);
+      expect(release.title, 'Kind Of Blue');
+      expect(release.artist, 'Miles Davis');
+    });
+
+    test('parses label and catalog number', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.label, 'Columbia');
+      expect(release.catno, 'CL 1355');
+    });
+
+    test('parses format with descriptions', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.format, 'Vinyl, LP, Album');
+    });
+
+    test('parses country, year, genres, and styles', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.country, 'US');
+      expect(release.year, 1959);
+      expect(release.genres, ['Jazz']);
+      expect(release.styles, ['Modal', 'Bop']);
+    });
+
+    test('parses notes', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.notes, 'A seminal jazz album.');
+    });
+
+    test('parses cover URL from primary image', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.coverUrl, 'https://i.discogs.com/kind_of_blue.jpg');
+    });
+
+    test('parses tracklist and filters heading rows', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.tracklist, hasLength(3));
+      expect(release.tracklist.map((t) => t.title), ['So What', 'Freddie Freeloader', 'Blue In Green']);
+      expect(release.tracklist.first.position, 'A1');
+      expect(release.tracklist.first.duration, '9:22');
+    });
+
+    test('parses identifiers', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.identifiers, hasLength(2));
+      expect(release.identifiers.first.type, 'Barcode');
+      expect(release.identifiers.first.value, '074643602222');
+    });
+
+    test('joins multiple artists with comma', () async {
+      final multiArtist = {
+        ...kindOfBlueRelease,
+        'artists': [
+          {'name': 'John Lennon'},
+          {'name': 'Paul McCartney'},
+        ],
+      };
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(multiArtist), 200),
+        ),
+      );
+      final release = await client.fetchRelease(1, _fakeToken);
+      expect(release.artist, 'John Lennon, Paul McCartney');
+    });
+
+    test('falls back to first image when no primary image present', () async {
+      final noPrimary = {
+        ...kindOfBlueRelease,
+        'images': [
+          {
+            'type': 'secondary',
+            'uri': 'https://i.discogs.com/back.jpg',
+          },
+        ],
+      };
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(noPrimary), 200),
+        ),
+      );
+      final release = await client.fetchRelease(1, _fakeToken);
+      expect(release.coverUrl, 'https://i.discogs.com/back.jpg');
+    });
+
+    test('handles missing optional fields gracefully', () async {
+      final minimal = {'id': 1, 'title': 'Unknown'};
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(minimal), 200),
+        ),
+      );
+      final release = await client.fetchRelease(1, _fakeToken);
+      expect(release.artist, '');
+      expect(release.label, '');
+      expect(release.catno, '');
+      expect(release.format, '');
+      expect(release.country, '');
+      expect(release.year, isNull);
+      expect(release.genres, isEmpty);
+      expect(release.styles, isEmpty);
+      expect(release.tracklist, isEmpty);
+      expect(release.notes, isNull);
+      expect(release.coverUrl, isNull);
+      expect(release.identifiers, isEmpty);
+    });
+
+    test('requests the correct URL path for the release id', () async {
+      late http.Request captured;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(jsonEncode(kindOfBlueRelease), 200);
+        }),
+      );
+      await client.fetchRelease(249504, _fakeToken);
+      expect(captured.url.path, '/releases/249504');
+    });
+
+    test('throws InvalidTokenError on 401', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      expect(
+        () => client.fetchRelease(1, _fakeToken),
+        throwsA(isA<InvalidTokenError>()),
+      );
+    });
+
+    test('throws RateLimitedError on 429', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(429));
+      expect(
+        () => client.fetchRelease(1, _fakeToken),
+        throwsA(isA<RateLimitedError>()),
+      );
+    });
+
+    test('throws DiscogsUnavailableError on 500', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(500));
+      expect(
+        () => client.fetchRelease(1, _fakeToken),
+        throwsA(isA<DiscogsUnavailableError>()),
+      );
+    });
+
+    test('throws NetworkError when request throws', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async => throw Exception('no internet')),
+      );
+      expect(
+        () => client.fetchRelease(1, _fakeToken),
+        throwsA(isA<NetworkError>()),
+      );
+    });
+
+    test('token is not present in thrown error messages', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      try {
+        await client.fetchRelease(1, _fakeToken);
         fail('expected InvalidTokenError');
       } on InvalidTokenError {
         // Pass — typed error carries no message containing the token.

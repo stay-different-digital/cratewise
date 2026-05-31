@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 release detail API method] — 2026-05-31
+
+### Added
+
+- `DiscogsReleaseDto` in `lib/infrastructure/discogs/dto/discogs_release.dart` — parses full Discogs release JSON: joins multiple artists with `, `; takes first label name and catalog number; builds format string from name + descriptions; selects primary cover image (falls back to first); parses `year` as `int?`; collects genres and styles as string lists; filters tracklist headings (only `type_ != "heading"` rows kept) into `DiscogsTrackDto` (position, title, duration); parses all identifiers into `DiscogsIdentifierDto` (type, value); nullable `notes` and `coverUrl`.
+- `DiscogsApiClient.fetchRelease(int id, String token)` — calls `GET /releases/{id}`; returns `DiscogsReleaseDto`; reuses existing typed error hierarchy; token passed in headers only, never stored or logged.
+- Eighteen unit tests added to `test/infrastructure/discogs/discogs_api_client_test.dart` covering: DTO return type, id/title/artist, label/catno, format with descriptions, country/year/genres/styles, notes, cover URL (primary image), tracklist with heading filtering, identifiers, multi-artist joining, secondary-image fallback, missing-field graceful defaults, correct URL path, all four error status codes, network failure, token absence from error messages.
+
+---
+
 ## [Unreleased — Phase 2 release detail placeholder] — 2026-05-31
 
 ### Added
