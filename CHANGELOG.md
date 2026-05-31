@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 secure token storage] — 2026-05-31
+
+### Added
+
+- `flutter_secure_storage: ^9.2.4` added to `pubspec.yaml`; CocoaPods required for iOS (installed via Homebrew).
+- `StorageError` added to `lib/shared/errors/app_error.dart` — typed error for keychain/keystore failures.
+- `ConnectionStatus` model in `lib/domain/models/connection_status.dart` — `isConnected` + nullable `username`.
+- `TokenStorage` abstract interface in `lib/domain/repositories/token_storage.dart` — `loadToken`, `loadUsername`, `saveCredentials`, `deleteCredentials`.
+- `DiscogsTokenStorage` in `lib/infrastructure/secure_storage/discogs_token_storage.dart` — wraps `FlutterSecureStorage` using keys `discogs_token` and `discogs_username`; all platform exceptions converted to `StorageError`; token never logged.
+- `DiscogsConnectionService` in `lib/application/services/discogs_connection_service.dart` — coordinates `TokenValidationService` + `TokenStorage`: `loadStatus()` (degrades gracefully on storage failure), `connect(token)` (validate then save), `disconnect()` (delete credentials).
+- `DiscogsTokenSection` now accepts optional `DiscogsConnectionService`; on `initState` loads saved connection status; on successful validation saves credentials and transitions to connected state; connected state shows masked token display (`••••••••••••••••`) and "Connected as @username" with a Disconnect button; Disconnect transitions back to idle and clears credentials.
+- Ten new tests in `test/presentation/widgets/discogs_token_section_test.dart` (replacing the previous 8 validation tests): loading indicator, connected state with masked token, each error path (401/403, 429, network, storage), button disabled during load, disconnect returns to idle, connected state on startup from saved credentials, token absent from rendered Text widgets.
+- Nine unit tests in `test/application/services/discogs_connection_service_test.dart` covering all `loadStatus`/`connect`/`disconnect` paths including storage failures and token-in-error-message absence check.
+
+---
+
 ## [Unreleased — Phase 2 token validation UI] — 2026-05-31
 
 ### Added

@@ -22,3 +22,7 @@ class UnexpectedApiError extends AppError {
   const UnexpectedApiError(this.statusCode);
   final int statusCode;
 }
+
+class StorageError extends AppError {
+  const StorageError();
+}
