@@ -26,3 +26,7 @@ class UnexpectedApiError extends AppError {
 class StorageError extends AppError {
   const StorageError();
 }
+
+class NoTokenError extends AppError {
+  const NoTokenError();
+}

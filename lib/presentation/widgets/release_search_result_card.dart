@@ -26,7 +26,7 @@ class ReleaseSearchResultCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _CoverPlaceholder(theme: theme),
+            _CoverThumbnail(theme: theme, coverUrl: result.coverUrl),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -85,13 +85,13 @@ class ReleaseSearchResultCard extends StatelessWidget {
   }
 }
 
-class _CoverPlaceholder extends StatelessWidget {
-  const _CoverPlaceholder({required this.theme});
+class _CoverThumbnail extends StatelessWidget {
+  const _CoverThumbnail({required this.theme, this.coverUrl});
 
   final ThemeData theme;
+  final String? coverUrl;
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _placeholder() {
     return Container(
       width: 72,
       height: 72,
@@ -103,6 +103,21 @@ class _CoverPlaceholder extends StatelessWidget {
         Icons.album,
         size: 32,
         color: theme.colorScheme.outlineVariant,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (coverUrl == null) return _placeholder();
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: Image.network(
+        coverUrl!,
+        width: 72,
+        height: 72,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => _placeholder(),
       ),
     );
   }

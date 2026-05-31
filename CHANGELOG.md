@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 live search] — 2026-05-31
+
+### Added
+
+- `NoTokenError` added to `lib/shared/errors/app_error.dart` — thrown when a search is attempted with no saved token.
+- `DiscogsSearchService` in `lib/application/services/discogs_search_service.dart` — loads the saved token from `TokenStorage`, calls `DiscogsApiClient.searchReleases`, maps `DiscogsSearchResultDto` to `ReleaseSearchResult`; throws `NoTokenError` when no token is saved; propagates all other `AppError` subtypes unchanged.
+- Eight unit tests in `test/application/services/discogs_search_service_test.dart` covering: `NoTokenError` on missing token, successful result mapping (all fields), empty results, `RateLimitedError`/`InvalidTokenError`/`NetworkError` propagation, and token-not-in-error check.
+- `Image.network` cover thumbnail support in `ReleaseSearchResultCard` — displays the cover image when `coverUrl` is non-null, falls back to the `Icons.album` placeholder on load error.
+
+### Changed
+
+- `SearchScreen` rewritten with a state machine (`_Idle` / `_Loading` / `_Results` / `_SearchError`); accepts optional `DiscogsSearchService`; search is triggered by pressing the keyboard Search action (`TextInputAction.search`), not on every keystroke; displays a `CircularProgressIndicator` while loading; shows a no-results state when the API returns zero items; shows typed error messages for `NoTokenError`, `InvalidTokenError`, `RateLimitedError`, `NetworkError`, `StorageError`, and unreachable-Discogs cases; clears back to empty state when the field is cleared; fake placeholder data removed.
+- `test/presentation/screens/search_screen_test.dart` rewritten (25 tests) — empty state, pre-submit idle state, loading indicator, result cards for all fields, no-results, no-token, network error, rate-limit, invalid-token, clear button behaviour, and security check (token not visible in any rendered Text widget).
+
+---
+
 ## [Unreleased — Phase 2 search API method] — 2026-05-31
 
 ### Added

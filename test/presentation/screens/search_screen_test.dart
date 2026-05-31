@@ -1,115 +1,279 @@
+import 'dart:async';
+
+import 'package:cratewise/application/services/discogs_search_service.dart';
+import 'package:cratewise/domain/models/release_search_result.dart';
+import 'package:cratewise/domain/repositories/token_storage.dart';
+import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/presentation/screens/search_screen.dart';
 import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
+import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget _buildScreen() {
-  return const MaterialApp(
-    home: Scaffold(body: SearchScreen()),
+// ---------------------------------------------------------------------------
+// Fakes
+// ---------------------------------------------------------------------------
+
+class _FakeTokenStorage implements TokenStorage {
+  @override
+  Future<String?> loadToken() async => null;
+  @override
+  Future<String?> loadUsername() async => null;
+  @override
+  Future<void> saveCredentials({
+    required String token,
+    required String username,
+  }) async {}
+  @override
+  Future<void> deleteCredentials() async {}
+}
+
+class _FakeSearchService extends DiscogsSearchService {
+  _FakeSearchService({this.results, this.throws})
+      : super(
+          storage: _FakeTokenStorage(),
+          apiClient: DiscogsApiClient(),
+        );
+
+  final List<ReleaseSearchResult>? results;
+  final AppError? throws;
+
+  @override
+  Future<List<ReleaseSearchResult>> search(String query) async {
+    if (throws != null) throw throws!;
+    return results ?? [];
+  }
+}
+
+class _DelayedSearchService extends DiscogsSearchService {
+  _DelayedSearchService(this._completer)
+      : super(
+          storage: _FakeTokenStorage(),
+          apiClient: DiscogsApiClient(),
+        );
+
+  final Completer<List<ReleaseSearchResult>> _completer;
+
+  @override
+  Future<List<ReleaseSearchResult>> search(String query) =>
+      _completer.future;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+Widget _buildScreen(DiscogsSearchService service) {
+  return MaterialApp(
+    home: Scaffold(body: SearchScreen(searchService: service)),
   );
 }
+
+const _kindOfBlue = ReleaseSearchResult(
+  id: 249504,
+  title: 'Kind Of Blue',
+  artist: 'Miles Davis',
+  format: 'Vinyl',
+  label: 'Columbia',
+  country: 'US',
+  year: 1959,
+);
+
+const _abbeyRoad = ReleaseSearchResult(
+  id: 14524953,
+  title: 'Abbey Road',
+  artist: 'The Beatles',
+  format: 'LP',
+  label: 'Apple Records',
+  country: 'UK',
+  year: 1969,
+);
+
+Future<void> submitSearch(WidgetTester tester, String query) async {
+  await tester.enterText(find.byType(TextField), query);
+  await tester.testTextInput.receiveAction(TextInputAction.search);
+  await tester.pump();
+  await tester.pump();
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
 void main() {
   group('SearchScreen empty state', () {
     testWidgets('shows heading and prompt when query is empty', (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(_buildScreen(_FakeSearchService()));
       expect(find.text('Search Discogs'), findsOneWidget);
       expect(
-        find.text('Type an artist, album, or label name to get started.'),
+        find.textContaining('Type an artist'),
         findsOneWidget,
       );
     });
 
     testWidgets('shows search icons when query is empty', (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(_buildScreen(_FakeSearchService()));
       // Both the TextField prefix and the empty-state illustration use Icons.search.
       expect(find.byIcon(Icons.search), findsWidgets);
     });
 
     testWidgets('does not show result cards when query is empty', (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(_buildScreen(_FakeSearchService()));
+      expect(find.byType(ReleaseSearchResultCard), findsNothing);
+    });
+
+    testWidgets('shows empty state with text entered but before submitting',
+        (tester) async {
+      await tester.pumpWidget(_buildScreen(_FakeSearchService()));
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump();
+      expect(find.text('Search Discogs'), findsOneWidget);
       expect(find.byType(ReleaseSearchResultCard), findsNothing);
     });
   });
 
-  group('SearchScreen results', () {
-    testWidgets('hides empty state and shows cards after entering query',
+  group('SearchScreen search', () {
+    testWidgets('shows loading indicator while search is in progress',
         (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      final completer = Completer<List<ReleaseSearchResult>>();
+      await tester.pumpWidget(
+          _buildScreen(_DelayedSearchService(completer)));
+
       await tester.enterText(find.byType(TextField), 'miles');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
       await tester.pump();
-      expect(
-        find.text('Type an artist, album, or label name to get started.'),
-        findsNothing,
-      );
-      expect(find.byType(ReleaseSearchResultCard), findsWidgets);
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      completer.complete([_kindOfBlue]);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('shows result cards after successful search', (tester) async {
+      final service =
+          _FakeSearchService(results: [_kindOfBlue, _abbeyRoad]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'vinyl');
+      expect(find.byType(ReleaseSearchResultCard), findsNWidgets(2));
+    });
+
+    testWidgets('hides empty state after successful search', (tester) async {
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+      expect(find.text('Search Discogs'), findsNothing);
     });
 
     testWidgets('result card shows artist name', (tester) async {
-      await tester.pumpWidget(_buildScreen());
-      await tester.enterText(find.byType(TextField), 'vinyl');
-      await tester.pump();
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
       expect(find.text('Miles Davis'), findsOneWidget);
     });
 
     testWidgets('result card shows title', (tester) async {
-      await tester.pumpWidget(_buildScreen());
-      await tester.enterText(find.byType(TextField), 'vinyl');
-      await tester.pump();
-      expect(find.text('Kind of Blue'), findsOneWidget);
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+      expect(find.text('Kind Of Blue'), findsOneWidget);
     });
 
     testWidgets('result card shows format and label', (tester) async {
-      await tester.pumpWidget(_buildScreen());
-      await tester.enterText(find.byType(TextField), 'vinyl');
-      await tester.pump();
-      expect(find.text('LP · Columbia'), findsOneWidget);
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+      expect(find.text('Vinyl · Columbia'), findsOneWidget);
     });
 
     testWidgets('result card shows year and country', (tester) async {
-      await tester.pumpWidget(_buildScreen());
-      await tester.enterText(find.byType(TextField), 'vinyl');
-      await tester.pump();
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
       expect(find.text('1959 · US'), findsOneWidget);
     });
 
     testWidgets('result card shows Discogs release ID', (tester) async {
-      await tester.pumpWidget(_buildScreen());
-      await tester.enterText(find.byType(TextField), 'vinyl');
-      await tester.pump();
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
       expect(find.text('#249504'), findsOneWidget);
     });
 
-    testWidgets('result card shows cover placeholder icon', (tester) async {
-      await tester.pumpWidget(_buildScreen());
-      await tester.enterText(find.byType(TextField), 'vinyl');
-      await tester.pump();
+    testWidgets('result card shows cover placeholder icon when no coverUrl',
+        (tester) async {
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
       expect(find.byIcon(Icons.album), findsWidgets);
     });
 
-    testWidgets('shows results for other fake releases', (tester) async {
-      await tester.pumpWidget(_buildScreen());
-      await tester.enterText(find.byType(TextField), 'vinyl');
-      await tester.pump();
-      expect(find.text('The Beatles'), findsOneWidget);
-      expect(find.text('Daft Punk'), findsOneWidget);
+    testWidgets('shows no-results message when search returns empty',
+        (tester) async {
+      final service = _FakeSearchService(results: []);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'xyzzy');
+      expect(find.text('No results'), findsOneWidget);
+      expect(find.byType(ReleaseSearchResultCard), findsNothing);
+    });
+
+    testWidgets('shows no-token message when no token is saved', (tester) async {
+      final service =
+          _FakeSearchService(throws: const NoTokenError());
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+      expect(
+        find.textContaining('Connect a Discogs token in Settings'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows network error message on network failure', (tester) async {
+      final service = _FakeSearchService(throws: const NetworkError());
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+      expect(find.textContaining('No internet'), findsOneWidget);
+    });
+
+    testWidgets('shows rate limit message when rate limited', (tester) async {
+      final service = _FakeSearchService(throws: const RateLimitedError());
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+      expect(find.textContaining('Too many requests'), findsOneWidget);
+    });
+
+    testWidgets('shows invalid token message on 401 error', (tester) async {
+      final service =
+          _FakeSearchService(throws: const InvalidTokenError());
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+      expect(find.textContaining('not valid'), findsOneWidget);
     });
   });
 
   group('SearchScreen clear', () {
     testWidgets('clear button appears when query is entered', (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(_buildScreen(_FakeSearchService()));
       expect(find.byTooltip('Clear search'), findsNothing);
       await tester.enterText(find.byType(TextField), 'miles');
       await tester.pump();
       expect(find.byTooltip('Clear search'), findsOneWidget);
     });
 
-    testWidgets('tapping clear restores empty state', (tester) async {
-      await tester.pumpWidget(_buildScreen());
+    testWidgets('tapping clear shows empty state', (tester) async {
+      await tester.pumpWidget(_buildScreen(_FakeSearchService()));
       await tester.enterText(find.byType(TextField), 'miles');
       await tester.pump();
-      expect(find.text('Miles Davis'), findsOneWidget);
+      await tester.tap(find.byTooltip('Clear search'));
+      await tester.pump();
+      expect(find.text('Search Discogs'), findsOneWidget);
+      expect(find.byType(ReleaseSearchResultCard), findsNothing);
+    });
+
+    testWidgets('tapping clear after results shows empty state', (tester) async {
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
 
       await tester.tap(find.byTooltip('Clear search'));
       await tester.pump();
@@ -119,12 +283,28 @@ void main() {
     });
 
     testWidgets('clear button disappears after clearing', (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(_buildScreen(_FakeSearchService()));
       await tester.enterText(find.byType(TextField), 'miles');
       await tester.pump();
       await tester.tap(find.byTooltip('Clear search'));
       await tester.pump();
       expect(find.byTooltip('Clear search'), findsNothing);
+    });
+  });
+
+  group('SearchScreen security', () {
+    testWidgets('token value is not visible in any rendered Text widget',
+        (tester) async {
+      const sensitiveToken = 'super_secret_token_xyz_123';
+      final service = _FakeSearchService(
+        throws: const InvalidTokenError(),
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+      final tokenInText = tester
+          .widgetList<Text>(find.byType(Text))
+          .where((w) => w.data?.contains(sensitiveToken) == true);
+      expect(tokenInText, isEmpty);
     });
   });
 }

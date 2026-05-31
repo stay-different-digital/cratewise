@@ -1,74 +1,81 @@
 import 'package:flutter/material.dart';
 
+import '../../application/services/discogs_search_service.dart';
 import '../../domain/models/release_search_result.dart';
+import '../../shared/errors/app_error.dart';
 import '../widgets/release_search_result_card.dart';
 
-// Placeholder data — replaced with Discogs API results in a later slice.
-const _fakeResults = <ReleaseSearchResult>[
-  ReleaseSearchResult(
-    id: 249504,
-    title: 'Kind of Blue',
-    artist: 'Miles Davis',
-    format: 'LP',
-    label: 'Columbia',
-    year: 1959,
-    country: 'US',
-  ),
-  ReleaseSearchResult(
-    id: 14524953,
-    title: 'Abbey Road',
-    artist: 'The Beatles',
-    format: 'LP',
-    label: 'Apple Records',
-    year: 1969,
-    country: 'UK',
-  ),
-  ReleaseSearchResult(
-    id: 4657838,
-    title: 'Random Access Memories',
-    artist: 'Daft Punk',
-    format: '2xLP',
-    label: 'Columbia',
-    year: 2013,
-    country: 'EU',
-  ),
-  ReleaseSearchResult(
-    id: 870481,
-    title: 'Back to Black',
-    artist: 'Amy Winehouse',
-    format: 'LP',
-    label: 'Island Records',
-    year: 2006,
-    country: 'UK',
-  ),
-  ReleaseSearchResult(
-    id: 7528137,
-    title: 'Music Has the Right to Children',
-    artist: 'Boards of Canada',
-    format: '2xLP',
-    label: 'Warp Records',
-    year: 1998,
-    country: 'UK',
-  ),
-];
+// ---------------------------------------------------------------------------
+// State machine
+// ---------------------------------------------------------------------------
+
+sealed class _SearchState {
+  const _SearchState();
+}
+
+class _Idle extends _SearchState {
+  const _Idle();
+}
+
+class _Loading extends _SearchState {
+  const _Loading();
+}
+
+class _Results extends _SearchState {
+  const _Results(this.items);
+  final List<ReleaseSearchResult> items;
+}
+
+class _SearchError extends _SearchState {
+  const _SearchError(this.error);
+  final AppError error;
+}
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key, this.searchService});
+
+  final DiscogsSearchService? searchService;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
+  late final DiscogsSearchService _service;
   final _controller = TextEditingController();
+  _SearchState _state = const _Idle();
 
   @override
   void initState() {
     super.initState();
+    _service = widget.searchService ?? DiscogsSearchService();
     _controller.addListener(_onQueryChanged);
   }
 
-  void _onQueryChanged() => setState(() {});
+  void _onQueryChanged() {
+    if (_controller.text.isEmpty) {
+      setState(() => _state = const _Idle());
+    } else {
+      setState(() {});
+    }
+  }
+
+  Future<void> _onSubmit(String query) async {
+    if (query.trim().isEmpty) return;
+    setState(() => _state = const _Loading());
+    try {
+      final results = await _service.search(query);
+      if (!mounted) return;
+      setState(() => _state = _Results(results));
+    } on AppError catch (e) {
+      if (!mounted) return;
+      setState(() => _state = _SearchError(e));
+    }
+  }
 
   @override
   void dispose() {
@@ -91,6 +98,7 @@ class _SearchScreenState extends State<SearchScreen> {
             autocorrect: false,
             enableSuggestions: false,
             textInputAction: TextInputAction.search,
+            onSubmitted: _onSubmit,
             decoration: InputDecoration(
               hintText: 'Artist, album, or label…',
               prefixIcon: const Icon(Icons.search),
@@ -114,14 +122,26 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ),
-        Expanded(
-          child:
-              hasQuery ? const _ResultsList() : const _EmptyState(),
-        ),
+        Expanded(child: _buildBody()),
       ],
     );
   }
+
+  Widget _buildBody() {
+    if (_controller.text.isEmpty) return const _EmptyState();
+    return switch (_state) {
+      _Idle() => const _EmptyState(),
+      _Loading() => const _LoadingIndicator(),
+      _Results(:final items) when items.isEmpty => const _NoResultsState(),
+      _Results(:final items) => _ResultsList(items: items),
+      _SearchError(:final error) => _SearchErrorState(error: error),
+    };
+  }
 }
+
+// ---------------------------------------------------------------------------
+// Body widgets
+// ---------------------------------------------------------------------------
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
@@ -144,7 +164,97 @@ class _EmptyState extends StatelessWidget {
             Text('Search Discogs', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Type an artist, album, or label name to get started.',
+              'Type an artist, album, or label name and press Search.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoadingIndicator extends StatelessWidget {
+  const _LoadingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(child: CircularProgressIndicator());
+  }
+}
+
+class _NoResultsState extends StatelessWidget {
+  const _NoResultsState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 56,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            const SizedBox(height: 16),
+            Text('No results', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Try a different search term.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchErrorState extends StatelessWidget {
+  const _SearchErrorState({required this.error});
+
+  final AppError error;
+
+  String get _message => switch (error) {
+        NoTokenError() =>
+          'Connect a Discogs token in Settings to search.',
+        InvalidTokenError() =>
+          'Your Discogs token is not valid. Go to Settings to reconnect.',
+        RateLimitedError() =>
+          'Too many requests. Wait a moment and try again.',
+        NetworkError() => 'No internet connection.',
+        StorageError() => 'Could not load your saved token. Try again.',
+        DiscogsUnavailableError() => 'Could not reach Discogs. Try again.',
+        UnexpectedApiError() => 'Could not reach Discogs. Try again.',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 56,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _message,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -158,16 +268,18 @@ class _EmptyState extends StatelessWidget {
 }
 
 class _ResultsList extends StatelessWidget {
-  const _ResultsList();
+  const _ResultsList({required this.items});
+
+  final List<ReleaseSearchResult> items;
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      itemCount: _fakeResults.length,
+      itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (_, index) =>
-          ReleaseSearchResultCard(result: _fakeResults[index]),
+          ReleaseSearchResultCard(result: items[index]),
     );
   }
 }
