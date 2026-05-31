@@ -20,6 +20,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - `HomeShellScreen` rewritten as a `StatefulWidget` navigation shell using `IndexedStack`. Phones (< 700 logical pixels) get a bottom `NavigationBar`; wider screens get a `NavigationRail` in a `Row` layout.
+- `SettingsScreen` replaced static placeholder with a scrollable `ListView` containing the Discogs connection section.
+- Nav reachability test updated to assert on Discogs section heading instead of the removed placeholder text.
+
+---
+
+## [Unreleased — Phase 2 token input UI] — 2026-05-31
+
+### Added
+
+- `DiscogsTokenSection` widget — masked `TextField` for a Discogs personal access token with a show/hide `IconButton`, helper text pointing to `discogs.com/settings/developers`, and "Validate token" / "Remove token" buttons that are disabled while the field is empty.
+- "Remove token" clears the in-memory field (UI state only; no storage in this slice).
+- `autocorrect: false` and `enableSuggestions: false` on the token field keep the value out of keyboard suggestion history.
+- `TextEditingController` is disposed correctly in `State.dispose`.
+- Seven widget tests covering: token masked by default, show/hide toggle (both directions), help URL text present, buttons disabled when field is empty, buttons enabled with text, and Remove clearing the field.
 
 ---
 

@@ -50,8 +50,8 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    // After navigating to Settings the Settings placeholder body is visible.
-    expect(find.text('App preferences and account settings.'), findsOneWidget);
+    // After navigating to Settings the Discogs connection section is visible.
+    expect(find.text('Discogs'), findsOneWidget);
   });
 
   testWidgets('tapping Collection shows Collection placeholder on narrow layout',
