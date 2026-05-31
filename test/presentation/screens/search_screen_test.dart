@@ -448,10 +448,13 @@ void main() {
       await submitSearch(tester, 'miles');
 
       await tester.tap(find.byType(ReleaseSearchResultCard).first);
-      await tester.pumpAndSettle();
+      // Advance past the navigation animation without waiting for the detail
+      // fetch (which would try to call FlutterSecureStorage in tests).
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(ReleaseDetailScreen), findsOneWidget);
-      expect(find.textContaining('249504'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
     testWidgets('back from detail screen returns to search results',
@@ -461,11 +464,13 @@ void main() {
       await submitSearch(tester, 'miles');
 
       await tester.tap(find.byType(ReleaseSearchResultCard).first);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.byType(ReleaseDetailScreen), findsOneWidget);
 
       await tester.pageBack();
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.byType(ReleaseDetailScreen), findsNothing);
       expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
     });

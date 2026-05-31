@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 release detail screen] — 2026-05-31
+
+### Added
+
+- `ReleaseDetail`, `ReleaseTrack`, `ReleaseIdentifier` domain models in `lib/domain/models/release_detail.dart`.
+- `DiscogsReleaseDetailService` in `lib/application/services/discogs_release_detail_service.dart` — loads the saved token, calls `DiscogsApiClient.fetchRelease`, maps the DTO to `ReleaseDetail`; throws `NoTokenError` when no token is saved; propagates all other `AppError` subtypes unchanged.
+- Nine unit tests in `test/application/services/discogs_release_detail_service_test.dart` covering: `NoTokenError` on missing token, `ReleaseDetail` return type on success, all DTO fields mapped correctly, tracklist mapping, identifier mapping, `RateLimitedError`/`InvalidTokenError`/`NetworkError` propagation, and token absence from error messages.
+
+### Changed
+
+- `ReleaseDetailScreen` rewritten from a `StatelessWidget` placeholder to a `StatefulWidget` with a state machine (`_Loading` / `_Loaded` / `_DetailError`). Accepts optional `DiscogsReleaseDetailService` for injection in tests. On `initState`, fetches release details; while loading shows `CircularProgressIndicator`; on error shows icon and friendly mapped message; on success shows scrollable content: cover image (full-width `AspectRatio`, falls back to placeholder on load error), title + artist header, info rows (label, catalog number, format, country, released year, genre, style, Discogs ID), tracklist rows (position, title, duration), optional notes section, optional identifiers section.
+- Fifteen widget tests in `test/presentation/screens/release_detail_screen_test.dart` covering: loading indicator, app bar title, release title, artist, label + catno, tracklist tracks, notes, identifiers, cover image widget present/absent, Discogs ID, notes section hidden when null, no-token error, network error, rate-limit error, back button, back navigation.
+- Two navigation tests in `test/presentation/screens/search_screen_test.dart` updated: replaced `pumpAndSettle()` with `pump()` + `pump(Duration(milliseconds: 500))` to advance past the navigation animation without triggering `FlutterSecureStorage` platform-channel calls; updated assertion from release-ID text (no longer shown in loading state) to `CircularProgressIndicator`.
+
+---
+
 ## [Unreleased — Phase 2 release detail API method] — 2026-05-31
 
 ### Added
