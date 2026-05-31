@@ -7,6 +7,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3 collection list UI] — 2026-05-31
+
+### Added
+- `CollectionScreen` replaced with a real list layout showing collection item cards and a search field (UI only, no filtering yet)
+- `CollectionItemCard` widget: cover thumbnail (placeholder when no URL), artist, title, label · year · format meta row, storage location row with icon
+- Empty state with `Icons.album_outlined` and descriptive text when the items list is empty
+- Default fake data (Miles Davis, Massive Attack, The Prodigy) displayed when no `items` param is injected
+- `CollectionScreen` accepts optional `List<CollectionItem>? items` parameter for test injection
+- Search field with clear button (UI only; filtering deferred to next slice)
+- 18 new widget tests for collection screen and card behaviour
+
+---
+
 ## [Unreleased — Phase 3 add to collection button] — 2026-05-31
 
 ### Added

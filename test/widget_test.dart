@@ -54,7 +54,7 @@ void main() {
     expect(find.text('Discogs'), findsOneWidget);
   });
 
-  testWidgets('tapping Collection shows Collection placeholder on narrow layout',
+  testWidgets('tapping Collection shows collection list on narrow layout',
       (tester) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;
@@ -65,6 +65,6 @@ void main() {
     await tester.tap(find.text('Collection').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('Your saved records will appear here.'), findsOneWidget);
+    expect(find.text('Miles Davis'), findsOneWidget);
   });
 }
