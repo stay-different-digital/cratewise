@@ -7,6 +7,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3 collection detail data] — 2026-05-31
+
+### Added
+- `CollectionDetailScreen` now loads the `CollectionItem` from `LocalCollectionRepository.getById()` using the same owned-`AppDatabase` pattern as other screens
+- Loading state (`CircularProgressIndicator`), not-found state ("Item not found."), and friendly error state ("Could not load this item.") with Retry button
+- Detail body shows: cover image (placeholder when none), artist, title in app bar; info rows for label/catno, format, country, year, media condition, sleeve condition, storage location; Notes section; Tags section (with `Chip` widgets); history section with added/updated dates in ISO format
+- Two-column wide layout (≥700dp) via `LayoutBuilder` mirroring `ReleaseDetailScreen`
+- `CollectionScreen._CollectionList` passes its `CollectionRepository` down to `CollectionDetailScreen` on navigation — avoids a second database connection and allows fake repos to propagate cleanly in tests
+- `_FakeCollectionRepository.getById()` now looks up from `items` list for accurate navigation tests
+- 27 new widget tests (loading × 2, loaded × 19, not-found × 2, error × 4, wide × 1) in `collection_detail_screen_test.dart`; updated 2 navigation tests in `collection_screen_test.dart`
+
+---
+
 ## [Unreleased — Phase 3 collection detail route] — 2026-05-31
 
 ### Added

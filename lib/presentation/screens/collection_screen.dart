@@ -130,7 +130,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
     return switch (_state) {
       _Loading() => const Center(child: CircularProgressIndicator()),
       _Loaded(:final items) when items.isEmpty => const _EmptyCollectionState(),
-      _Loaded(:final items) => _CollectionList(items: items),
+      _Loaded(:final items) =>
+        _CollectionList(items: items, repository: _repository),
       _CollectionError() => _CollectionErrorState(onRetry: _load),
     };
   }
@@ -141,9 +142,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
 // ---------------------------------------------------------------------------
 
 class _CollectionList extends StatelessWidget {
-  const _CollectionList({required this.items});
+  const _CollectionList({required this.items, required this.repository});
 
   final List<CollectionItem> items;
+  final CollectionRepository repository;
 
   @override
   Widget build(BuildContext context) {
@@ -155,8 +157,10 @@ class _CollectionList extends StatelessWidget {
         item: items[index],
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) =>
-                CollectionDetailScreen(itemId: items[index].id),
+            builder: (_) => CollectionDetailScreen(
+              itemId: items[index].id,
+              repository: repository,
+            ),
           ),
         ),
       ),

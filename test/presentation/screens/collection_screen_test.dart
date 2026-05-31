@@ -25,7 +25,8 @@ class _FakeCollectionRepository implements CollectionRepository {
   }
 
   @override
-  Future<CollectionItem?> getById(String id) async => null;
+  Future<CollectionItem?> getById(String id) async =>
+      items.where((i) => i.id == id).firstOrNull;
 
   @override
   Future<bool> containsRelease(int discogsReleaseId) async => false;
@@ -274,15 +275,15 @@ void main() {
       expect(find.byType(CollectionDetailScreen), findsOneWidget);
     });
 
-    testWidgets('detail screen receives the correct item id', (tester) async {
+    testWidgets('detail screen shows data for the tapped item', (tester) async {
       final repo = _FakeCollectionRepository(
-        items: [_makeItem(id: 'my-unique-id')],
+        items: [_makeItem(id: 'my-unique-id', artist: 'Detail Artist')],
       );
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(CollectionItemCard).first);
       await tester.pumpAndSettle();
-      expect(find.text('my-unique-id'), findsOneWidget);
+      expect(find.textContaining('Detail Artist'), findsOneWidget);
     });
 
     testWidgets('back navigation returns to collection list', (tester) async {
