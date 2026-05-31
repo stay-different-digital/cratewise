@@ -7,6 +7,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 release detail states and iPad polish] — 2026-05-31
+
+### Changed
+
+- `ReleaseDetailScreen` loading state replaced `CircularProgressIndicator` with `_SkeletonBody` — a static layout-matched skeleton with placeholder blocks for the cover, title/artist, info rows, and tracklist rows. Key `'release-detail-loading'` on the skeleton root allows test assertions without depending on `CircularProgressIndicator`.
+- App bar title now updates to the album title once the detail is loaded; shows `'Release Detail'` during loading and error states.
+- Empty title safeguard: `detail.title.isEmpty` falls back to `'(Untitled)'`.
+- `_ErrorBody` accepts an optional `onRetry` callback. A `FilledButton('Retry')` appears for all retriable errors (`NetworkError`, `RateLimitedError`, `StorageError`, `DiscogsUnavailableError`, `UnexpectedApiError`). Non-retriable errors (`NoTokenError`, `InvalidTokenError`) show message only.
+- `_DetailBody` uses `LayoutBuilder` to switch between narrow (< 700 dp) and wide (≥ 700 dp) layouts. Wide layout: 300 dp left column (cover image with rounded corners, or a placeholder icon when `coverUrl == null`; title, artist, info rows) and an `Expanded` right column (tracklist, notes, identifiers). Uses the same breakpoint (700 dp) as `HomeShellScreen`.
+- Extracted reusable sub-widgets: `_TitleArtist`, `_InfoRows`, `_TracklistSection`, `_NotesSection`, `_IdentifiersSection` — shared between narrow and wide layouts.
+- Twenty widget tests in `test/presentation/screens/release_detail_screen_test.dart`: skeleton key check replaces `CircularProgressIndicator` check; title assertion updated to `findsWidgets` (title appears in both app bar and body); added group `'retry'` with three tests: retry button visible on network error, retry button absent on no-token error, retry refetches and shows loaded state (via `_FailThenSucceedService`).
+- One navigation test in `test/presentation/screens/search_screen_test.dart` updated: assertion changed from `find.byType(CircularProgressIndicator)` to `find.byKey(const Key('release-detail-loading'))`.
+
+---
+
 ## [Unreleased — Phase 2 release detail screen] — 2026-05-31
 
 ### Added

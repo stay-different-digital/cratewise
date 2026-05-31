@@ -53,6 +53,22 @@ class _BlockingService extends DiscogsReleaseDetailService {
   Future<ReleaseDetail> fetchDetail(int _) => Completer<ReleaseDetail>().future;
 }
 
+// Fails on the first call, returns detail on subsequent calls.
+class _FailThenSucceedService extends DiscogsReleaseDetailService {
+  _FailThenSucceedService({required this.detail})
+      : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
+
+  final ReleaseDetail detail;
+  int _calls = 0;
+
+  @override
+  Future<ReleaseDetail> fetchDetail(int _) async {
+    _calls++;
+    if (_calls == 1) throw const NetworkError();
+    return detail;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Fixture
 // ---------------------------------------------------------------------------
@@ -88,14 +104,14 @@ Widget _wrap(Widget child) => MaterialApp(home: child);
 void main() {
   group('ReleaseDetailScreen', () {
     group('loading state', () {
-      testWidgets('shows loading indicator while fetching', (tester) async {
+      testWidgets('shows loading skeleton while fetching', (tester) async {
         await tester.pumpWidget(_wrap(
           ReleaseDetailScreen(
             releaseId: 249504,
             detailService: _BlockingService(),
           ),
         ));
-        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.byKey(const Key('release-detail-loading')), findsOneWidget);
       });
 
       testWidgets('shows app bar title while loading', (tester) async {
@@ -118,7 +134,8 @@ void main() {
           ),
         ));
         await tester.pumpAndSettle();
-        expect(find.text('Kind Of Blue'), findsOneWidget);
+        // Title appears in both the app bar and the detail body.
+        expect(find.text('Kind Of Blue'), findsWidgets);
       });
 
       testWidgets('shows artist when loaded', (tester) async {
@@ -284,6 +301,47 @@ void main() {
         ));
         await tester.pumpAndSettle();
         expect(find.textContaining('Too many requests'), findsOneWidget);
+      });
+    });
+
+    group('retry', () {
+      testWidgets('shows retry button for network error', (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 1,
+            detailService: _ErrorService(error: const NetworkError()),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.widgetWithText(FilledButton, 'Retry'), findsOneWidget);
+      });
+
+      testWidgets('does not show retry button for no-token error',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 1,
+            detailService: _ErrorService(error: const NoTokenError()),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.widgetWithText(FilledButton, 'Retry'), findsNothing);
+      });
+
+      testWidgets('retry button refetches and shows loaded state on success',
+          (tester) async {
+        final service = _FailThenSucceedService(detail: _kindOfBlue);
+        await tester.pumpWidget(
+            _wrap(ReleaseDetailScreen(releaseId: 1, detailService: service)));
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('No internet'), findsOneWidget);
+        expect(find.widgetWithText(FilledButton, 'Retry'), findsOneWidget);
+
+        await tester.tap(find.widgetWithText(FilledButton, 'Retry'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Kind Of Blue'), findsWidgets);
       });
     });
 

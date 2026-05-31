@@ -66,13 +66,31 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     }
   }
 
+  void _retry() {
+    setState(() => _state = const _Loading());
+    _fetch();
+  }
+
+  static bool _isRetriable(AppError e) =>
+      e is! NoTokenError && e is! InvalidTokenError;
+
   @override
   Widget build(BuildContext context) {
+    final state = _state;
     return Scaffold(
-      appBar: AppBar(title: const Text('Release Detail')),
-      body: switch (_state) {
-        _Loading() => const Center(child: CircularProgressIndicator()),
-        _DetailError(:final error) => _ErrorBody(error: error),
+      appBar: AppBar(
+        title: Text(
+          state is _Loaded && state.detail.title.isNotEmpty
+              ? state.detail.title
+              : 'Release Detail',
+        ),
+      ),
+      body: switch (state) {
+        _Loading() => const _SkeletonBody(),
+        _DetailError(:final error) => _ErrorBody(
+            error: error,
+            onRetry: _isRetriable(error) ? _retry : null,
+          ),
         _Loaded(:final detail) => _DetailBody(detail: detail),
       },
     );
@@ -80,13 +98,101 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Body widgets
+// Loading skeleton
+// ---------------------------------------------------------------------------
+
+class _SkeletonBody extends StatelessWidget {
+  const _SkeletonBody();
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.surfaceContainerHighest;
+
+    Widget block({double? width, required double height}) => Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        );
+
+    return SingleChildScrollView(
+      key: const Key('release-detail-loading'),
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AspectRatio(aspectRatio: 1, child: ColoredBox(color: color)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                block(width: 200, height: 22),
+                const SizedBox(height: 8),
+                block(width: 130, height: 16),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: List.generate(
+                5,
+                (_) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(
+                    children: [
+                      block(width: 80, height: 12),
+                      const SizedBox(width: 16),
+                      Expanded(child: block(height: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: block(width: 80, height: 14),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: List.generate(
+                4,
+                (_) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(
+                    children: [
+                      block(width: 28, height: 12),
+                      const SizedBox(width: 12),
+                      Expanded(child: block(height: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Error body
 // ---------------------------------------------------------------------------
 
 class _ErrorBody extends StatelessWidget {
-  const _ErrorBody({required this.error});
+  const _ErrorBody({required this.error, this.onRetry});
 
   final AppError error;
+  final VoidCallback? onRetry;
 
   String get _message => switch (error) {
         NoTokenError() =>
@@ -122,6 +228,13 @@ class _ErrorBody extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: onRetry,
+                child: const Text('Retry'),
+              ),
+            ],
           ],
         ),
       ),
@@ -129,14 +242,28 @@ class _ErrorBody extends StatelessWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Detail body
+// ---------------------------------------------------------------------------
+
 class _DetailBody extends StatelessWidget {
   const _DetailBody({required this.detail});
 
   final ReleaseDetail detail;
 
+  static const _kWideBreakpoint = 700.0;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          constraints.maxWidth >= _kWideBreakpoint
+              ? _buildWide(context)
+              : _buildNarrow(context),
+    );
+  }
+
+  Widget _buildNarrow(BuildContext context) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -144,77 +271,208 @@ class _DetailBody extends StatelessWidget {
           if (detail.coverUrl != null) _CoverImage(url: detail.coverUrl!),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(detail.title, style: theme.textTheme.headlineSmall),
-                if (detail.artist.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    detail.artist,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+            child: _TitleArtist(detail: detail),
           ),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                if (detail.label.isNotEmpty)
-                  _InfoRow(
-                    'Label',
-                    detail.catno.isNotEmpty
-                        ? '${detail.label} — ${detail.catno}'
-                        : detail.label,
-                  ),
-                if (detail.format.isNotEmpty)
-                  _InfoRow('Format', detail.format),
-                if (detail.country.isNotEmpty)
-                  _InfoRow('Country', detail.country),
-                if (detail.year != null)
-                  _InfoRow('Released', '${detail.year}'),
-                if (detail.genres.isNotEmpty)
-                  _InfoRow('Genre', detail.genres.join(', ')),
-                if (detail.styles.isNotEmpty)
-                  _InfoRow('Style', detail.styles.join(', ')),
-                _InfoRow('Discogs ID', '#${detail.id}'),
-              ],
-            ),
+            child: _InfoRows(detail: detail),
           ),
-          if (detail.tracklist.isNotEmpty) ...[
-            const Divider(height: 1),
-            const _SectionHeader('Tracklist'),
-            ...detail.tracklist.map((t) => _TrackRow(track: t)),
-            const SizedBox(height: 8),
-          ],
-          if (detail.notes != null && detail.notes!.isNotEmpty) ...[
-            const Divider(height: 1),
-            const _SectionHeader('Notes'),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Text(detail.notes!, style: theme.textTheme.bodyMedium),
-            ),
-          ],
-          if (detail.identifiers.isNotEmpty) ...[
-            const Divider(height: 1),
-            const _SectionHeader('Identifiers'),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                children: detail.identifiers
-                    .map((i) => _InfoRow(i.type, i.value))
-                    .toList(),
-              ),
-            ),
-          ],
+          if (detail.tracklist.isNotEmpty)
+            _TracklistSection(tracks: detail.tracklist),
+          if (detail.notes != null && detail.notes!.isNotEmpty)
+            _NotesSection(notes: detail.notes!),
+          if (detail.identifiers.isNotEmpty)
+            _IdentifiersSection(identifiers: detail.identifiers),
           const SizedBox(height: 32),
         ],
       ),
+    );
+  }
+
+  Widget _buildWide(BuildContext context) {
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 300,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (detail.coverUrl != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: _CoverImage(url: detail.coverUrl!),
+                  )
+                else
+                  AspectRatio(
+                    aspectRatio: 1,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.album,
+                          size: 72,
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 20),
+                _TitleArtist(detail: detail),
+                const SizedBox(height: 16),
+                _InfoRows(detail: detail),
+              ],
+            ),
+          ),
+          const SizedBox(width: 32),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (detail.tracklist.isNotEmpty)
+                  _TracklistSection(tracks: detail.tracklist),
+                if (detail.notes != null && detail.notes!.isNotEmpty)
+                  _NotesSection(notes: detail.notes!),
+                if (detail.identifiers.isNotEmpty)
+                  _IdentifiersSection(identifiers: detail.identifiers),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Shared sub-widgets
+// ---------------------------------------------------------------------------
+
+class _TitleArtist extends StatelessWidget {
+  const _TitleArtist({required this.detail});
+
+  final ReleaseDetail detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          detail.title.isEmpty ? '(Untitled)' : detail.title,
+          style: theme.textTheme.headlineSmall,
+        ),
+        if (detail.artist.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            detail.artist,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _InfoRows extends StatelessWidget {
+  const _InfoRows({required this.detail});
+
+  final ReleaseDetail detail;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (detail.label.isNotEmpty)
+          _InfoRow(
+            'Label',
+            detail.catno.isNotEmpty
+                ? '${detail.label} — ${detail.catno}'
+                : detail.label,
+          ),
+        if (detail.format.isNotEmpty) _InfoRow('Format', detail.format),
+        if (detail.country.isNotEmpty) _InfoRow('Country', detail.country),
+        if (detail.year != null) _InfoRow('Released', '${detail.year}'),
+        if (detail.genres.isNotEmpty)
+          _InfoRow('Genre', detail.genres.join(', ')),
+        if (detail.styles.isNotEmpty)
+          _InfoRow('Style', detail.styles.join(', ')),
+        _InfoRow('Discogs ID', '#${detail.id}'),
+      ],
+    );
+  }
+}
+
+class _TracklistSection extends StatelessWidget {
+  const _TracklistSection({required this.tracks});
+
+  final List<ReleaseTrack> tracks;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Divider(height: 1),
+        const _SectionHeader('Tracklist'),
+        ...tracks.map((t) => _TrackRow(track: t)),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
+class _NotesSection extends StatelessWidget {
+  const _NotesSection({required this.notes});
+
+  final String notes;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Divider(height: 1),
+        const _SectionHeader('Notes'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Text(notes, style: Theme.of(context).textTheme.bodyMedium),
+        ),
+      ],
+    );
+  }
+}
+
+class _IdentifiersSection extends StatelessWidget {
+  const _IdentifiersSection({required this.identifiers});
+
+  final List<ReleaseIdentifier> identifiers;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Divider(height: 1),
+        const _SectionHeader('Identifiers'),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Column(
+            children:
+                identifiers.map((i) => _InfoRow(i.type, i.value)).toList(),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -454,7 +454,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(ReleaseDetailScreen), findsOneWidget);
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byKey(const Key('release-detail-loading')), findsOneWidget);
     });
 
     testWidgets('back from detail screen returns to search results',
