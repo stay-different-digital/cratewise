@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 Discogs API client] — 2026-05-31
+
+### Added
+
+- `DiscogsApiClient` in `lib/infrastructure/discogs/discogs_api_client.dart` — injectable `http.Client`, `fetchIdentity(token)` method targeting `/oauth/identity`, correct `User-Agent` and `Authorization` headers, no token persisted or logged.
+- `DiscogsIdentity` DTO in `lib/infrastructure/discogs/dto/discogs_identity.dart` — `username` and `resourceUrl` fields parsed from JSON.
+- Typed error hierarchy in `lib/shared/errors/app_error.dart` — sealed `AppError` base with `InvalidTokenError` (401/403), `RateLimitedError` (429), `DiscogsUnavailableError` (5xx), `NetworkError` (socket/transport), and `UnexpectedApiError(statusCode)`.
+- `http: ^1.6.0` added to `pubspec.yaml`.
+- Eight unit tests covering: 200 identity parse, 401/403 → `InvalidTokenError`, 429 → `RateLimitedError`, 500 → `DiscogsUnavailableError`, transport exception → `NetworkError`, correct request headers, and token absence from error messages.
+
+---
+
 ## [Unreleased]
 
 ### Added
