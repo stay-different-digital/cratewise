@@ -8,6 +8,7 @@ abstract final class AppRoutes {
   static const wishlist = '/wishlist';
   static const barcodeScan = '/barcode-scan';
   static const settings = '/settings';
+  static const releaseDetail = '/release-detail';
 }
 
 Route<void> buildHomeRoute() {

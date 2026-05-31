@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cratewise/application/services/discogs_search_service.dart';
+import 'package:cratewise/presentation/screens/release_detail_screen.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
@@ -436,6 +437,37 @@ void main() {
 
       await submitSearch(tester, 'miles'); // same query, but cleared first
       expect(service.callCount, 2);
+    });
+  });
+
+  group('SearchScreen navigation', () {
+    testWidgets('tapping a result card opens release detail screen',
+        (tester) async {
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+
+      await tester.tap(find.byType(ReleaseSearchResultCard).first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReleaseDetailScreen), findsOneWidget);
+      expect(find.textContaining('249504'), findsOneWidget);
+    });
+
+    testWidgets('back from detail screen returns to search results',
+        (tester) async {
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+
+      await tester.tap(find.byType(ReleaseSearchResultCard).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(ReleaseDetailScreen), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(ReleaseDetailScreen), findsNothing);
+      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
     });
   });
 

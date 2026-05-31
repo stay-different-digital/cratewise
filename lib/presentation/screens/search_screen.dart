@@ -6,6 +6,7 @@ import '../../application/services/discogs_search_service.dart';
 import '../../domain/models/release_search_result.dart';
 import '../../shared/errors/app_error.dart';
 import '../widgets/release_search_result_card.dart';
+import 'release_detail_screen.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -296,8 +297,15 @@ class _ResultsList extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (_, index) =>
-          ReleaseSearchResultCard(result: items[index]),
+      itemBuilder: (context, index) => ReleaseSearchResultCard(
+        result: items[index],
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                ReleaseDetailScreen(releaseId: items[index].id),
+          ),
+        ),
+      ),
     );
   }
 }

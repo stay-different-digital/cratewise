@@ -7,6 +7,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 release detail placeholder] — 2026-05-31
+
+### Added
+
+- `ReleaseDetailScreen` in `lib/presentation/screens/release_detail_screen.dart` — placeholder screen showing the Discogs release ID, an album icon, app bar title "Release Detail", and "Full release details coming soon." text. No API call is made.
+- `AppRoutes.releaseDetail = '/release-detail'` constant added to `lib/app/router.dart` for documentation.
+- `onTap: VoidCallback?` parameter added to `ReleaseSearchResultCard` — card body wrapped in `InkWell` with `Card(clipBehavior: Clip.antiAlias)` for proper Material ripple clipping.
+- Tapping a `ReleaseSearchResultCard` in the search results pushes `ReleaseDetailScreen` via `Navigator.of(context).push(MaterialPageRoute(...))`, passing only the release ID.
+- Five widget tests in `test/presentation/screens/release_detail_screen_test.dart`: shows release ID, shows app bar title, shows placeholder message, shows back button when pushed, back button returns to previous screen.
+- Two widget tests added to `test/presentation/screens/search_screen_test.dart` (navigation group): tapping result opens detail screen with correct ID, back from detail returns to search results.
+
+---
+
 ## [Unreleased — Phase 2 search debounce & dedup] — 2026-05-31
 
 ### Changed
