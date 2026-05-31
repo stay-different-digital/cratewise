@@ -7,6 +7,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 iOS Keychain diagnostics] — 2026-05-31
+
+### Changed
+
+- `DiscogsTokenStorage.saveCredentials` — temporary `dart:developer` debug log added to surface the raw iOS Keychain error code (`PlatformException` code + message, no token value) while investigating a Keychain write failure on iOS. To be removed once root cause is confirmed and fixed.
+
+---
+
 ## [Unreleased — Phase 2 secure token storage] — 2026-05-31
 
 ### Added

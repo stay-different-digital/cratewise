@@ -1,3 +1,6 @@
+import 'dart:developer' as dev;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../domain/repositories/token_storage.dart';
@@ -38,7 +41,14 @@ class DiscogsTokenStorage implements TokenStorage {
     try {
       await _storage.write(key: _tokenKey, value: token);
       await _storage.write(key: _usernameKey, value: username);
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) {
+        dev.log(
+          'Keychain write failed: ${e.runtimeType}: $e',
+          name: 'DiscogsTokenStorage',
+          level: 900,
+        );
+      }
       throw const StorageError();
     }
   }
