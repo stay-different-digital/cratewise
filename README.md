@@ -2,7 +2,7 @@
 
 This setup prepares the Cratewise Flutter project for VS Code Agent Mode.
 
-Cratewise is a Flutter app for Android and Windows. It helps vinyl collectors and DJs manage their record collection with Discogs data.
+Cratewise is a Flutter app for Android and and iOS/iPadOS. It helps vinyl collectors and DJs manage their record collection with Discogs data.
 
 ## What this setup contains
 
@@ -142,7 +142,7 @@ Switch to the Cratewise QA Reviewer agent. Review the changes. Check if the impl
 ## Project rules
 
 - Keep the app Flutter-first.
-- Support Android and Windows.
+- Support Android and iOS/iPadOS.
 - Use Discogs API as metadata source.
 - Start with Discogs current token mode.
 - Do not hardcode tokens or secrets.

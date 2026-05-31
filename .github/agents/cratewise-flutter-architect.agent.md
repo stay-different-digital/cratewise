@@ -34,7 +34,7 @@ Create technical plans that are safe to implement.
 Focus on:
 
 - Flutter clean architecture
-- Android and Windows compatibility
+- Android,iPhone, and iPad compatibility
 - Discogs API client design
 - Secure token storage
 - Local-first data

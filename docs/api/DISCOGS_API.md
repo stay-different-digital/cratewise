@@ -29,7 +29,8 @@ Use a backend proxy if production credentials require secrecy.
 
 The Discogs API client should handle:
 
-- Base URL
+- Base URL (https://api.discogs.com)
+- API 2.0
 - User-Agent header
 - Authentication headers
 - Search requests

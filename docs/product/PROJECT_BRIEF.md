@@ -6,8 +6,25 @@ Create a modern Flutter alternative for managing a vinyl collection with Discogs
 
 ## Platforms
 
+Build the app with Flutter.
+
+The app must support:
+
 - Android
-- Windows desktop
+- iPhone
+- iPad
+
+Design the app mobile-first.
+
+The app should work well on:
+
+- Android phones
+- iPhones
+- iPads
+
+Use responsive layouts so the app feels natural on larger iPad screens.
+
+Windows desktop is out of scope.
 
 ## Main users
 
@@ -34,14 +51,16 @@ The MVP includes:
 
 - Flutter project setup
 - Android support
-- Windows support
+- iOS support
+- iPadOS support
 - Discogs current token connection
 - Discogs release search
 - Release detail page
 - Local collection
 - Wishlist
 - Barcode scan on Android
-- Manual barcode entry on Windows
+- Barcode scan on iOS
+- Barcode scan on iPadOS
 - Offline collection
 - CSV export
 

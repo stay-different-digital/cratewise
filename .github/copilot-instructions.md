@@ -2,7 +2,7 @@
 
 ## Project summary
 
-Cratewise is a Flutter app for Android and Windows.
+Cratewise is a Flutter app for Android and  iOS/iPadOS.
 
 It is a modern vinyl collection app that uses the Discogs API for metadata.
 
@@ -44,7 +44,7 @@ test/
 
 ## Flutter rules
 
-- Use Flutter widgets that work on Android and Windows.
+- Use Flutter widgets that work on Android and iOS/iPadOS.
 - Use responsive layouts.
 - Use Material 3 as base.
 - Support light mode and dark mode.

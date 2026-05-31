@@ -6,10 +6,11 @@ Cratewise is a Flutter app for vinyl collectors and DJs.
 
 The app is an independent Discogs companion. It must never pretend to be Discogs.
 
-The app supports:
+The app must support:
 
-- Android
-- Windows desktop
+- Android phones
+- iPhones
+- iPads
 
 The app uses:
 
@@ -28,7 +29,8 @@ The app helps users:
 - Add releases to a local collection
 - Manage wishlist items
 - Scan barcodes on Android
-- Enter barcodes manually on Windows
+- Scan barcode on iPhone
+- Scan barcode on iPad
 - Use the collection offline
 - Import and export CSV files
 

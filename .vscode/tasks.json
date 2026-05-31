@@ -32,9 +32,21 @@
       "problemMatcher": []
     },
     {
-      "label": "Flutter: Run Windows",
+      "label": "Flutter: Run iOS",
       "type": "shell",
-      "command": "flutter run -d windows",
+      "command": "flutter run -d ios",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: Build Android APK",
+      "type": "shell",
+      "command": "flutter build apk",
+      "problemMatcher": []
+    },
+    {
+      "label": "Flutter: Build iOS",
+      "type": "shell",
+      "command": "flutter build ios",
       "problemMatcher": []
     }
   ]

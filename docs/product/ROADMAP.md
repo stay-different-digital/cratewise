@@ -1,5 +1,19 @@
 # Roadmap: Cratewise
 
+## Platform scope
+
+In scope:
+
+- Android
+- iPhone
+- iPad
+
+Out of scope:
+
+- Windows desktop
+- macOS desktop
+- Web
+
 ## Phase 0: Product foundation
 
 Goal:
