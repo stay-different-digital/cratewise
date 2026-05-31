@@ -45,6 +45,42 @@ class _FakeSearchService extends DiscogsSearchService {
   }
 }
 
+class _CountingSearchService extends DiscogsSearchService {
+  _CountingSearchService({required this.results})
+      : super(
+          storage: _FakeTokenStorage(),
+          apiClient: DiscogsApiClient(),
+        );
+
+  final List<ReleaseSearchResult> results;
+  int callCount = 0;
+
+  @override
+  Future<List<ReleaseSearchResult>> search(String query) async {
+    callCount++;
+    return results;
+  }
+}
+
+class _FlippingSearchService extends DiscogsSearchService {
+  _FlippingSearchService({required this.firstError, required this.results})
+      : super(
+          storage: _FakeTokenStorage(),
+          apiClient: DiscogsApiClient(),
+        );
+
+  final AppError firstError;
+  final List<ReleaseSearchResult> results;
+  int _callCount = 0;
+
+  @override
+  Future<List<ReleaseSearchResult>> search(String query) async {
+    _callCount++;
+    if (_callCount == 1) throw firstError;
+    return results;
+  }
+}
+
 class _DelayedSearchService extends DiscogsSearchService {
   _DelayedSearchService(this._completer)
       : super(
@@ -126,9 +162,11 @@ void main() {
         (tester) async {
       await tester.pumpWidget(_buildScreen(_FakeSearchService()));
       await tester.enterText(find.byType(TextField), 'miles');
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
       expect(find.text('Search Discogs'), findsOneWidget);
       expect(find.byType(ReleaseSearchResultCard), findsNothing);
+      // drain debounce timer so the test exits cleanly
+      await tester.pumpAndSettle();
     });
   });
 
@@ -257,6 +295,8 @@ void main() {
       await tester.enterText(find.byType(TextField), 'miles');
       await tester.pump();
       expect(find.byTooltip('Clear search'), findsOneWidget);
+      // drain debounce timer so the test exits cleanly
+      await tester.pumpAndSettle();
     });
 
     testWidgets('tapping clear shows empty state', (tester) async {
@@ -289,6 +329,113 @@ void main() {
       await tester.tap(find.byTooltip('Clear search'));
       await tester.pump();
       expect(find.byTooltip('Clear search'), findsNothing);
+    });
+  });
+
+  group('SearchScreen debounce', () {
+    testWidgets('does not search before debounce delay elapses', (tester) async {
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(ReleaseSearchResultCard), findsNothing);
+
+      // drain timer
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('searches automatically after debounce delay', (tester) async {
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(const Duration(milliseconds: 200)); // before timer
+      expect(find.byType(ReleaseSearchResultCard), findsNothing);
+
+      await tester.pump(const Duration(milliseconds: 200)); // fires at 300ms
+      await tester.pumpAndSettle();
+      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+    });
+
+    testWidgets('resets debounce when query changes mid-wait', (tester) async {
+      final service = _CountingSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+
+      await tester.enterText(find.byType(TextField), 'mil');
+      await tester.pump(const Duration(milliseconds: 200));
+      // change query before timer fires — resets the 300ms window
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(const Duration(milliseconds: 200));
+      // 400ms elapsed but the second timer is only at 200ms — no search yet
+      expect(service.callCount, 0);
+
+      await tester.pump(const Duration(milliseconds: 200)); // second timer fires
+      await tester.pumpAndSettle();
+      expect(service.callCount, 1); // only one search, for the final query
+    });
+
+    testWidgets('clearing text cancels pending debounce', (tester) async {
+      final service = _CountingSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.tap(find.byTooltip('Clear search'));
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pump();
+
+      expect(service.callCount, 0);
+      expect(find.text('Search Discogs'), findsOneWidget);
+    });
+  });
+
+  group('SearchScreen dedup', () {
+    testWidgets('does not fire a duplicate request when results are showing',
+        (tester) async {
+      final service = _CountingSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+
+      await submitSearch(tester, 'miles');
+      expect(service.callCount, 1);
+      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+
+      await submitSearch(tester, 'miles'); // same query, results already shown
+      expect(service.callCount, 1);
+      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+    });
+
+    testWidgets('allows retry after an error for the same query', (tester) async {
+      final service = _FlippingSearchService(
+        firstError: const NetworkError(),
+        results: [_kindOfBlue],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+
+      await submitSearch(tester, 'miles'); // first call: throws NetworkError
+      expect(find.textContaining('No internet'), findsOneWidget);
+
+      // state is _SearchError → dedup allows same query to retry
+      await submitSearch(tester, 'miles'); // second call: returns results
+      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+    });
+
+    testWidgets('fires again after clearing and retyping same query',
+        (tester) async {
+      final service = _CountingSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+
+      await submitSearch(tester, 'miles');
+      expect(service.callCount, 1);
+
+      await tester.tap(find.byTooltip('Clear search'));
+      await tester.pump();
+
+      await submitSearch(tester, 'miles'); // same query, but cleared first
+      expect(service.callCount, 2);
     });
   });
 

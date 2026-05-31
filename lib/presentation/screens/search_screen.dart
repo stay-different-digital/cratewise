@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../application/services/discogs_search_service.dart';
@@ -48,6 +50,8 @@ class _SearchScreenState extends State<SearchScreen> {
   late final DiscogsSearchService _service;
   final _controller = TextEditingController();
   _SearchState _state = const _Idle();
+  Timer? _debounce;
+  String _lastQuery = '';
 
   @override
   void initState() {
@@ -57,18 +61,31 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onQueryChanged() {
-    if (_controller.text.isEmpty) {
+    _debounce?.cancel();
+    final query = _controller.text.trim();
+    if (query.isEmpty) {
+      _lastQuery = '';
       setState(() => _state = const _Idle());
-    } else {
-      setState(() {});
+      return;
     }
+    setState(() {}); // rebuild clear button
+    _debounce = Timer(
+      const Duration(milliseconds: 300),
+      () => _onSubmit(query),
+    );
   }
 
   Future<void> _onSubmit(String query) async {
-    if (query.trim().isEmpty) return;
+    _debounce?.cancel();
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return;
+    if (trimmed == _lastQuery && (_state is _Loading || _state is _Results)) {
+      return;
+    }
+    _lastQuery = trimmed;
     setState(() => _state = const _Loading());
     try {
-      final results = await _service.search(query);
+      final results = await _service.search(trimmed);
       if (!mounted) return;
       setState(() => _state = _Results(results));
     } on AppError catch (e) {
@@ -79,6 +96,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -164,7 +182,7 @@ class _EmptyState extends StatelessWidget {
             Text('Search Discogs', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Type an artist, album, or label name and press Search.',
+              'Type an artist, album, or label name to search.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,

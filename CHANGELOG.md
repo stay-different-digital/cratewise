@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 2 search debounce & dedup] — 2026-05-31
+
+### Changed
+
+- `SearchScreen` now debounces the search input: a `dart:async` `Timer` fires 300 ms after the last keystroke, triggering the search automatically — no keyboard submit required (though pressing the Search key still fires immediately and cancels the pending timer).
+- Duplicate requests are suppressed: if the same trimmed query is submitted while a search is already loading or results are already showing, the request is skipped. Retries are allowed when the previous attempt produced an error. Clearing the field resets the deduplication state.
+- `_EmptyState` prompt text updated from "Type an artist, album, or label name and press Search." to "Type an artist, album, or label name to search." to match automatic-search behaviour.
+- Eight new widget tests in `test/presentation/screens/search_screen_test.dart` covering: debounce does not fire before 300 ms, debounce fires after 300 ms, debounce resets on mid-wait query change, clearing cancels the timer, dedup skips duplicate when results showing, retry allowed after error, fires again after clear-and-retype.
+- Two existing tests updated to drain pending debounce timers via `pumpAndSettle` so the test harness exits cleanly.
+
+---
+
 ## [Unreleased — Phase 2 live search] — 2026-05-31
 
 ### Added
