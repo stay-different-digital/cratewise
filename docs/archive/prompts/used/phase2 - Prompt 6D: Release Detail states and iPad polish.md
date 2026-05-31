@@ -1,4 +1,4 @@
-## Prompt 6D: Release Detail states and iPad polish
+## phase2 - Prompt 6D: Release Detail states and iPad polish
 
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 

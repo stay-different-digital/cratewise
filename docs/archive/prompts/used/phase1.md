@@ -1,3 +1,5 @@
+## phase1
+
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 
 Implement the first small Phase 1 feature slice for Cratewise: create a basic app navigation foundation for Android, iPhone, and iPad.

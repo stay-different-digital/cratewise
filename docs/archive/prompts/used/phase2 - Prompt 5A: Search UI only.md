@@ -1,4 +1,4 @@
-## Prompt 5A: Search UI only
+## phase2 - Prompt 5A: Search UI only
 
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 

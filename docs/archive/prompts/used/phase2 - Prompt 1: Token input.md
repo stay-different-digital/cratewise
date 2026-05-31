@@ -1,3 +1,5 @@
+## phase2 - Prompt 1: Token input.md
+
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 
 Implement the first small Phase 2 feature slice for Cratewise: add a Discogs current token input UI.

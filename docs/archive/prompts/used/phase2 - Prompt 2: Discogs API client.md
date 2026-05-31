@@ -1,3 +1,5 @@
+## phase2 - Prompt 2: Discogs API client
+
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 
 Implement the next small Phase 2 feature slice for Cratewise: create a basic Discogs API client layer.

@@ -1,4 +1,4 @@
-## Prompt 5C: Connect Search screen to Discogs API
+## phase2 - Prompt 5C: Connect Search screen to Discogs API
 
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 

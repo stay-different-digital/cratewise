@@ -1,5 +1,5 @@
 
-## Prompt 5D: Search states, debounce, and polish
+## phase2 - Prompt 5D: Search states, debounce, and polish
 
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 

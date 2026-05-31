@@ -1,3 +1,5 @@
+## phase2 - Prompt 3: Token validation
+
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 
 Implement the next small Phase 2 feature slice for Cratewise: validate a Discogs current token from the Settings screen.
