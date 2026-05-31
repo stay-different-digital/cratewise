@@ -9,6 +9,7 @@ abstract final class AppRoutes {
   static const barcodeScan = '/barcode-scan';
   static const settings = '/settings';
   static const releaseDetail = '/release-detail';
+  static const collectionDetail = '/collection-detail';
 }
 
 Route<void> buildHomeRoute() {

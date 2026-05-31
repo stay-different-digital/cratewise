@@ -5,6 +5,7 @@ import '../../domain/repositories/collection_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../widgets/collection_item_card.dart';
+import 'collection_detail_screen.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -150,7 +151,15 @@ class _CollectionList extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => CollectionItemCard(item: items[index]),
+      itemBuilder: (context, index) => CollectionItemCard(
+        item: items[index],
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) =>
+                CollectionDetailScreen(itemId: items[index].id),
+          ),
+        ),
+      ),
     );
   }
 }

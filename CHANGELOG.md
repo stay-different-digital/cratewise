@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3 collection detail route] — 2026-05-31
+
+### Added
+- `CollectionDetailScreen` placeholder: receives `itemId` and displays it; shows "Collection Item" app bar title
+- Tapping a `CollectionItemCard` in the collection list navigates to `CollectionDetailScreen` via `Navigator.push` / `MaterialPageRoute`
+- `AppRoutes.collectionDetail` constant added to `router.dart`
+- 3 widget tests for `CollectionDetailScreen` and 3 navigation tests in `collection_screen_test.dart` (tap opens detail, correct id passed, back navigation returns to list)
+
+---
+
 ## [Unreleased — Phase 3 connect collection list to storage] — 2026-05-31
 
 ### Added

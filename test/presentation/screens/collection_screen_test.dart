@@ -1,5 +1,6 @@
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
 import 'package:cratewise/presentation/screens/collection_screen.dart';
 import 'package:cratewise/presentation/widgets/collection_item_card.dart';
 import 'package:flutter/material.dart';
@@ -258,6 +259,48 @@ void main() {
       await tester.tap(find.byTooltip('Clear search'));
       await tester.pump();
       expect(find.byTooltip('Clear search'), findsNothing);
+    });
+  });
+
+  group('CollectionScreen — navigation', () {
+    testWidgets('tapping a card opens CollectionDetailScreen', (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(id: 'detail-id-1')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(CollectionItemCard).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(CollectionDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('detail screen receives the correct item id', (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(id: 'my-unique-id')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(CollectionItemCard).first);
+      await tester.pumpAndSettle();
+      expect(find.text('my-unique-id'), findsOneWidget);
+    });
+
+    testWidgets('back navigation returns to collection list', (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(id: 'nav-test-id', artist: 'Return Artist')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(CollectionItemCard).first);
+      await tester.pumpAndSettle();
+      // Detail screen is shown
+      expect(find.byType(CollectionDetailScreen), findsOneWidget);
+      // Navigate back
+      final NavigatorState navigator = tester.state(find.byType(Navigator));
+      navigator.pop();
+      await tester.pumpAndSettle();
+      // Collection list is visible again
+      expect(find.text('Return Artist'), findsOneWidget);
     });
   });
 
