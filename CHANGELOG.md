@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3 add to collection use case] — 2026-05-31
+
+### Added
+- `AddToCollectionUseCase` in `application/use_cases`: converts a `ReleaseDetail` into a `CollectionItem` with default conditions and saves it via `CollectionRepository`
+- `AddToCollectionResult` sealed class with `AddToCollectionSuccess(item)` and `AddToCollectionDuplicate` variants
+- Duplicate prevention: `containsRelease` checked before inserting; returns `AddToCollectionDuplicate` without writing if the Discogs release ID is already present
+- Empty strings from `ReleaseDetail` (label, catno, format, country) mapped to `null` on the stored item
+- `uuid: ^4.5.3` added as a dependency for UUID v4 ID generation
+- 20 unit tests using a `FakeCollectionRepository` (no SQLite)
+
+---
+
 ## [Unreleased — Phase 3 local collection storage] — 2026-05-31
 
 ### Added
