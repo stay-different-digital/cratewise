@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3 local collection storage] — 2026-05-31
+
+### Added
+- Drift 2.33 SQLite database (`AppDatabase`) with `CollectionItems` table; `RecordConditionConverter` and `StringListConverter` type converters
+- `LocalCollectionRepository` implementing `CollectionRepository`: `getAll`, `getById`, `containsRelease`, `add`, `update`, `remove`
+- `containsRelease(int discogsReleaseId)` added to `CollectionRepository` interface
+- `drift`, `sqlite3_flutter_libs`, `path_provider`, `path` added as dependencies; `drift_dev`, `build_runner` as dev dependencies
+- 14 repository integration tests using `NativeDatabase.memory()`
+
+---
+
 ## [Unreleased — Phase 3 collection data model] — 2026-05-31
 
 ### Added
