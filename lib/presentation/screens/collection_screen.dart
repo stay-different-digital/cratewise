@@ -1,86 +1,79 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/models/collection_item.dart';
+import '../../domain/repositories/collection_repository.dart';
+import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../widgets/collection_item_card.dart';
 
-List<CollectionItem> _fakeItems() => [
-      CollectionItem(
-        id: 'fake-1',
-        discogsReleaseId: 249504,
-        artist: 'Miles Davis',
-        title: 'Kind of Blue',
-        label: 'Columbia',
-        catno: 'CL 1355',
-        format: 'LP',
-        country: 'US',
-        year: 1959,
-        coverUrl: null,
-        mediaCondition: RecordCondition.veryGoodPlus,
-        sleeveCondition: RecordCondition.veryGood,
-        tags: const ['jazz', 'classic'],
-        storageLocation: 'Shelf A1',
-        createdAt: DateTime(2026, 1, 1),
-        updatedAt: DateTime(2026, 1, 1),
-      ),
-      CollectionItem(
-        id: 'fake-2',
-        discogsReleaseId: 352310,
-        artist: 'Massive Attack',
-        title: 'Mezzanine',
-        label: 'Virgin',
-        catno: null,
-        format: 'LP',
-        country: 'UK',
-        year: 1998,
-        coverUrl: null,
-        mediaCondition: RecordCondition.nearMint,
-        sleeveCondition: RecordCondition.nearMint,
-        tags: const [],
-        storageLocation: null,
-        createdAt: DateTime(2026, 1, 2),
-        updatedAt: DateTime(2026, 1, 2),
-      ),
-      CollectionItem(
-        id: 'fake-3',
-        discogsReleaseId: 8386,
-        artist: 'The Prodigy',
-        title: 'Music for the Jilted Generation',
-        label: null,
-        catno: null,
-        format: null,
-        country: 'UK',
-        year: null,
-        coverUrl: null,
-        mediaCondition: RecordCondition.veryGood,
-        sleeveCondition: RecordCondition.good,
-        tags: const [],
-        storageLocation: null,
-        createdAt: DateTime(2026, 1, 3),
-        updatedAt: DateTime(2026, 1, 3),
-      ),
-    ];
+// ---------------------------------------------------------------------------
+// State machine
+// ---------------------------------------------------------------------------
+
+sealed class _CollectionState {
+  const _CollectionState();
+}
+
+class _Loading extends _CollectionState {
+  const _Loading();
+}
+
+class _Loaded extends _CollectionState {
+  const _Loaded(this.items);
+  final List<CollectionItem> items;
+}
+
+class _CollectionError extends _CollectionState {
+  const _CollectionError();
+}
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
 
 class CollectionScreen extends StatefulWidget {
-  const CollectionScreen({super.key, this.items});
+  const CollectionScreen({super.key, this.repository});
 
-  final List<CollectionItem>? items;
+  final CollectionRepository? repository;
 
   @override
   State<CollectionScreen> createState() => _CollectionScreenState();
 }
 
 class _CollectionScreenState extends State<CollectionScreen> {
-  late final List<CollectionItem> _items;
+  late final CollectionRepository _repository;
+  AppDatabase? _ownedDb;
+  _CollectionState _state = const _Loading();
   final _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _items = widget.items ?? _fakeItems();
+    if (widget.repository != null) {
+      _repository = widget.repository!;
+    } else {
+      final db = AppDatabase(openAppDatabase());
+      _ownedDb = db;
+      _repository = LocalCollectionRepository(db);
+    }
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _state = const _Loading());
+    try {
+      final items = await _repository.getAll();
+      if (!mounted) return;
+      setState(() => _state = _Loaded(items));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _state = const _CollectionError());
+    }
   }
 
   @override
   void dispose() {
+    _ownedDb?.close();
     _searchController.dispose();
     super.dispose();
   }
@@ -127,13 +120,18 @@ class _CollectionScreenState extends State<CollectionScreen> {
             ),
           ),
         ),
-        Expanded(
-          child: _items.isEmpty
-              ? const _EmptyCollectionState()
-              : _CollectionList(items: _items),
-        ),
+        Expanded(child: _buildBody()),
       ],
     );
+  }
+
+  Widget _buildBody() {
+    return switch (_state) {
+      _Loading() => const Center(child: CircularProgressIndicator()),
+      _Loaded(:final items) when items.isEmpty => const _EmptyCollectionState(),
+      _Loaded(:final items) => _CollectionList(items: items),
+      _CollectionError() => _CollectionErrorState(onRetry: _load),
+    };
   }
 }
 
@@ -186,6 +184,45 @@ class _EmptyCollectionState extends StatelessWidget {
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CollectionErrorState extends StatelessWidget {
+  const _CollectionErrorState({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 56,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Could not load your collection.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonal(
+              onPressed: onRetry,
+              child: const Text('Retry'),
             ),
           ],
         ),

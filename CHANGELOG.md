@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3 connect collection list to storage] — 2026-05-31
+
+### Added
+- `CollectionScreen` now loads items from `LocalCollectionRepository` on startup
+- Loading state with `CircularProgressIndicator` shown while `getAll()` runs
+- Error state with "Could not load your collection." message and "Retry" button
+- `CollectionScreen` accepts optional `CollectionRepository? repository` parameter for test injection; creates an owned `AppDatabase(openAppDatabase())` + `LocalCollectionRepository` when none is injected and disposes the database in `dispose()`
+- 23 widget tests covering loading, empty, list, error, retry, search field, and card field states
+
+### Removed
+- Fake hard-coded collection items (`_fakeItems()`) removed from `CollectionScreen`
+
+---
+
 ## [Unreleased — Phase 3 collection list UI] — 2026-05-31
 
 ### Added
