@@ -32,13 +32,14 @@ Deliverables:
 
 Goal:
 
-- Create a stable Flutter foundation for Android and Windows.
+- Create a stable Flutter foundation for Android, iPhone, and iPad.
 
 Deliverables:
 
 - Flutter project setup
 - Android build
-- Windows build
+- iPhone build
+- iPadOS build
 - Routing
 - Theme
 - Local database setup
@@ -48,7 +49,8 @@ Deliverables:
 Done criteria:
 
 - App starts on Android.
-- App starts on Windows.
+- App starts on iPhone.
+- App starts on iPad.
 - Navigation works.
 - Theme works.
 - Secure storage can save and remove a test value.
@@ -101,7 +103,8 @@ Deliverables:
 - Wishlist
 - Add to wishlist
 - Barcode scanner for Android
-- Manual barcode input for Windows
+- Barcode scanner for iPhone
+- Barcode scanner for iPad
 
 ## Phase 5: Offline and sync
 
@@ -139,7 +142,8 @@ Goal:
 Deliverables:
 
 - Android beta build
-- Windows beta build
+- iPhone beta build
+- iPad beta build
 - QA checklist
 - Feedback process
 
@@ -155,7 +159,9 @@ Deliverables:
 - Privacy policy
 - Documentation
 - Stable Android build
-- Stable Windows build
+- Stable iPhone build
+- Stable iPad build
+
 
 ## Phase 9: Growth
 

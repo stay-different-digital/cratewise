@@ -11,8 +11,8 @@ on:
       - develop
 
 jobs:
-  flutter-ci:
-    name: Flutter analyze and test
+  android:
+    name: Android analyze, test, and build
     runs-on: ubuntu-latest
 
     steps:
@@ -42,3 +42,23 @@ jobs:
 
       - name: Build Android debug
         run: flutter build apk --debug
+
+  ios:
+    name: iOS debug build
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build iOS debug without codesigning
+        run: flutter build ios --debug --no-codesign

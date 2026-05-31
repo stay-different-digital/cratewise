@@ -22,7 +22,8 @@ Use secure storage for tokens.
 Test secure storage on:
 
 - Android
-- Windows
+- iPhone
+- iPadOS
 
 ## Error messages
 

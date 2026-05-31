@@ -78,7 +78,7 @@ Suggested package categories:
 - CSV: csv
 - Files: File Picker and Path Provider
 
-Pick final packages based on Android and Windows compatibility.
+Pick final packages based on Android and iOS/iPadOS compatibility.
 
 ## Data model
 

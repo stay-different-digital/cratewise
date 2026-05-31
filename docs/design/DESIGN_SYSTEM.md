@@ -62,7 +62,6 @@ Use:
 - Compact list view
 - Grid view for collection browsing
 - Dark mode support
-- Responsive layout for Windows
 - Clean empty states
 - Clear form validation states
 
