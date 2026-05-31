@@ -90,3 +90,20 @@ Use:
 - Use semantic labels for buttons.
 - Keep touch targets large enough.
 - Avoid using color alone to explain status.
+
+## Design References
+
+Primary Figma references:
+
+- Airbnb UI Kit reference: http://figma.com/design/CRU00LNZW4efVeSzDzq8Ba/Airbnb-Mobile-App--Community-?node-id=770-526&p=f&t=HOjeq7XPs8p5E1TR-0
+
+Use these files for layout inspiration, spacing, form patterns, empty states,
+and mobile navigation patterns.
+
+Do not copy:
+
+- Airbnb logos
+- Airbnb colors as primary identity
+- Airbnb-specific copy
+- Exact screen layouts
+- Brand illustrations
