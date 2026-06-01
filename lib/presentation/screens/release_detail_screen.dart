@@ -4,8 +4,10 @@ import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/release_detail.dart';
+import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
 
@@ -48,12 +50,14 @@ class ReleaseDetailScreen extends StatefulWidget {
     this.detailService,
     this.addToCollectionUseCase,
     this.addToWishlistUseCase,
+    this.cacheRepository,
   });
 
   final int releaseId;
   final DiscogsReleaseDetailService? detailService;
   final AddToCollectionUseCase? addToCollectionUseCase;
   final AddToWishlistUseCase? addToWishlistUseCase;
+  final CachedReleaseMetadataRepository? cacheRepository;
 
   @override
   State<ReleaseDetailScreen> createState() => _ReleaseDetailScreenState();
@@ -72,12 +76,15 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _service = widget.detailService ?? DiscogsReleaseDetailService();
     final collectionProvided = widget.addToCollectionUseCase != null;
     final wishlistProvided = widget.addToWishlistUseCase != null;
     if (collectionProvided && wishlistProvided) {
       _addUseCase = widget.addToCollectionUseCase!;
       _addWishlistUseCase = widget.addToWishlistUseCase!;
+      _service = widget.detailService ??
+          DiscogsReleaseDetailService(
+            cacheRepository: widget.cacheRepository,
+          );
     } else {
       final db = AppDatabase(openAppDatabase());
       _ownedDb = db;
@@ -85,6 +92,11 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
           AddToCollectionUseCase(LocalCollectionRepository(db));
       _addWishlistUseCase = widget.addToWishlistUseCase ??
           AddToWishlistUseCase(LocalWishlistRepository(db));
+      _service = widget.detailService ??
+          DiscogsReleaseDetailService(
+            cacheRepository:
+                widget.cacheRepository ?? LocalCachedReleaseMetadataRepository(db),
+          );
     }
     _fetch();
   }

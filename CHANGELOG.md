@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5F: Cache release metadata after loading release detail] — 2026-06-01
+
+### Added
+- `DiscogsReleaseDetailService` now accepts an optional `CachedReleaseMetadataRepository`; after a successful Discogs fetch, saves mapped metadata to the local cache
+- Cache save failure is swallowed silently so it can never break the detail screen
+- `ReleaseDetailScreen` accepts optional `cacheRepository` and wires it into the service it creates; when creating its own `AppDatabase`, it also creates a `LocalCachedReleaseMetadataRepository` automatically
+- `SearchScreen` and `HomeShellScreen` thread `cacheRepository` through the screen hierarchy so the single `AppDatabase` in `HomeShellScreen` is used for all cache writes
+- 6 new service-layer unit tests covering: saves on success, maps fields correctly, failure resilience, no-save-on-error, token not in cached metadata, works without cache repo
+
+---
+
 ## [Unreleased — Phase 5E: Cached release metadata model and storage] — 2026-06-01
 
 ### Added

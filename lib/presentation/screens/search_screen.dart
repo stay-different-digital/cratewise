@@ -6,6 +6,7 @@ import '../../application/services/discogs_search_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/release_search_result.dart';
+import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../shared/errors/app_error.dart';
 import '../widgets/release_search_result_card.dart';
 import 'release_detail_screen.dart';
@@ -46,11 +47,13 @@ class SearchScreen extends StatefulWidget {
     this.searchService,
     this.addToCollectionUseCase,
     this.addToWishlistUseCase,
+    this.cacheRepository,
   });
 
   final DiscogsSearchService? searchService;
   final AddToCollectionUseCase? addToCollectionUseCase;
   final AddToWishlistUseCase? addToWishlistUseCase;
+  final CachedReleaseMetadataRepository? cacheRepository;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -165,6 +168,7 @@ class _SearchScreenState extends State<SearchScreen> {
           items: items,
           addToCollectionUseCase: widget.addToCollectionUseCase,
           addToWishlistUseCase: widget.addToWishlistUseCase,
+          cacheRepository: widget.cacheRepository,
         ),
       _SearchError(:final error) => _SearchErrorState(error: error),
     };
@@ -304,11 +308,13 @@ class _ResultsList extends StatelessWidget {
     required this.items,
     this.addToCollectionUseCase,
     this.addToWishlistUseCase,
+    this.cacheRepository,
   });
 
   final List<ReleaseSearchResult> items;
   final AddToCollectionUseCase? addToCollectionUseCase;
   final AddToWishlistUseCase? addToWishlistUseCase;
+  final CachedReleaseMetadataRepository? cacheRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -324,6 +330,7 @@ class _ResultsList extends StatelessWidget {
               releaseId: items[index].id,
               addToCollectionUseCase: addToCollectionUseCase,
               addToWishlistUseCase: addToWishlistUseCase,
+              cacheRepository: cacheRepository,
             ),
           ),
         ),
