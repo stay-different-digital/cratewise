@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3L: edit storage location] — 2026-06-01
+
+### Added
+- Edit storage location icon button (`Icons.inventory_2_outlined`) in the `CollectionDetailScreen` app bar, visible only in the loaded state
+- `_EditStorageLocationSheet` modal bottom sheet with a single-line `TextFormField` pre-filled with the current storage location; `onFieldSubmitted` triggers save; saving stores the trimmed text, clears the Location row when empty, and updates `updatedAt: DateTime.now()`
+- After a successful save, the screen updates immediately with the new value and shows a 'Storage location saved.' snackbar
+- 14 new widget tests: button visibility in all states, sheet opens with title, pre-fill, Save calls update, success snackbar, value + updatedAt updated on screen, clearing hides Location row, error message, sheet stays open on error
+
+---
+
 ## [Unreleased — Phase 3K: edit tags] — 2026-06-01
 
 ### Added

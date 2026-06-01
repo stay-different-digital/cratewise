@@ -1110,4 +1110,292 @@ void main() {
       expect(find.byKey(const Key('save-notes-button')), findsOneWidget);
     });
   });
+
+  group('CollectionDetailScreen — edit storage location', () {
+    testWidgets('shows edit storage location button when loaded',
+        (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('edit-storage-location-button')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('does not show edit storage location button while loading',
+        (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      expect(
+        find.byKey(const Key('edit-storage-location-button')),
+        findsNothing,
+      );
+    });
+
+    testWidgets(
+        'does not show edit storage location button in not-found state',
+        (tester) async {
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(
+        _wrap(
+          CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('edit-storage-location-button')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('does not show edit storage location button in error state',
+        (tester) async {
+      final repo = _FakeCollectionRepository(throwsOnLoad: true);
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('edit-storage-location-button')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('tapping button opens sheet with title', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('edit-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Storage Location'), findsOneWidget);
+    });
+
+    testWidgets('sheet shows Save button', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('edit-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('save-storage-location-button')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('sheet pre-fills existing storage location', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(storageLocation: 'Studio crate'),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('edit-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('storage-location-text-field')),
+          matching: find.text('Studio crate'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tapping Save calls repository.update', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('edit-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('save-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(repo.updateCallCount, 1);
+    });
+
+    testWidgets('shows success snackbar after save', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('edit-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('save-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Storage location saved.'), findsOneWidget);
+    });
+
+    testWidgets('save updates storage location shown on screen',
+        (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(storageLocation: 'Box A'),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Box A'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const Key('edit-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('storage-location-text-field')),
+        'Shelf 2',
+      );
+      await tester.tap(
+        find.byKey(const Key('save-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Shelf 2'), findsOneWidget);
+      expect(find.textContaining('Box A'), findsNothing);
+    });
+
+    testWidgets('save updates updatedAt shown on screen', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(updatedAt: DateTime(2025, 9, 3)),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('2025-09-03'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const Key('edit-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('save-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('2025-09-03'), findsNothing);
+    });
+
+    testWidgets('clearing storage location hides Location row',
+        (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(storageLocation: 'Living room shelf'),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Living room shelf'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const Key('edit-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('storage-location-text-field')),
+        '',
+      );
+      await tester.tap(
+        find.byKey(const Key('save-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Living room shelf'), findsNothing);
+      expect(find.text('Location'), findsNothing);
+    });
+
+    testWidgets('save error shows error message in sheet', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('edit-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('save-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Could not save storage location'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('save error does not close sheet', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('edit-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('save-storage-location-button')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('save-storage-location-button')),
+        findsOneWidget,
+      );
+    });
+  });
 }

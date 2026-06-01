@@ -117,6 +117,22 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     }
   }
 
+  Future<void> _showEditStorageLocationSheet(CollectionItem item) async {
+    final updated = await showModalBottomSheet<CollectionItem>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) =>
+          _EditStorageLocationSheet(item: item, repository: _repository),
+    );
+    if (updated != null && mounted) {
+      setState(() => _state = _Loaded(updated));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Storage location saved.')),
+      );
+    }
+  }
+
   Future<void> _showEditConditionsSheet(CollectionItem item) async {
     final updated = await showModalBottomSheet<CollectionItem>(
       context: context,
@@ -158,6 +174,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                   icon: const Icon(Icons.label_outlined),
                   tooltip: 'Edit tags',
                   onPressed: () => _showEditTagsSheet(state.item),
+                ),
+                IconButton(
+                  key: const Key('edit-storage-location-button'),
+                  icon: const Icon(Icons.inventory_2_outlined),
+                  tooltip: 'Edit storage location',
+                  onPressed: () => _showEditStorageLocationSheet(state.item),
                 ),
               ]
             : null,
@@ -281,6 +303,113 @@ class _EditConditionsSheetState extends State<_EditConditionsSheet> {
           const SizedBox(height: 24),
           FilledButton(
             key: const Key('save-conditions-button'),
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Edit storage location sheet
+// ---------------------------------------------------------------------------
+
+class _EditStorageLocationSheet extends StatefulWidget {
+  const _EditStorageLocationSheet({
+    required this.item,
+    required this.repository,
+  });
+
+  final CollectionItem item;
+  final CollectionRepository repository;
+
+  @override
+  State<_EditStorageLocationSheet> createState() =>
+      _EditStorageLocationSheetState();
+}
+
+class _EditStorageLocationSheetState
+    extends State<_EditStorageLocationSheet> {
+  late final TextEditingController _controller;
+  bool _saving = false;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        TextEditingController(text: widget.item.storageLocation ?? '');
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _hasError = false;
+    });
+    try {
+      final text = _controller.text.trim();
+      final updated = widget.item.copyWith(
+        storageLocation: text,
+        updatedAt: DateTime.now(),
+      );
+      await widget.repository.update(updated);
+      if (!mounted) return;
+      Navigator.of(context).pop(updated);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Edit Storage Location', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 24),
+          TextFormField(
+            key: const Key('storage-location-text-field'),
+            controller: _controller,
+            enabled: !_saving,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(labelText: 'Storage location'),
+            onFieldSubmitted: (_) => _save(),
+          ),
+          if (_hasError) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Could not save storage location. Please try again.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          FilledButton(
+            key: const Key('save-storage-location-button'),
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const SizedBox.square(
