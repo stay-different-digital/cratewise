@@ -173,7 +173,7 @@ void main() {
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Could not load this item.'), findsOneWidget);
+      expect(find.textContaining('Could not load this item'), findsOneWidget);
     });
 
     testWidgets('shows retry button on error', (tester) async {
@@ -208,7 +208,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       // First call failed — error shown
-      expect(find.text('Could not load this item.'), findsOneWidget);
+      expect(find.textContaining('Could not load this item'), findsOneWidget);
       // Tap retry — second call succeeds
       await tester.tap(find.byKey(const Key('wishlist-detail-retry-button')));
       await tester.pumpAndSettle();
@@ -651,6 +651,48 @@ void main() {
       await tester.tap(find.byKey(const Key('save-notes-button')));
       await tester.pumpAndSettle();
       expect(find.textContaining('Could not save notes'), findsOneWidget);
+    });
+  });
+
+  group('WishlistDetailScreen — local-first', () {
+    testWidgets('loads without a Discogs token', (tester) async {
+      final repo =
+          _FakeWishlistRepository(item: _makeItem(artist: 'Offline Artist'));
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Offline Artist'), findsOneWidget);
+    });
+
+    testWidgets('loads without network (simulated by local-only fake repo)',
+        (tester) async {
+      final repo = _FakeWishlistRepository(
+        item: _makeItem(artist: 'No Network Artist'),
+      );
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('No Network Artist'), findsOneWidget);
+    });
+
+    testWidgets('not found state mentions device storage', (tester) async {
+      final repo = _FakeWishlistRepository();
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'nonexistent-id', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('device storage'), findsOneWidget);
+    });
+
+    testWidgets('error state mentions device storage', (tester) async {
+      final repo = _FakeWishlistRepository(throwsOnLoad: true);
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('device storage'), findsOneWidget);
     });
   });
 

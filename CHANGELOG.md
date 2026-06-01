@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5D: Wishlist explicitly local-first] — 2026-06-01
+
+### Changed
+- `_EmptyWishlistState` body text split into two lines: "Your wishlist is saved on this device and works without internet." + "Use the Search tab to find releases and add them." — makes local-first nature explicit
+- `_WishlistErrorState` body text updated to "Could not load your wishlist from device storage." — clarifies it is a local storage error
+- `_NotFoundBody` (wishlist detail) body text updated to "This item may have been removed from your device storage." — makes local-first nature explicit
+- `_ErrorBody` (wishlist detail) body text updated to "Could not load this item from device storage." — clarifies it is a local storage error
+- 5 new widget tests added to `test/presentation/screens/wishlist_screen_test.dart` in a `WishlistScreen — local-first` group
+- 4 new widget tests added to `test/presentation/screens/wishlist_detail_screen_test.dart` in a `WishlistDetailScreen — local-first` group
+
+---
+
 ## [Unreleased — Phase 5C: Collection Detail explicitly local-first] — 2026-06-01
 
 ### Changed

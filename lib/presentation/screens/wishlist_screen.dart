@@ -150,7 +150,15 @@ class _EmptyWishlistState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Search for a release on Discogs and tap "Add to Wishlist" to start tracking records you want.',
+              'Your wishlist is saved on this device and works without internet.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Use the Search tab to find releases and add them.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -184,7 +192,7 @@ class _WishlistErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load your wishlist.',
+              'Could not load your wishlist from device storage.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
