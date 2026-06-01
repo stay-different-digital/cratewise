@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../application/use_cases/barcode_lookup_use_case.dart';
 import '../../domain/models/release_search_result.dart';
 import '../widgets/release_search_result_card.dart';
 
@@ -15,51 +16,39 @@ class _Idle extends _ScanState {
   const _Idle();
 }
 
+class _Loading extends _ScanState {
+  const _Loading();
+}
+
 class _HasResults extends _ScanState {
   const _HasResults(this.results);
   final List<ReleaseSearchResult> results;
 }
 
-// ---------------------------------------------------------------------------
-// Fake data (placeholder until barcode lookup use case is wired in Phase 4L)
-// ---------------------------------------------------------------------------
+class _NoResults extends _ScanState {
+  const _NoResults();
+}
 
-const _kFakeResults = [
-  ReleaseSearchResult(
-    id: 249504,
-    artist: 'Miles Davis',
-    title: 'Kind Of Blue',
-    format: 'Vinyl',
-    label: 'Columbia',
-    country: 'US',
-    year: 1959,
-  ),
-  ReleaseSearchResult(
-    id: 1362700,
-    artist: 'Miles Davis',
-    title: 'Kind Of Blue',
-    format: 'CD',
-    label: 'Legacy',
-    country: 'US',
-    year: 1997,
-  ),
-  ReleaseSearchResult(
-    id: 3849102,
-    artist: 'Miles Davis',
-    title: 'Kind Of Blue',
-    format: 'Vinyl',
-    label: 'Mobile Fidelity',
-    country: 'US',
-    year: 2015,
-  ),
-];
+class _NoToken extends _ScanState {
+  const _NoToken();
+}
+
+class _RateLimited extends _ScanState {
+  const _RateLimited();
+}
+
+class _LookupError extends _ScanState {
+  const _LookupError();
+}
 
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
 
 class BarcodeScanScreen extends StatefulWidget {
-  const BarcodeScanScreen({super.key});
+  const BarcodeScanScreen({super.key, this.useCase});
+
+  final BarcodeLookupUseCase? useCase;
 
   @override
   State<BarcodeScanScreen> createState() => _BarcodeScanScreenState();
@@ -67,7 +56,14 @@ class BarcodeScanScreen extends StatefulWidget {
 
 class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   final _controller = TextEditingController();
+  late final BarcodeLookupUseCase _useCase;
   _ScanState _state = const _Idle();
+
+  @override
+  void initState() {
+    super.initState();
+    _useCase = widget.useCase ?? BarcodeLookupUseCase();
+  }
 
   @override
   void dispose() {
@@ -75,10 +71,22 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     super.dispose();
   }
 
-  void _onSearch() {
+  Future<void> _onSearch() async {
     final barcode = _controller.text.trim();
     if (barcode.isEmpty) return;
-    setState(() => _state = const _HasResults(_kFakeResults));
+    setState(() => _state = const _Loading());
+    final result = await _useCase.execute(barcode);
+    if (!mounted) return;
+    setState(() {
+      _state = switch (result) {
+        BarcodeLookupSuccess(:final results) => _HasResults(results),
+        BarcodeLookupNoResults() => const _NoResults(),
+        BarcodeLookupEmptyInput() => const _Idle(),
+        BarcodeLookupNoToken() => const _NoToken(),
+        BarcodeLookupRateLimited() => const _RateLimited(),
+        BarcodeLookupError() => const _LookupError(),
+      };
+    });
   }
 
   @override
@@ -132,7 +140,12 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
         Expanded(
           child: switch (_state) {
             _Idle() => const _EmptyState(),
+            _Loading() => const _LoadingIndicator(),
             _HasResults(:final results) => _ResultsList(results: results),
+            _NoResults() => const _NoResultsState(),
+            _NoToken() => const _NoTokenState(),
+            _RateLimited() => const _RateLimitedState(),
+            _LookupError() => const _ErrorState(),
           },
         ),
       ],
@@ -185,6 +198,14 @@ class _ScanAreaPlaceholder extends StatelessWidget {
   }
 }
 
+class _LoadingIndicator extends StatelessWidget {
+  const _LoadingIndicator();
+
+  @override
+  Widget build(BuildContext context) =>
+      const Center(child: CircularProgressIndicator());
+}
+
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -235,6 +256,145 @@ class _ResultsList extends StatelessWidget {
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) =>
           ReleaseSearchResultCard(result: results[index]),
+    );
+  }
+}
+
+class _NoResultsState extends StatelessWidget {
+  const _NoResultsState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 56,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            const SizedBox(height: 16),
+            Text('No releases found', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'No Discogs releases match this barcode. Try a different barcode or check the number.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoTokenState extends StatelessWidget {
+  const _NoTokenState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.link_off,
+              size: 56,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Discogs account not connected',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Go to Settings to connect your Discogs account.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RateLimitedState extends StatelessWidget {
+  const _RateLimitedState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.hourglass_empty,
+              size: 56,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            const SizedBox(height: 16),
+            Text('Too many requests', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Discogs is limiting requests right now. Wait a moment and try again.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 56,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            const SizedBox(height: 16),
+            Text('Something went wrong', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Check your connection and try again.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

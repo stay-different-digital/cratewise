@@ -7,6 +7,24 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4L: Connect manual barcode input to lookup] — 2026-06-01
+
+### Changed
+- `BarcodeScanScreen` wired to `BarcodeLookupUseCase`; fake result data removed
+- `_onSearch` is now `async`; sets loading state before awaiting use case, guards with `mounted` check
+- State machine expanded: `_Idle` / `_Loading` / `_HasResults` / `_NoResults` / `_NoToken` / `_RateLimited` / `_LookupError`
+
+### Added
+- `_LoadingIndicator` — `CircularProgressIndicator` centered while use case is pending
+- `_NoResultsState` — "No releases found" with hint to check barcode number
+- `_NoTokenState` — "Discogs account not connected"; directs user to Settings
+- `_RateLimitedState` — "Too many requests"; friendly retry prompt
+- `_ErrorState` — "Something went wrong"; check connection prompt
+- `BarcodeScanScreen(useCase:)` optional parameter for test injection; defaults to `BarcodeLookupUseCase()` in `initState`
+- 21 widget tests in `barcode_scan_screen_test.dart` (rewrote all 16 Phase 4K tests + 5 new state tests)
+
+---
+
 ## [Unreleased — Phase 4K: Barcode scan screen UI] — 2026-06-01
 
 ### Added
