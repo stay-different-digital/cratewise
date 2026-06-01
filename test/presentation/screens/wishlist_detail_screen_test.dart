@@ -9,11 +9,18 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeWishlistRepository implements WishlistRepository {
-  _FakeWishlistRepository({this.item, this.throwsOnLoad = false});
+  _FakeWishlistRepository({
+    this.item,
+    this.throwsOnLoad = false,
+    this.throwsOnUpdate = false,
+  });
 
   final WishlistItem? item;
   final bool throwsOnLoad;
+  final bool throwsOnUpdate;
   int loadCallCount = 0;
+  int updateCallCount = 0;
+  WishlistItem? updatedItem;
 
   @override
   Future<WishlistItem?> getById(String id) async {
@@ -23,13 +30,18 @@ class _FakeWishlistRepository implements WishlistRepository {
   }
 
   @override
+  Future<void> update(WishlistItem item) async {
+    updateCallCount++;
+    updatedItem = item;
+    if (throwsOnUpdate) throw Exception('update error');
+  }
+
+  @override
   Future<List<WishlistItem>> getAll() async => [];
   @override
   Future<bool> containsRelease(int discogsReleaseId) async => false;
   @override
   Future<void> add(WishlistItem item) async {}
-  @override
-  Future<void> update(WishlistItem item) async {}
   @override
   Future<void> remove(String id) async {}
 }
@@ -369,6 +381,267 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Notes'), findsNothing);
+    });
+  });
+
+  group('WishlistDetailScreen — edit buttons', () {
+    testWidgets('edit-priority-button visible when loaded', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('edit-priority-button')), findsOneWidget);
+    });
+
+    testWidgets('edit-target-price-button visible when loaded', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('edit-target-price-button')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('edit-notes-button visible when loaded', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('edit-notes-button')), findsOneWidget);
+    });
+  });
+
+  group('WishlistDetailScreen — edit priority', () {
+    testWidgets('tapping edit-priority-button opens sheet', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-priority-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Edit Priority'), findsOneWidget);
+    });
+
+    testWidgets('saving priority calls repository.update', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-priority-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('save-priority-button')));
+      await tester.pumpAndSettle();
+      expect(repo.updateCallCount, 1);
+    });
+
+    testWidgets('saving priority shows success snackbar', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-priority-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('save-priority-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Priority saved.'), findsOneWidget);
+    });
+
+    testWidgets('priority save error shows error message', (tester) async {
+      final repo = _FakeWishlistRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-priority-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('save-priority-button')));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Could not save priority'),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('WishlistDetailScreen — edit target price', () {
+    testWidgets('tapping edit-target-price-button opens sheet',
+        (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-target-price-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Edit Target Price'), findsOneWidget);
+    });
+
+    testWidgets('saving valid price calls repository.update', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-target-price-button')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('target-price-text-field')),
+        '19.99',
+      );
+      await tester.tap(find.byKey(const Key('save-target-price-button')));
+      await tester.pumpAndSettle();
+      expect(repo.updateCallCount, 1);
+      expect(repo.updatedItem?.targetPrice, 19.99);
+    });
+
+    testWidgets('saving empty price clears to Not set', (tester) async {
+      final repo =
+          _FakeWishlistRepository(item: _makeItem(targetPrice: 29.99));
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-target-price-button')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('target-price-text-field')),
+        '',
+      );
+      await tester.tap(find.byKey(const Key('save-target-price-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Not set'), findsOneWidget);
+    });
+
+    testWidgets('invalid price shows validation error', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-target-price-button')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('target-price-text-field')),
+        'abc',
+      );
+      await tester.tap(find.byKey(const Key('save-target-price-button')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('valid price'), findsOneWidget);
+    });
+
+    testWidgets('target price save error shows error message', (tester) async {
+      final repo = _FakeWishlistRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-target-price-button')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('target-price-text-field')),
+        '9.99',
+      );
+      await tester.tap(find.byKey(const Key('save-target-price-button')));
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Could not save target price'),
+        findsOneWidget,
+      );
+    });
+  });
+
+  group('WishlistDetailScreen — edit notes', () {
+    testWidgets('tapping edit-notes-button opens sheet', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Edit Notes'), findsOneWidget);
+    });
+
+    testWidgets('saving notes calls repository.update', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('notes-text-field')),
+        'New note text',
+      );
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+      expect(repo.updateCallCount, 1);
+    });
+
+    testWidgets('saving notes shows success snackbar', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Notes saved.'), findsOneWidget);
+    });
+
+    testWidgets('clearing notes hides notes section after save',
+        (tester) async {
+      final repo = _FakeWishlistRepository(
+        item: _makeItem(notes: 'Old note'),
+      );
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Old note'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('notes-text-field')),
+        '',
+      );
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Notes'), findsNothing);
+      expect(find.text('Old note'), findsNothing);
+    });
+
+    testWidgets('notes save error shows error message', (tester) async {
+      final repo = _FakeWishlistRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Could not save notes'), findsOneWidget);
     });
   });
 }

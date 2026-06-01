@@ -86,12 +86,80 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _showEditPrioritySheet(WishlistItem item) async {
+    final updated = await showModalBottomSheet<WishlistItem>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _EditPrioritySheet(item: item, repository: _repository),
+    );
+    if (updated != null && mounted) {
+      setState(() => _state = _Loaded(updated));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Priority saved.')),
+      );
+    }
+  }
+
+  Future<void> _showEditTargetPriceSheet(WishlistItem item) async {
+    final updated = await showModalBottomSheet<WishlistItem>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) =>
+          _EditTargetPriceSheet(item: item, repository: _repository),
+    );
+    if (updated != null && mounted) {
+      setState(() => _state = _Loaded(updated));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Target price saved.')),
+      );
+    }
+  }
+
+  Future<void> _showEditNotesSheet(WishlistItem item) async {
+    final updated = await showModalBottomSheet<WishlistItem>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _EditNotesSheet(item: item, repository: _repository),
+    );
+    if (updated != null && mounted) {
+      setState(() => _state = _Loaded(updated));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Notes saved.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = _state;
     return Scaffold(
       appBar: AppBar(
         title: Text(state is _Loaded ? state.item.title : 'Wishlist Item'),
+        actions: state is _Loaded
+            ? [
+                IconButton(
+                  key: const Key('edit-priority-button'),
+                  icon: const Icon(Icons.tune),
+                  tooltip: 'Edit priority',
+                  onPressed: () => _showEditPrioritySheet(state.item),
+                ),
+                IconButton(
+                  key: const Key('edit-target-price-button'),
+                  icon: const Icon(Icons.sell_outlined),
+                  tooltip: 'Edit target price',
+                  onPressed: () => _showEditTargetPriceSheet(state.item),
+                ),
+                IconButton(
+                  key: const Key('edit-notes-button'),
+                  icon: const Icon(Icons.edit_note),
+                  tooltip: 'Edit notes',
+                  onPressed: () => _showEditNotesSheet(state.item),
+                ),
+              ]
+            : null,
       ),
       body: switch (state) {
         _Loading() => const Center(
@@ -102,6 +170,334 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
         _NotFound() => const _NotFoundBody(),
         _DetailError() => _ErrorBody(onRetry: _load),
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Edit priority sheet
+// ---------------------------------------------------------------------------
+
+class _EditPrioritySheet extends StatefulWidget {
+  const _EditPrioritySheet({required this.item, required this.repository});
+
+  final WishlistItem item;
+  final WishlistRepository repository;
+
+  @override
+  State<_EditPrioritySheet> createState() => _EditPrioritySheetState();
+}
+
+class _EditPrioritySheetState extends State<_EditPrioritySheet> {
+  late WishlistPriority _priority;
+  bool _saving = false;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _priority = widget.item.priority;
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _hasError = false;
+    });
+    try {
+      final updated = widget.item.copyWith(
+        priority: _priority,
+        updatedAt: DateTime.now(),
+      );
+      await widget.repository.update(updated);
+      if (!mounted) return;
+      Navigator.of(context).pop(updated);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Edit Priority', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 24),
+          DropdownButtonFormField<WishlistPriority>(
+            key: const Key('priority-dropdown'),
+            initialValue: _priority,
+            decoration: const InputDecoration(labelText: 'Priority'),
+            items: WishlistPriority.values
+                .map((p) => DropdownMenuItem(value: p, child: Text(p.label)))
+                .toList(),
+            onChanged: _saving
+                ? null
+                : (v) {
+                    if (v != null) setState(() => _priority = v);
+                  },
+          ),
+          if (_hasError) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Could not save priority. Please try again.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          FilledButton(
+            key: const Key('save-priority-button'),
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Edit target price sheet
+// ---------------------------------------------------------------------------
+
+class _EditTargetPriceSheet extends StatefulWidget {
+  const _EditTargetPriceSheet({required this.item, required this.repository});
+
+  final WishlistItem item;
+  final WishlistRepository repository;
+
+  @override
+  State<_EditTargetPriceSheet> createState() => _EditTargetPriceSheetState();
+}
+
+class _EditTargetPriceSheetState extends State<_EditTargetPriceSheet> {
+  late final TextEditingController _controller;
+  bool _saving = false;
+  bool _hasError = false;
+  String? _validationError;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.item.targetPrice?.toStringAsFixed(2) ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final text = _controller.text.trim();
+    double? parsed;
+    if (text.isNotEmpty) {
+      parsed = double.tryParse(text);
+      if (parsed == null) {
+        setState(() =>
+            _validationError = 'Enter a valid price, or leave empty to clear.');
+        return;
+      }
+    }
+    setState(() {
+      _saving = true;
+      _hasError = false;
+      _validationError = null;
+    });
+    try {
+      final updated = text.isEmpty
+          ? widget.item.copyWith(
+              clearTargetPrice: true,
+              updatedAt: DateTime.now(),
+            )
+          : widget.item.copyWith(
+              targetPrice: parsed,
+              updatedAt: DateTime.now(),
+            );
+      await widget.repository.update(updated);
+      if (!mounted) return;
+      Navigator.of(context).pop(updated);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Edit Target Price', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 24),
+          TextFormField(
+            key: const Key('target-price-text-field'),
+            controller: _controller,
+            enabled: !_saving,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Target price',
+              hintText: 'Leave empty to clear',
+              errorText: _validationError,
+            ),
+            onFieldSubmitted: (_) => _save(),
+          ),
+          if (_hasError) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Could not save target price. Please try again.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          FilledButton(
+            key: const Key('save-target-price-button'),
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Edit notes sheet
+// ---------------------------------------------------------------------------
+
+class _EditNotesSheet extends StatefulWidget {
+  const _EditNotesSheet({required this.item, required this.repository});
+
+  final WishlistItem item;
+  final WishlistRepository repository;
+
+  @override
+  State<_EditNotesSheet> createState() => _EditNotesSheetState();
+}
+
+class _EditNotesSheetState extends State<_EditNotesSheet> {
+  late final TextEditingController _controller;
+  bool _saving = false;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.item.notes ?? '');
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _hasError = false;
+    });
+    try {
+      final text = _controller.text.trim();
+      final updated = widget.item.copyWith(
+        notes: text,
+        updatedAt: DateTime.now(),
+      );
+      await widget.repository.update(updated);
+      if (!mounted) return;
+      Navigator.of(context).pop(updated);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Edit Notes', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 24),
+          TextFormField(
+            key: const Key('notes-text-field'),
+            controller: _controller,
+            enabled: !_saving,
+            minLines: 3,
+            maxLines: 8,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              labelText: 'Notes',
+              alignLabelWithHint: true,
+            ),
+          ),
+          if (_hasError) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Could not save notes. Please try again.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          FilledButton(
+            key: const Key('save-notes-button'),
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 }

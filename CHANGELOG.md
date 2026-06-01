@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4H: Edit wishlist item fields] — 2026-06-01
+
+### Added
+- `WishlistDetailScreen` AppBar actions when loaded: Edit Priority (`tune` icon), Edit Target Price (`sell_outlined` icon), Edit Notes (`edit_note` icon)
+- `_EditPrioritySheet`: bottom sheet with `DropdownButtonFormField<WishlistPriority>`; saves via `repository.update`; success snackbar "Priority saved."
+- `_EditTargetPriceSheet`: bottom sheet with numeric `TextFormField`; validates input as double; empty clears target price to null (shows "Not set"); inline validation error for non-numeric input; success snackbar "Target price saved."
+- `_EditNotesSheet`: bottom sheet with multiline `TextFormField`; clearing text hides notes section on save; success snackbar "Notes saved."
+- All three sheets show "Could not save…" error inline and keep sheet open on `repository.update` failure
+- `WishlistItem.copyWith` gains `clearTargetPrice` bool parameter to allow clearing `targetPrice` to `null`
+- 17 widget tests in `wishlist_detail_screen_test.dart`: edit buttons (3), edit priority (4), edit target price (5), edit notes (5)
+
+### Changed
+- `WishlistItem.copyWith` now uses `clearTargetPrice ? null : (targetPrice ?? this.targetPrice)` for the target price field
+
+---
+
 ## [Unreleased — Phase 4G: Wishlist detail route and data] — 2026-06-01
 
 ### Added
