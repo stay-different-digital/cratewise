@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5B: Collection list explicitly local-first] — 2026-06-01
+
+### Changed
+- Empty state body text in `CollectionScreen` now states "Your collection is saved on this device and works without internet" — makes offline-first nature explicit
+- Added a second line "Use the Search tab to find releases and add them" to guide new users
+- Error state message updated from "Could not load your collection." to "Could not load your collection from device storage." — clarifies the error source is local, not network
+- 6 new widget tests added to `test/presentation/screens/collection_screen_test.dart` covering explicit local-first properties: loads without token, loads without network, empty state offline messaging, error state device-storage messaging
+
+---
+
 ## [Unreleased — Phase 5A: Sync status domain model] — 2026-06-01
 
 ### Added

@@ -225,7 +225,15 @@ class _EmptyCollectionState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Search for a release on Discogs and tap "Add to Collection" to start building your collection.',
+              'Your collection is saved on this device and works without internet.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Use the Search tab to find releases and add them.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -259,7 +267,7 @@ class _CollectionErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load your collection.',
+              'Could not load your collection from device storage.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,

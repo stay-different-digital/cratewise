@@ -129,11 +129,19 @@ void main() {
       expect(find.text('Your collection is empty'), findsOneWidget);
     });
 
-    testWidgets('shows descriptive empty state body text', (tester) async {
+    testWidgets('shows offline capability in empty state body text',
+        (tester) async {
       final repo = _FakeCollectionRepository();
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Search for a release'), findsOneWidget);
+      expect(find.textContaining('saved on this device'), findsOneWidget);
+    });
+
+    testWidgets('shows how-to-add hint in empty state', (tester) async {
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Search tab'), findsOneWidget);
     });
 
     testWidgets('does not show any CollectionItemCard when empty',
@@ -185,7 +193,7 @@ void main() {
       final repo = _FakeCollectionRepository(throwsOnLoad: true);
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Could not load'), findsOneWidget);
+      expect(find.textContaining('device storage'), findsOneWidget);
     });
 
     testWidgets('shows Retry button in error state', (tester) async {
@@ -355,6 +363,49 @@ void main() {
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.text('Columbia · 1959 · LP'), findsOneWidget);
+    });
+  });
+
+  group('CollectionScreen — local-first', () {
+    testWidgets('loads without a Discogs token', (tester) async {
+      // No token is passed or required — repository is purely local.
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(artist: 'Offline Artist')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.text('Offline Artist'), findsOneWidget);
+    });
+
+    testWidgets('loads without network (simulated by local-only fake repo)',
+        (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(artist: 'No Network Artist')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.text('No Network Artist'), findsOneWidget);
+    });
+
+    testWidgets('empty state mentions device storage', (tester) async {
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('saved on this device'), findsOneWidget);
+    });
+
+    testWidgets('empty state mentions offline capability', (tester) async {
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('without internet'), findsOneWidget);
+    });
+
+    testWidgets('error state message mentions device storage', (tester) async {
+      final repo = _FakeCollectionRepository(throwsOnLoad: true);
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('device storage'), findsOneWidget);
     });
   });
 
