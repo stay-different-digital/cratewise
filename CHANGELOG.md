@@ -7,6 +7,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5I: Cache thumbnails after viewing release detail] — 2026-06-01
+
+### Added
+- `DiscogsReleaseDetailService` now accepts an optional `ThumbnailCacheService`; after a successful API fetch it calls `getOrFetch(releaseId, coverUrl)` via `_tryThumbnailCache`; failure is silently swallowed
+- `ReleaseDetailScreen` now accepts an optional `ThumbnailCacheService` parameter; when not injected it self-creates one backed by `LocalThumbnailRepository`; the thumbnail service is forwarded to `DiscogsReleaseDetailService`
+- 5 new unit tests for thumbnail caching in `DiscogsReleaseDetailService`: fetched after success, save failure swallowed, not called on API error, missing coverUrl safe, works without thumbnail service
+
+---
+
 ## [Unreleased — Phase 5H: Thumbnail cache abstraction] — 2026-06-01
 
 ### Added

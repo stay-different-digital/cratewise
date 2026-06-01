@@ -7,18 +7,21 @@ import '../../infrastructure/discogs/discogs_api_client.dart';
 import '../../infrastructure/discogs/dto/discogs_release.dart';
 import '../../infrastructure/secure_storage/discogs_token_storage.dart';
 import '../../shared/errors/app_error.dart';
+import 'thumbnail_cache_service.dart';
 
 class DiscogsReleaseDetailService {
   DiscogsReleaseDetailService({
     TokenStorage? storage,
     DiscogsApiClient? apiClient,
     this._cacheRepository,
+    this._thumbnailCacheService,
   })  : _storage = storage ?? DiscogsTokenStorage(),
         _apiClient = apiClient ?? DiscogsApiClient();
 
   final TokenStorage _storage;
   final DiscogsApiClient _apiClient;
   final CachedReleaseMetadataRepository? _cacheRepository;
+  final ThumbnailCacheService? _thumbnailCacheService;
 
   /// Fetches full release details for [releaseId] using the saved token.
   /// Throws [NoTokenError] if no token is stored.
@@ -29,7 +32,17 @@ class DiscogsReleaseDetailService {
     final dto = await _apiClient.fetchRelease(releaseId, token);
     final detail = _toDetail(dto);
     await _tryCache(detail);
+    await _tryThumbnailCache(detail);
     return detail;
+  }
+
+  Future<void> _tryThumbnailCache(ReleaseDetail detail) async {
+    if (_thumbnailCacheService == null) return;
+    try {
+      await _thumbnailCacheService.getOrFetch(detail.id, detail.coverUrl);
+    } catch (_) {
+      // thumbnail cache failure must not break the detail load
+    }
   }
 
   Future<void> _tryCache(ReleaseDetail detail) async {

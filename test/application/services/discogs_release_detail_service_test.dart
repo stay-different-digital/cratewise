@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:cratewise/application/services/discogs_release_detail_service.dart';
+import 'package:cratewise/application/services/thumbnail_cache_service.dart';
 import 'package:cratewise/domain/models/cached_release_metadata.dart';
 import 'package:cratewise/domain/models/release_detail.dart';
 import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
+import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
@@ -14,6 +16,30 @@ import 'package:http/testing.dart';
 // ---------------------------------------------------------------------------
 // Fakes
 // ---------------------------------------------------------------------------
+
+class _SpyThumbnailRepository implements ThumbnailRepository {
+  final Map<int, String> _paths = {};
+  final Map<int, List<int>> _bytes = {};
+  bool saveThrows = false;
+  int saveCallCount = 0;
+
+  @override
+  Future<String?> getLocalPath(int releaseId) async => _paths[releaseId];
+
+  @override
+  Future<void> save(int releaseId, List<int> bytes) async {
+    saveCallCount++;
+    if (saveThrows) throw Exception('disk full');
+    _bytes[releaseId] = bytes;
+    _paths[releaseId] = '/fake/thumb_$releaseId.jpg';
+  }
+
+  @override
+  Future<void> remove(int releaseId) async => _paths.remove(releaseId);
+
+  @override
+  Future<bool> exists(int releaseId) async => _paths.containsKey(releaseId);
+}
 
 class _SpyCacheRepository implements CachedReleaseMetadataRepository {
   final List<CachedReleaseMetadata> saved = [];
@@ -53,11 +79,13 @@ DiscogsReleaseDetailService _makeService(
   String? token,
   http.Client httpClient, {
   CachedReleaseMetadataRepository? cacheRepo,
+  ThumbnailCacheService? thumbnailService,
 }) {
   return DiscogsReleaseDetailService(
     storage: _FakeStorage(token: token),
     apiClient: DiscogsApiClient(httpClient: httpClient),
     cacheRepository: cacheRepo,
+    thumbnailCacheService: thumbnailService,
   );
 }
 
@@ -302,6 +330,88 @@ void main() {
     });
 
     test('works correctly without a cache repository', () async {
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+      );
+      final detail = await service.fetchDetail(249504);
+      expect(detail.title, 'Kind Of Blue');
+    });
+  });
+
+  group('DiscogsReleaseDetailService — thumbnail caching', () {
+    test('thumbnail is fetched after successful detail load', () async {
+      final repo = _SpyThumbnailRepository();
+      final thumbService = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient(
+          (_) async => http.Response.bytes([0xff, 0xd8], 200),
+        ),
+      );
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        thumbnailService: thumbService,
+      );
+      await service.fetchDetail(249504);
+      expect(repo.saveCallCount, 1);
+    });
+
+    test('thumbnail save failure does not prevent returning ReleaseDetail',
+        () async {
+      final repo = _SpyThumbnailRepository()..saveThrows = true;
+      final thumbService = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient(
+          (_) async => http.Response.bytes([0xff, 0xd8], 200),
+        ),
+      );
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        thumbnailService: thumbService,
+      );
+      final detail = await service.fetchDetail(249504);
+      expect(detail.title, 'Kind Of Blue');
+    });
+
+    test('thumbnail not fetched when API returns error', () async {
+      final repo = _SpyThumbnailRepository();
+      final thumbService = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient((_) async => http.Response('', 200)),
+      );
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response('', 429)),
+        thumbnailService: thumbService,
+      );
+      await expectLater(
+        () => service.fetchDetail(1),
+        throwsA(isA<RateLimitedError>()),
+      );
+      expect(repo.saveCallCount, 0);
+    });
+
+    test('missing coverUrl is handled safely', () async {
+      final noCoverJson = Map<String, dynamic>.from(_kindOfBlueJson)
+        ..remove('images');
+      final repo = _SpyThumbnailRepository();
+      final thumbService = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient((_) async => http.Response('', 200)),
+      );
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response(jsonEncode(noCoverJson), 200)),
+        thumbnailService: thumbService,
+      );
+      final detail = await service.fetchDetail(249504);
+      expect(detail.title, 'Kind Of Blue');
+      expect(repo.saveCallCount, 0);
+    });
+
+    test('works correctly without a thumbnail service', () async {
       final service = _makeService(
         'fake_token',
         MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../../application/services/discogs_release_detail_service.dart';
+import '../../application/services/thumbnail_cache_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/cached_release_metadata.dart';
 import '../../domain/models/release_detail.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
+import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
 
@@ -57,6 +59,7 @@ class ReleaseDetailScreen extends StatefulWidget {
     this.addToCollectionUseCase,
     this.addToWishlistUseCase,
     this.cacheRepository,
+    this.thumbnailCacheService,
   });
 
   final int releaseId;
@@ -64,6 +67,7 @@ class ReleaseDetailScreen extends StatefulWidget {
   final AddToCollectionUseCase? addToCollectionUseCase;
   final AddToWishlistUseCase? addToWishlistUseCase;
   final CachedReleaseMetadataRepository? cacheRepository;
+  final ThumbnailCacheService? thumbnailCacheService;
 
   @override
   State<ReleaseDetailScreen> createState() => _ReleaseDetailScreenState();
@@ -92,6 +96,10 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
       _service = widget.detailService ??
           DiscogsReleaseDetailService(
             cacheRepository: _cacheRepository,
+            thumbnailCacheService: widget.thumbnailCacheService ??
+                ThumbnailCacheService(
+                  repository: LocalThumbnailRepository(),
+                ),
           );
     } else {
       final db = AppDatabase(openAppDatabase());
@@ -105,6 +113,10 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
       _service = widget.detailService ??
           DiscogsReleaseDetailService(
             cacheRepository: _cacheRepository,
+            thumbnailCacheService: widget.thumbnailCacheService ??
+                ThumbnailCacheService(
+                  repository: LocalThumbnailRepository(),
+                ),
           );
     }
     _fetch();
