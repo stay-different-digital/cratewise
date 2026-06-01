@@ -1,3 +1,5 @@
+## phase3 - Prompt 3N: Offline collection view polish
+
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 
 Implement the final small Phase 3 feature slice for Cratewise: polish the offline collection view.

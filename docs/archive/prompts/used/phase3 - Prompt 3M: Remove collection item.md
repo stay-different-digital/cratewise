@@ -1,3 +1,5 @@
+## phase3 - Prompt 3M: Remove collection item
+
 Read AGENTS.md and the docs in docs/product, docs/architecture, docs/design, docs/api, docs/security, and docs/workflow.
 
 Implement the next small Phase 3 feature slice for Cratewise: allow removing a collection item from the local collection.
