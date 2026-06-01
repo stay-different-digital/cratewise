@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4A: wishlist data model] — 2026-06-01
+
+### Added
+- `WishlistItem` domain model with all required fields (`id`, `discogsReleaseId`, `artist`, `title`, `priority`, `createdAt`, `updatedAt`) and optional fields (`label`, `catno`, `format`, `country`, `year`, `coverUrl`, `targetPrice`, `notes`)
+- `WishlistPriority` enum with four values: `low`, `medium`, `high`, `mustHave`; each has a human-readable `label`
+- `WishlistRepository` abstract interface (`getAll`, `getById`, `containsRelease`, `add`, `update`, `remove`) mirroring `CollectionRepository`
+- 8 new unit tests: required fields, optional fields, null defaults, `copyWith` identity / override / immutability, priority count, priority labels
+
+---
+
 ## [Unreleased — Phase 3N: offline collection view polish] — 2026-06-01
 
 ### Added
