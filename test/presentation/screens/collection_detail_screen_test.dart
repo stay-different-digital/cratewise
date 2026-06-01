@@ -618,4 +618,229 @@ void main() {
       expect(find.textContaining(RecordCondition.mint.label), findsOneWidget);
     });
   });
+
+  group('CollectionDetailScreen — edit notes', () {
+    testWidgets('shows edit notes button when loaded', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('edit-notes-button')), findsOneWidget);
+    });
+
+    testWidgets('does not show edit notes button while loading', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      expect(find.byKey(const Key('edit-notes-button')), findsNothing);
+    });
+
+    testWidgets('does not show edit notes button in not-found state',
+        (tester) async {
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(
+        _wrap(
+          CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('edit-notes-button')), findsNothing);
+    });
+
+    testWidgets('does not show edit notes button in error state',
+        (tester) async {
+      final repo = _FakeCollectionRepository(throwsOnLoad: true);
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('edit-notes-button')), findsNothing);
+    });
+
+    testWidgets('tapping edit notes button opens sheet with title',
+        (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Notes'), findsOneWidget);
+    });
+
+    testWidgets('sheet shows Save button', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('save-notes-button')), findsOneWidget);
+    });
+
+    testWidgets('sheet pre-fills existing notes', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(notes: 'Existing note text'),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('notes-text-field')),
+          matching: find.text('Existing note text'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tapping Save calls repository.update', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+
+      expect(repo.updateCallCount, 1);
+    });
+
+    testWidgets('shows success snackbar after save', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Notes saved.'), findsOneWidget);
+    });
+
+    testWidgets('save updates notes shown on screen', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(notes: 'Old note text'),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Old note text'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('notes-text-field')),
+        'New note text',
+      );
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('New note text'), findsOneWidget);
+      expect(find.text('Old note text'), findsNothing);
+    });
+
+    testWidgets('save updates updatedAt shown on screen', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(updatedAt: DateTime(2025, 12, 10)),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('2025-12-10'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('2025-12-10'), findsNothing);
+    });
+
+    testWidgets('clearing notes hides the notes section', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(notes: 'Some note'),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Notes'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const Key('notes-text-field')), '');
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Notes'), findsNothing);
+    });
+
+    testWidgets('save error shows error message in sheet', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Could not save'), findsOneWidget);
+    });
+
+    testWidgets('save error does not close sheet', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-notes-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-notes-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('save-notes-button')), findsOneWidget);
+    });
+  });
 }

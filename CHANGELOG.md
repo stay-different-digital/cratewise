@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3J: edit notes] — 2026-06-01
+
+### Added
+- Edit notes icon button (`Icons.edit_note`) in the `CollectionDetailScreen` app bar, visible only in the loaded state alongside the existing edit conditions button
+- `_EditNotesSheet` modal bottom sheet with a multiline `TextFormField` pre-filled with existing notes; includes Save button with loading spinner, inline error message on failure, and snackbar confirmation on success
+- After a successful save the screen state updates immediately via `copyWith(notes: ...)` with `updatedAt: DateTime.now()`; saving empty text clears the notes section from the screen
+- 14 new widget tests covering: button visibility in all four states, sheet open/content, pre-fill, Save calls `repository.update`, success snackbar, notes update on screen, updatedAt change, clear hides section, error message, sheet stays open on error
+
+---
+
 ## [Unreleased — Phase 3I: edit media and sleeve condition] — 2026-06-01
 
 ### Added

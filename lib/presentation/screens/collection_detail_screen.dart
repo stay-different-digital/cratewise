@@ -87,6 +87,21 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _showEditNotesSheet(CollectionItem item) async {
+    final updated = await showModalBottomSheet<CollectionItem>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _EditNotesSheet(item: item, repository: _repository),
+    );
+    if (updated != null && mounted) {
+      setState(() => _state = _Loaded(updated));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Notes saved.')),
+      );
+    }
+  }
+
   Future<void> _showEditConditionsSheet(CollectionItem item) async {
     final updated = await showModalBottomSheet<CollectionItem>(
       context: context,
@@ -116,6 +131,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                   icon: const Icon(Icons.edit_outlined),
                   tooltip: 'Edit conditions',
                   onPressed: () => _showEditConditionsSheet(state.item),
+                ),
+                IconButton(
+                  key: const Key('edit-notes-button'),
+                  icon: const Icon(Icons.edit_note),
+                  tooltip: 'Edit notes',
+                  onPressed: () => _showEditNotesSheet(state.item),
                 ),
               ]
             : null,
@@ -239,6 +260,111 @@ class _EditConditionsSheetState extends State<_EditConditionsSheet> {
           const SizedBox(height: 24),
           FilledButton(
             key: const Key('save-conditions-button'),
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Edit notes sheet
+// ---------------------------------------------------------------------------
+
+class _EditNotesSheet extends StatefulWidget {
+  const _EditNotesSheet({required this.item, required this.repository});
+
+  final CollectionItem item;
+  final CollectionRepository repository;
+
+  @override
+  State<_EditNotesSheet> createState() => _EditNotesSheetState();
+}
+
+class _EditNotesSheetState extends State<_EditNotesSheet> {
+  late final TextEditingController _controller;
+  bool _saving = false;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.item.notes ?? '');
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _hasError = false;
+    });
+    try {
+      final text = _controller.text.trim();
+      final updated = widget.item.copyWith(
+        notes: text,
+        updatedAt: DateTime.now(),
+      );
+      await widget.repository.update(updated);
+      if (!mounted) return;
+      Navigator.of(context).pop(updated);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Edit Notes', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 24),
+          TextFormField(
+            key: const Key('notes-text-field'),
+            controller: _controller,
+            enabled: !_saving,
+            minLines: 3,
+            maxLines: 8,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              labelText: 'Personal notes',
+              alignLabelWithHint: true,
+            ),
+          ),
+          if (_hasError) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Could not save notes. Please try again.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          FilledButton(
+            key: const Key('save-notes-button'),
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const SizedBox.square(
