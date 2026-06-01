@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4E: add to wishlist use case] — 2026-06-01
+
+### Added
+- `AddToWishlistUseCase` with `execute(ReleaseDetail)` method
+- `AddToWishlistResult` sealed class: `AddToWishlistSuccess(item)` and `AddToWishlistDuplicate`
+- Duplicate prevention via `WishlistRepository.containsRelease`; empty string release fields coerced to null
+- 18 unit tests covering success path, default field values (priority=medium, targetPrice=null, notes=null), empty-string coercion, and duplicate prevention
+
+---
+
 ## [Unreleased — Phase 4D: connect wishlist list to storage] — 2026-06-01
 
 ### Added
