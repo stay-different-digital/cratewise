@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5H: Thumbnail cache abstraction] — 2026-06-01
+
+### Added
+- `ThumbnailRepository` domain interface: `getLocalPath`, `save`, `remove`, `exists` keyed by release ID
+- `LocalThumbnailRepository` infrastructure implementation storing files as `thumb_<releaseId>.jpg` under `<appDocumentsDir>/thumbnails/`; accepts injected `Directory` for testing
+- `ThumbnailCacheService` application service: `getOrFetch(releaseId, imageUrl?)` returns local path (from cache or after download); returns null on null/empty URL, non-200 response, network error, or save failure; swallows all errors
+- 9 unit tests for `ThumbnailCacheService` covering null/empty URL, cache hit, download + save, HTTP errors, network errors, save failure, correct URL forwarded
+- 10 integration tests for `LocalThumbnailRepository` using a real temp directory covering null before save, exists, save/read/overwrite, remove, independent IDs
+
+---
+
 ## [Unreleased — Phase 5G: Offline fallback for Release Detail screen] — 2026-06-01
 
 ### Added
