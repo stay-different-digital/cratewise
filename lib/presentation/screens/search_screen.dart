@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../application/services/discogs_search_service.dart';
+import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../domain/models/release_search_result.dart';
 import '../../shared/errors/app_error.dart';
 import '../widgets/release_search_result_card.dart';
@@ -39,9 +40,10 @@ class _SearchError extends _SearchState {
 // ---------------------------------------------------------------------------
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key, this.searchService});
+  const SearchScreen({super.key, this.searchService, this.addToCollectionUseCase});
 
   final DiscogsSearchService? searchService;
+  final AddToCollectionUseCase? addToCollectionUseCase;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -152,7 +154,10 @@ class _SearchScreenState extends State<SearchScreen> {
       _Idle() => const _EmptyState(),
       _Loading() => const _LoadingIndicator(),
       _Results(:final items) when items.isEmpty => const _NoResultsState(),
-      _Results(:final items) => _ResultsList(items: items),
+      _Results(:final items) => _ResultsList(
+          items: items,
+          addToCollectionUseCase: widget.addToCollectionUseCase,
+        ),
       _SearchError(:final error) => _SearchErrorState(error: error),
     };
   }
@@ -287,9 +292,10 @@ class _SearchErrorState extends StatelessWidget {
 }
 
 class _ResultsList extends StatelessWidget {
-  const _ResultsList({required this.items});
+  const _ResultsList({required this.items, this.addToCollectionUseCase});
 
   final List<ReleaseSearchResult> items;
+  final AddToCollectionUseCase? addToCollectionUseCase;
 
   @override
   Widget build(BuildContext context) {
@@ -301,8 +307,10 @@ class _ResultsList extends StatelessWidget {
         result: items[index],
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) =>
-                ReleaseDetailScreen(releaseId: items[index].id),
+            builder: (_) => ReleaseDetailScreen(
+              releaseId: items[index].id,
+              addToCollectionUseCase: addToCollectionUseCase,
+            ),
           ),
         ),
       ),

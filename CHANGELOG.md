@@ -7,6 +7,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Fix: single AppDatabase instance] — 2026-06-01
+
+### Fixed
+- Eliminated Drift "multiple databases" warning that appeared when navigating to `ReleaseDetailScreen` from Search while the Collection tab was open; both screens were independently opening `AppDatabase` against the same SQLite file, risking race-condition corruption on concurrent writes
+- `HomeShellScreen` now creates one `AppDatabase`, `LocalCollectionRepository`, and `AddToCollectionUseCase` in `initState()` and disposes the database in `dispose()`; the shared instances are passed down to `CollectionScreen` (via `repository`) and `SearchScreen` (via `addToCollectionUseCase`), which threads it through to `ReleaseDetailScreen`
+- `ReleaseDetailScreen` retains its null-fallback (creates own DB when no use case injected) so it continues to work in isolation for tests
+
+---
+
 ## [Unreleased — Phase 3 collection detail data] — 2026-05-31
 
 ### Added
