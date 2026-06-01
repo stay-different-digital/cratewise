@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4J: Barcode lookup use case] — 2026-06-01
+
+### Added
+- `DiscogsApiClient.searchByBarcode(barcode, token)` — searches `/database/search` with `barcode=` query parameter (distinct from `q=`; uses the Discogs barcode identifier field)
+- `BarcodeLookupUseCase` with `execute(String barcode) → Future<BarcodeLookupResult>`
+- `BarcodeLookupResult` sealed class: `BarcodeLookupSuccess(results)`, `BarcodeLookupNoResults`, `BarcodeLookupEmptyInput`, `BarcodeLookupNoToken`, `BarcodeLookupRateLimited`, `BarcodeLookupError(error)`
+- Input validation: trims whitespace; returns `BarcodeLookupEmptyInput` when blank
+- Token loaded safely via `TokenStorage`; `BarcodeLookupNoToken` returned when absent; token never logged or surfaced in error types
+- 19 unit tests: 5 `DiscogsApiClient.searchByBarcode` tests + 14 `BarcodeLookupUseCase` tests
+
+---
+
 ## [Unreleased — Phase 4I: Remove wishlist item] — 2026-06-01
 
 ### Added

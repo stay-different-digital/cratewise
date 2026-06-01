@@ -284,6 +284,73 @@ void main() {
     });
   });
 
+  group('DiscogsApiClient.searchByBarcode', () {
+    String searchBody(List<Map<String, dynamic>> results) =>
+        jsonEncode({'results': results, 'pagination': {}});
+
+    final kindOfBlue = {
+      'id': 249504,
+      'title': 'Miles Davis - Kind Of Blue',
+      'thumb': 'https://i.discogs.com/cover.jpg',
+      'format': ['Vinyl', 'LP'],
+      'label': ['Columbia'],
+      'year': '1959',
+      'country': 'US',
+    };
+
+    test('returns list of DTOs on 200', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(searchBody([kindOfBlue]), 200),
+        ),
+      );
+      final results = await client.searchByBarcode('5099706035422', _fakeToken);
+      expect(results, hasLength(1));
+      expect(results.first, isA<DiscogsSearchResultDto>());
+    });
+
+    test('encodes barcode and type in request URL', () async {
+      late http.Request captured;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(searchBody([]), 200);
+        }),
+      );
+      await client.searchByBarcode('5099706035422', _fakeToken);
+      expect(captured.url.path, '/database/search');
+      expect(captured.url.queryParameters['barcode'], '5099706035422');
+      expect(captured.url.queryParameters['type'], 'release');
+      expect(captured.url.queryParameters.containsKey('q'), isFalse);
+    });
+
+    test('returns empty list when results array is empty', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(searchBody([]), 200),
+        ),
+      );
+      final results = await client.searchByBarcode('0000000000000', _fakeToken);
+      expect(results, isEmpty);
+    });
+
+    test('throws InvalidTokenError on 401', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      expect(
+        () => client.searchByBarcode('1234567890', _fakeToken),
+        throwsA(isA<InvalidTokenError>()),
+      );
+    });
+
+    test('throws RateLimitedError on 429', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(429));
+      expect(
+        () => client.searchByBarcode('1234567890', _fakeToken),
+        throwsA(isA<RateLimitedError>()),
+      );
+    });
+  });
+
   group('DiscogsApiClient.fetchRelease', () {
     final kindOfBlueRelease = {
       'id': 249504,

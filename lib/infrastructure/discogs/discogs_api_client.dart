@@ -50,6 +50,23 @@ class DiscogsApiClient {
         .toList();
   }
 
+  /// Searches Discogs releases by [barcode] identifier.
+  Future<List<DiscogsSearchResultDto>> searchByBarcode(
+    String barcode,
+    String token,
+  ) async {
+    final response = await _get(
+      '/database/search',
+      token,
+      queryParameters: {'barcode': barcode, 'type': 'release'},
+    );
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final results = json['results'] as List<dynamic>? ?? [];
+    return results
+        .map((e) => DiscogsSearchResultDto.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<http.Response> _get(
     String path,
     String token, {
