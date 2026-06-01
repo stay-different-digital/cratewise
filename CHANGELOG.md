@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5G: Offline fallback for Release Detail screen] — 2026-06-01
+
+### Added
+- Release Detail screen now falls back to local cache when the Discogs API call fails for any reason (network error, rate limit, invalid/missing token, etc.)
+- `_CachedLoaded` state added to the screen's state machine; maps `CachedReleaseMetadata` to `ReleaseDetail` for display via `_cachedMetadataToDetail`
+- `_CachedDetailBody` + `_CachedBanner` widgets display cached content with a clearly labelled "Showing saved data · last updated [date]" banner
+- `_cacheRepository` field stored in screen state so the same repository instance is used for both cache writes (after API success) and cache reads (on API failure)
+- Add to Collection and Add to Wishlist buttons remain available when showing cached data
+- App bar title populated from cached metadata when in cached state
+- 10 new widget tests covering: banner shown, date displayed, title/artist from cache, error state when cache empty, all error types fall back, action buttons present, token not shown in banner
+
+### Changed
+- 5 existing error-state and retry tests updated to supply `_FakeCacheRepository(cachedMetadata: null)` so they resolve via the fake immediately rather than querying the file-based Drift DB
+
+---
+
 ## [Unreleased — Phase 5F: Cache release metadata after loading release detail] — 2026-06-01
 
 ### Added

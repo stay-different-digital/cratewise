@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:cratewise/application/services/discogs_release_detail_service.dart';
 import 'package:cratewise/application/use_cases/add_to_collection_use_case.dart';
 import 'package:cratewise/application/use_cases/add_to_wishlist_use_case.dart';
+import 'package:cratewise/domain/models/cached_release_metadata.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/release_detail.dart';
+import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
@@ -57,6 +60,20 @@ class _BlockingService extends DiscogsReleaseDetailService {
 
   @override
   Future<ReleaseDetail> fetchDetail(int _) => Completer<ReleaseDetail>().future;
+}
+
+class _FakeCacheRepository implements CachedReleaseMetadataRepository {
+  _FakeCacheRepository({this.cachedMetadata});
+  final CachedReleaseMetadata? cachedMetadata;
+
+  @override
+  Future<CachedReleaseMetadata?> getByReleaseId(int id) async => cachedMetadata;
+
+  @override
+  Future<void> save(CachedReleaseMetadata metadata) async {}
+
+  @override
+  Future<void> remove(int id) async {}
 }
 
 // Fails on the first call, returns detail on subsequent calls.
@@ -158,6 +175,26 @@ AddToWishlistUseCase _newWishlistUseCase({bool alreadyContains = false}) =>
     AddToWishlistUseCase(_FakeWishlistRepository(
       alreadyContains: alreadyContains,
     ));
+
+final _cachedKindOfBlue = CachedReleaseMetadata(
+  discogsReleaseId: 249504,
+  artist: 'Miles Davis',
+  title: 'Kind Of Blue',
+  label: 'Columbia',
+  catno: 'CL 1355',
+  format: 'Vinyl',
+  country: 'US',
+  year: 1959,
+  genres: const ['Jazz'],
+  styles: const ['Modal', 'Bop'],
+  tracklist: const ['So What', 'Freddie Freeloader'],
+  barcodes: const ['074643602222'],
+  coverUrl: null,
+  notes: 'A seminal jazz album.',
+  fetchedAt: DateTime(2026, 1, 15),
+  cacheSource: 'discogs_api',
+  syncStatus: SyncStatus.localOnly,
+);
 
 Widget _wrap(Widget child) => MaterialApp(home: child);
 
@@ -339,6 +376,7 @@ void main() {
           ReleaseDetailScreen(
             releaseId: 1,
             detailService: _ErrorService(error: const NoTokenError()),
+            cacheRepository: _FakeCacheRepository(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -350,6 +388,7 @@ void main() {
           ReleaseDetailScreen(
             releaseId: 1,
             detailService: _ErrorService(error: const NetworkError()),
+            cacheRepository: _FakeCacheRepository(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -361,6 +400,7 @@ void main() {
           ReleaseDetailScreen(
             releaseId: 1,
             detailService: _ErrorService(error: const RateLimitedError()),
+            cacheRepository: _FakeCacheRepository(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -374,6 +414,7 @@ void main() {
           ReleaseDetailScreen(
             releaseId: 1,
             detailService: _ErrorService(error: const NetworkError()),
+            cacheRepository: _FakeCacheRepository(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -386,6 +427,7 @@ void main() {
           ReleaseDetailScreen(
             releaseId: 1,
             detailService: _ErrorService(error: const NoTokenError()),
+            cacheRepository: _FakeCacheRepository(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -395,8 +437,11 @@ void main() {
       testWidgets('retry button refetches and shows loaded state on success',
           (tester) async {
         final service = _FailThenSucceedService(detail: _kindOfBlue);
-        await tester.pumpWidget(
-            _wrap(ReleaseDetailScreen(releaseId: 1, detailService: service)));
+        await tester.pumpWidget(_wrap(ReleaseDetailScreen(
+          releaseId: 1,
+          detailService: service,
+          cacheRepository: _FakeCacheRepository(),
+        )));
         await tester.pumpAndSettle();
 
         expect(find.textContaining('No internet'), findsOneWidget);
@@ -733,6 +778,158 @@ void main() {
           find.byKey(const Key('add-to-wishlist-button')),
         );
         expect(button.onPressed, isNull);
+      });
+    });
+
+    group('offline cache fallback', () {
+      testWidgets('shows cached banner when API fails and cache has data',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Showing saved data'), findsOneWidget);
+      });
+
+      testWidgets('cached banner shows last updated date', (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('15 Jan 2026'), findsOneWidget);
+      });
+
+      testWidgets('shows title from cache when API fails', (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.text('Kind Of Blue'), findsWidgets);
+      });
+
+      testWidgets('shows artist from cache when API fails', (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.text('Miles Davis'), findsOneWidget);
+      });
+
+      testWidgets('app bar shows title from cache when API fails',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        // Title appears in app bar
+        expect(find.text('Kind Of Blue'), findsWidgets);
+      });
+
+      testWidgets('shows error state when API fails and cache is empty',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 1,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(cachedMetadata: null),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('No internet'), findsOneWidget);
+        expect(find.textContaining('Showing saved data'), findsNothing);
+      });
+
+      testWidgets('shows cached data for NoTokenError when cache is available',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _ErrorService(error: const NoTokenError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('Showing saved data'), findsOneWidget);
+        expect(find.text('Kind Of Blue'), findsWidgets);
+      });
+
+      testWidgets('shows Add to Collection button when showing cached data',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.text('Add to Collection'), findsOneWidget);
+      });
+
+      testWidgets('shows Add to Wishlist button when showing cached data',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.text('Add to Wishlist'), findsOneWidget);
+      });
+
+      testWidgets('cached banner does not contain token text', (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('token'), findsNothing);
+        expect(find.textContaining('secret'), findsNothing);
       });
     });
   });

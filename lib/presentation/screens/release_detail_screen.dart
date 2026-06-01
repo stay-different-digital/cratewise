@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
+import '../../domain/models/cached_release_metadata.dart';
 import '../../domain/models/release_detail.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
@@ -26,6 +27,11 @@ class _Loading extends _DetailState {
 class _Loaded extends _DetailState {
   const _Loaded(this.detail);
   final ReleaseDetail detail;
+}
+
+class _CachedLoaded extends _DetailState {
+  _CachedLoaded(this.metadata);
+  final CachedReleaseMetadata metadata;
 }
 
 class _DetailError extends _DetailState {
@@ -67,6 +73,7 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   late final DiscogsReleaseDetailService _service;
   late final AddToCollectionUseCase _addUseCase;
   late final AddToWishlistUseCase _addWishlistUseCase;
+  late final CachedReleaseMetadataRepository? _cacheRepository;
   AppDatabase? _ownedDb;
 
   _DetailState _state = const _Loading();
@@ -81,9 +88,10 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     if (collectionProvided && wishlistProvided) {
       _addUseCase = widget.addToCollectionUseCase!;
       _addWishlistUseCase = widget.addToWishlistUseCase!;
+      _cacheRepository = widget.cacheRepository;
       _service = widget.detailService ??
           DiscogsReleaseDetailService(
-            cacheRepository: widget.cacheRepository,
+            cacheRepository: _cacheRepository,
           );
     } else {
       final db = AppDatabase(openAppDatabase());
@@ -92,10 +100,11 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
           AddToCollectionUseCase(LocalCollectionRepository(db));
       _addWishlistUseCase = widget.addToWishlistUseCase ??
           AddToWishlistUseCase(LocalWishlistRepository(db));
+      _cacheRepository =
+          widget.cacheRepository ?? LocalCachedReleaseMetadataRepository(db);
       _service = widget.detailService ??
           DiscogsReleaseDetailService(
-            cacheRepository:
-                widget.cacheRepository ?? LocalCachedReleaseMetadataRepository(db),
+            cacheRepository: _cacheRepository,
           );
     }
     _fetch();
@@ -113,8 +122,22 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
       if (!mounted) return;
       setState(() => _state = _Loaded(detail));
     } on AppError catch (e) {
+      final cached = await _tryLoadFromCache();
       if (!mounted) return;
-      setState(() => _state = _DetailError(e));
+      if (cached != null) {
+        setState(() => _state = _CachedLoaded(cached));
+      } else {
+        setState(() => _state = _DetailError(e));
+      }
+    }
+  }
+
+  Future<CachedReleaseMetadata?> _tryLoadFromCache() async {
+    if (_cacheRepository == null) return null;
+    try {
+      return await _cacheRepository.getByReleaseId(widget.releaseId);
+    } catch (_) {
+      return null;
     }
   }
 
@@ -123,8 +146,16 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     _fetch();
   }
 
+  ReleaseDetail? _currentDetail() {
+    final state = _state;
+    if (state is _Loaded) return state.detail;
+    if (state is _CachedLoaded) return _cachedMetadataToDetail(state.metadata);
+    return null;
+  }
+
   Future<void> _handleAdd() async {
-    final detail = (_state as _Loaded).detail;
+    final detail = _currentDetail();
+    if (detail == null) return;
     setState(() => _addState = _AddState.adding);
     final result = await _addUseCase.execute(detail);
     if (!mounted) return;
@@ -143,7 +174,8 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   }
 
   Future<void> _handleAddToWishlist() async {
-    final detail = (_state as _Loaded).detail;
+    final detail = _currentDetail();
+    if (detail == null) return;
     setState(() => _addWishlistState = _AddState.adding);
     final result = await _addWishlistUseCase.execute(detail);
     if (!mounted) return;
@@ -164,16 +196,23 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   static bool _isRetriable(AppError e) =>
       e is! NoTokenError && e is! InvalidTokenError;
 
+  String get _appBarTitle {
+    final state = _state;
+    if (state is _Loaded && state.detail.title.isNotEmpty) {
+      return state.detail.title;
+    }
+    if (state is _CachedLoaded && state.metadata.title.isNotEmpty) {
+      return state.metadata.title;
+    }
+    return 'Release Detail';
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = _state;
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          state is _Loaded && state.detail.title.isNotEmpty
-              ? state.detail.title
-              : 'Release Detail',
-        ),
+        title: Text(_appBarTitle),
       ),
       body: switch (state) {
         _Loading() => const _SkeletonBody(),
@@ -182,8 +221,9 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
             onRetry: _isRetriable(error) ? _retry : null,
           ),
         _Loaded(:final detail) => _DetailBody(detail: detail),
+        _CachedLoaded(:final metadata) => _CachedDetailBody(metadata: metadata),
       },
-      bottomNavigationBar: state is _Loaded
+      bottomNavigationBar: (state is _Loaded || state is _CachedLoaded)
           ? _AddActionsBar(
               collectionState: _addState,
               wishlistState: _addWishlistState,
@@ -545,6 +585,90 @@ class _DetailBody extends StatelessWidget {
     );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Cached detail body
+// ---------------------------------------------------------------------------
+
+class _CachedDetailBody extends StatelessWidget {
+  const _CachedDetailBody({required this.metadata});
+
+  final CachedReleaseMetadata metadata;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _CachedBanner(fetchedAt: metadata.fetchedAt),
+        Expanded(child: _DetailBody(detail: _cachedMetadataToDetail(metadata))),
+      ],
+    );
+  }
+}
+
+class _CachedBanner extends StatelessWidget {
+  const _CachedBanner({required this.fetchedAt});
+
+  final DateTime fetchedAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ColoredBox(
+      color: theme.colorScheme.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            Icon(
+              Icons.offline_pin_outlined,
+              size: 16,
+              color: theme.colorScheme.onSecondaryContainer,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Showing saved data · last updated ${_formatCachedDate(fetchedAt)}',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSecondaryContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _formatCachedDate(DateTime dt) {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
+}
+
+ReleaseDetail _cachedMetadataToDetail(CachedReleaseMetadata m) => ReleaseDetail(
+      id: m.discogsReleaseId,
+      title: m.title,
+      artist: m.artist,
+      label: m.label ?? '',
+      catno: m.catno ?? '',
+      format: m.format ?? '',
+      country: m.country ?? '',
+      year: m.year,
+      genres: m.genres,
+      styles: m.styles,
+      tracklist: m.tracklist
+          .map((t) => ReleaseTrack(position: '', title: t, duration: ''))
+          .toList(),
+      notes: m.notes,
+      coverUrl: m.coverUrl,
+      identifiers: m.barcodes
+          .map((b) => ReleaseIdentifier(type: 'Barcode', value: b))
+          .toList(),
+    );
 
 // ---------------------------------------------------------------------------
 // Shared sub-widgets
