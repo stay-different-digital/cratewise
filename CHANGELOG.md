@@ -7,6 +7,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4B: local wishlist storage] — 2026-06-01
+
+### Added
+- `WishlistItems` Drift table (`WishlistRow`) with all fields including `targetPrice` (real, nullable) and `priority` (text via `WishlistPriorityConverter`)
+- `WishlistPriorityConverter` type converter in `app_database.dart`
+- `LocalWishlistRepository` implementing `WishlistRepository` with `getAll`, `getById`, `containsRelease`, `add`, `update`, `remove`
+- 14 integration tests using `NativeDatabase.memory()` covering add/getAll, getById, containsRelease, update, remove, and full optional-field round-trip
+
+### Changed
+- `AppDatabase.schemaVersion` bumped to 2; migration creates `wishlist_items` table for existing v1 databases
+
+---
+
 ## [Unreleased — Phase 4A: wishlist data model] — 2026-06-01
 
 ### Added
