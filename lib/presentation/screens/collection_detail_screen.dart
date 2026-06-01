@@ -87,12 +87,38 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _showEditConditionsSheet(CollectionItem item) async {
+    final updated = await showModalBottomSheet<CollectionItem>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) =>
+          _EditConditionsSheet(item: item, repository: _repository),
+    );
+    if (updated != null && mounted) {
+      setState(() => _state = _Loaded(updated));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Conditions saved.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = _state;
     return Scaffold(
       appBar: AppBar(
         title: Text(state is _Loaded ? state.item.title : 'Collection Item'),
+        actions: state is _Loaded
+            ? [
+                IconButton(
+                  key: const Key('edit-conditions-button'),
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: 'Edit conditions',
+                  onPressed: () => _showEditConditionsSheet(state.item),
+                ),
+              ]
+            : null,
       ),
       body: switch (state) {
         _Loading() => const Center(
@@ -103,6 +129,126 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
         _NotFound() => const _NotFoundBody(),
         _DetailError() => _ErrorBody(onRetry: _load),
       },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Edit conditions sheet
+// ---------------------------------------------------------------------------
+
+class _EditConditionsSheet extends StatefulWidget {
+  const _EditConditionsSheet({required this.item, required this.repository});
+
+  final CollectionItem item;
+  final CollectionRepository repository;
+
+  @override
+  State<_EditConditionsSheet> createState() => _EditConditionsSheetState();
+}
+
+class _EditConditionsSheetState extends State<_EditConditionsSheet> {
+  late RecordCondition _media;
+  late RecordCondition _sleeve;
+  bool _saving = false;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _media = widget.item.mediaCondition;
+    _sleeve = widget.item.sleeveCondition;
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _hasError = false;
+    });
+    try {
+      final updated = widget.item.copyWith(
+        mediaCondition: _media,
+        sleeveCondition: _sleeve,
+        updatedAt: DateTime.now(),
+      );
+      await widget.repository.update(updated);
+      if (!mounted) return;
+      Navigator.of(context).pop(updated);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Edit Conditions', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 24),
+          DropdownButtonFormField<RecordCondition>(
+            key: const Key('media-condition-dropdown'),
+            initialValue: _media,
+            decoration: const InputDecoration(labelText: 'Media condition'),
+            items: RecordCondition.values
+                .map(
+                  (c) => DropdownMenuItem(value: c, child: Text(c.label)),
+                )
+                .toList(),
+            onChanged: _saving
+                ? null
+                : (v) {
+                    if (v != null) setState(() => _media = v);
+                  },
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<RecordCondition>(
+            key: const Key('sleeve-condition-dropdown'),
+            initialValue: _sleeve,
+            decoration: const InputDecoration(labelText: 'Sleeve condition'),
+            items: RecordCondition.values
+                .map(
+                  (c) => DropdownMenuItem(value: c, child: Text(c.label)),
+                )
+                .toList(),
+            onChanged: _saving
+                ? null
+                : (v) {
+                    if (v != null) setState(() => _sleeve = v);
+                  },
+          ),
+          if (_hasError) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Could not save conditions. Please try again.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          FilledButton(
+            key: const Key('save-conditions-button'),
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
+          ),
+        ],
+      ),
     );
   }
 }

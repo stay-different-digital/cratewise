@@ -104,19 +104,21 @@ void main() {
   });
 
   group('RecordCondition', () {
-    test('all eight grades are defined', () {
-      expect(RecordCondition.values.length, 8);
+    test('all nine grades are defined', () {
+      expect(RecordCondition.values.length, 9);
     });
 
     test('label returns human-readable string', () {
       expect(RecordCondition.nearMint.label, 'Near Mint (NM or M-)');
       expect(RecordCondition.veryGoodPlus.label, 'Very Good Plus (VG+)');
+      expect(RecordCondition.notSet.label, 'Not set');
     });
 
     test('abbreviation returns short grade code', () {
       expect(RecordCondition.mint.abbreviation, 'M');
       expect(RecordCondition.veryGoodPlus.abbreviation, 'VG+');
       expect(RecordCondition.poor.abbreviation, 'P');
+      expect(RecordCondition.notSet.abbreviation, '—');
     });
   });
 }

@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3I: edit media and sleeve condition] — 2026-06-01
+
+### Added
+- `RecordCondition.notSet` enum value (label "Not set", abbreviation "—") stored as the string `"notSet"` in SQLite via the existing `RecordConditionConverter`; safe to add without a DB migration
+- Edit icon button (`Icons.edit_outlined`) in the `CollectionDetailScreen` app bar, visible only in the loaded state
+- `_EditConditionsSheet` modal bottom sheet with `DropdownButtonFormField` pickers for media condition and sleeve condition; includes Save button with loading spinner, inline error message on failure, and snackbar confirmation on success
+- After a successful save the screen state updates immediately (no reload) using `copyWith(updatedAt: DateTime.now())`; the `_EditConditionsSheet` passes the updated `CollectionItem` back to the screen via `Navigator.pop`
+- 12 new widget tests covering: edit button visibility in all states, sheet open/content, Save calls `repository.update`, success snackbar, updated date change, error message on failure, sheet stays open on failure, and condition value update after save
+
+### Changed
+- `RecordCondition` count updated from 8 to 9 values; domain model tests updated accordingly
+
+---
+
 ## [Unreleased — Fix: single AppDatabase instance] — 2026-06-01
 
 ### Fixed

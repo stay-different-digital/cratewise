@@ -9,11 +9,18 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
-  _FakeCollectionRepository({this.item, this.throwsOnLoad = false});
+  _FakeCollectionRepository({
+    this.item,
+    this.throwsOnLoad = false,
+    this.throwsOnUpdate = false,
+  });
 
   final CollectionItem? item;
   final bool throwsOnLoad;
+  final bool throwsOnUpdate;
   int loadCallCount = 0;
+  int updateCallCount = 0;
+  CollectionItem? lastUpdatedItem;
 
   @override
   Future<CollectionItem?> getById(String id) async {
@@ -29,7 +36,12 @@ class _FakeCollectionRepository implements CollectionRepository {
   @override
   Future<void> add(CollectionItem item) async {}
   @override
-  Future<void> update(CollectionItem item) async {}
+  Future<void> update(CollectionItem item) async {
+    updateCallCount++;
+    lastUpdatedItem = item;
+    if (throwsOnUpdate) throw Exception('update error');
+  }
+
   @override
   Future<void> remove(String id) async {}
 }
@@ -423,6 +435,187 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Miles Davis'), findsOneWidget);
+    });
+  });
+
+  group('CollectionDetailScreen — edit conditions', () {
+    testWidgets('shows edit button when loaded', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('edit-conditions-button')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('does not show edit button while loading', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      expect(find.byKey(const Key('edit-conditions-button')), findsNothing);
+    });
+
+    testWidgets('does not show edit button in not-found state', (tester) async {
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(
+        _wrap(
+          CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('edit-conditions-button')), findsNothing);
+    });
+
+    testWidgets('does not show edit button in error state', (tester) async {
+      final repo = _FakeCollectionRepository(throwsOnLoad: true);
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('edit-conditions-button')), findsNothing);
+    });
+
+    testWidgets('tapping edit button opens sheet with title', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-conditions-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Conditions'), findsOneWidget);
+    });
+
+    testWidgets('sheet shows Save button', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-conditions-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('save-conditions-button')), findsOneWidget);
+    });
+
+    testWidgets('tapping Save calls repository.update', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-conditions-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-conditions-button')));
+      await tester.pumpAndSettle();
+
+      expect(repo.updateCallCount, 1);
+    });
+
+    testWidgets('shows success snackbar after save', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-conditions-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-conditions-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Conditions saved.'), findsOneWidget);
+    });
+
+    testWidgets('save updates updatedAt shown on screen', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(updatedAt: DateTime(2026, 2, 15)),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('2026-02-15'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('edit-conditions-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-conditions-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('2026-02-15'), findsNothing);
+    });
+
+    testWidgets('save error shows error message in sheet', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-conditions-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-conditions-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Could not save'), findsOneWidget);
+    });
+
+    testWidgets('save error does not close sheet', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-conditions-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-conditions-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('save-conditions-button')), findsOneWidget);
+    });
+
+    testWidgets(
+        'changing media condition and saving updates displayed value',
+        (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-conditions-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('media-condition-dropdown')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(RecordCondition.mint.label).last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-conditions-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining(RecordCondition.mint.label), findsOneWidget);
     });
   });
 }

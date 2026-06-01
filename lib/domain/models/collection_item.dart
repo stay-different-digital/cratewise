@@ -6,7 +6,8 @@ enum RecordCondition {
   goodPlus,
   good,
   fair,
-  poor;
+  poor,
+  notSet;
 
   String get label => switch (this) {
         mint => 'Mint (M)',
@@ -17,6 +18,7 @@ enum RecordCondition {
         good => 'Good (G)',
         fair => 'Fair (F)',
         poor => 'Poor (P)',
+        notSet => 'Not set',
       };
 
   String get abbreviation => switch (this) {
@@ -28,6 +30,7 @@ enum RecordCondition {
         good => 'G',
         fair => 'F',
         poor => 'P',
+        notSet => '—',
       };
 }
 
