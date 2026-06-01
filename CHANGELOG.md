@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5E: Cached release metadata model and storage] — 2026-06-01
+
+### Added
+- `lib/domain/models/cached_release_metadata.dart` — `CachedReleaseMetadata` model with all release fields, lists (genres, styles, tracklist, barcodes), fetchedAt, cacheSource, syncStatus
+- `lib/domain/repositories/cached_release_metadata_repository.dart` — `CachedReleaseMetadataRepository` interface with `getByReleaseId`, `save` (upsert), `remove`
+- `CachedReleases` Drift table in `app_database.dart`; schema bumped to v3 with migration
+- `SyncStatusConverter` TypeConverter in `app_database.dart`
+- `lib/infrastructure/local_database/local_cached_release_metadata_repository.dart` — local implementation using `insertOnConflictUpdate` for upsert
+- 15 integration tests in `test/infrastructure/local_database/local_cached_release_metadata_repository_test.dart`
+
+---
+
 ## [Unreleased — Phase 5D: Wishlist explicitly local-first] — 2026-06-01
 
 ### Changed

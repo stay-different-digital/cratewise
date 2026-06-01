@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../domain/models/collection_item.dart';
+import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
 
 part 'app_database.g.dart';
@@ -47,6 +48,16 @@ class WishlistPriorityConverter
 
   @override
   String toSql(WishlistPriority value) => value.name;
+}
+
+class SyncStatusConverter extends TypeConverter<SyncStatus, String> {
+  const SyncStatusConverter();
+
+  @override
+  SyncStatus fromSql(String fromDb) => SyncStatus.values.byName(fromDb);
+
+  @override
+  String toSql(SyncStatus value) => value.name;
 }
 
 // ---------------------------------------------------------------------------
@@ -102,16 +113,40 @@ class WishlistItems extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('CachedReleaseRow')
+class CachedReleases extends Table {
+  IntColumn get discogsReleaseId => integer()();
+  TextColumn get artist => text()();
+  TextColumn get title => text()();
+  TextColumn get label => text().nullable()();
+  TextColumn get catno => text().nullable()();
+  TextColumn get format => text().nullable()();
+  TextColumn get country => text().nullable()();
+  IntColumn get year => integer().nullable()();
+  TextColumn get genres => text().map(const StringListConverter())();
+  TextColumn get styles => text().map(const StringListConverter())();
+  TextColumn get tracklist => text().map(const StringListConverter())();
+  TextColumn get notes => text().nullable()();
+  TextColumn get barcodes => text().map(const StringListConverter())();
+  TextColumn get coverUrl => text().nullable()();
+  DateTimeColumn get fetchedAt => dateTime()();
+  TextColumn get cacheSource => text()();
+  TextColumn get syncStatus => text().map(const SyncStatusConverter())();
+
+  @override
+  Set<Column> get primaryKey => {discogsReleaseId};
+}
+
 // ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
 
-@DriftDatabase(tables: [CollectionItems, WishlistItems])
+@DriftDatabase(tables: [CollectionItems, WishlistItems, CachedReleases])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -119,6 +154,9 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.createTable(wishlistItems);
+          }
+          if (from < 3) {
+            await m.createTable(cachedReleases);
           }
         },
       );

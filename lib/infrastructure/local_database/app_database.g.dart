@@ -1821,6 +1821,946 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistRow> {
   }
 }
 
+class $CachedReleasesTable extends CachedReleases
+    with TableInfo<$CachedReleasesTable, CachedReleaseRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CachedReleasesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _discogsReleaseIdMeta = const VerificationMeta(
+    'discogsReleaseId',
+  );
+  @override
+  late final GeneratedColumn<int> discogsReleaseId = GeneratedColumn<int>(
+    'discogs_release_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _artistMeta = const VerificationMeta('artist');
+  @override
+  late final GeneratedColumn<String> artist = GeneratedColumn<String>(
+    'artist',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _catnoMeta = const VerificationMeta('catno');
+  @override
+  late final GeneratedColumn<String> catno = GeneratedColumn<String>(
+    'catno',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _formatMeta = const VerificationMeta('format');
+  @override
+  late final GeneratedColumn<String> format = GeneratedColumn<String>(
+    'format',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _countryMeta = const VerificationMeta(
+    'country',
+  );
+  @override
+  late final GeneratedColumn<String> country = GeneratedColumn<String>(
+    'country',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _yearMeta = const VerificationMeta('year');
+  @override
+  late final GeneratedColumn<int> year = GeneratedColumn<int>(
+    'year',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<String>, String> genres =
+      GeneratedColumn<String>(
+        'genres',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<List<String>>($CachedReleasesTable.$convertergenres);
+  @override
+  late final GeneratedColumnWithTypeConverter<List<String>, String> styles =
+      GeneratedColumn<String>(
+        'styles',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<List<String>>($CachedReleasesTable.$converterstyles);
+  @override
+  late final GeneratedColumnWithTypeConverter<List<String>, String> tracklist =
+      GeneratedColumn<String>(
+        'tracklist',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<List<String>>($CachedReleasesTable.$convertertracklist);
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<String>, String> barcodes =
+      GeneratedColumn<String>(
+        'barcodes',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<List<String>>($CachedReleasesTable.$converterbarcodes);
+  static const VerificationMeta _coverUrlMeta = const VerificationMeta(
+    'coverUrl',
+  );
+  @override
+  late final GeneratedColumn<String> coverUrl = GeneratedColumn<String>(
+    'cover_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cacheSourceMeta = const VerificationMeta(
+    'cacheSource',
+  );
+  @override
+  late final GeneratedColumn<String> cacheSource = GeneratedColumn<String>(
+    'cache_source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<SyncStatus, String> syncStatus =
+      GeneratedColumn<String>(
+        'sync_status',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<SyncStatus>($CachedReleasesTable.$convertersyncStatus);
+  @override
+  List<GeneratedColumn> get $columns => [
+    discogsReleaseId,
+    artist,
+    title,
+    label,
+    catno,
+    format,
+    country,
+    year,
+    genres,
+    styles,
+    tracklist,
+    notes,
+    barcodes,
+    coverUrl,
+    fetchedAt,
+    cacheSource,
+    syncStatus,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cached_releases';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CachedReleaseRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('discogs_release_id')) {
+      context.handle(
+        _discogsReleaseIdMeta,
+        discogsReleaseId.isAcceptableOrUnknown(
+          data['discogs_release_id']!,
+          _discogsReleaseIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('artist')) {
+      context.handle(
+        _artistMeta,
+        artist.isAcceptableOrUnknown(data['artist']!, _artistMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_artistMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
+      );
+    }
+    if (data.containsKey('catno')) {
+      context.handle(
+        _catnoMeta,
+        catno.isAcceptableOrUnknown(data['catno']!, _catnoMeta),
+      );
+    }
+    if (data.containsKey('format')) {
+      context.handle(
+        _formatMeta,
+        format.isAcceptableOrUnknown(data['format']!, _formatMeta),
+      );
+    }
+    if (data.containsKey('country')) {
+      context.handle(
+        _countryMeta,
+        country.isAcceptableOrUnknown(data['country']!, _countryMeta),
+      );
+    }
+    if (data.containsKey('year')) {
+      context.handle(
+        _yearMeta,
+        year.isAcceptableOrUnknown(data['year']!, _yearMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('cover_url')) {
+      context.handle(
+        _coverUrlMeta,
+        coverUrl.isAcceptableOrUnknown(data['cover_url']!, _coverUrlMeta),
+      );
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    if (data.containsKey('cache_source')) {
+      context.handle(
+        _cacheSourceMeta,
+        cacheSource.isAcceptableOrUnknown(
+          data['cache_source']!,
+          _cacheSourceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_cacheSourceMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {discogsReleaseId};
+  @override
+  CachedReleaseRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CachedReleaseRow(
+      discogsReleaseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}discogs_release_id'],
+      )!,
+      artist: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}artist'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      ),
+      catno: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}catno'],
+      ),
+      format: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}format'],
+      ),
+      country: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}country'],
+      ),
+      year: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}year'],
+      ),
+      genres: $CachedReleasesTable.$convertergenres.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}genres'],
+        )!,
+      ),
+      styles: $CachedReleasesTable.$converterstyles.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}styles'],
+        )!,
+      ),
+      tracklist: $CachedReleasesTable.$convertertracklist.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}tracklist'],
+        )!,
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      barcodes: $CachedReleasesTable.$converterbarcodes.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}barcodes'],
+        )!,
+      ),
+      coverUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cover_url'],
+      ),
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+      cacheSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cache_source'],
+      )!,
+      syncStatus: $CachedReleasesTable.$convertersyncStatus.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}sync_status'],
+        )!,
+      ),
+    );
+  }
+
+  @override
+  $CachedReleasesTable createAlias(String alias) {
+    return $CachedReleasesTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<List<String>, String> $convertergenres =
+      const StringListConverter();
+  static TypeConverter<List<String>, String> $converterstyles =
+      const StringListConverter();
+  static TypeConverter<List<String>, String> $convertertracklist =
+      const StringListConverter();
+  static TypeConverter<List<String>, String> $converterbarcodes =
+      const StringListConverter();
+  static TypeConverter<SyncStatus, String> $convertersyncStatus =
+      const SyncStatusConverter();
+}
+
+class CachedReleaseRow extends DataClass
+    implements Insertable<CachedReleaseRow> {
+  final int discogsReleaseId;
+  final String artist;
+  final String title;
+  final String? label;
+  final String? catno;
+  final String? format;
+  final String? country;
+  final int? year;
+  final List<String> genres;
+  final List<String> styles;
+  final List<String> tracklist;
+  final String? notes;
+  final List<String> barcodes;
+  final String? coverUrl;
+  final DateTime fetchedAt;
+  final String cacheSource;
+  final SyncStatus syncStatus;
+  const CachedReleaseRow({
+    required this.discogsReleaseId,
+    required this.artist,
+    required this.title,
+    this.label,
+    this.catno,
+    this.format,
+    this.country,
+    this.year,
+    required this.genres,
+    required this.styles,
+    required this.tracklist,
+    this.notes,
+    required this.barcodes,
+    this.coverUrl,
+    required this.fetchedAt,
+    required this.cacheSource,
+    required this.syncStatus,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['discogs_release_id'] = Variable<int>(discogsReleaseId);
+    map['artist'] = Variable<String>(artist);
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || label != null) {
+      map['label'] = Variable<String>(label);
+    }
+    if (!nullToAbsent || catno != null) {
+      map['catno'] = Variable<String>(catno);
+    }
+    if (!nullToAbsent || format != null) {
+      map['format'] = Variable<String>(format);
+    }
+    if (!nullToAbsent || country != null) {
+      map['country'] = Variable<String>(country);
+    }
+    if (!nullToAbsent || year != null) {
+      map['year'] = Variable<int>(year);
+    }
+    {
+      map['genres'] = Variable<String>(
+        $CachedReleasesTable.$convertergenres.toSql(genres),
+      );
+    }
+    {
+      map['styles'] = Variable<String>(
+        $CachedReleasesTable.$converterstyles.toSql(styles),
+      );
+    }
+    {
+      map['tracklist'] = Variable<String>(
+        $CachedReleasesTable.$convertertracklist.toSql(tracklist),
+      );
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    {
+      map['barcodes'] = Variable<String>(
+        $CachedReleasesTable.$converterbarcodes.toSql(barcodes),
+      );
+    }
+    if (!nullToAbsent || coverUrl != null) {
+      map['cover_url'] = Variable<String>(coverUrl);
+    }
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    map['cache_source'] = Variable<String>(cacheSource);
+    {
+      map['sync_status'] = Variable<String>(
+        $CachedReleasesTable.$convertersyncStatus.toSql(syncStatus),
+      );
+    }
+    return map;
+  }
+
+  CachedReleasesCompanion toCompanion(bool nullToAbsent) {
+    return CachedReleasesCompanion(
+      discogsReleaseId: Value(discogsReleaseId),
+      artist: Value(artist),
+      title: Value(title),
+      label: label == null && nullToAbsent
+          ? const Value.absent()
+          : Value(label),
+      catno: catno == null && nullToAbsent
+          ? const Value.absent()
+          : Value(catno),
+      format: format == null && nullToAbsent
+          ? const Value.absent()
+          : Value(format),
+      country: country == null && nullToAbsent
+          ? const Value.absent()
+          : Value(country),
+      year: year == null && nullToAbsent ? const Value.absent() : Value(year),
+      genres: Value(genres),
+      styles: Value(styles),
+      tracklist: Value(tracklist),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      barcodes: Value(barcodes),
+      coverUrl: coverUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coverUrl),
+      fetchedAt: Value(fetchedAt),
+      cacheSource: Value(cacheSource),
+      syncStatus: Value(syncStatus),
+    );
+  }
+
+  factory CachedReleaseRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CachedReleaseRow(
+      discogsReleaseId: serializer.fromJson<int>(json['discogsReleaseId']),
+      artist: serializer.fromJson<String>(json['artist']),
+      title: serializer.fromJson<String>(json['title']),
+      label: serializer.fromJson<String?>(json['label']),
+      catno: serializer.fromJson<String?>(json['catno']),
+      format: serializer.fromJson<String?>(json['format']),
+      country: serializer.fromJson<String?>(json['country']),
+      year: serializer.fromJson<int?>(json['year']),
+      genres: serializer.fromJson<List<String>>(json['genres']),
+      styles: serializer.fromJson<List<String>>(json['styles']),
+      tracklist: serializer.fromJson<List<String>>(json['tracklist']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      barcodes: serializer.fromJson<List<String>>(json['barcodes']),
+      coverUrl: serializer.fromJson<String?>(json['coverUrl']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+      cacheSource: serializer.fromJson<String>(json['cacheSource']),
+      syncStatus: serializer.fromJson<SyncStatus>(json['syncStatus']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'discogsReleaseId': serializer.toJson<int>(discogsReleaseId),
+      'artist': serializer.toJson<String>(artist),
+      'title': serializer.toJson<String>(title),
+      'label': serializer.toJson<String?>(label),
+      'catno': serializer.toJson<String?>(catno),
+      'format': serializer.toJson<String?>(format),
+      'country': serializer.toJson<String?>(country),
+      'year': serializer.toJson<int?>(year),
+      'genres': serializer.toJson<List<String>>(genres),
+      'styles': serializer.toJson<List<String>>(styles),
+      'tracklist': serializer.toJson<List<String>>(tracklist),
+      'notes': serializer.toJson<String?>(notes),
+      'barcodes': serializer.toJson<List<String>>(barcodes),
+      'coverUrl': serializer.toJson<String?>(coverUrl),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+      'cacheSource': serializer.toJson<String>(cacheSource),
+      'syncStatus': serializer.toJson<SyncStatus>(syncStatus),
+    };
+  }
+
+  CachedReleaseRow copyWith({
+    int? discogsReleaseId,
+    String? artist,
+    String? title,
+    Value<String?> label = const Value.absent(),
+    Value<String?> catno = const Value.absent(),
+    Value<String?> format = const Value.absent(),
+    Value<String?> country = const Value.absent(),
+    Value<int?> year = const Value.absent(),
+    List<String>? genres,
+    List<String>? styles,
+    List<String>? tracklist,
+    Value<String?> notes = const Value.absent(),
+    List<String>? barcodes,
+    Value<String?> coverUrl = const Value.absent(),
+    DateTime? fetchedAt,
+    String? cacheSource,
+    SyncStatus? syncStatus,
+  }) => CachedReleaseRow(
+    discogsReleaseId: discogsReleaseId ?? this.discogsReleaseId,
+    artist: artist ?? this.artist,
+    title: title ?? this.title,
+    label: label.present ? label.value : this.label,
+    catno: catno.present ? catno.value : this.catno,
+    format: format.present ? format.value : this.format,
+    country: country.present ? country.value : this.country,
+    year: year.present ? year.value : this.year,
+    genres: genres ?? this.genres,
+    styles: styles ?? this.styles,
+    tracklist: tracklist ?? this.tracklist,
+    notes: notes.present ? notes.value : this.notes,
+    barcodes: barcodes ?? this.barcodes,
+    coverUrl: coverUrl.present ? coverUrl.value : this.coverUrl,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+    cacheSource: cacheSource ?? this.cacheSource,
+    syncStatus: syncStatus ?? this.syncStatus,
+  );
+  CachedReleaseRow copyWithCompanion(CachedReleasesCompanion data) {
+    return CachedReleaseRow(
+      discogsReleaseId: data.discogsReleaseId.present
+          ? data.discogsReleaseId.value
+          : this.discogsReleaseId,
+      artist: data.artist.present ? data.artist.value : this.artist,
+      title: data.title.present ? data.title.value : this.title,
+      label: data.label.present ? data.label.value : this.label,
+      catno: data.catno.present ? data.catno.value : this.catno,
+      format: data.format.present ? data.format.value : this.format,
+      country: data.country.present ? data.country.value : this.country,
+      year: data.year.present ? data.year.value : this.year,
+      genres: data.genres.present ? data.genres.value : this.genres,
+      styles: data.styles.present ? data.styles.value : this.styles,
+      tracklist: data.tracklist.present ? data.tracklist.value : this.tracklist,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      barcodes: data.barcodes.present ? data.barcodes.value : this.barcodes,
+      coverUrl: data.coverUrl.present ? data.coverUrl.value : this.coverUrl,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+      cacheSource: data.cacheSource.present
+          ? data.cacheSource.value
+          : this.cacheSource,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedReleaseRow(')
+          ..write('discogsReleaseId: $discogsReleaseId, ')
+          ..write('artist: $artist, ')
+          ..write('title: $title, ')
+          ..write('label: $label, ')
+          ..write('catno: $catno, ')
+          ..write('format: $format, ')
+          ..write('country: $country, ')
+          ..write('year: $year, ')
+          ..write('genres: $genres, ')
+          ..write('styles: $styles, ')
+          ..write('tracklist: $tracklist, ')
+          ..write('notes: $notes, ')
+          ..write('barcodes: $barcodes, ')
+          ..write('coverUrl: $coverUrl, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('cacheSource: $cacheSource, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    discogsReleaseId,
+    artist,
+    title,
+    label,
+    catno,
+    format,
+    country,
+    year,
+    genres,
+    styles,
+    tracklist,
+    notes,
+    barcodes,
+    coverUrl,
+    fetchedAt,
+    cacheSource,
+    syncStatus,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CachedReleaseRow &&
+          other.discogsReleaseId == this.discogsReleaseId &&
+          other.artist == this.artist &&
+          other.title == this.title &&
+          other.label == this.label &&
+          other.catno == this.catno &&
+          other.format == this.format &&
+          other.country == this.country &&
+          other.year == this.year &&
+          other.genres == this.genres &&
+          other.styles == this.styles &&
+          other.tracklist == this.tracklist &&
+          other.notes == this.notes &&
+          other.barcodes == this.barcodes &&
+          other.coverUrl == this.coverUrl &&
+          other.fetchedAt == this.fetchedAt &&
+          other.cacheSource == this.cacheSource &&
+          other.syncStatus == this.syncStatus);
+}
+
+class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
+  final Value<int> discogsReleaseId;
+  final Value<String> artist;
+  final Value<String> title;
+  final Value<String?> label;
+  final Value<String?> catno;
+  final Value<String?> format;
+  final Value<String?> country;
+  final Value<int?> year;
+  final Value<List<String>> genres;
+  final Value<List<String>> styles;
+  final Value<List<String>> tracklist;
+  final Value<String?> notes;
+  final Value<List<String>> barcodes;
+  final Value<String?> coverUrl;
+  final Value<DateTime> fetchedAt;
+  final Value<String> cacheSource;
+  final Value<SyncStatus> syncStatus;
+  const CachedReleasesCompanion({
+    this.discogsReleaseId = const Value.absent(),
+    this.artist = const Value.absent(),
+    this.title = const Value.absent(),
+    this.label = const Value.absent(),
+    this.catno = const Value.absent(),
+    this.format = const Value.absent(),
+    this.country = const Value.absent(),
+    this.year = const Value.absent(),
+    this.genres = const Value.absent(),
+    this.styles = const Value.absent(),
+    this.tracklist = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.barcodes = const Value.absent(),
+    this.coverUrl = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.cacheSource = const Value.absent(),
+    this.syncStatus = const Value.absent(),
+  });
+  CachedReleasesCompanion.insert({
+    this.discogsReleaseId = const Value.absent(),
+    required String artist,
+    required String title,
+    this.label = const Value.absent(),
+    this.catno = const Value.absent(),
+    this.format = const Value.absent(),
+    this.country = const Value.absent(),
+    this.year = const Value.absent(),
+    required List<String> genres,
+    required List<String> styles,
+    required List<String> tracklist,
+    this.notes = const Value.absent(),
+    required List<String> barcodes,
+    this.coverUrl = const Value.absent(),
+    required DateTime fetchedAt,
+    required String cacheSource,
+    required SyncStatus syncStatus,
+  }) : artist = Value(artist),
+       title = Value(title),
+       genres = Value(genres),
+       styles = Value(styles),
+       tracklist = Value(tracklist),
+       barcodes = Value(barcodes),
+       fetchedAt = Value(fetchedAt),
+       cacheSource = Value(cacheSource),
+       syncStatus = Value(syncStatus);
+  static Insertable<CachedReleaseRow> custom({
+    Expression<int>? discogsReleaseId,
+    Expression<String>? artist,
+    Expression<String>? title,
+    Expression<String>? label,
+    Expression<String>? catno,
+    Expression<String>? format,
+    Expression<String>? country,
+    Expression<int>? year,
+    Expression<String>? genres,
+    Expression<String>? styles,
+    Expression<String>? tracklist,
+    Expression<String>? notes,
+    Expression<String>? barcodes,
+    Expression<String>? coverUrl,
+    Expression<DateTime>? fetchedAt,
+    Expression<String>? cacheSource,
+    Expression<String>? syncStatus,
+  }) {
+    return RawValuesInsertable({
+      if (discogsReleaseId != null) 'discogs_release_id': discogsReleaseId,
+      if (artist != null) 'artist': artist,
+      if (title != null) 'title': title,
+      if (label != null) 'label': label,
+      if (catno != null) 'catno': catno,
+      if (format != null) 'format': format,
+      if (country != null) 'country': country,
+      if (year != null) 'year': year,
+      if (genres != null) 'genres': genres,
+      if (styles != null) 'styles': styles,
+      if (tracklist != null) 'tracklist': tracklist,
+      if (notes != null) 'notes': notes,
+      if (barcodes != null) 'barcodes': barcodes,
+      if (coverUrl != null) 'cover_url': coverUrl,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (cacheSource != null) 'cache_source': cacheSource,
+      if (syncStatus != null) 'sync_status': syncStatus,
+    });
+  }
+
+  CachedReleasesCompanion copyWith({
+    Value<int>? discogsReleaseId,
+    Value<String>? artist,
+    Value<String>? title,
+    Value<String?>? label,
+    Value<String?>? catno,
+    Value<String?>? format,
+    Value<String?>? country,
+    Value<int?>? year,
+    Value<List<String>>? genres,
+    Value<List<String>>? styles,
+    Value<List<String>>? tracklist,
+    Value<String?>? notes,
+    Value<List<String>>? barcodes,
+    Value<String?>? coverUrl,
+    Value<DateTime>? fetchedAt,
+    Value<String>? cacheSource,
+    Value<SyncStatus>? syncStatus,
+  }) {
+    return CachedReleasesCompanion(
+      discogsReleaseId: discogsReleaseId ?? this.discogsReleaseId,
+      artist: artist ?? this.artist,
+      title: title ?? this.title,
+      label: label ?? this.label,
+      catno: catno ?? this.catno,
+      format: format ?? this.format,
+      country: country ?? this.country,
+      year: year ?? this.year,
+      genres: genres ?? this.genres,
+      styles: styles ?? this.styles,
+      tracklist: tracklist ?? this.tracklist,
+      notes: notes ?? this.notes,
+      barcodes: barcodes ?? this.barcodes,
+      coverUrl: coverUrl ?? this.coverUrl,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      cacheSource: cacheSource ?? this.cacheSource,
+      syncStatus: syncStatus ?? this.syncStatus,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (discogsReleaseId.present) {
+      map['discogs_release_id'] = Variable<int>(discogsReleaseId.value);
+    }
+    if (artist.present) {
+      map['artist'] = Variable<String>(artist.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (catno.present) {
+      map['catno'] = Variable<String>(catno.value);
+    }
+    if (format.present) {
+      map['format'] = Variable<String>(format.value);
+    }
+    if (country.present) {
+      map['country'] = Variable<String>(country.value);
+    }
+    if (year.present) {
+      map['year'] = Variable<int>(year.value);
+    }
+    if (genres.present) {
+      map['genres'] = Variable<String>(
+        $CachedReleasesTable.$convertergenres.toSql(genres.value),
+      );
+    }
+    if (styles.present) {
+      map['styles'] = Variable<String>(
+        $CachedReleasesTable.$converterstyles.toSql(styles.value),
+      );
+    }
+    if (tracklist.present) {
+      map['tracklist'] = Variable<String>(
+        $CachedReleasesTable.$convertertracklist.toSql(tracklist.value),
+      );
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (barcodes.present) {
+      map['barcodes'] = Variable<String>(
+        $CachedReleasesTable.$converterbarcodes.toSql(barcodes.value),
+      );
+    }
+    if (coverUrl.present) {
+      map['cover_url'] = Variable<String>(coverUrl.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    if (cacheSource.present) {
+      map['cache_source'] = Variable<String>(cacheSource.value);
+    }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(
+        $CachedReleasesTable.$convertersyncStatus.toSql(syncStatus.value),
+      );
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CachedReleasesCompanion(')
+          ..write('discogsReleaseId: $discogsReleaseId, ')
+          ..write('artist: $artist, ')
+          ..write('title: $title, ')
+          ..write('label: $label, ')
+          ..write('catno: $catno, ')
+          ..write('format: $format, ')
+          ..write('country: $country, ')
+          ..write('year: $year, ')
+          ..write('genres: $genres, ')
+          ..write('styles: $styles, ')
+          ..write('tracklist: $tracklist, ')
+          ..write('notes: $notes, ')
+          ..write('barcodes: $barcodes, ')
+          ..write('coverUrl: $coverUrl, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('cacheSource: $cacheSource, ')
+          ..write('syncStatus: $syncStatus')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1828,6 +2768,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $WishlistItemsTable wishlistItems = $WishlistItemsTable(this);
+  late final $CachedReleasesTable cachedReleases = $CachedReleasesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1835,6 +2776,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     collectionItems,
     wishlistItems,
+    cachedReleases,
   ];
 }
 
@@ -2676,6 +3618,446 @@ typedef $$WishlistItemsTableProcessedTableManager =
       WishlistRow,
       PrefetchHooks Function()
     >;
+typedef $$CachedReleasesTableCreateCompanionBuilder =
+    CachedReleasesCompanion Function({
+      Value<int> discogsReleaseId,
+      required String artist,
+      required String title,
+      Value<String?> label,
+      Value<String?> catno,
+      Value<String?> format,
+      Value<String?> country,
+      Value<int?> year,
+      required List<String> genres,
+      required List<String> styles,
+      required List<String> tracklist,
+      Value<String?> notes,
+      required List<String> barcodes,
+      Value<String?> coverUrl,
+      required DateTime fetchedAt,
+      required String cacheSource,
+      required SyncStatus syncStatus,
+    });
+typedef $$CachedReleasesTableUpdateCompanionBuilder =
+    CachedReleasesCompanion Function({
+      Value<int> discogsReleaseId,
+      Value<String> artist,
+      Value<String> title,
+      Value<String?> label,
+      Value<String?> catno,
+      Value<String?> format,
+      Value<String?> country,
+      Value<int?> year,
+      Value<List<String>> genres,
+      Value<List<String>> styles,
+      Value<List<String>> tracklist,
+      Value<String?> notes,
+      Value<List<String>> barcodes,
+      Value<String?> coverUrl,
+      Value<DateTime> fetchedAt,
+      Value<String> cacheSource,
+      Value<SyncStatus> syncStatus,
+    });
+
+class $$CachedReleasesTableFilterComposer
+    extends Composer<_$AppDatabase, $CachedReleasesTable> {
+  $$CachedReleasesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get discogsReleaseId => $composableBuilder(
+    column: $table.discogsReleaseId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get artist => $composableBuilder(
+    column: $table.artist,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get catno => $composableBuilder(
+    column: $table.catno,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get format => $composableBuilder(
+    column: $table.format,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get country => $composableBuilder(
+    column: $table.country,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get year => $composableBuilder(
+    column: $table.year,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get genres => $composableBuilder(
+    column: $table.genres,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get styles => $composableBuilder(
+    column: $table.styles,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get tracklist => $composableBuilder(
+    column: $table.tracklist,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get barcodes => $composableBuilder(
+    column: $table.barcodes,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get coverUrl => $composableBuilder(
+    column: $table.coverUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cacheSource => $composableBuilder(
+    column: $table.cacheSource,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<SyncStatus, SyncStatus, String>
+  get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+}
+
+class $$CachedReleasesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CachedReleasesTable> {
+  $$CachedReleasesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get discogsReleaseId => $composableBuilder(
+    column: $table.discogsReleaseId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get artist => $composableBuilder(
+    column: $table.artist,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get catno => $composableBuilder(
+    column: $table.catno,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get format => $composableBuilder(
+    column: $table.format,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get country => $composableBuilder(
+    column: $table.country,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get year => $composableBuilder(
+    column: $table.year,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get genres => $composableBuilder(
+    column: $table.genres,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get styles => $composableBuilder(
+    column: $table.styles,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tracklist => $composableBuilder(
+    column: $table.tracklist,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get barcodes => $composableBuilder(
+    column: $table.barcodes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get coverUrl => $composableBuilder(
+    column: $table.coverUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cacheSource => $composableBuilder(
+    column: $table.cacheSource,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CachedReleasesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CachedReleasesTable> {
+  $$CachedReleasesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get discogsReleaseId => $composableBuilder(
+    column: $table.discogsReleaseId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get artist =>
+      $composableBuilder(column: $table.artist, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<String> get catno =>
+      $composableBuilder(column: $table.catno, builder: (column) => column);
+
+  GeneratedColumn<String> get format =>
+      $composableBuilder(column: $table.format, builder: (column) => column);
+
+  GeneratedColumn<String> get country =>
+      $composableBuilder(column: $table.country, builder: (column) => column);
+
+  GeneratedColumn<int> get year =>
+      $composableBuilder(column: $table.year, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<List<String>, String> get genres =>
+      $composableBuilder(column: $table.genres, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<List<String>, String> get styles =>
+      $composableBuilder(column: $table.styles, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<List<String>, String> get tracklist =>
+      $composableBuilder(column: $table.tracklist, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<List<String>, String> get barcodes =>
+      $composableBuilder(column: $table.barcodes, builder: (column) => column);
+
+  GeneratedColumn<String> get coverUrl =>
+      $composableBuilder(column: $table.coverUrl, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get cacheSource => $composableBuilder(
+    column: $table.cacheSource,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<SyncStatus, String> get syncStatus =>
+      $composableBuilder(
+        column: $table.syncStatus,
+        builder: (column) => column,
+      );
+}
+
+class $$CachedReleasesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CachedReleasesTable,
+          CachedReleaseRow,
+          $$CachedReleasesTableFilterComposer,
+          $$CachedReleasesTableOrderingComposer,
+          $$CachedReleasesTableAnnotationComposer,
+          $$CachedReleasesTableCreateCompanionBuilder,
+          $$CachedReleasesTableUpdateCompanionBuilder,
+          (
+            CachedReleaseRow,
+            BaseReferences<
+              _$AppDatabase,
+              $CachedReleasesTable,
+              CachedReleaseRow
+            >,
+          ),
+          CachedReleaseRow,
+          PrefetchHooks Function()
+        > {
+  $$CachedReleasesTableTableManager(
+    _$AppDatabase db,
+    $CachedReleasesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CachedReleasesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CachedReleasesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CachedReleasesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> discogsReleaseId = const Value.absent(),
+                Value<String> artist = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String?> label = const Value.absent(),
+                Value<String?> catno = const Value.absent(),
+                Value<String?> format = const Value.absent(),
+                Value<String?> country = const Value.absent(),
+                Value<int?> year = const Value.absent(),
+                Value<List<String>> genres = const Value.absent(),
+                Value<List<String>> styles = const Value.absent(),
+                Value<List<String>> tracklist = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<List<String>> barcodes = const Value.absent(),
+                Value<String?> coverUrl = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+                Value<String> cacheSource = const Value.absent(),
+                Value<SyncStatus> syncStatus = const Value.absent(),
+              }) => CachedReleasesCompanion(
+                discogsReleaseId: discogsReleaseId,
+                artist: artist,
+                title: title,
+                label: label,
+                catno: catno,
+                format: format,
+                country: country,
+                year: year,
+                genres: genres,
+                styles: styles,
+                tracklist: tracklist,
+                notes: notes,
+                barcodes: barcodes,
+                coverUrl: coverUrl,
+                fetchedAt: fetchedAt,
+                cacheSource: cacheSource,
+                syncStatus: syncStatus,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> discogsReleaseId = const Value.absent(),
+                required String artist,
+                required String title,
+                Value<String?> label = const Value.absent(),
+                Value<String?> catno = const Value.absent(),
+                Value<String?> format = const Value.absent(),
+                Value<String?> country = const Value.absent(),
+                Value<int?> year = const Value.absent(),
+                required List<String> genres,
+                required List<String> styles,
+                required List<String> tracklist,
+                Value<String?> notes = const Value.absent(),
+                required List<String> barcodes,
+                Value<String?> coverUrl = const Value.absent(),
+                required DateTime fetchedAt,
+                required String cacheSource,
+                required SyncStatus syncStatus,
+              }) => CachedReleasesCompanion.insert(
+                discogsReleaseId: discogsReleaseId,
+                artist: artist,
+                title: title,
+                label: label,
+                catno: catno,
+                format: format,
+                country: country,
+                year: year,
+                genres: genres,
+                styles: styles,
+                tracklist: tracklist,
+                notes: notes,
+                barcodes: barcodes,
+                coverUrl: coverUrl,
+                fetchedAt: fetchedAt,
+                cacheSource: cacheSource,
+                syncStatus: syncStatus,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CachedReleasesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CachedReleasesTable,
+      CachedReleaseRow,
+      $$CachedReleasesTableFilterComposer,
+      $$CachedReleasesTableOrderingComposer,
+      $$CachedReleasesTableAnnotationComposer,
+      $$CachedReleasesTableCreateCompanionBuilder,
+      $$CachedReleasesTableUpdateCompanionBuilder,
+      (
+        CachedReleaseRow,
+        BaseReferences<_$AppDatabase, $CachedReleasesTable, CachedReleaseRow>,
+      ),
+      CachedReleaseRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2684,4 +4066,6 @@ class $AppDatabaseManager {
       $$CollectionItemsTableTableManager(_db, _db.collectionItems);
   $$WishlistItemsTableTableManager get wishlistItems =>
       $$WishlistItemsTableTableManager(_db, _db.wishlistItems);
+  $$CachedReleasesTableTableManager get cachedReleases =>
+      $$CachedReleasesTableTableManager(_db, _db.cachedReleases);
 }
