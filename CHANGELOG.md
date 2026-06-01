@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4M: Android barcode scanner] — 2026-06-01
+
+### Added
+- `mobile_scanner: ^7.2.0` dependency
+- Android camera permission (`android.permission.CAMERA`) in `AndroidManifest.xml`
+- `_ScanAreaState` enum (`placeholder | scanning | permissionDenied`) controlling scan area widget
+- `_AndroidScanArea` — 160dp live camera preview using `MobileScanner`; fires `onDetect` + `onPermissionDenied` callbacks
+- `_PermissionDeniedScanArea` — replaces scan area when camera permission is denied; directs user to Settings
+
+### Changed
+- "Scan barcode" button now activates Android camera (no-op on iOS/iPadOS, unchanged)
+- `_onBarcodeDetected`: fills barcode input with scanned value, closes scanner, triggers lookup
+- `_onScannerPermissionDenied`: guarded against duplicate calls; switches scan area to permission denied state
+
+---
+
 ## [Unreleased — Phase 4L: Connect manual barcode input to lookup] — 2026-06-01
 
 ### Changed

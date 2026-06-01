@@ -1,11 +1,15 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../application/use_cases/barcode_lookup_use_case.dart';
 import '../../domain/models/release_search_result.dart';
 import '../widgets/release_search_result_card.dart';
 
 // ---------------------------------------------------------------------------
-// State machine
+// Lookup state machine
 // ---------------------------------------------------------------------------
 
 sealed class _ScanState {
@@ -22,6 +26,7 @@ class _Loading extends _ScanState {
 
 class _HasResults extends _ScanState {
   const _HasResults(this.results);
+
   final List<ReleaseSearchResult> results;
 }
 
@@ -42,6 +47,12 @@ class _LookupError extends _ScanState {
 }
 
 // ---------------------------------------------------------------------------
+// Scan area state
+// ---------------------------------------------------------------------------
+
+enum _ScanAreaState { placeholder, scanning, permissionDenied }
+
+// ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
 
@@ -58,6 +69,9 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   final _controller = TextEditingController();
   late final BarcodeLookupUseCase _useCase;
   _ScanState _state = const _Idle();
+  _ScanAreaState _scanAreaState = _ScanAreaState.placeholder;
+
+  static bool get _isAndroid => !kIsWeb && Platform.isAndroid;
 
   @override
   void initState() {
@@ -89,12 +103,40 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     });
   }
 
+  void _onScanButtonPressed() {
+    if (!_isAndroid) return;
+    setState(() => _scanAreaState = _ScanAreaState.scanning);
+  }
+
+  void _onBarcodeDetected(BarcodeCapture capture) {
+    if (_scanAreaState != _ScanAreaState.scanning) return;
+    final rawValue = capture.barcodes.firstOrNull?.rawValue;
+    if (rawValue == null || rawValue.isEmpty) return;
+    setState(() => _scanAreaState = _ScanAreaState.placeholder);
+    _controller.text = rawValue;
+    _onSearch();
+  }
+
+  void _onScannerPermissionDenied() {
+    if (!mounted || _scanAreaState != _ScanAreaState.scanning) return;
+    setState(() => _scanAreaState = _ScanAreaState.permissionDenied);
+  }
+
+  Widget _buildScanArea() => switch (_scanAreaState) {
+    _ScanAreaState.placeholder => const _ScanAreaPlaceholder(),
+    _ScanAreaState.permissionDenied => const _PermissionDeniedScanArea(),
+    _ScanAreaState.scanning => _AndroidScanArea(
+      onDetect: _onBarcodeDetected,
+      onPermissionDenied: _onScannerPermissionDenied,
+    ),
+  };
+
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _ScanAreaPlaceholder(),
+        _buildScanArea(),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: Row(
@@ -132,7 +174,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: OutlinedButton.icon(
             key: const Key('scan-barcode-button'),
-            onPressed: () {},
+            onPressed: _onScanButtonPressed,
             icon: const Icon(Icons.qr_code_scanner),
             label: const Text('Scan barcode'),
           ),
@@ -154,7 +196,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Body widgets
+// Scan area widgets
 // ---------------------------------------------------------------------------
 
 class _ScanAreaPlaceholder extends StatelessWidget {
@@ -197,6 +239,97 @@ class _ScanAreaPlaceholder extends StatelessWidget {
     );
   }
 }
+
+class _PermissionDeniedScanArea extends StatelessWidget {
+  const _PermissionDeniedScanArea();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      key: const Key('scan-area-permission-denied'),
+      height: 160,
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant,
+          width: 1.5,
+        ),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.no_photography,
+                size: 48,
+                color: theme.colorScheme.outline,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Camera permission denied',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Allow camera access in Settings to scan barcodes.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AndroidScanArea extends StatelessWidget {
+  const _AndroidScanArea({
+    required this.onDetect,
+    required this.onPermissionDenied,
+  });
+
+  final void Function(BarcodeCapture) onDetect;
+  final VoidCallback onPermissionDenied;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('scan-area-scanner'),
+      height: 160,
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: MobileScanner(
+        onDetect: onDetect,
+        errorBuilder: (context, error) {
+          if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) => onPermissionDenied(),
+            );
+          }
+          return const SizedBox.expand();
+        },
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Body widgets
+// ---------------------------------------------------------------------------
 
 class _LoadingIndicator extends StatelessWidget {
   const _LoadingIndicator();
