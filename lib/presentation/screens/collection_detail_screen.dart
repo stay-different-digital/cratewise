@@ -87,6 +87,21 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     super.dispose();
   }
 
+  Future<void> _showEditTagsSheet(CollectionItem item) async {
+    final updated = await showModalBottomSheet<CollectionItem>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _EditTagsSheet(item: item, repository: _repository),
+    );
+    if (updated != null && mounted) {
+      setState(() => _state = _Loaded(updated));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tags saved.')),
+      );
+    }
+  }
+
   Future<void> _showEditNotesSheet(CollectionItem item) async {
     final updated = await showModalBottomSheet<CollectionItem>(
       context: context,
@@ -137,6 +152,12 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                   icon: const Icon(Icons.edit_note),
                   tooltip: 'Edit notes',
                   onPressed: () => _showEditNotesSheet(state.item),
+                ),
+                IconButton(
+                  key: const Key('edit-tags-button'),
+                  icon: const Icon(Icons.label_outlined),
+                  tooltip: 'Edit tags',
+                  onPressed: () => _showEditTagsSheet(state.item),
                 ),
               ]
             : null,
@@ -260,6 +281,154 @@ class _EditConditionsSheetState extends State<_EditConditionsSheet> {
           const SizedBox(height: 24),
           FilledButton(
             key: const Key('save-conditions-button'),
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Edit tags sheet
+// ---------------------------------------------------------------------------
+
+class _EditTagsSheet extends StatefulWidget {
+  const _EditTagsSheet({required this.item, required this.repository});
+
+  final CollectionItem item;
+  final CollectionRepository repository;
+
+  @override
+  State<_EditTagsSheet> createState() => _EditTagsSheetState();
+}
+
+class _EditTagsSheetState extends State<_EditTagsSheet> {
+  late List<String> _tags;
+  late final TextEditingController _tagController;
+  bool _saving = false;
+  bool _hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tags = List<String>.from(widget.item.tags);
+    _tagController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _tagController.dispose();
+    super.dispose();
+  }
+
+  void _addTag() {
+    final tag = _tagController.text.trim();
+    if (tag.isEmpty) return;
+    if (_tags.any((t) => t.toLowerCase() == tag.toLowerCase())) return;
+    setState(() {
+      _tags.add(tag);
+      _tagController.clear();
+    });
+  }
+
+  void _removeTag(String tag) {
+    setState(() => _tags.remove(tag));
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _saving = true;
+      _hasError = false;
+    });
+    try {
+      final updated = widget.item.copyWith(
+        tags: List<String>.from(_tags),
+        updatedAt: DateTime.now(),
+      );
+      await widget.repository.update(updated);
+      if (!mounted) return;
+      Navigator.of(context).pop(updated);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Edit Tags', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 24),
+          if (_tags.isNotEmpty) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                for (final tag in _tags)
+                  InputChip(
+                    key: Key('tag-chip-$tag'),
+                    label: Text(tag),
+                    deleteIcon: const Icon(Icons.close, size: 18),
+                    onDeleted:
+                        _saving ? null : () => _removeTag(tag),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  key: const Key('tag-input-field'),
+                  controller: _tagController,
+                  enabled: !_saving,
+                  textCapitalization: TextCapitalization.none,
+                  decoration:
+                      const InputDecoration(labelText: 'Add a tag'),
+                  onFieldSubmitted: (_) => _addTag(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                key: const Key('add-tag-button'),
+                icon: const Icon(Icons.add),
+                tooltip: 'Add tag',
+                onPressed: _saving ? null : _addTag,
+              ),
+            ],
+          ),
+          if (_hasError) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Could not save tags. Please try again.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          FilledButton(
+            key: const Key('save-tags-button'),
             onPressed: _saving ? null : _save,
             child: _saving
                 ? const SizedBox.square(

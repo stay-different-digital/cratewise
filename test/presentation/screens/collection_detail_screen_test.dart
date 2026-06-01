@@ -619,6 +619,273 @@ void main() {
     });
   });
 
+  group('CollectionDetailScreen — edit tags', () {
+    testWidgets('shows edit tags button when loaded', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('edit-tags-button')), findsOneWidget);
+    });
+
+    testWidgets('does not show edit tags button while loading', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      expect(find.byKey(const Key('edit-tags-button')), findsNothing);
+    });
+
+    testWidgets('does not show edit tags button in not-found state',
+        (tester) async {
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(
+        _wrap(
+          CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('edit-tags-button')), findsNothing);
+    });
+
+    testWidgets('does not show edit tags button in error state',
+        (tester) async {
+      final repo = _FakeCollectionRepository(throwsOnLoad: true);
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('edit-tags-button')), findsNothing);
+    });
+
+    testWidgets('tapping edit tags button opens sheet with title',
+        (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Edit Tags'), findsOneWidget);
+    });
+
+    testWidgets('sheet shows existing tags as chips', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(tags: ['jazz', 'essential']),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('tag-chip-jazz')), findsOneWidget);
+      expect(find.byKey(const Key('tag-chip-essential')), findsOneWidget);
+    });
+
+    testWidgets('can add a tag', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('tag-input-field')),
+        'soul',
+      );
+      await tester.tap(find.byKey(const Key('add-tag-button')));
+      await tester.pump();
+
+      expect(find.byKey(const Key('tag-chip-soul')), findsOneWidget);
+    });
+
+    testWidgets('can remove a tag', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(tags: ['jazz']),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const Key('tag-chip-jazz')),
+          matching: find.byIcon(Icons.close),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('tag-chip-jazz')), findsNothing);
+    });
+
+    testWidgets('does not add empty tag', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('add-tag-button')));
+      await tester.pump();
+
+      expect(find.byType(InputChip), findsNothing);
+    });
+
+    testWidgets('does not add duplicate tag (case-insensitive)', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(tags: ['jazz']),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('tag-input-field')),
+        'Jazz',
+      );
+      await tester.tap(find.byKey(const Key('add-tag-button')));
+      await tester.pump();
+
+      expect(find.byType(InputChip), findsOneWidget);
+    });
+
+    testWidgets('tapping Save calls repository.update', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-tags-button')));
+      await tester.pumpAndSettle();
+
+      expect(repo.updateCallCount, 1);
+    });
+
+    testWidgets('shows success snackbar after save', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-tags-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tags saved.'), findsOneWidget);
+    });
+
+    testWidgets('save updates tags shown on screen', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(tags: ['jazz']),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byKey(const Key('tag-input-field')),
+        'soul',
+      );
+      await tester.tap(find.byKey(const Key('add-tag-button')));
+      await tester.pump();
+
+      await tester.tap(find.byKey(const Key('save-tags-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('soul'), findsOneWidget);
+    });
+
+    testWidgets('save updates updatedAt shown on screen', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(updatedAt: DateTime(2025, 11, 5)),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('2025-11-05'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-tags-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('2025-11-05'), findsNothing);
+    });
+
+    testWidgets('save error shows error message in sheet', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-tags-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Could not save'), findsOneWidget);
+    });
+
+    testWidgets('save error does not close sheet', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+        throwsOnUpdate: true,
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('edit-tags-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('save-tags-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('save-tags-button')), findsOneWidget);
+    });
+  });
+
   group('CollectionDetailScreen — edit notes', () {
     testWidgets('shows edit notes button when loaded', (tester) async {
       final repo = _FakeCollectionRepository(item: _makeItem());

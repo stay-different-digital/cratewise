@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3K: edit tags] — 2026-06-01
+
+### Added
+- Edit tags icon button (`Icons.label_outlined`) in the `CollectionDetailScreen` app bar, visible only in the loaded state
+- `_EditTagsSheet` modal bottom sheet showing existing tags as `InputChip` widgets; each chip has a delete icon (`Icons.close`) to remove it; a text field + add button allows adding new tags; duplicate tags are rejected case-insensitively; empty input is ignored
+- After a successful save, the screen updates immediately with the new tag list and `updatedAt: DateTime.now()`
+- 15 new widget tests: button visibility in all states, sheet open/chips shown, add tag, remove tag, empty/duplicate guards, Save calls update, success snackbar, tags + updatedAt on screen, error message, sheet stays open on error
+
+---
+
 ## [Unreleased — Phase 3J: edit notes] — 2026-06-01
 
 ### Added
