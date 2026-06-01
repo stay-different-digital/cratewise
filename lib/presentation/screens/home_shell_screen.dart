@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_nav_rail.dart';
 import 'barcode_scan_screen.dart';
@@ -31,10 +32,11 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
     _db = AppDatabase(openAppDatabase());
     final repo = LocalCollectionRepository(_db);
     final addUseCase = AddToCollectionUseCase(repo);
+    final wishlistRepo = LocalWishlistRepository(_db);
     _screens = [
       SearchScreen(addToCollectionUseCase: addUseCase),
       CollectionScreen(repository: repo),
-      const WishlistScreen(),
+      WishlistScreen(repository: wishlistRepo),
       const BarcodeScanScreen(),
       const SettingsScreen(),
     ];

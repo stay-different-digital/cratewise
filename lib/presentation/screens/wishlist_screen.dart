@@ -1,62 +1,108 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/models/wishlist_item.dart';
+import '../../domain/repositories/wishlist_repository.dart';
+import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../widgets/wishlist_item_card.dart';
 
-// Placeholder items shown before local storage is connected.
-final _kFakeItems = <WishlistItem>[
-  WishlistItem(
-    id: 'fake-1',
-    discogsReleaseId: 249504,
-    artist: 'Miles Davis',
-    title: 'Kind Of Blue',
-    priority: WishlistPriority.mustHave,
-    label: 'Columbia',
-    year: 1959,
-    format: 'Vinyl, LP',
-    targetPrice: 45.00,
-    createdAt: DateTime(2026, 1, 1),
-    updatedAt: DateTime(2026, 1, 1),
-  ),
-  WishlistItem(
-    id: 'fake-2',
-    discogsReleaseId: 870099,
-    artist: 'John Coltrane',
-    title: 'A Love Supreme',
-    priority: WishlistPriority.high,
-    label: 'Impulse!',
-    year: 1965,
-    format: 'Vinyl, LP',
-    createdAt: DateTime(2026, 1, 2),
-    updatedAt: DateTime(2026, 1, 2),
-  ),
-  WishlistItem(
-    id: 'fake-3',
-    discogsReleaseId: 305076,
-    artist: 'Aphex Twin',
-    title: 'Selected Ambient Works 85-92',
-    priority: WishlistPriority.medium,
-    year: 1992,
-    createdAt: DateTime(2026, 1, 3),
-    updatedAt: DateTime(2026, 1, 3),
-  ),
-];
+// ---------------------------------------------------------------------------
+// State machine
+// ---------------------------------------------------------------------------
 
-class WishlistScreen extends StatelessWidget {
-  const WishlistScreen({super.key, this.items});
+sealed class _WishlistState {
+  const _WishlistState();
+}
 
-  final List<WishlistItem>? items;
+class _Loading extends _WishlistState {
+  const _Loading();
+}
+
+class _Loaded extends _WishlistState {
+  const _Loaded(this.items);
+  final List<WishlistItem> items;
+}
+
+class _WishlistError extends _WishlistState {
+  const _WishlistError();
+}
+
+// ---------------------------------------------------------------------------
+// Screen
+// ---------------------------------------------------------------------------
+
+class WishlistScreen extends StatefulWidget {
+  const WishlistScreen({super.key, this.repository});
+
+  final WishlistRepository? repository;
+
+  @override
+  State<WishlistScreen> createState() => _WishlistScreenState();
+}
+
+class _WishlistScreenState extends State<WishlistScreen> {
+  late final WishlistRepository _repository;
+  AppDatabase? _ownedDb;
+  _WishlistState _state = const _Loading();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.repository != null) {
+      _repository = widget.repository!;
+    } else {
+      final db = AppDatabase(openAppDatabase());
+      _ownedDb = db;
+      _repository = LocalWishlistRepository(db);
+    }
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _state = const _Loading());
+    try {
+      final items = await _repository.getAll();
+      if (!mounted) return;
+      setState(() => _state = _Loaded(items));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _state = const _WishlistError());
+    }
+  }
+
+  @override
+  void dispose() {
+    _ownedDb?.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final displayItems = items ?? _kFakeItems;
-    if (displayItems.isEmpty) return const _EmptyWishlistState();
+    return switch (_state) {
+      _Loading() => const Center(child: CircularProgressIndicator()),
+      _Loaded(:final items) when items.isEmpty => const _EmptyWishlistState(),
+      _Loaded(:final items) => _WishlistList(items: items),
+      _WishlistError() => _WishlistErrorState(onRetry: _load),
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Body widgets
+// ---------------------------------------------------------------------------
+
+class _WishlistList extends StatelessWidget {
+  const _WishlistList({required this.items});
+
+  final List<WishlistItem> items;
+
+  @override
+  Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      itemCount: displayItems.length,
+      itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) =>
-          WishlistItemCard(item: displayItems[index]),
+      itemBuilder: (context, index) => WishlistItemCard(item: items[index]),
     );
   }
 }
@@ -90,6 +136,45 @@ class _EmptyWishlistState extends StatelessWidget {
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WishlistErrorState extends StatelessWidget {
+  const _WishlistErrorState({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 56,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Could not load your wishlist.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonal(
+              onPressed: onRetry,
+              child: const Text('Retry'),
             ),
           ],
         ),

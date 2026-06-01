@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4D: connect wishlist list to storage] — 2026-06-01
+
+### Added
+- `WishlistScreen` converted to `StatefulWidget` with loading/empty/error/list states
+- `_WishlistErrorState` widget with retry button
+- `_WishlistList` extracted widget wrapping the `ListView.separated`
+- 8 new widget tests covering loading state, error state, retry recovery, and list loading from repository
+
+### Changed
+- `WishlistScreen` parameter changed from `items: List<WishlistItem>?` to `repository: WishlistRepository?`; fake static data removed
+- `HomeShellScreen` creates a `LocalWishlistRepository` sharing the owned `AppDatabase` and passes it to `WishlistScreen`
+
+---
+
 ## [Unreleased — Phase 4C: wishlist list UI] — 2026-06-01
 
 ### Added

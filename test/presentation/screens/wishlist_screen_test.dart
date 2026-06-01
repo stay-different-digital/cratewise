@@ -1,8 +1,69 @@
 import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/wishlist_screen.dart';
 import 'package:cratewise/presentation/widgets/wishlist_item_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+// ---------------------------------------------------------------------------
+// Fakes
+// ---------------------------------------------------------------------------
+
+class _FakeWishlistRepository implements WishlistRepository {
+  _FakeWishlistRepository({this.items = const [], this.throwsOnLoad = false});
+
+  final List<WishlistItem> items;
+  final bool throwsOnLoad;
+  int loadCallCount = 0;
+
+  @override
+  Future<List<WishlistItem>> getAll() async {
+    loadCallCount++;
+    if (throwsOnLoad) throw Exception('db error');
+    return List.of(items);
+  }
+
+  @override
+  Future<WishlistItem?> getById(String id) async =>
+      items.where((i) => i.id == id).firstOrNull;
+
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => false;
+
+  @override
+  Future<void> add(WishlistItem item) async {}
+
+  @override
+  Future<void> update(WishlistItem item) async {}
+
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _FlippingWishlistRepository implements WishlistRepository {
+  _FlippingWishlistRepository({required this.successItems});
+
+  final List<WishlistItem> successItems;
+  int _callCount = 0;
+
+  @override
+  Future<List<WishlistItem>> getAll() async {
+    _callCount++;
+    if (_callCount == 1) throw Exception('first load fails');
+    return List.of(successItems);
+  }
+
+  @override
+  Future<WishlistItem?> getById(String id) async => null;
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => false;
+  @override
+  Future<void> add(WishlistItem item) async {}
+  @override
+  Future<void> update(WishlistItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -40,47 +101,126 @@ Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 // ---------------------------------------------------------------------------
 
 void main() {
+  group('WishlistScreen — loading state', () {
+    testWidgets('shows loading indicator initially', (tester) async {
+      final repo = _FakeWishlistRepository();
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('hides loading indicator after load completes', (tester) async {
+      final repo = _FakeWishlistRepository();
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+  });
+
   group('WishlistScreen — empty state', () {
-    testWidgets('shows empty state when items list is empty', (tester) async {
-      await tester.pumpWidget(_wrap(const WishlistScreen(items: [])));
+    testWidgets('shows empty state when repository returns no items',
+        (tester) async {
+      final repo = _FakeWishlistRepository();
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
       expect(find.byType(WishlistItemCard), findsNothing);
       expect(find.text('Your wishlist is empty'), findsOneWidget);
     });
 
     testWidgets('empty state shows helpful copy', (tester) async {
-      await tester.pumpWidget(_wrap(const WishlistScreen(items: [])));
-      expect(
-        find.textContaining('Add to Wishlist'),
-        findsOneWidget,
-      );
+      final repo = _FakeWishlistRepository();
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Add to Wishlist'), findsOneWidget);
     });
 
     testWidgets('empty state shows bookmark icon', (tester) async {
-      await tester.pumpWidget(_wrap(const WishlistScreen(items: [])));
+      final repo = _FakeWishlistRepository();
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
       expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
     });
   });
 
   group('WishlistScreen — list', () {
     testWidgets('shows WishlistItemCard for each item', (tester) async {
-      final items = [
+      final repo = _FakeWishlistRepository(items: [
         _makeItem(id: 'a', releaseId: 1),
         _makeItem(id: 'b', releaseId: 2),
         _makeItem(id: 'c', releaseId: 3),
-      ];
-      await tester.pumpWidget(_wrap(WishlistScreen(items: items)));
+      ]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
       expect(find.byType(WishlistItemCard), findsNWidgets(3));
     });
 
     testWidgets('shows single card for single item', (tester) async {
-      await tester.pumpWidget(_wrap(WishlistScreen(items: [_makeItem()])));
+      final repo = _FakeWishlistRepository(items: [_makeItem()]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
       expect(find.byType(WishlistItemCard), findsOneWidget);
     });
 
-    testWidgets('default (null items) shows fake data cards', (tester) async {
-      await tester.pumpWidget(_wrap(const WishlistScreen()));
-      expect(find.byType(WishlistItemCard), findsWidgets);
+    testWidgets('does not show empty state when items present', (tester) async {
+      final repo = _FakeWishlistRepository(items: [_makeItem()]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
       expect(find.text('Your wishlist is empty'), findsNothing);
+    });
+
+    testWidgets('shows artist name', (tester) async {
+      final repo = _FakeWishlistRepository(
+        items: [_makeItem(artist: 'Miles Davis')],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.text('Miles Davis'), findsOneWidget);
+    });
+
+    testWidgets('shows title', (tester) async {
+      final repo = _FakeWishlistRepository(
+        items: [_makeItem(title: 'Kind Of Blue')],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.text('Kind Of Blue'), findsOneWidget);
+    });
+  });
+
+  group('WishlistScreen — error state', () {
+    testWidgets('shows error message when load fails', (tester) async {
+      final repo = _FakeWishlistRepository(throwsOnLoad: true);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Could not load'), findsOneWidget);
+    });
+
+    testWidgets('shows Retry button in error state', (tester) async {
+      final repo = _FakeWishlistRepository(throwsOnLoad: true);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.text('Retry'), findsOneWidget);
+    });
+
+    testWidgets('retry calls getAll again', (tester) async {
+      final repo = _FakeWishlistRepository(throwsOnLoad: true);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+      expect(repo.loadCallCount, 2);
+    });
+
+    testWidgets('retry can recover to loaded state', (tester) async {
+      final repo = _FlippingWishlistRepository(
+        successItems: [_makeItem(artist: 'Recovered Artist')],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.text('Retry'), findsOneWidget);
+      await tester.tap(find.text('Retry'));
+      await tester.pumpAndSettle();
+      expect(find.text('Recovered Artist'), findsOneWidget);
+      expect(find.text('Retry'), findsNothing);
     });
   });
 
