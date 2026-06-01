@@ -1,5 +1,6 @@
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
+import 'package:cratewise/presentation/screens/wishlist_detail_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_screen.dart';
 import 'package:cratewise/presentation/widgets/wishlist_item_card.dart';
 import 'package:flutter/material.dart';
@@ -304,6 +305,45 @@ void main() {
         _wrap(WishlistItemCard(item: _makeItem())),
       );
       expect(find.byIcon(Icons.album), findsOneWidget);
+    });
+  });
+
+  group('WishlistScreen — navigation', () {
+    testWidgets('tapping a card opens WishlistDetailScreen', (tester) async {
+      final repo = _FakeWishlistRepository(
+        items: [_makeItem(id: 'detail-id-1')],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(WishlistItemCard).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(WishlistDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('detail screen shows data for the tapped item', (tester) async {
+      final repo = _FakeWishlistRepository(
+        items: [_makeItem(id: 'unique-id', artist: 'Nav Artist')],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(WishlistItemCard).first);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Nav Artist'), findsOneWidget);
+    });
+
+    testWidgets('back navigation returns to wishlist list', (tester) async {
+      final repo = _FakeWishlistRepository(
+        items: [_makeItem(id: 'back-nav-id', artist: 'Return Artist')],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(WishlistItemCard).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(WishlistDetailScreen), findsOneWidget);
+      final NavigatorState navigator = tester.state(find.byType(Navigator));
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(find.text('Return Artist'), findsOneWidget);
     });
   });
 }

@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4G: Wishlist detail route and data] — 2026-06-01
+
+### Added
+- `WishlistDetailScreen`: loads a `WishlistItem` by ID from `WishlistRepository`; shows loading / not-found / error / loaded states; 2-column layout on screens ≥700dp
+- Loaded view shows: cover image (full-width on narrow, 300dp column on wide), artist, title, label/catno combined, format, country, year, priority label, target price (or "Not set"), notes section (hidden when empty), and added/updated dates
+- `WishlistScreen._WishlistList` passes `WishlistRepository` down; tapping any `WishlistItemCard` pushes `WishlistDetailScreen` with the item's ID and shared repository
+- 24 widget tests in `wishlist_detail_screen_test.dart`: loading (2), not-found (2), error+retry (4), header (2), mandatory fields (5), optional fields (7), notes (3)
+- 3 navigation tests added to `wishlist_screen_test.dart`: tap opens detail, data passes correctly, back navigation returns to list
+
+### Changed
+- `WishlistScreen._WishlistList` gains required `repository` param and wires `WishlistItemCard.onTap` to open `WishlistDetailScreen`
+
+---
+
 ## [Unreleased — Phase 4F: Add to Wishlist button] — 2026-06-01
 
 ### Added

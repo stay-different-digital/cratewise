@@ -5,6 +5,7 @@ import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../widgets/wishlist_item_card.dart';
+import 'wishlist_detail_screen.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -81,7 +82,10 @@ class _WishlistScreenState extends State<WishlistScreen> {
     return switch (_state) {
       _Loading() => const Center(child: CircularProgressIndicator()),
       _Loaded(:final items) when items.isEmpty => const _EmptyWishlistState(),
-      _Loaded(:final items) => _WishlistList(items: items),
+      _Loaded(:final items) => _WishlistList(
+          items: items,
+          repository: _repository,
+        ),
       _WishlistError() => _WishlistErrorState(onRetry: _load),
     };
   }
@@ -92,9 +96,21 @@ class _WishlistScreenState extends State<WishlistScreen> {
 // ---------------------------------------------------------------------------
 
 class _WishlistList extends StatelessWidget {
-  const _WishlistList({required this.items});
+  const _WishlistList({required this.items, required this.repository});
 
   final List<WishlistItem> items;
+  final WishlistRepository repository;
+
+  void _openDetail(BuildContext context, int index) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => WishlistDetailScreen(
+          itemId: items[index].id,
+          repository: repository,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +118,10 @@ class _WishlistList extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => WishlistItemCard(item: items[index]),
+      itemBuilder: (context, index) => WishlistItemCard(
+        item: items[index],
+        onTap: () => _openDetail(context, index),
+      ),
     );
   }
 }
