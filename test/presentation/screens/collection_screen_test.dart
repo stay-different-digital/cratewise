@@ -357,4 +357,85 @@ void main() {
       expect(find.text('Columbia · 1959 · LP'), findsOneWidget);
     });
   });
+
+  group('CollectionScreen — iPad layout', () {
+    testWidgets('shows GridView at wide breakpoint', (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(id: 'a'), _makeItem(id: 'b')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.byType(GridView), findsOneWidget);
+    });
+
+    testWidgets('GridView shows all item cards', (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeCollectionRepository(
+        items: [
+          _makeItem(id: 'a', artist: 'Artist A'),
+          _makeItem(id: 'b', artist: 'Artist B'),
+          _makeItem(id: 'c', artist: 'Artist C'),
+          _makeItem(id: 'd', artist: 'Artist D'),
+        ],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.byType(CollectionItemCard), findsNWidgets(4));
+    });
+
+    testWidgets('narrow screen does not show GridView', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(id: 'a'), _makeItem(id: 'b')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.byType(GridView), findsNothing);
+      expect(find.byType(CollectionItemCard), findsNWidgets(2));
+    });
+
+    testWidgets('tapping card in GridView opens CollectionDetailScreen',
+        (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(id: 'grid-detail-1', artist: 'Grid Artist')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(CollectionItemCard).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(CollectionDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('empty state shows without GridView at wide breakpoint',
+        (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.byType(GridView), findsNothing);
+      expect(find.text('Your collection is empty'), findsOneWidget);
+    });
+  });
 }

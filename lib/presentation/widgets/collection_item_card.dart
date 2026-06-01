@@ -117,17 +117,20 @@ class _CoverThumbnail extends StatelessWidget {
   final String? coverUrl;
 
   Widget _placeholder() {
-    return Container(
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Icon(
-        Icons.album,
-        size: 32,
-        color: theme.colorScheme.outlineVariant,
+    return Semantics(
+      label: 'No cover image',
+      child: Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(
+          Icons.album,
+          size: 32,
+          color: theme.colorScheme.outlineVariant,
+        ),
       ),
     );
   }

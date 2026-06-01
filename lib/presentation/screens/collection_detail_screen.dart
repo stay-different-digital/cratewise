@@ -842,13 +842,28 @@ class _CollectionDetailBody extends StatelessWidget {
   }
 }
 
-Widget _coverPlaceholder(ThemeData theme) => ColoredBox(
-      color: theme.colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Icon(
-          Icons.album,
-          size: 72,
-          color: theme.colorScheme.outlineVariant,
+Widget _coverPlaceholder(ThemeData theme) => Semantics(
+      label: 'No cover image',
+      child: ColoredBox(
+        color: theme.colorScheme.surfaceContainerHighest,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.album,
+                size: 72,
+                color: theme.colorScheme.outlineVariant,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'No cover',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.outlineVariant,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

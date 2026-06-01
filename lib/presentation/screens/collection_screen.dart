@@ -147,21 +147,54 @@ class _CollectionList extends StatelessWidget {
   final List<CollectionItem> items;
   final CollectionRepository repository;
 
+  static const _kWideBreakpoint = 700.0;
+  static const _kGridItemExtent = 124.0;
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          constraints.maxWidth >= _kWideBreakpoint
+              ? _buildGrid(context)
+              : _buildList(context),
+    );
+  }
+
+  Widget _buildList(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) => CollectionItemCard(
         item: items[index],
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => CollectionDetailScreen(
-              itemId: items[index].id,
-              repository: repository,
-            ),
-          ),
+        onTap: () => _openDetail(context, index),
+      ),
+    );
+  }
+
+  Widget _buildGrid(BuildContext context) {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        mainAxisExtent: _kGridItemExtent,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) => CollectionItemCard(
+        item: items[index],
+        onTap: () => _openDetail(context, index),
+      ),
+    );
+  }
+
+  void _openDetail(BuildContext context, int index) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => CollectionDetailScreen(
+          itemId: items[index].id,
+          repository: repository,
         ),
       ),
     );

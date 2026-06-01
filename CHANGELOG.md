@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3N: offline collection view polish] — 2026-06-01
+
+### Added
+- 2-column `GridView` layout for `CollectionScreen` on wide screens (≥700 logical pixels), replacing the single-column `ListView`; narrow screens keep the existing list
+- "No cover" text label and `Semantics(label: 'No cover image')` on the full-width cover placeholder in `CollectionDetailScreen`
+- `Semantics(label: 'No cover image')` on the 72×72 thumbnail placeholder in `CollectionItemCard` for screen-reader accessibility
+- 5 new widget tests: GridView shows at wide breakpoint, all cards present in grid, narrow screen uses list, tapping grid card navigates to detail, wide empty state shows without grid
+
+---
+
 ## [Unreleased — Phase 3M: remove collection item] — 2026-06-01
 
 ### Added
