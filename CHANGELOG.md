@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4C: wishlist list UI] — 2026-06-01
+
+### Added
+- `WishlistItemCard` widget showing cover thumbnail, artist, title, priority badge, label/year/format meta row, and target price
+- `_PriorityBadge` with Material 3 container colors per priority level (low → surfaceContainerHighest, medium → tertiaryContainer, high → secondaryContainer, mustHave → primaryContainer)
+- `WishlistScreen` replaced with real list UI; accepts optional `items` param (defaults to 3 fake items); shows `_EmptyWishlistState` when items is empty
+- 16 new widget tests covering empty state, list rendering, card content, priority labels, meta row variants, target price presence/absence, cover placeholder
+
+---
+
 ## [Unreleased — Phase 4B: local wishlist storage] — 2026-06-01
 
 ### Added
