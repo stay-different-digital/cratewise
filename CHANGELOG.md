@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4N: iPhone barcode scanner] — 2026-06-01
+
+### Added
+- `NSCameraUsageDescription` in `ios/Runner/Info.plist` — required for iOS camera permission dialog
+
+### Changed
+- `_isAndroid` guard replaced by `_supportsScanner` (`Platform.isAndroid || Platform.isIOS`) — "Scan barcode" button now activates camera on iPhone and iPad in addition to Android
+- `_AndroidScanArea` renamed to `_CameraScanArea` — widget is now used on both Android and iOS
+- `_ScanAreaPlaceholder` hint text updated from "Camera preview coming soon" to "Tap 'Scan barcode' to open your camera"
+
+---
+
 ## [Unreleased — Phase 4M: Android barcode scanner] — 2026-06-01
 
 ### Added

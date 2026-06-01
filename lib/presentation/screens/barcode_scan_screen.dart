@@ -71,7 +71,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   _ScanState _state = const _Idle();
   _ScanAreaState _scanAreaState = _ScanAreaState.placeholder;
 
-  static bool get _isAndroid => !kIsWeb && Platform.isAndroid;
+  static bool get _supportsScanner => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
   @override
   void initState() {
@@ -104,7 +104,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   }
 
   void _onScanButtonPressed() {
-    if (!_isAndroid) return;
+    if (!_supportsScanner) return;
     setState(() => _scanAreaState = _ScanAreaState.scanning);
   }
 
@@ -125,7 +125,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   Widget _buildScanArea() => switch (_scanAreaState) {
     _ScanAreaState.placeholder => const _ScanAreaPlaceholder(),
     _ScanAreaState.permissionDenied => const _PermissionDeniedScanArea(),
-    _ScanAreaState.scanning => _AndroidScanArea(
+    _ScanAreaState.scanning => _CameraScanArea(
       onDetect: _onBarcodeDetected,
       onPermissionDenied: _onScannerPermissionDenied,
     ),
@@ -228,7 +228,7 @@ class _ScanAreaPlaceholder extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Camera preview coming soon',
+              "Tap 'Scan barcode' to open your camera",
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -292,8 +292,8 @@ class _PermissionDeniedScanArea extends StatelessWidget {
   }
 }
 
-class _AndroidScanArea extends StatelessWidget {
-  const _AndroidScanArea({
+class _CameraScanArea extends StatelessWidget {
+  const _CameraScanArea({
     required this.onDetect,
     required this.onPermissionDenied,
   });
