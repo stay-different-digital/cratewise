@@ -13,14 +13,18 @@ class _FakeWishlistRepository implements WishlistRepository {
     this.item,
     this.throwsOnLoad = false,
     this.throwsOnUpdate = false,
+    this.throwsOnRemove = false,
   });
 
   final WishlistItem? item;
   final bool throwsOnLoad;
   final bool throwsOnUpdate;
+  final bool throwsOnRemove;
   int loadCallCount = 0;
   int updateCallCount = 0;
+  int removeCallCount = 0;
   WishlistItem? updatedItem;
+  String? removedId;
 
   @override
   Future<WishlistItem?> getById(String id) async {
@@ -37,13 +41,18 @@ class _FakeWishlistRepository implements WishlistRepository {
   }
 
   @override
+  Future<void> remove(String id) async {
+    removeCallCount++;
+    removedId = id;
+    if (throwsOnRemove) throw Exception('remove error');
+  }
+
+  @override
   Future<List<WishlistItem>> getAll() async => [];
   @override
   Future<bool> containsRelease(int discogsReleaseId) async => false;
   @override
   Future<void> add(WishlistItem item) async {}
-  @override
-  Future<void> remove(String id) async {}
 }
 
 class _FlippingWishlistRepository implements WishlistRepository {
@@ -642,6 +651,152 @@ void main() {
       await tester.tap(find.byKey(const Key('save-notes-button')));
       await tester.pumpAndSettle();
       expect(find.textContaining('Could not save notes'), findsOneWidget);
+    });
+  });
+
+  group('WishlistDetailScreen — remove item', () {
+    testWidgets('shows overflow menu button when loaded', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('detail-overflow-menu')), findsOneWidget);
+    });
+
+    testWidgets('overflow menu not shown while loading', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      expect(find.byKey(const Key('detail-overflow-menu')), findsNothing);
+    });
+
+    testWidgets('tapping overflow menu shows Remove from wishlist option',
+        (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      expect(find.text('Remove from wishlist'), findsOneWidget);
+    });
+
+    testWidgets('tapping Remove option shows confirmation dialog',
+        (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from wishlist'));
+      await tester.pumpAndSettle();
+      expect(find.text('Remove from wishlist?'), findsOneWidget);
+    });
+
+    testWidgets('confirmation dialog mentions Discogs not affected',
+        (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from wishlist'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Discogs'), findsOneWidget);
+    });
+
+    testWidgets('tapping Cancel does not call repository.remove',
+        (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from wishlist'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('cancel-remove-button')));
+      await tester.pumpAndSettle();
+      expect(repo.removeCallCount, 0);
+    });
+
+    testWidgets('tapping Remove calls repository.remove', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from wishlist'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+      expect(repo.removeCallCount, 1);
+    });
+
+    testWidgets('navigates back after successful remove', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  key: const Key('go-to-detail'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => WishlistDetailScreen(
+                        itemId: 'w-1',
+                        repository: repo,
+                      ),
+                    ),
+                  ),
+                  child: const Text('Go to detail'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const Key('go-to-detail')));
+      await tester.pumpAndSettle();
+      expect(find.byType(WishlistDetailScreen), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from wishlist'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(WishlistDetailScreen), findsNothing);
+    });
+
+    testWidgets('remove error shows snackbar', (tester) async {
+      final repo = _FakeWishlistRepository(
+        item: _makeItem(),
+        throwsOnRemove: true,
+      );
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from wishlist'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Could not remove'), findsOneWidget);
     });
   });
 }

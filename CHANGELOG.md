@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4I: Remove wishlist item] — 2026-06-01
+
+### Added
+- `WishlistDetailScreen` overflow `PopupMenuButton` (`detail-overflow-menu`) in AppBar when loaded
+- "Remove from wishlist" `PopupMenuItem` opens `AlertDialog` confirmation; dialog states Discogs is not affected
+- Cancel button (`cancel-remove-button`) dismisses dialog without calling `repository.remove`
+- Confirm button (`confirm-remove-button`) calls `repository.remove(item.id)` and navigates back on success
+- Remove failure shows snackbar "Could not remove item. Please try again." and stays on screen
+- 9 widget tests in `wishlist_detail_screen_test.dart`: overflow menu visibility, remove option, dialog, Discogs mention, cancel, confirm, navigate back, error snackbar
+
+---
+
 ## [Unreleased — Phase 4H: Edit wishlist item fields] — 2026-06-01
 
 ### Added

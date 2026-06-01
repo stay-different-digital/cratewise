@@ -30,6 +30,8 @@ class _DetailError extends _DetailState {
   const _DetailError();
 }
 
+enum _OverflowAction { remove }
+
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
@@ -132,6 +134,52 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     }
   }
 
+  Future<void> _confirmRemove(WishlistItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove from wishlist?'),
+        content: const Text(
+          'This removes the item from your Cratewise wishlist. '
+          'Your Discogs account is not affected.',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('cancel-remove-button'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            key: const Key('confirm-remove-button'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _removeItem(item);
+    }
+  }
+
+  Future<void> _removeItem(WishlistItem item) async {
+    try {
+      await _repository.remove(item.id);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not remove item. Please try again.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = _state;
@@ -157,6 +205,20 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
                   icon: const Icon(Icons.edit_note),
                   tooltip: 'Edit notes',
                   onPressed: () => _showEditNotesSheet(state.item),
+                ),
+                PopupMenuButton<_OverflowAction>(
+                  key: const Key('detail-overflow-menu'),
+                  onSelected: (action) {
+                    if (action == _OverflowAction.remove) {
+                      _confirmRemove(state.item);
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: _OverflowAction.remove,
+                      child: Text('Remove from wishlist'),
+                    ),
+                  ],
                 ),
               ]
             : null,
