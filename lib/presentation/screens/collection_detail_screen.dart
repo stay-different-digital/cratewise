@@ -31,6 +31,12 @@ class _DetailError extends _DetailState {
 }
 
 // ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+
+enum _OverflowAction { remove }
+
+// ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
 
@@ -117,6 +123,52 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     }
   }
 
+  Future<void> _confirmRemove(CollectionItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove from Cratewise?'),
+        content: const Text(
+          'This removes the item from your Cratewise collection. '
+          'Your Discogs collection is not affected.',
+        ),
+        actions: [
+          TextButton(
+            key: const Key('cancel-remove-button'),
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            key: const Key('confirm-remove-button'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _removeItem(item);
+    }
+  }
+
+  Future<void> _removeItem(CollectionItem item) async {
+    try {
+      await _repository.remove(item.id);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not remove item. Please try again.'),
+        ),
+      );
+    }
+  }
+
   Future<void> _showEditStorageLocationSheet(CollectionItem item) async {
     final updated = await showModalBottomSheet<CollectionItem>(
       context: context,
@@ -180,6 +232,20 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                   icon: const Icon(Icons.inventory_2_outlined),
                   tooltip: 'Edit storage location',
                   onPressed: () => _showEditStorageLocationSheet(state.item),
+                ),
+                PopupMenuButton<_OverflowAction>(
+                  key: const Key('detail-overflow-menu'),
+                  onSelected: (action) {
+                    if (action == _OverflowAction.remove) {
+                      _confirmRemove(state.item);
+                    }
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      value: _OverflowAction.remove,
+                      child: Text('Remove from Cratewise'),
+                    ),
+                  ],
                 ),
               ]
             : null,

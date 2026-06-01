@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 3M: remove collection item] — 2026-06-01
+
+### Added
+- `PopupMenuButton` (overflow / three-dot menu) in `CollectionDetailScreen` app bar, visible only in the loaded state, with a single "Remove from Cratewise" action
+- `AlertDialog` confirmation before removal; content explicitly states that only the Cratewise collection is affected and Discogs is not
+- After successful removal, the app navigates back to the Collection list
+- On removal failure, a 'Could not remove item. Please try again.' snackbar appears and navigation does not occur
+- 12 new widget tests: button visibility in all states, menu item visible, dialog appears, dialog mentions Discogs, Cancel closes without removing, Remove calls repository.remove, navigates back on success, snackbar on error, stays on screen on error
+
+---
+
 ## [Unreleased — Phase 3L: edit storage location] — 2026-06-01
 
 ### Added

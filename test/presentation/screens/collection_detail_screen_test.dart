@@ -13,13 +13,16 @@ class _FakeCollectionRepository implements CollectionRepository {
     this.item,
     this.throwsOnLoad = false,
     this.throwsOnUpdate = false,
+    this.throwsOnRemove = false,
   });
 
   final CollectionItem? item;
   final bool throwsOnLoad;
   final bool throwsOnUpdate;
+  final bool throwsOnRemove;
   int loadCallCount = 0;
   int updateCallCount = 0;
+  int removeCallCount = 0;
   CollectionItem? lastUpdatedItem;
 
   @override
@@ -43,7 +46,10 @@ class _FakeCollectionRepository implements CollectionRepository {
   }
 
   @override
-  Future<void> remove(String id) async {}
+  Future<void> remove(String id) async {
+    removeCallCount++;
+    if (throwsOnRemove) throw Exception('remove error');
+  }
 }
 
 class _FlippingCollectionRepository implements CollectionRepository {
@@ -1396,6 +1402,231 @@ void main() {
         find.byKey(const Key('save-storage-location-button')),
         findsOneWidget,
       );
+    });
+  });
+
+  group('CollectionDetailScreen — remove item', () {
+    testWidgets('shows overflow menu button when loaded', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('detail-overflow-menu')), findsOneWidget);
+    });
+
+    testWidgets('does not show overflow menu button while loading',
+        (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      expect(find.byKey(const Key('detail-overflow-menu')), findsNothing);
+    });
+
+    testWidgets('does not show overflow menu button in not-found state',
+        (tester) async {
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(
+        _wrap(
+          CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('detail-overflow-menu')), findsNothing);
+    });
+
+    testWidgets('does not show overflow menu button in error state',
+        (tester) async {
+      final repo = _FakeCollectionRepository(throwsOnLoad: true);
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('detail-overflow-menu')), findsNothing);
+    });
+
+    testWidgets('tapping overflow menu shows Remove from Cratewise option',
+        (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Remove from Cratewise'), findsOneWidget);
+    });
+
+    testWidgets('tapping Remove option shows confirmation dialog',
+        (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from Cratewise'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    testWidgets('confirmation dialog mentions Discogs not affected',
+        (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from Cratewise'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Discogs'), findsOneWidget);
+    });
+
+    testWidgets('tapping Cancel closes dialog without calling repository.remove',
+        (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from Cratewise'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('cancel-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(repo.removeCallCount, 0);
+    });
+
+    testWidgets('tapping Remove calls repository.remove', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from Cratewise'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(repo.removeCallCount, 1);
+    });
+
+    testWidgets('navigates back after successful remove', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  key: const Key('go-to-detail'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CollectionDetailScreen(
+                        itemId: 'test-1',
+                        repository: repo,
+                      ),
+                    ),
+                  ),
+                  child: const Text('Go to detail'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('go-to-detail')));
+      await tester.pumpAndSettle();
+      expect(find.byType(CollectionDetailScreen), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from Cratewise'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CollectionDetailScreen), findsNothing);
+    });
+
+    testWidgets('remove error shows snackbar', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+        throwsOnRemove: true,
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from Cratewise'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Could not remove'), findsOneWidget);
+    });
+
+    testWidgets('remove error does not navigate back', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+        throwsOnRemove: true,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: TextButton(
+                  key: const Key('go-to-detail'),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CollectionDetailScreen(
+                        itemId: 'test-1',
+                        repository: repo,
+                      ),
+                    ),
+                  ),
+                  child: const Text('Go to detail'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(const Key('go-to-detail')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remove from Cratewise'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CollectionDetailScreen), findsOneWidget);
     });
   });
 }
