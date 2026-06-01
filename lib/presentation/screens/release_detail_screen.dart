@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
+import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/release_detail.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
 
 // ---------------------------------------------------------------------------
@@ -45,11 +47,13 @@ class ReleaseDetailScreen extends StatefulWidget {
     required this.releaseId,
     this.detailService,
     this.addToCollectionUseCase,
+    this.addToWishlistUseCase,
   });
 
   final int releaseId;
   final DiscogsReleaseDetailService? detailService;
   final AddToCollectionUseCase? addToCollectionUseCase;
+  final AddToWishlistUseCase? addToWishlistUseCase;
 
   @override
   State<ReleaseDetailScreen> createState() => _ReleaseDetailScreenState();
@@ -58,21 +62,29 @@ class ReleaseDetailScreen extends StatefulWidget {
 class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   late final DiscogsReleaseDetailService _service;
   late final AddToCollectionUseCase _addUseCase;
+  late final AddToWishlistUseCase _addWishlistUseCase;
   AppDatabase? _ownedDb;
 
   _DetailState _state = const _Loading();
   _AddState _addState = _AddState.idle;
+  _AddState _addWishlistState = _AddState.idle;
 
   @override
   void initState() {
     super.initState();
     _service = widget.detailService ?? DiscogsReleaseDetailService();
-    if (widget.addToCollectionUseCase != null) {
+    final collectionProvided = widget.addToCollectionUseCase != null;
+    final wishlistProvided = widget.addToWishlistUseCase != null;
+    if (collectionProvided && wishlistProvided) {
       _addUseCase = widget.addToCollectionUseCase!;
+      _addWishlistUseCase = widget.addToWishlistUseCase!;
     } else {
       final db = AppDatabase(openAppDatabase());
       _ownedDb = db;
-      _addUseCase = AddToCollectionUseCase(LocalCollectionRepository(db));
+      _addUseCase = widget.addToCollectionUseCase ??
+          AddToCollectionUseCase(LocalCollectionRepository(db));
+      _addWishlistUseCase = widget.addToWishlistUseCase ??
+          AddToWishlistUseCase(LocalWishlistRepository(db));
     }
     _fetch();
   }
@@ -118,6 +130,25 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     }
   }
 
+  Future<void> _handleAddToWishlist() async {
+    final detail = (_state as _Loaded).detail;
+    setState(() => _addWishlistState = _AddState.adding);
+    final result = await _addWishlistUseCase.execute(detail);
+    if (!mounted) return;
+    switch (result) {
+      case AddToWishlistSuccess():
+        setState(() => _addWishlistState = _AddState.added);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Added to your wishlist')),
+        );
+      case AddToWishlistDuplicate():
+        setState(() => _addWishlistState = _AddState.duplicate);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Already in your wishlist')),
+        );
+    }
+  }
+
   static bool _isRetriable(AppError e) =>
       e is! NoTokenError && e is! InvalidTokenError;
 
@@ -141,9 +172,11 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
         _Loaded(:final detail) => _DetailBody(detail: detail),
       },
       bottomNavigationBar: state is _Loaded
-          ? _AddToCollectionBar(
-              addState: _addState,
-              onAdd: _handleAdd,
+          ? _AddActionsBar(
+              collectionState: _addState,
+              wishlistState: _addWishlistState,
+              onAddCollection: _handleAdd,
+              onAddToWishlist: _handleAddToWishlist,
             )
           : null,
     );
@@ -151,26 +184,55 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Add to collection bar
+// Add actions bar (collection + wishlist)
 // ---------------------------------------------------------------------------
 
-class _AddToCollectionBar extends StatelessWidget {
-  const _AddToCollectionBar({required this.addState, required this.onAdd});
+class _AddActionsBar extends StatelessWidget {
+  const _AddActionsBar({
+    required this.collectionState,
+    required this.wishlistState,
+    required this.onAddCollection,
+    required this.onAddToWishlist,
+  });
 
-  final _AddState addState;
-  final VoidCallback onAdd;
+  final _AddState collectionState;
+  final _AddState wishlistState;
+  final VoidCallback onAddCollection;
+  final VoidCallback onAddToWishlist;
 
   @override
   Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: _buildCollectionButton(),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: _buildWishlistButton(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollectionButton() {
     final Widget icon;
     final String label;
     final VoidCallback? onPressed;
 
-    switch (addState) {
+    switch (collectionState) {
       case _AddState.idle:
         icon = const Icon(Icons.add);
         label = 'Add to Collection';
-        onPressed = onAdd;
+        onPressed = onAddCollection;
       case _AddState.adding:
         icon = const Icon(Icons.add);
         label = 'Adding…';
@@ -181,19 +243,39 @@ class _AddToCollectionBar extends StatelessWidget {
         onPressed = null;
     }
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            key: const Key('add-to-collection-button'),
-            onPressed: onPressed,
-            icon: icon,
-            label: Text(label),
-          ),
-        ),
-      ),
+    return FilledButton.icon(
+      key: const Key('add-to-collection-button'),
+      onPressed: onPressed,
+      icon: icon,
+      label: Text(label),
+    );
+  }
+
+  Widget _buildWishlistButton() {
+    final Widget icon;
+    final String label;
+    final VoidCallback? onPressed;
+
+    switch (wishlistState) {
+      case _AddState.idle:
+        icon = const Icon(Icons.bookmark_border);
+        label = 'Add to Wishlist';
+        onPressed = onAddToWishlist;
+      case _AddState.adding:
+        icon = const Icon(Icons.bookmark_border);
+        label = 'Adding…';
+        onPressed = null;
+      case _AddState.added || _AddState.duplicate:
+        icon = const Icon(Icons.bookmark);
+        label = 'In Wishlist';
+        onPressed = null;
+    }
+
+    return OutlinedButton.icon(
+      key: const Key('add-to-wishlist-button'),
+      onPressed: onPressed,
+      icon: icon,
+      label: Text(label),
     );
   }
 }

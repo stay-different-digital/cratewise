@@ -2,10 +2,13 @@ import 'dart:async';
 
 import 'package:cratewise/application/services/discogs_release_detail_service.dart';
 import 'package:cratewise/application/use_cases/add_to_collection_use_case.dart';
+import 'package:cratewise/application/use_cases/add_to_wishlist_use_case.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/release_detail.dart';
+import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
+import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/presentation/screens/release_detail_screen.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
@@ -124,6 +127,35 @@ class _FakeCollectionRepository implements CollectionRepository {
 
 AddToCollectionUseCase _newUseCase({bool alreadyContains = false}) =>
     AddToCollectionUseCase(_FakeCollectionRepository(
+      alreadyContains: alreadyContains,
+    ));
+
+class _FakeWishlistRepository implements WishlistRepository {
+  const _FakeWishlistRepository({this.alreadyContains = false});
+
+  final bool alreadyContains;
+
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => alreadyContains;
+
+  @override
+  Future<void> add(WishlistItem item) async {}
+
+  @override
+  Future<List<WishlistItem>> getAll() async => [];
+
+  @override
+  Future<WishlistItem?> getById(String id) async => null;
+
+  @override
+  Future<void> update(WishlistItem item) async {}
+
+  @override
+  Future<void> remove(String id) async {}
+}
+
+AddToWishlistUseCase _newWishlistUseCase({bool alreadyContains = false}) =>
+    AddToWishlistUseCase(_FakeWishlistRepository(
       alreadyContains: alreadyContains,
     ));
 
@@ -441,6 +473,7 @@ void main() {
             releaseId: 249504,
             detailService: _LoadedService(detail: _kindOfBlue),
             addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -454,6 +487,7 @@ void main() {
             releaseId: 249504,
             detailService: _BlockingService(),
             addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
           ),
         ));
         expect(find.text('Add to Collection'), findsNothing);
@@ -466,6 +500,7 @@ void main() {
             releaseId: 1,
             detailService: _ErrorService(error: const NetworkError()),
             addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -478,6 +513,7 @@ void main() {
             releaseId: 249504,
             detailService: _LoadedService(detail: _kindOfBlue),
             addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -495,6 +531,7 @@ void main() {
             releaseId: 249504,
             detailService: _LoadedService(detail: _kindOfBlue),
             addToCollectionUseCase: _newUseCase(alreadyContains: true),
+            addToWishlistUseCase: _newWishlistUseCase(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -512,6 +549,7 @@ void main() {
             releaseId: 249504,
             detailService: _LoadedService(detail: _kindOfBlue),
             addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -530,6 +568,7 @@ void main() {
             releaseId: 249504,
             detailService: _LoadedService(detail: _kindOfBlue),
             addToCollectionUseCase: _newUseCase(alreadyContains: true),
+            addToWishlistUseCase: _newWishlistUseCase(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -546,6 +585,7 @@ void main() {
             releaseId: 249504,
             detailService: _LoadedService(detail: _kindOfBlue),
             addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
           ),
         ));
         await tester.pumpAndSettle();
@@ -555,6 +595,142 @@ void main() {
 
         final button = tester.widget<FilledButton>(
           find.byKey(const Key('add-to-collection-button')),
+        );
+        expect(button.onPressed, isNull);
+      });
+    });
+
+    group('add to wishlist', () {
+      testWidgets('shows Add to Wishlist button when release is loaded',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _LoadedService(detail: _kindOfBlue),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.text('Add to Wishlist'), findsOneWidget);
+      });
+
+      testWidgets('does not show Add to Wishlist button while loading',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _BlockingService(),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+          ),
+        ));
+        expect(find.text('Add to Wishlist'), findsNothing);
+      });
+
+      testWidgets('does not show Add to Wishlist button in error state',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 1,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+          ),
+        ));
+        await tester.pumpAndSettle();
+        expect(find.text('Add to Wishlist'), findsNothing);
+      });
+
+      testWidgets('tapping button shows added snackbar', (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _LoadedService(detail: _kindOfBlue),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+          ),
+        ));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const Key('add-to-wishlist-button')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Added to your wishlist'), findsOneWidget);
+      });
+
+      testWidgets(
+          'tapping button when already in wishlist shows duplicate snackbar',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _LoadedService(detail: _kindOfBlue),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(alreadyContains: true),
+          ),
+        ));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const Key('add-to-wishlist-button')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Already in your wishlist'), findsOneWidget);
+      });
+
+      testWidgets('button changes to In Wishlist after successful add',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _LoadedService(detail: _kindOfBlue),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+          ),
+        ));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const Key('add-to-wishlist-button')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('In Wishlist'), findsOneWidget);
+        expect(find.text('Add to Wishlist'), findsNothing);
+      });
+
+      testWidgets('button changes to In Wishlist when release is duplicate',
+          (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _LoadedService(detail: _kindOfBlue),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(alreadyContains: true),
+          ),
+        ));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const Key('add-to-wishlist-button')));
+        await tester.pumpAndSettle();
+
+        expect(find.text('In Wishlist'), findsOneWidget);
+      });
+
+      testWidgets('In Wishlist button is disabled after add', (tester) async {
+        await tester.pumpWidget(_wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _LoadedService(detail: _kindOfBlue),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+          ),
+        ));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byKey(const Key('add-to-wishlist-button')));
+        await tester.pumpAndSettle();
+
+        final button = tester.widget<OutlinedButton>(
+          find.byKey(const Key('add-to-wishlist-button')),
         );
         expect(button.onPressed, isNull);
       });

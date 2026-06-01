@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../application/services/discogs_search_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
+import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/release_search_result.dart';
 import '../../shared/errors/app_error.dart';
 import '../widgets/release_search_result_card.dart';
@@ -40,10 +41,16 @@ class _SearchError extends _SearchState {
 // ---------------------------------------------------------------------------
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key, this.searchService, this.addToCollectionUseCase});
+  const SearchScreen({
+    super.key,
+    this.searchService,
+    this.addToCollectionUseCase,
+    this.addToWishlistUseCase,
+  });
 
   final DiscogsSearchService? searchService;
   final AddToCollectionUseCase? addToCollectionUseCase;
+  final AddToWishlistUseCase? addToWishlistUseCase;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -157,6 +164,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _Results(:final items) => _ResultsList(
           items: items,
           addToCollectionUseCase: widget.addToCollectionUseCase,
+          addToWishlistUseCase: widget.addToWishlistUseCase,
         ),
       _SearchError(:final error) => _SearchErrorState(error: error),
     };
@@ -292,10 +300,15 @@ class _SearchErrorState extends StatelessWidget {
 }
 
 class _ResultsList extends StatelessWidget {
-  const _ResultsList({required this.items, this.addToCollectionUseCase});
+  const _ResultsList({
+    required this.items,
+    this.addToCollectionUseCase,
+    this.addToWishlistUseCase,
+  });
 
   final List<ReleaseSearchResult> items;
   final AddToCollectionUseCase? addToCollectionUseCase;
+  final AddToWishlistUseCase? addToWishlistUseCase;
 
   @override
   Widget build(BuildContext context) {
@@ -310,6 +323,7 @@ class _ResultsList extends StatelessWidget {
             builder: (_) => ReleaseDetailScreen(
               releaseId: items[index].id,
               addToCollectionUseCase: addToCollectionUseCase,
+              addToWishlistUseCase: addToWishlistUseCase,
             ),
           ),
         ),

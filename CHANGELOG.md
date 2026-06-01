@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4F: Add to Wishlist button] — 2026-06-01
+
+### Added
+- `_AddActionsBar` widget: two-button bar in `ReleaseDetailScreen.bottomNavigationBar` showing "Add to Collection" (`FilledButton.icon`) and "Add to Wishlist" (`OutlinedButton.icon`) stacked vertically
+- `_addWishlistState` field (`_AddState` enum) in `_ReleaseDetailScreenState` with idle/adding/added/duplicate states
+- `_handleAddToWishlist()` method: calls `AddToWishlistUseCase`, shows snackbar ("Added to your wishlist" or "Already in your wishlist"), updates button state
+- `AddToWishlistUseCase` threaded through `HomeShellScreen → SearchScreen → _ResultsList → ReleaseDetailScreen`
+- 8 new widget tests for the wishlist button (present/absent, snackbars, label transitions, disabled state)
+
+### Changed
+- `ReleaseDetailScreen` gains optional `addToWishlistUseCase` param; falls back to `LocalWishlistRepository` sharing the owned `AppDatabase`
+- `SearchScreen` gains optional `addToWishlistUseCase` param; threads to `ReleaseDetailScreen`
+- `_AddToCollectionBar` replaced by `_AddActionsBar` (collection button behavior unchanged)
+
+---
+
 ## [Unreleased — Phase 4E: add to wishlist use case] — 2026-06-01
 
 ### Added
