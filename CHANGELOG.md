@@ -7,6 +7,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5A: Sync status domain model] — 2026-06-01
+
+### Added
+- `SyncStatus` enum in `lib/domain/models/sync_status.dart` with values: `localOnly`, `synced`, `pending`, `failed`, `conflict`, `offline`
+- 2 unit tests in `test/domain/models/sync_status_test.dart`: value set coverage + switch exhaustiveness
+
+---
+
 ## [Unreleased — Phase 4O: iPad barcode scanner layout] — 2026-06-01
 
 ### Changed
