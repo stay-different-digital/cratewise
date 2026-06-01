@@ -7,6 +7,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5C: Collection Detail explicitly local-first] — 2026-06-01
+
+### Changed
+- `_NotFoundBody` body text updated to "This item may have been removed from your device storage." — makes local-first nature explicit
+- `_ErrorBody` body text updated to "Could not load this item from device storage." — clarifies it is a local storage error
+- 4 new widget tests added to `test/presentation/screens/collection_detail_screen_test.dart` in a `CollectionDetailScreen — local-first` group: loads without token, loads without network, not-found state mentions device storage, error state mentions device storage
+
+---
+
 ## [Unreleased — Phase 5B: Collection list explicitly local-first] — 2026-06-01
 
 ### Changed

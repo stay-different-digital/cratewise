@@ -1629,4 +1629,50 @@ void main() {
       expect(find.byType(CollectionDetailScreen), findsOneWidget);
     });
   });
+
+  group('CollectionDetailScreen — local-first', () {
+    testWidgets('loads without a Discogs token', (tester) async {
+      // No token passed or required — repository is purely local.
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(artist: 'Offline Artist'),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Offline Artist'), findsOneWidget);
+    });
+
+    testWidgets('loads without network (simulated by local-only fake repo)',
+        (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(artist: 'No Network Artist'),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('No Network Artist'), findsOneWidget);
+    });
+
+    testWidgets('not found state mentions device storage', (tester) async {
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(
+        _wrap(
+          CollectionDetailScreen(itemId: 'nonexistent-id', repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('device storage'), findsOneWidget);
+    });
+
+    testWidgets('error state mentions device storage', (tester) async {
+      final repo = _FakeCollectionRepository(throwsOnLoad: true);
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('device storage'), findsOneWidget);
+    });
+  });
 }

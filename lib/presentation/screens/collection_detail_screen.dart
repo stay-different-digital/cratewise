@@ -1059,7 +1059,7 @@ class _NotFoundBody extends StatelessWidget {
             Text('Item not found.', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'This item may have been removed.',
+              'This item may have been removed from your device storage.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -1093,7 +1093,7 @@ class _ErrorBody extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Could not load this item.',
+              'Could not load this item from device storage.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
