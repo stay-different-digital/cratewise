@@ -122,17 +122,29 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     setState(() => _scanAreaState = _ScanAreaState.permissionDenied);
   }
 
-  Widget _buildScanArea() => switch (_scanAreaState) {
-    _ScanAreaState.placeholder => const _ScanAreaPlaceholder(),
-    _ScanAreaState.permissionDenied => const _PermissionDeniedScanArea(),
+  static const _kWideBreakpoint = 700.0;
+
+  Widget _buildScanArea({double height = 160}) => switch (_scanAreaState) {
+    _ScanAreaState.placeholder => _ScanAreaPlaceholder(height: height),
+    _ScanAreaState.permissionDenied => _PermissionDeniedScanArea(height: height),
     _ScanAreaState.scanning => _CameraScanArea(
+      height: height,
       onDetect: _onBarcodeDetected,
       onPermissionDenied: _onScannerPermissionDenied,
     ),
   };
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildResults() => switch (_state) {
+    _Idle() => const _EmptyState(),
+    _Loading() => const _LoadingIndicator(),
+    _HasResults(:final results) => _ResultsList(results: results),
+    _NoResults() => const _NoResultsState(),
+    _NoToken() => const _NoTokenState(),
+    _RateLimited() => const _RateLimitedState(),
+    _LookupError() => const _ErrorState(),
+  };
+
+  Widget _buildNarrow(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -179,18 +191,79 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
             label: const Text('Scan barcode'),
           ),
         ),
-        Expanded(
-          child: switch (_state) {
-            _Idle() => const _EmptyState(),
-            _Loading() => const _LoadingIndicator(),
-            _HasResults(:final results) => _ResultsList(results: results),
-            _NoResults() => const _NoResultsState(),
-            _NoToken() => const _NoTokenState(),
-            _RateLimited() => const _RateLimitedState(),
-            _LookupError() => const _ErrorState(),
-          },
-        ),
+        Expanded(child: _buildResults()),
       ],
+    );
+  }
+
+  Widget _buildWide(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: 360,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildScanArea(height: 280),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        key: const Key('barcode-input'),
+                        controller: _controller,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: (_) => _onSearch(),
+                        decoration: const InputDecoration(
+                          hintText: 'Enter barcode manually…',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      key: const Key('search-barcode-button'),
+                      onPressed: _onSearch,
+                      child: const Text('Search'),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: OutlinedButton.icon(
+                  key: const Key('scan-barcode-button'),
+                  onPressed: _onScanButtonPressed,
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Scan barcode'),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const VerticalDivider(width: 1, thickness: 1),
+        Expanded(child: _buildResults()),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          constraints.maxWidth >= _kWideBreakpoint
+              ? _buildWide(context)
+              : _buildNarrow(context),
     );
   }
 }
@@ -200,14 +273,16 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
 // ---------------------------------------------------------------------------
 
 class _ScanAreaPlaceholder extends StatelessWidget {
-  const _ScanAreaPlaceholder();
+  const _ScanAreaPlaceholder({this.height = 160});
+
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
       key: const Key('scan-area-placeholder'),
-      height: 160,
+      height: height,
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
@@ -241,14 +316,16 @@ class _ScanAreaPlaceholder extends StatelessWidget {
 }
 
 class _PermissionDeniedScanArea extends StatelessWidget {
-  const _PermissionDeniedScanArea();
+  const _PermissionDeniedScanArea({this.height = 160});
+
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
       key: const Key('scan-area-permission-denied'),
-      height: 160,
+      height: height,
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
@@ -296,16 +373,18 @@ class _CameraScanArea extends StatelessWidget {
   const _CameraScanArea({
     required this.onDetect,
     required this.onPermissionDenied,
+    this.height = 160,
   });
 
   final void Function(BarcodeCapture) onDetect;
   final VoidCallback onPermissionDenied;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       key: const Key('scan-area-scanner'),
-      height: 160,
+      height: height,
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(

@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4O: iPad barcode scanner layout] — 2026-06-01
+
+### Changed
+- `BarcodeScanScreen` now uses `LayoutBuilder` with `_kWideBreakpoint = 700.0`
+- Wide layout (≥700dp, iPad): 360dp left panel (scan area 280dp tall, input field, scan button) + `VerticalDivider` + expanded right panel (results, empty, loading, error states)
+- Narrow layout (<700dp, phones): original vertical column layout unchanged
+- Scan area widgets (`_ScanAreaPlaceholder`, `_PermissionDeniedScanArea`, `_CameraScanArea`) now accept a `height` parameter (default 160) so the wide layout can request a taller preview
+
+---
+
 ## [Unreleased — Phase 4N: iPhone barcode scanner] — 2026-06-01
 
 ### Added
