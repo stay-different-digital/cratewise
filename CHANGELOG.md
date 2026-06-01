@@ -7,6 +7,23 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 4K: Barcode scan screen UI] — 2026-06-01
+
+### Added
+- `BarcodeScanScreen` replaced with full `StatefulWidget` layout
+- `_ScanAreaPlaceholder` — decorative 160dp container with scanner icon and "Camera preview coming soon" label
+- Manual barcode `TextField` (`barcode-input`) with `OutlineInputBorder` and search action
+- "Search" `FilledButton` (`search-barcode-button`) — triggers fake result lookup on non-empty input
+- "Scan barcode" `OutlinedButton.icon` (`scan-barcode-button`) — placeholder for future camera integration; tap does nothing
+- `_EmptyState` — idle state with QR icon, title "Scan or enter a barcode", and usage hint
+- `_ResultsList` — `ListView.separated` of `ReleaseSearchResultCard`; shows artist, title, format, label, year, country, Discogs release ID
+- 3 fake `ReleaseSearchResult` entries (Miles Davis – Kind Of Blue, multiple pressings) shown on any non-empty search
+- Whitespace-only barcode treated as empty (stays idle)
+- Keyboard `TextInputAction.search` submits same as button tap
+- 16 widget tests in `barcode_scan_screen_test.dart`
+
+---
+
 ## [Unreleased — Phase 4J: Barcode lookup use case] — 2026-06-01
 
 ### Added
