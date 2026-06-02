@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
+import 'collection_import_preview_screen.dart';
+
 const _kWideBreakpoint = 700.0;
 const _kCardExtent = 96.0;
 
 class ImportExportScreen extends StatelessWidget {
-  const ImportExportScreen({super.key});
+  const ImportExportScreen({super.key, this.collectionImportUseCase});
+
+  /// Injected only for testing. Production code passes null.
+  final FetchCollectionImportPreviewUseCase? collectionImportUseCase;
 
   @override
   Widget build(BuildContext context) {
@@ -13,6 +19,13 @@ class ImportExportScreen extends StatelessWidget {
       body: LayoutBuilder(
         builder: (context, constraints) => _ActionBody(
           isWide: constraints.maxWidth >= _kWideBreakpoint,
+          onImportCollection: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => CollectionImportPreviewScreen(
+                useCase: collectionImportUseCase,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -24,58 +37,71 @@ class ImportExportScreen extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ActionConfig {
-  const _ActionConfig({required this.icon, required this.title});
+  const _ActionConfig({
+    required this.icon,
+    required this.title,
+    this.badge = 'Coming soon',
+    this.onTap,
+  });
 
   final IconData icon;
   final String title;
+  final String? badge;
+  final void Function(BuildContext)? onTap;
 }
-
-const _kDiscogsActions = [
-  _ActionConfig(
-    icon: Icons.cloud_download_outlined,
-    title: 'Import Collection from Discogs',
-  ),
-  _ActionConfig(
-    icon: Icons.cloud_download_outlined,
-    title: 'Import Wishlist from Discogs',
-  ),
-  _ActionConfig(
-    icon: Icons.cloud_upload_outlined,
-    title: 'Export Collection to Discogs',
-  ),
-  _ActionConfig(
-    icon: Icons.cloud_upload_outlined,
-    title: 'Export Wishlist to Discogs',
-  ),
-];
-
-const _kCsvActions = [
-  _ActionConfig(
-    icon: Icons.download_outlined,
-    title: 'Export Collection to CSV',
-  ),
-  _ActionConfig(
-    icon: Icons.download_outlined,
-    title: 'Export Wishlist to CSV',
-  ),
-  _ActionConfig(
-    icon: Icons.upload_file_outlined,
-    title: 'Import Collection from CSV',
-  ),
-  _ActionConfig(
-    icon: Icons.upload_file_outlined,
-    title: 'Import Wishlist from CSV',
-  ),
-];
 
 // ---------------------------------------------------------------------------
 // Body
 // ---------------------------------------------------------------------------
 
 class _ActionBody extends StatelessWidget {
-  const _ActionBody({required this.isWide});
+  const _ActionBody({
+    required this.isWide,
+    required this.onImportCollection,
+  });
 
   final bool isWide;
+  final VoidCallback onImportCollection;
+
+  List<_ActionConfig> get _discogsActions => [
+        _ActionConfig(
+          icon: Icons.cloud_download_outlined,
+          title: 'Import Collection from Discogs',
+          badge: null,
+          onTap: (ctx) => onImportCollection(),
+        ),
+        const _ActionConfig(
+          icon: Icons.cloud_download_outlined,
+          title: 'Import Wishlist from Discogs',
+        ),
+        const _ActionConfig(
+          icon: Icons.cloud_upload_outlined,
+          title: 'Export Collection to Discogs',
+        ),
+        const _ActionConfig(
+          icon: Icons.cloud_upload_outlined,
+          title: 'Export Wishlist to Discogs',
+        ),
+      ];
+
+  static const _kCsvActions = [
+    _ActionConfig(
+      icon: Icons.download_outlined,
+      title: 'Export Collection to CSV',
+    ),
+    _ActionConfig(
+      icon: Icons.download_outlined,
+      title: 'Export Wishlist to CSV',
+    ),
+    _ActionConfig(
+      icon: Icons.upload_file_outlined,
+      title: 'Import Collection from CSV',
+    ),
+    _ActionConfig(
+      icon: Icons.upload_file_outlined,
+      title: 'Import Wishlist from CSV',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -83,16 +109,16 @@ class _ActionBody extends StatelessWidget {
       slivers: [
         const SliverToBoxAdapter(child: SizedBox(height: 8)),
         const SliverToBoxAdapter(child: _SectionHeader(title: 'Discogs')),
-        _buildSection(_kDiscogsActions),
+        _buildSection(context, _discogsActions),
         const SliverToBoxAdapter(child: SizedBox(height: 8)),
         const SliverToBoxAdapter(child: _SectionHeader(title: 'CSV files')),
-        _buildSection(_kCsvActions),
+        _buildSection(context, _kCsvActions),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
       ],
     );
   }
 
-  Widget _buildSection(List<_ActionConfig> actions) {
+  Widget _buildSection(BuildContext context, List<_ActionConfig> actions) {
     if (isWide) {
       return SliverPadding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -104,7 +130,8 @@ class _ActionBody extends StatelessWidget {
             mainAxisExtent: _kCardExtent,
           ),
           itemCount: actions.length,
-          itemBuilder: (context, index) => _ActionCard(action: actions[index]),
+          itemBuilder: (context, index) =>
+              _ActionCard(action: actions[index]),
         ),
       );
     }
@@ -113,7 +140,8 @@ class _ActionBody extends StatelessWidget {
       sliver: SliverList.separated(
         itemCount: actions.length,
         separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemBuilder: (context, index) => _ActionCard(action: actions[index]),
+        itemBuilder: (context, index) =>
+            _ActionCard(action: actions[index]),
       ),
     );
   }
@@ -159,12 +187,14 @@ class _ActionCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Coming soon'),
-            duration: Duration(seconds: 2),
-          ),
-        ),
+        onTap: action.onTap != null
+            ? () => action.onTap!(context)
+            : () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Coming soon'),
+                    duration: Duration(seconds: 2),
+                  ),
+                ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
@@ -186,23 +216,25 @@ class _ActionCard extends StatelessWidget {
                       ),
                       maxLines: 2,
                     ),
-                    const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Coming soon',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                    if (action.badge != null) ...[
+                      const SizedBox(height: 2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          action.badge!,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
