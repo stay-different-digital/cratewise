@@ -1,0 +1,12 @@
+import '../models/import_export_job.dart';
+
+abstract interface class ImportExportJobRepository {
+  Future<void> add(ImportExportJob job);
+  Future<void> update(ImportExportJob job);
+  Future<ImportExportJob?> getById(String id);
+
+  /// Returns jobs ordered by [ImportExportJob.createdAt] descending.
+  Future<List<ImportExportJob>> getRecent({int limit = 20});
+
+  Future<void> remove(String id);
+}
