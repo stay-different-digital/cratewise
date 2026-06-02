@@ -1,4 +1,7 @@
+import 'package:cratewise/application/use_cases/retry_metadata_refresh_use_case.dart';
+import 'package:cratewise/domain/models/cached_release_metadata.dart';
 import 'package:cratewise/domain/models/retry_action.dart';
+import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
 import 'package:cratewise/domain/repositories/retry_action_repository.dart';
 import 'package:cratewise/presentation/screens/failed_actions_screen.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +41,49 @@ class _FakeRetryRepo implements RetryActionRepository {
 
   @override
   Future<void> remove(String id) async {}
+}
+
+// Minimal fakes for RetryMetadataRefreshUseCase super-constructor.
+class _NullCacheRepo implements CachedReleaseMetadataRepository {
+  @override
+  Future<CachedReleaseMetadata?> getByReleaseId(int id) async => null;
+  @override
+  Future<void> save(CachedReleaseMetadata m) async {}
+  @override
+  Future<void> remove(int id) async {}
+}
+
+class _NullRetryRepoForUseCase implements RetryActionRepository {
+  @override
+  Future<void> add(RetryAction a) async {}
+  @override
+  Future<List<RetryAction>> getAll() async => [];
+  @override
+  Future<RetryAction?> getById(String id) async => null;
+  @override
+  Future<List<RetryAction>> getPending() async => [];
+  @override
+  Future<void> update(RetryAction a) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+/// Fake use case that returns a configurable result without touching repos.
+class _FakeRetryUseCase extends RetryMetadataRefreshUseCase {
+  _FakeRetryUseCase(this._result)
+      : super(
+          retryRepo: _NullRetryRepoForUseCase(),
+          cacheRepo: _NullCacheRepo(),
+        );
+
+  final RetryMetadataResult _result;
+  int callCount = 0;
+
+  @override
+  Future<RetryMetadataResult> execute(RetryAction action) async {
+    callCount++;
+    return _result;
+  }
 }
 
 class _FlippingRepo implements RetryActionRepository {
@@ -301,6 +347,171 @@ void main() {
         expect(allText, isNot(contains('header')));
         expect(allText, isNot(contains('authorization')));
       });
+    });
+  });
+
+  group('FailedActionsScreen — retry button', () {
+    RetryAction metadataAction() => _makeAction(
+          actionType: RetryActionType.refreshReleaseMetadata,
+          safeErrorMessage: 'Release metadata could not be refreshed.',
+        );
+
+    testWidgets('shows Retry button for refreshReleaseMetadata when use case provided',
+        (tester) async {
+      final repo = _FakeRetryRepo(actions: [metadataAction()]);
+      final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
+      await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextButton, 'Retry'), findsOneWidget);
+    });
+
+    testWidgets('does NOT show Retry button for cacheThumbnail action',
+        (tester) async {
+      final repo = _FakeRetryRepo(
+        actions: [_makeAction(actionType: RetryActionType.cacheThumbnail)],
+      );
+      final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
+      await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextButton, 'Retry'), findsNothing);
+    });
+
+    testWidgets('does NOT show Retry button when no use case provided',
+        (tester) async {
+      final repo = _FakeRetryRepo(actions: [metadataAction()]);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextButton, 'Retry'), findsNothing);
+    });
+
+    testWidgets('tapping Retry calls use case execute', (tester) async {
+      final repo = _FakeRetryRepo(actions: [metadataAction()]);
+      final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
+      await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(uc.callCount, 1);
+    });
+
+    testWidgets('success shows snackbar with success message', (tester) async {
+      final repo = _FakeRetryRepo(actions: [metadataAction()]);
+      final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
+      await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Release info updated.'), findsOneWidget);
+    });
+
+    testWidgets('NoToken shows snackbar with connect-account message',
+        (tester) async {
+      final repo = _FakeRetryRepo(actions: [metadataAction()]);
+      final uc = _FakeRetryUseCase(const RetryMetadataNoToken());
+      await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Connect your Discogs account to retry.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('RateLimited shows snackbar with rate-limit message',
+        (tester) async {
+      final repo = _FakeRetryRepo(actions: [metadataAction()]);
+      final uc = _FakeRetryUseCase(const RetryMetadataRateLimited());
+      await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rate limited — try again shortly.'), findsOneWidget);
+    });
+
+    testWidgets('NetworkError shows snackbar with network message',
+        (tester) async {
+      final repo = _FakeRetryRepo(actions: [metadataAction()]);
+      final uc = _FakeRetryUseCase(const RetryMetadataNetworkError());
+      await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Network unavailable — try again later.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('snackbar message does not contain token or secret',
+        (tester) async {
+      final repo = _FakeRetryRepo(actions: [metadataAction()]);
+      for (final result in <RetryMetadataResult>[
+        const RetryMetadataSuccess(),
+        const RetryMetadataNoToken(),
+        const RetryMetadataRateLimited(),
+        const RetryMetadataNetworkError(),
+        const RetryMetadataFailed(),
+      ]) {
+        final uc = _FakeRetryUseCase(result);
+        await tester.pumpWidget(
+            _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+        await tester.pumpAndSettle();
+
+        final snackbar = tester
+            .widgetList<Text>(find.descendant(
+              of: find.byType(SnackBar),
+              matching: find.byType(Text),
+            ))
+            .map((t) => t.data ?? '')
+            .join(' ')
+            .toLowerCase();
+
+        expect(snackbar, isNot(contains('token')));
+        expect(snackbar, isNot(contains('secret')));
+      }
+    });
+
+    testWidgets('after success, list reloads (shows empty state)', (tester) async {
+      // Repo starts with one action; after retry (success) the action is
+      // removed and the list reloads as empty.
+      final actions = [metadataAction()];
+      final repo = _FakeRetryRepo(actions: actions);
+      final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
+      await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+      await tester.pumpAndSettle();
+
+      // Simulate the action being removed (success removes it from repo).
+      actions.clear();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No failed actions'), findsOneWidget);
     });
   });
 

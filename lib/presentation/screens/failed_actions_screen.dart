@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../application/use_cases/retry_metadata_refresh_use_case.dart';
 import '../../domain/models/retry_action.dart';
 import '../../domain/repositories/retry_action_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
@@ -31,9 +32,14 @@ class _LoadError extends _FailedActionsState {
 // ---------------------------------------------------------------------------
 
 class FailedActionsScreen extends StatefulWidget {
-  const FailedActionsScreen({super.key, this.repository});
+  const FailedActionsScreen({
+    super.key,
+    this.repository,
+    this.retryUseCase,
+  });
 
   final RetryActionRepository? repository;
+  final RetryMetadataRefreshUseCase? retryUseCase;
 
   @override
   State<FailedActionsScreen> createState() => _FailedActionsScreenState();
@@ -84,7 +90,11 @@ class _FailedActionsScreenState extends State<FailedActionsScreen> {
       body: switch (_state) {
         _Loading() => const Center(child: CircularProgressIndicator()),
         _Loaded(:final actions) when actions.isEmpty => const _EmptyState(),
-        _Loaded(:final actions) => _ActionList(actions: actions),
+        _Loaded(:final actions) => _ActionList(
+            actions: actions,
+            retryUseCase: widget.retryUseCase,
+            onRetried: _load,
+          ),
         _LoadError() => _ErrorState(onRetry: _load),
       },
     );
@@ -96,9 +106,15 @@ class _FailedActionsScreenState extends State<FailedActionsScreen> {
 // ---------------------------------------------------------------------------
 
 class _ActionList extends StatelessWidget {
-  const _ActionList({required this.actions});
+  const _ActionList({
+    required this.actions,
+    required this.onRetried,
+    this.retryUseCase,
+  });
 
   final List<RetryAction> actions;
+  final RetryMetadataRefreshUseCase? retryUseCase;
+  final VoidCallback onRetried;
 
   @override
   Widget build(BuildContext context) {
@@ -106,15 +122,32 @@ class _ActionList extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       itemCount: actions.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => _ActionCard(action: actions[index]),
+      itemBuilder: (context, index) => _ActionCard(
+        action: actions[index],
+        retryUseCase: retryUseCase,
+        onRetried: onRetried,
+      ),
     );
   }
 }
 
-class _ActionCard extends StatelessWidget {
-  const _ActionCard({required this.action});
+class _ActionCard extends StatefulWidget {
+  const _ActionCard({
+    required this.action,
+    required this.onRetried,
+    this.retryUseCase,
+  });
 
   final RetryAction action;
+  final RetryMetadataRefreshUseCase? retryUseCase;
+  final VoidCallback onRetried;
+
+  @override
+  State<_ActionCard> createState() => _ActionCardState();
+}
+
+class _ActionCardState extends State<_ActionCard> {
+  bool _retrying = false;
 
   static String _friendlyType(RetryActionType type) => switch (type) {
         RetryActionType.refreshReleaseMetadata => 'Refresh release info',
@@ -143,10 +176,37 @@ class _ActionCard extends StatelessWidget {
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}, $h:$m';
   }
 
+  static String _snackbarMessage(RetryMetadataResult result) => switch (result) {
+        RetryMetadataSuccess() => 'Release info updated.',
+        RetryMetadataNoToken() => 'Connect your Discogs account to retry.',
+        RetryMetadataRateLimited() => 'Rate limited — try again shortly.',
+        RetryMetadataNetworkError() => 'Network unavailable — try again later.',
+        RetryMetadataFailed() => 'Refresh failed — try again later.',
+      };
+
+  Future<void> _doRetry() async {
+    final useCase = widget.retryUseCase;
+    if (useCase == null) return;
+
+    setState(() => _retrying = true);
+    final result = await useCase.execute(widget.action);
+    if (!mounted) return;
+    setState(() => _retrying = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_snackbarMessage(result))),
+    );
+    widget.onRetried();
+  }
+
+  bool get _showRetryButton =>
+      widget.retryUseCase != null &&
+      widget.action.actionType == RetryActionType.refreshReleaseMetadata;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isPending = action.status == RetryActionStatus.pending;
+    final isPending = widget.action.status == RetryActionStatus.pending;
     final statusColor =
         isPending ? theme.colorScheme.tertiary : theme.colorScheme.error;
     final statusBgColor = isPending
@@ -164,7 +224,7 @@ class _ActionCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    _friendlyType(action.actionType),
+                    _friendlyType(widget.action.actionType),
                     style: theme.textTheme.titleSmall,
                   ),
                 ),
@@ -177,7 +237,7 @@ class _ActionCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    _friendlyStatus(action.status),
+                    _friendlyStatus(widget.action.status),
                     style: theme.textTheme.labelSmall
                         ?.copyWith(color: statusColor),
                   ),
@@ -186,19 +246,37 @@ class _ActionCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              action.safeErrorMessage,
+              widget.action.safeErrorMessage,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 8),
-            _InfoRow(label: 'Attempts', value: '${action.attemptCount}'),
-            if (action.lastAttemptedAt != null)
+            _InfoRow(
+                label: 'Attempts', value: '${widget.action.attemptCount}'),
+            if (widget.action.lastAttemptedAt != null)
               _InfoRow(
                 label: 'Last tried',
-                value: _formatDate(action.lastAttemptedAt!),
+                value: _formatDate(widget.action.lastAttemptedAt!),
               ),
-            _InfoRow(label: 'Queued', value: _formatDate(action.createdAt)),
+            _InfoRow(
+                label: 'Queued', value: _formatDate(widget.action.createdAt)),
+            if (_showRetryButton) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: _retrying
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : TextButton(
+                        onPressed: _doRetry,
+                        child: const Text('Retry'),
+                      ),
+              ),
+            ],
           ],
         ),
       ),

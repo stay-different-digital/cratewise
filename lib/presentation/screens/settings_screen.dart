@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../application/use_cases/retry_metadata_refresh_use_case.dart';
 import '../widgets/discogs_token_section.dart';
 import 'failed_actions_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({super.key, this.retryUseCase});
+
+  final RetryMetadataRefreshUseCase? retryUseCase;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +24,8 @@ class SettingsScreen extends StatelessWidget {
           trailing: const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => const FailedActionsScreen(),
+              builder: (_) =>
+                  FailedActionsScreen(retryUseCase: retryUseCase),
             ),
           ),
         ),

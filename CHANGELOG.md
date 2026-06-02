@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5P: Retry failed metadata refresh] — 2026-06-02
+
+### Added
+- `RetryMetadataRefreshUseCase`: loads saved token, calls Discogs API, saves to metadata cache on success, removes retry action; updates `attemptCount` + `lastAttemptedAt` + sets `status=failed` on any API failure; swallows repo update errors; result types: `Success`, `NoToken`, `RateLimited`, `NetworkError`, `Failed`
+- `FailedActionsScreen._ActionCard` now shows a "Retry" `TextButton` for `refreshReleaseMetadata` actions only; per-card loading spinner while in flight; shows friendly snackbar result message; reloads action list after retry
+- `SettingsScreen` and `HomeShellScreen` now thread `RetryMetadataRefreshUseCase` through the composition root using the shared `AppDatabase`
+
+### Security
+- Token is never stored in or returned from `RetryMetadataResult`
+- `NoToken` result does NOT increment `attemptCount` (user action required, not a transient failure)
+- All snackbar messages are hardcoded safe strings — no raw errors, no tokens
+
+---
+
 ## [Unreleased — Phase 5O: Failed Actions screen] — 2026-06-02
 
 ### Added
