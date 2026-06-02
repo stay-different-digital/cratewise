@@ -7,6 +7,250 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 6P: Wishlist export preview builder] — 2026-06-02
+
+### Added
+- `WishlistExportPreview` domain model with `totalCount`, `eligibleCount`, `alreadySyncedCount`, and `invalidCount` computed getters
+- `WishlistExportRow` sealed class with three subtypes: `EligibleWishlistExportRow` (valid release ID, not yet synced), `AlreadySyncedWishlistExportRow` (valid release ID, previously synced), `InvalidWishlistExportRow` (missing or invalid release ID, with safe reason string)
+- `classifyWishlistItemForExport` top-level function: `discogsReleaseId <= 0` → invalid; `syncStatus == synced` → already synced; otherwise → eligible
+- `CheckWishlistExportCapabilityUseCase` — always returns `WishlistExportNotSupported`; reason mentions CSV as an alternative; synchronous with no I/O
+- `BuildWishlistExportPreviewUseCase` — checks capability first (skips repository when not supported); loads all wishlist items; classifies each into a row; catches repository errors and returns `WishlistExportPreviewError`
+- 6 capability tests and 24 preview use-case tests (capability gate, empty wishlist, eligible/synced/invalid rows, mixed counts, repository error)
+
+### Security
+- `InvalidWishlistExportRow.reason` is a hardcoded display string — never a token, secret, or internal detail
+
+---
+
+## [Unreleased — Phase 6O: Execute collection export to Discogs] — 2026-06-02
+
+### Added
+- `DiscogsApiClient.addToCollection(username, releaseId, token)` — POST to `/users/{username}/collection/folders/1/releases/{releaseId}` (expects 201 Created); targets folder 1 (Discogs default "Uncategorized")
+- `DiscogsApiClient._post(path, token)` helper method for POST requests with auth header
+- `DiscogsApiClient._checkStatus` now accepts an optional `expectedStatus` parameter (default 200); POST uses 201
+- `ExecuteCollectionExportUseCase` with four sealed result types: `ExecuteExportCompleted` (jobId, exported/skipped/failed counts), `ExecuteExportNotSupported`, `ExecuteExportNoToken`, `ExecuteExportFailed`
+  - Step 1: capability gate — returns `ExecuteExportNotSupported` if not supported
+  - Step 2: loads token and username from `TokenStorage` — returns `ExecuteExportNoToken` if absent or on error
+  - Step 3: creates `ImportExportJob` record; iterates preview rows — POSTs each `EligibleExportRow` to Discogs, updates `syncStatus` to `synced` on success; skips `AlreadySyncedExportRow` and `InvalidExportRow`; records `ValidRow`/`SkippedRow`/`FailedRow` per item; updates job to completed/completedWithErrors on finish
+- `CollectionExportPreviewScreen` gains three new states: `_Exporting` (spinner), `_ExportDone` (summary), `_NoToken` (friendly message)
+- Confirm button is now enabled when `eligibleCount > 0` and an execute use case is wired in; tapping begins export and transitions through states
+- `_ExportingBody` spinner widget, `_ExportSummaryBody` with Added to Discogs / Skipped / Failed counts and Done button, `_NoTokenState` widget
+- Production `initState` self-creates `ExecuteCollectionExportUseCase` from all required dependencies; tests inject fakes
+- 10 new API unit tests for `addToCollection` (201 success, correct URL and auth header, 401/403/429/500 error mapping, network error, 200 treated as unexpected)
+- 35 new use-case tests covering capability gate, no token, successful export, partial failure, infrastructure failure, and security assertions
+- Updated screen tests to 41 total (exporting state, export done state, execute transition states)
+
+### Security
+- Token and username are loaded at execution time and never stored in job records, row results, or error messages
+- All user-facing error strings are hardcoded safe strings — no raw errors, no tokens
+- `_NoTokenState` shows a friendly message without revealing what credentials are missing
+
+---
+
+## [Unreleased — Phase 6N: Collection export preview UI] — 2026-06-02
+
+### Added
+- `CollectionExportPreviewScreen` with four states: `_Loading` (spinner), `_Ready` (preview summary + confirm bar), `_NotSupported` (explains CSV alternative), `_Error` (retry button)
+- Summary card shows: total local items, ready to export count, already linked to Discogs count, cannot export count
+- Notes card shown when there are already-synced or invalid items, explaining what each category means
+- Disabled confirm bar with dynamic label ("Nothing to export" / "Export N records"); enabled state wired in the next slice
+- `LayoutBuilder` wide layout ≥700dp: summary card and row list side-by-side (iPad)
+- `ImportExportScreen` wires the "Export Collection to Discogs" card to navigate to `CollectionExportPreviewScreen`; "Coming soon" badge removed from that card
+- 31 new screen widget tests and 3 navigation tests in `import_export_screen_test.dart`
+
+### Security
+- No tokens read or written in the preview screen
+- `_NotSupportedState` displays only the capability reason string — never internal details
+
+---
+
+## [Unreleased — Phase 6M: Collection export preview builder] — 2026-06-02
+
+### Added
+- `CollectionExportPreview` domain model with `totalCount`, `eligibleCount`, `alreadySyncedCount`, and `invalidCount` getters
+- `CollectionExportRow` sealed class with three subtypes: `EligibleExportRow` (valid release ID, not yet synced), `AlreadySyncedExportRow` (valid release ID, previously synced), `InvalidExportRow` (missing or invalid release ID, with safe reason string)
+- `classifyForExport` top-level function: `discogsReleaseId <= 0` → invalid; `syncStatus == synced` → already synced; otherwise → eligible
+- `BuildCollectionExportPreviewUseCase` — checks capability first (skips repository when not supported); loads all collection items; classifies each; catches repository errors and returns `CollectionExportPreviewError`
+- 24 new unit tests covering capability gate, empty collection, eligible/synced/invalid rows, mixed counts, repository error, and security assertions
+
+### Security
+- `InvalidExportRow.reason` is a hardcoded display string — never a token, secret, or internal detail
+
+---
+
+## [Unreleased — Phase 6L: Collection export capability check] — 2026-06-02
+
+### Added
+- `CheckCollectionExportCapabilityUseCase` with sealed result types `CollectionExportSupported` and `CollectionExportNotSupported`
+- Always returns `CollectionExportNotSupported`; reason is a friendly user-facing string that mentions CSV as an alternative; synchronous with no I/O or network calls
+- 6 unit tests: result type, non-empty reason, no token/secret wording, mentions CSV, synchronous, consistent across calls
+
+---
+
+## [Unreleased — Phase 6K: Confirm and save Discogs wishlist import] — 2026-06-02
+
+### Added
+- `ExecuteWishlistImportUseCase` with three result types: `WishlistImportCompleted` (jobId, added/skipped/failed counts), `WishlistImportNoToken`, `WishlistImportFailed`
+  - Saves each `NewWishlistRow` as a `WishlistItem` via `WishlistRepository.add` with `WishlistPriority.medium` and `SyncStatus.localOnly`
+  - Skips `DuplicateWishlistRow` and `InvalidWishlistRow` items, recording `SkippedRow` results for each
+  - Records `ValidRow` on success or `FailedRow` on per-item exception
+  - Creates and updates an `ImportExportJob` (running → completed / completedWithErrors)
+- `WishlistImportPreviewScreen` gains `_Importing` and `_ImportDone` states; confirm button is now enabled
+- `_ImportingBody` shows spinner with "Saving your wishlist…" message
+- `_ImportSummaryBody` shows Added to wishlist / Skipped / Failed counts with a Done button
+- 38 new tests covering use-case result paths, job record creation, skip/fail behavior, screen state transitions, and security assertions
+
+### Security
+- Token is loaded from `TokenStorage` at execution time; never stored in job records, row results, or error messages
+- All snackbar and summary messages are hardcoded safe strings
+
+---
+
+## [Unreleased — Phase 6J: Wishlist import preview UI] — 2026-06-02
+
+### Added
+- `FetchWishlistImportPreviewUseCase` — loads token and username from `TokenStorage`; paginates `DiscogsApiClient.fetchWantlistPage`; passes all items to `BuildWishlistImportPreviewUseCase`; returns typed result: `WishlistImportPreviewReady`, `WishlistImportNoToken`, `WishlistImportRateLimited`, `WishlistImportNetworkError`, `WishlistImportError`
+- `WishlistImportPreviewScreen` with six states: `_Loading`, `_Loaded`, `_NoToken`, `_RateLimited`, `_NetworkError`, `_Error`
+- Summary card shows total wantlist items / new / duplicates / invalid counts
+- Notes warning card shown when duplicates or invalid items are present
+- Disabled confirm bar (execution added in the next slice)
+- `LayoutBuilder` wide layout ≥700dp for iPad
+- `ImportExportScreen` wires the "Import Wishlist from Discogs" card to navigate to `WishlistImportPreviewScreen`; "Coming soon" badge removed from that card
+- 54 new tests covering all states, wide layout, security assertions, and 3 navigation tests in `import_export_screen_test.dart`
+
+### Security
+- Token is never shown or logged; only presence is checked
+- `_NoTokenState` displays a connection prompt — no token value exposed
+- No Discogs username or token appears in any user-facing widget text
+
+---
+
+## [Unreleased — Phase 6I: Wishlist import API + preview builder] — 2026-06-02
+
+### Added
+- `DiscogsApiClient.fetchWantlistPage(username, token, {page, perPage})` — paginated GET `/users/{username}/wants`; returns `DiscogsWantlistPageDto` with pagination metadata and list of `DiscogsWantlistItemDto`
+- `DiscogsWantlistItemDto` — parses `releaseId`, `title`, `artist`, `year`, `label`, `catno`, `format`, `genres`, `thumbUrl`, `rating`, `notes` (notes treated as null when absent or empty string)
+- `WishlistImportPreview` domain model with `totalCount`, `newCount`, `duplicateCount`, `invalidCount` getters
+- `WishlistImportRow` sealed class with three subtypes: `NewWishlistRow`, `DuplicateWishlistRow`, `InvalidWishlistRow` (with safe reason string)
+- `BuildWishlistImportPreviewUseCase` — classifies each DTO: `releaseId == 0` → invalid; blank title → invalid; already in local wishlist (by release ID) → duplicate; otherwise → new
+- 24 new API unit tests and 28 new preview use-case tests (52 total)
+
+### Security
+- Token passed only as an HTTP `Authorization` header — never logged or stored beyond the call
+- `InvalidWishlistRow.reason` is a hardcoded display string
+
+---
+
+## [Unreleased — Phase 6H: Confirm and save Discogs collection import] — 2026-06-02
+
+### Added
+- `ExecuteCollectionImportUseCase` with three result types: `CollectionImportCompleted` (jobId, added/skipped/failed counts), `CollectionImportNoToken`, `CollectionImportFailed`
+  - Saves each `NewCollectionRow` as a `CollectionItem` via `CollectionRepository.add` with `RecordCondition.notSet` for media and sleeve and `SyncStatus.localOnly`
+  - Skips `DuplicateCollectionRow` and `InvalidCollectionRow` items, recording `SkippedRow` results
+  - Records `ValidRow` on success or `FailedRow` on per-item exception
+  - Creates and updates an `ImportExportJob` (running → completed / completedWithErrors)
+- `CollectionImportPreviewScreen` gains `_Importing` and `_ImportDone` states; confirm button is now enabled
+- `_ImportingBody` shows spinner with "Saving your collection…" message
+- `_ImportSummaryBody` shows Added / Skipped / Failed counts with a Done button
+- 37 new tests covering use-case result paths, job record creation, skip/fail behavior, screen state transitions, and security assertions
+
+### Security
+- Token loaded at execution time; never stored in job records, row results, or error messages
+- All summary and snackbar messages are hardcoded safe strings
+
+---
+
+## [Unreleased — Phase 6G: Collection import preview UI] — 2026-06-02
+
+### Added
+- `FetchCollectionImportPreviewUseCase` — loads token and username from `TokenStorage`; paginates `DiscogsApiClient.fetchCollectionPage`; passes all items to `BuildCollectionImportPreviewUseCase`; returns typed result: `CollectionImportPreviewReady`, `CollectionImportNoToken`, `CollectionImportRateLimited`, `CollectionImportNetworkError`, `CollectionImportError`
+- `CollectionImportPreviewScreen` with six states: `_Loading`, `_Loaded`, `_NoToken`, `_RateLimited`, `_NetworkError`, `_Error`
+- Summary card shows total Discogs items / new / duplicates / invalid counts
+- Notes warning card shown when duplicates or invalid items are present
+- Disabled confirm bar (execution added in the next slice)
+- `LayoutBuilder` wide layout ≥700dp for iPad
+- `ImportExportScreen` wires the "Import Collection from Discogs" card to navigate to `CollectionImportPreviewScreen`; "Coming soon" badge removed from that card
+- 55 new tests covering all states, wide layout, security assertions, and navigation tests
+
+### Security
+- Token is never shown or logged; only presence is checked
+- `_NoTokenState` displays a connection prompt — no token value or username exposed
+
+---
+
+## [Unreleased — Phase 6F: Collection import preview builder] — 2026-06-02
+
+### Added
+- `CollectionImportPreview` domain model with `totalCount`, `newCount`, `duplicateCount`, `invalidCount` getters
+- `CollectionImportRow` sealed class with three subtypes: `NewCollectionRow`, `DuplicateCollectionRow`, `InvalidCollectionRow` (with safe reason string)
+- `BuildCollectionImportPreviewUseCase` — classifies each `DiscogsCollectionItemDto`: `releaseId == 0` → invalid; blank title → invalid; already in local collection (by release ID) → duplicate; otherwise → new
+- 28 new unit tests covering all classification paths, field mapping, duplicate detection, counts, and security assertions
+
+### Security
+- `InvalidCollectionRow.reason` is a hardcoded display string — never a token, secret, or internal detail
+
+---
+
+## [Unreleased — Phase 6E: Discogs collection import API method] — 2026-06-02
+
+### Added
+- `DiscogsApiClient.fetchCollectionPage(username, token, {page, perPage})` — paginated GET `/users/{username}/collection/folders/0/releases` (folder 0 = all releases); returns `DiscogsCollectionPageDto` with pagination metadata and list of `DiscogsCollectionItemDto`
+- `DiscogsCollectionItemDto` — parses `releaseId`, `title`, `artist`, `year`, `label`, `catno`, `format`, `genres`, `thumbUrl` from Discogs collection response shape
+- `DiscogsCollectionPageDto` with `items`, `page`, `pages`, `perPage`, `urls` fields
+- 21 new unit tests covering successful parse, pagination metadata, error mapping (401, 429, 500, network), empty response, and multi-page detection
+
+### Security
+- Token passed only as an HTTP `Authorization` header — never logged, stored, or returned
+
+---
+
+## [Unreleased — Phase 6D: Import and Export screen shell] — 2026-06-02
+
+### Added
+- `ImportExportScreen` with two sections: Discogs actions (import/export collection and wishlist) and CSV file actions (export/import collection and wishlist)
+- 8 action cards, each showing an icon, title, optional "Coming soon" badge, and chevron; tapping a Coming soon card shows a snackbar
+- 2-column `SliverGrid` layout on screens ≥700dp (iPad); single-column `SliverList` on narrower screens
+- Settings screen now has an "Import & Export" list tile that navigates to `ImportExportScreen`
+- 15 new widget tests covering card render, Coming soon snackbar, wide grid layout, and Settings navigation
+
+---
+
+## [Unreleased — Phase 6C: Local import/export job storage] — 2026-06-02
+
+### Added
+- `ImportExportJobs` Drift table with columns for all `ImportExportJob` fields; `ImportExportJobTypeConverter` and `ImportExportStatusConverter` type converters
+- `ImportExportRowResults` Drift table with columns for all `ImportExportRowResult` subtypes; `ImportExportRowResultTypeConverter`
+- `LocalImportExportJobRepository` — Drift implementation of `ImportExportJobRepository`; `getRecent` orders by `startedAt` descending
+- `LocalImportExportRowResultRepository` — Drift implementation of `ImportExportRowResultRepository`; `removeAllForJob` deletes by `jobId`
+- Schema version bumped to 6; migration creates both new tables
+- 51 new integration tests using `NativeDatabase.memory()` covering add/update/getById/getRecent/remove for jobs and addResult/getResults/removeAllForJob for row results, plus enum round-trip and security assertions
+
+---
+
+## [Unreleased — Phase 6B: Import/export repository contracts] — 2026-06-02
+
+### Added
+- `ImportExportJobRepository` abstract interface: `add`, `update`, `getById`, `getRecent(limit)`, `remove`
+- `ImportExportRowResultRepository` abstract interface: `addResult`, `getResults(jobId)`, `removeAllForJob(jobId)`
+- 28 new contract tests using in-memory fake implementations, covering add/read/update/delete semantics, `getRecent` ordering and limit, and `getResults` isolation by job ID
+
+---
+
+## [Unreleased — Phase 6A: Import/export domain models] — 2026-06-02
+
+### Added
+- `ImportExportJobType` enum with 8 values: `importCollectionFromDiscogs`, `importWishlistFromDiscogs`, `exportCollectionToDiscogs`, `exportWishlistToDiscogs`, `importCollectionFromCsv`, `exportCollectionToCsv`, `importWishlistFromCsv`, `exportWishlistToCsv`
+- `ImportExportStatus` enum with 8 values: `notStarted`, `running`, `completed`, `completedWithErrors`, `failed`, `cancelled`, `partiallyCompleted`, `paused`
+- `ImportExportJob` model with all job tracking fields (`id`, `jobType`, `status`, `startedAt`, `finishedAt`, `totalItems`, `processedItems`, `errorMessage`); `copyWith` with optional `clearFinishedAt` and `clearErrorMessage` flags
+- `ImportExportRowResult` sealed class with three subtypes: `ValidRow` (itemId, label), `SkippedRow` (itemId, reason), `FailedRow` (itemId, safeMessage)
+- 25 new unit tests covering enum labels, `copyWith` field preservation and clearing, `ImportExportRowResult` subtype checks, and security assertions (no token or secret fields on any model)
+
+### Security
+- No token, secret, or credential fields on any import/export model
+- `FailedRow.safeMessage` is an explicit safe-string field by design
+
+---
+
 ## [Unreleased — Phase 5R: Offline mode final polish] — 2026-06-02
 
 ### Changed
