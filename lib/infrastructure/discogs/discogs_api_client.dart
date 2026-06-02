@@ -8,6 +8,7 @@ import 'dto/discogs_collection_item.dart';
 import 'dto/discogs_identity.dart';
 import 'dto/discogs_release.dart';
 import 'dto/discogs_search_result.dart';
+import 'dto/discogs_wantlist_item.dart';
 
 const _baseUrl = 'https://api.discogs.com';
 const _userAgent = 'Cratewise/1.0';
@@ -71,6 +72,27 @@ class DiscogsApiClient {
     );
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return DiscogsCollectionPageDto.fromJson(json);
+  }
+
+  /// Fetches one page of the authenticated user's Discogs wantlist.
+  ///
+  /// [username] must be the Discogs username returned by [fetchIdentity].
+  Future<DiscogsWantlistPageDto> fetchWantlistPage(
+    String username,
+    String token, {
+    int page = 1,
+    int perPage = 50,
+  }) async {
+    final response = await _get(
+      '/users/$username/wants',
+      token,
+      queryParameters: {
+        'page': '$page',
+        'per_page': '$perPage',
+      },
+    );
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return DiscogsWantlistPageDto.fromJson(json);
   }
 
   /// Searches Discogs releases by [barcode] identifier.

@@ -5,6 +5,7 @@ import 'package:cratewise/infrastructure/discogs/dto/discogs_collection_item.dar
 import 'package:cratewise/infrastructure/discogs/dto/discogs_identity.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_release.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_search_result.dart';
+import 'package:cratewise/infrastructure/discogs/dto/discogs_wantlist_item.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -948,6 +949,361 @@ void main() {
       final client = DiscogsApiClient(httpClient: _mockClient(401));
       try {
         await client.fetchRelease(1, _fakeToken);
+        fail('expected InvalidTokenError');
+      } on InvalidTokenError {
+        // Pass — typed error carries no message containing the token.
+      }
+    });
+  });
+
+  group('DiscogsApiClient.fetchWantlistPage', () {
+    const fakeUsername = 'vinyl_fan';
+
+    Map<String, dynamic> wantlistBody({
+      int page = 1,
+      int pages = 3,
+      int perPage = 50,
+      int items = 125,
+      List<Map<String, dynamic>> wants = const [],
+    }) =>
+        {
+          'pagination': {
+            'page': page,
+            'pages': pages,
+            'per_page': perPage,
+            'items': items,
+            'urls': {
+              'next':
+                  'https://api.discogs.com/users/vinyl_fan/wants?page=2',
+              'last':
+                  'https://api.discogs.com/users/vinyl_fan/wants?page=$pages',
+            },
+          },
+          'wants': wants,
+        };
+
+    final bridgeStrippedBare = {
+      'id': 3003339,
+      'resource_url': 'https://api.discogs.com/users/vinyl_fan/wants/3003339',
+      'rating': 3,
+      'notes': 'Great album, need to find a copy.',
+      'date_added': '2023-04-10T09:15:00-07:00',
+      'basic_information': {
+        'id': 3003339,
+        'title': 'The Bride Stripped Bare',
+        'year': 1978,
+        'thumb': 'https://i.discogs.com/bride_150.jpg',
+        'cover_image': 'https://i.discogs.com/bride.jpg',
+        'artists': [
+          {'name': 'Bryan Ferry', 'id': 79999},
+        ],
+        'labels': [
+          {'name': 'Polydor', 'catno': '2302 069', 'id': 812},
+        ],
+        'formats': [
+          {
+            'name': 'Vinyl',
+            'qty': '1',
+            'descriptions': ['LP', 'Album'],
+          },
+        ],
+        'genres': ['Rock'],
+        'styles': ['Art Rock', 'New Wave'],
+      },
+    };
+
+    test('returns DiscogsWantlistPageDto on 200', () async {
+      final body = wantlistBody(wants: [bridgeStrippedBare]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page, isA<DiscogsWantlistPageDto>());
+    });
+
+    test('parses pagination fields', () async {
+      final body = wantlistBody(page: 2, pages: 5, items: 230);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page.page, 2);
+      expect(page.totalPages, 5);
+      expect(page.totalItems, 230);
+    });
+
+    test('parses wantlist item fields', () async {
+      final body = wantlistBody(wants: [bridgeStrippedBare]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      final item = page.items.first;
+      expect(item, isA<DiscogsWantlistItemDto>());
+      expect(item.releaseId, 3003339);
+      expect(item.dateAdded, '2023-04-10T09:15:00-07:00');
+      expect(item.rating, 3);
+    });
+
+    test('parses title, artist, year from basic_information', () async {
+      final body = wantlistBody(wants: [bridgeStrippedBare]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      final item = page.items.first;
+      expect(item.title, 'The Bride Stripped Bare');
+      expect(item.artist, 'Bryan Ferry');
+      expect(item.year, 1978);
+    });
+
+    test('parses label and catalog number', () async {
+      final body = wantlistBody(wants: [bridgeStrippedBare]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      final item = page.items.first;
+      expect(item.label, 'Polydor');
+      expect(item.catno, '2302 069');
+    });
+
+    test('parses format with descriptions', () async {
+      final body = wantlistBody(wants: [bridgeStrippedBare]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page.items.first.format, 'Vinyl, LP, Album');
+    });
+
+    test('parses genres', () async {
+      final body = wantlistBody(wants: [bridgeStrippedBare]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page.items.first.genres, ['Rock']);
+    });
+
+    test('parses thumbUrl from basic_information thumb', () async {
+      final body = wantlistBody(wants: [bridgeStrippedBare]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page.items.first.thumbUrl, 'https://i.discogs.com/bride_150.jpg');
+    });
+
+    test('treats empty thumb string as null', () async {
+      final item = {
+        ...bridgeStrippedBare,
+        'basic_information': {
+          ...(bridgeStrippedBare['basic_information']
+              as Map<String, dynamic>),
+          'thumb': '',
+        },
+      };
+      final body = wantlistBody(wants: [item]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page.items.first.thumbUrl, isNull);
+    });
+
+    test('parses notes field', () async {
+      final body = wantlistBody(wants: [bridgeStrippedBare]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page.items.first.notes, 'Great album, need to find a copy.');
+    });
+
+    test('treats absent notes as null', () async {
+      final noNotes = {
+        ...bridgeStrippedBare,
+      }..remove('notes');
+      final body = wantlistBody(wants: [noNotes]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page.items.first.notes, isNull);
+    });
+
+    test('treats empty notes string as null', () async {
+      final emptyNotes = {...bridgeStrippedBare, 'notes': ''};
+      final body = wantlistBody(wants: [emptyNotes]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page.items.first.notes, isNull);
+    });
+
+    test('joins multiple artists with comma', () async {
+      final multiArtist = {
+        ...bridgeStrippedBare,
+        'basic_information': {
+          ...(bridgeStrippedBare['basic_information']
+              as Map<String, dynamic>),
+          'artists': [
+            {'name': 'John Lennon'},
+            {'name': 'Paul McCartney'},
+          ],
+        },
+      };
+      final body = wantlistBody(wants: [multiArtist]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page.items.first.artist, 'John Lennon, Paul McCartney');
+    });
+
+    test('handles missing optional fields gracefully', () async {
+      final minimal = {
+        'id': 1,
+        'date_added': '',
+        'rating': 0,
+        'basic_information': {'id': 1},
+      };
+      final body = wantlistBody(wants: [minimal]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      final item = page.items.first;
+      expect(item.title, '');
+      expect(item.artist, '');
+      expect(item.label, '');
+      expect(item.catno, '');
+      expect(item.format, '');
+      expect(item.genres, isEmpty);
+      expect(item.year, isNull);
+      expect(item.thumbUrl, isNull);
+      expect(item.notes, isNull);
+    });
+
+    test('returns empty items list when wants array is empty', () async {
+      final body = wantlistBody();
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(page.items, isEmpty);
+      expect(page.totalItems, 125);
+    });
+
+    test('encodes correct URL path for the given username', () async {
+      late http.Request captured;
+      final body = wantlistBody();
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(jsonEncode(body), 200);
+        }),
+      );
+      await client.fetchWantlistPage('vinyl_fan', _fakeToken);
+      expect(captured.url.path, '/users/vinyl_fan/wants');
+    });
+
+    test('encodes page and per_page query parameters', () async {
+      late http.Request captured;
+      final body = wantlistBody();
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(jsonEncode(body), 200);
+        }),
+      );
+      await client.fetchWantlistPage(
+        fakeUsername,
+        _fakeToken,
+        page: 3,
+        perPage: 25,
+      );
+      expect(captured.url.queryParameters['page'], '3');
+      expect(captured.url.queryParameters['per_page'], '25');
+    });
+
+    test('defaults to page=1 and perPage=50', () async {
+      late http.Request captured;
+      final body = wantlistBody();
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(jsonEncode(body), 200);
+        }),
+      );
+      await client.fetchWantlistPage(fakeUsername, _fakeToken);
+      expect(captured.url.queryParameters['page'], '1');
+      expect(captured.url.queryParameters['per_page'], '50');
+    });
+
+    test('throws InvalidTokenError on 401', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      expect(
+        () => client.fetchWantlistPage(fakeUsername, _fakeToken),
+        throwsA(isA<InvalidTokenError>()),
+      );
+    });
+
+    test('throws InvalidTokenError on 403', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(403));
+      expect(
+        () => client.fetchWantlistPage(fakeUsername, _fakeToken),
+        throwsA(isA<InvalidTokenError>()),
+      );
+    });
+
+    test('throws RateLimitedError on 429', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(429));
+      expect(
+        () => client.fetchWantlistPage(fakeUsername, _fakeToken),
+        throwsA(isA<RateLimitedError>()),
+      );
+    });
+
+    test('throws DiscogsUnavailableError on 500', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(500));
+      expect(
+        () => client.fetchWantlistPage(fakeUsername, _fakeToken),
+        throwsA(isA<DiscogsUnavailableError>()),
+      );
+    });
+
+    test('throws NetworkError when request throws', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async => throw Exception('no internet')),
+      );
+      expect(
+        () => client.fetchWantlistPage(fakeUsername, _fakeToken),
+        throwsA(isA<NetworkError>()),
+      );
+    });
+
+    test('token is not present in thrown error messages', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      try {
+        await client.fetchWantlistPage(fakeUsername, _fakeToken);
         fail('expected InvalidTokenError');
       } on InvalidTokenError {
         // Pass — typed error carries no message containing the token.
