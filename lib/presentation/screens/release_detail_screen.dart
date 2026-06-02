@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../application/services/discogs_release_detail_service.dart';
@@ -7,6 +9,7 @@ import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/cached_release_metadata.dart';
 import '../../domain/models/release_detail.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
+import '../../domain/repositories/thumbnail_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
@@ -60,6 +63,7 @@ class ReleaseDetailScreen extends StatefulWidget {
     this.addToWishlistUseCase,
     this.cacheRepository,
     this.thumbnailCacheService,
+    this.thumbnailRepository,
   });
 
   final int releaseId;
@@ -68,6 +72,7 @@ class ReleaseDetailScreen extends StatefulWidget {
   final AddToWishlistUseCase? addToWishlistUseCase;
   final CachedReleaseMetadataRepository? cacheRepository;
   final ThumbnailCacheService? thumbnailCacheService;
+  final ThumbnailRepository? thumbnailRepository;
 
   @override
   State<ReleaseDetailScreen> createState() => _ReleaseDetailScreenState();
@@ -233,7 +238,10 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
             onRetry: _isRetriable(error) ? _retry : null,
           ),
         _Loaded(:final detail) => _DetailBody(detail: detail),
-        _CachedLoaded(:final metadata) => _CachedDetailBody(metadata: metadata),
+        _CachedLoaded(:final metadata) => _CachedDetailBody(
+            metadata: metadata,
+            thumbnailRepository: widget.thumbnailRepository,
+          ),
       },
       bottomNavigationBar: (state is _Loaded || state is _CachedLoaded)
           ? _AddActionsBar(
@@ -447,7 +455,8 @@ class _ErrorBody extends StatelessWidget {
         InvalidTokenError() =>
           'Your Discogs token is not valid. Go to Settings to reconnect.',
         RateLimitedError() => 'Too many requests. Wait a moment and try again.',
-        NetworkError() => 'No internet connection.',
+        NetworkError() =>
+          'No internet connection. Visit this release while online to save data for offline viewing.',
         StorageError() => 'Could not load your saved token. Try again.',
         DiscogsUnavailableError() => 'Could not reach Discogs. Try again.',
         UnexpectedApiError() => 'Could not reach Discogs. Try again.',
@@ -494,11 +503,20 @@ class _ErrorBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DetailBody extends StatelessWidget {
-  const _DetailBody({required this.detail});
+  const _DetailBody({required this.detail, this.localThumbnailPath});
 
   final ReleaseDetail detail;
+  final String? localThumbnailPath;
 
   static const _kWideBreakpoint = 700.0;
+
+  Widget _buildCoverNarrow() {
+    if (localThumbnailPath != null) {
+      return _LocalCoverImage(path: localThumbnailPath!);
+    }
+    if (detail.coverUrl != null) return _CoverImage(url: detail.coverUrl!);
+    return const SizedBox.shrink();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -515,7 +533,7 @@ class _DetailBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (detail.coverUrl != null) _CoverImage(url: detail.coverUrl!),
+          _buildCoverNarrow(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: _TitleArtist(detail: detail),
@@ -537,8 +555,39 @@ class _DetailBody extends StatelessWidget {
     );
   }
 
-  Widget _buildWide(BuildContext context) {
+  Widget _buildWideCover(BuildContext context) {
     final theme = Theme.of(context);
+    if (localThumbnailPath != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: _LocalCoverImage(path: localThumbnailPath!),
+      );
+    }
+    if (detail.coverUrl != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: _CoverImage(url: detail.coverUrl!),
+      );
+    }
+    return AspectRatio(
+      aspectRatio: 1,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Icon(
+            Icons.album,
+            size: 72,
+            color: theme.colorScheme.outlineVariant,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWide(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -549,28 +598,7 @@ class _DetailBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (detail.coverUrl != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: _CoverImage(url: detail.coverUrl!),
-                  )
-                else
-                  AspectRatio(
-                    aspectRatio: 1,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.album,
-                          size: 72,
-                          color: theme.colorScheme.outlineVariant,
-                        ),
-                      ),
-                    ),
-                  ),
+                _buildWideCover(context),
                 const SizedBox(height: 20),
                 _TitleArtist(detail: detail),
                 const SizedBox(height: 16),
@@ -603,17 +631,38 @@ class _DetailBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _CachedDetailBody extends StatelessWidget {
-  const _CachedDetailBody({required this.metadata});
+  const _CachedDetailBody({
+    required this.metadata,
+    this.thumbnailRepository,
+  });
 
   final CachedReleaseMetadata metadata;
+  final ThumbnailRepository? thumbnailRepository;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _CachedBanner(fetchedAt: metadata.fetchedAt),
-        Expanded(child: _DetailBody(detail: _cachedMetadataToDetail(metadata))),
-      ],
+    final detail = _cachedMetadataToDetail(metadata);
+    if (thumbnailRepository == null) {
+      return Column(
+        children: [
+          _CachedBanner(fetchedAt: metadata.fetchedAt),
+          Expanded(child: _DetailBody(detail: detail)),
+        ],
+      );
+    }
+    return FutureBuilder<String?>(
+      future: thumbnailRepository!.getLocalPath(metadata.discogsReleaseId),
+      builder: (context, snapshot) => Column(
+        children: [
+          _CachedBanner(fetchedAt: metadata.fetchedAt),
+          Expanded(
+            child: _DetailBody(
+              detail: detail,
+              localThumbnailPath: snapshot.data,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -804,6 +853,34 @@ class _IdentifiersSection extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _LocalCoverImage extends StatelessWidget {
+  const _LocalCoverImage({required this.path});
+
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Image.file(
+        File(path),
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => ColoredBox(
+          color: theme.colorScheme.surfaceContainerHighest,
+          child: Center(
+            child: Icon(
+              Icons.album,
+              size: 72,
+              color: theme.colorScheme.outlineVariant,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

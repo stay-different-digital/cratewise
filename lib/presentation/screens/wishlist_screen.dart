@@ -113,6 +113,9 @@ class _WishlistList extends StatelessWidget {
   final WishlistRepository repository;
   final ThumbnailRepository thumbnailRepository;
 
+  static const _kWideBreakpoint = 700.0;
+  static const _kGridItemExtent = 124.0;
+
   void _openDetail(BuildContext context, int index) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -127,10 +130,37 @@ class _WishlistList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) =>
+          constraints.maxWidth >= _kWideBreakpoint
+              ? _buildGrid(context)
+              : _buildList(context),
+    );
+  }
+
+  Widget _buildList(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
+      itemBuilder: (context, index) => WishlistItemCard(
+        item: items[index],
+        onTap: () => _openDetail(context, index),
+        thumbnailRepository: thumbnailRepository,
+      ),
+    );
+  }
+
+  Widget _buildGrid(BuildContext context) {
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        mainAxisExtent: _kGridItemExtent,
+      ),
+      itemCount: items.length,
       itemBuilder: (context, index) => WishlistItemCard(
         item: items[index],
         onTap: () => _openDetail(context, index),

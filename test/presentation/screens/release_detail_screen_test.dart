@@ -10,6 +10,7 @@ import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
@@ -195,6 +196,25 @@ final _cachedKindOfBlue = CachedReleaseMetadata(
   cacheSource: 'discogs_api',
   syncStatus: SyncStatus.localOnly,
 );
+
+class _FakeThumbnailRepository implements ThumbnailRepository {
+  int getLocalPathCallCount = 0;
+
+  @override
+  Future<String?> getLocalPath(int releaseId) async {
+    getLocalPathCallCount++;
+    return null;
+  }
+
+  @override
+  Future<void> save(int releaseId, List<int> bytes) async {}
+
+  @override
+  Future<void> remove(int releaseId) async {}
+
+  @override
+  Future<bool> exists(int releaseId) async => false;
+}
 
 Widget _wrap(Widget child) => MaterialApp(home: child);
 
@@ -931,6 +951,94 @@ void main() {
         expect(find.textContaining('token'), findsNothing);
         expect(find.textContaining('secret'), findsNothing);
       });
+    });
+  });
+
+  group('ReleaseDetailScreen — offline wording', () {
+    testWidgets('network error message mentions offline viewing hint',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        ReleaseDetailScreen(
+          releaseId: 249504,
+          detailService: _ErrorService(error: const NetworkError()),
+          addToCollectionUseCase: _newUseCase(),
+          addToWishlistUseCase: _newWishlistUseCase(),
+          cacheRepository: _FakeCacheRepository(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('offline viewing'), findsOneWidget);
+    });
+
+    testWidgets('network error message does not contain token or secret',
+        (tester) async {
+      await tester.pumpWidget(_wrap(
+        ReleaseDetailScreen(
+          releaseId: 249504,
+          detailService: _ErrorService(error: const NetworkError()),
+          addToCollectionUseCase: _newUseCase(),
+          addToWishlistUseCase: _newWishlistUseCase(),
+          cacheRepository: _FakeCacheRepository(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('token'), findsNothing);
+      expect(find.textContaining('secret'), findsNothing);
+    });
+  });
+
+  group('ReleaseDetailScreen — cached thumbnail in offline fallback', () {
+    testWidgets('calls thumbnailRepository.getLocalPath when showing cached view',
+        (tester) async {
+      final thumbRepo = _FakeThumbnailRepository();
+      await tester.pumpWidget(_wrap(
+        ReleaseDetailScreen(
+          releaseId: 249504,
+          detailService: _ErrorService(error: const NetworkError()),
+          addToCollectionUseCase: _newUseCase(),
+          addToWishlistUseCase: _newWishlistUseCase(),
+          cacheRepository:
+              _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          thumbnailRepository: thumbRepo,
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(thumbRepo.getLocalPathCallCount, greaterThan(0));
+    });
+
+    testWidgets('does not call thumbnailRepository when showing live data',
+        (tester) async {
+      final thumbRepo = _FakeThumbnailRepository();
+      await tester.pumpWidget(_wrap(
+        ReleaseDetailScreen(
+          releaseId: 249504,
+          detailService: _LoadedService(detail: _kindOfBlue),
+          addToCollectionUseCase: _newUseCase(),
+          addToWishlistUseCase: _newWishlistUseCase(),
+          thumbnailRepository: thumbRepo,
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(thumbRepo.getLocalPathCallCount, 0);
+    });
+
+    testWidgets(
+        'cached view renders without crash when thumbnailRepository returns null path',
+        (tester) async {
+      final thumbRepo = _FakeThumbnailRepository();
+      await tester.pumpWidget(_wrap(
+        ReleaseDetailScreen(
+          releaseId: 249504,
+          detailService: _ErrorService(error: const NetworkError()),
+          addToCollectionUseCase: _newUseCase(),
+          addToWishlistUseCase: _newWishlistUseCase(),
+          cacheRepository:
+              _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+          thumbnailRepository: thumbRepo,
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Showing saved data'), findsOneWidget);
     });
   });
 }

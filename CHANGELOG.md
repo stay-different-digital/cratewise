@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5R: Offline mode final polish] — 2026-06-02
+
+### Changed
+- Wishlist list shows a 2-column `GridView` on screens ≥700dp (iPad), matching Collection list
+- Search screen `NetworkError` message now mentions that the collection and wishlist remain available offline
+- Release Detail `NetworkError` message (when no cached data) now hints to visit the release online to save data for offline viewing
+- Barcode scan `_ErrorState` icon colour corrected to `theme.colorScheme.error`; message now explains that an internet connection is needed for Discogs lookups
+- `ReleaseDetailScreen` accepts an optional `ThumbnailRepository`; when provided and the screen falls back to cached metadata, the locally cached cover thumbnail is used instead of attempting a `Image.network` call (which fails offline)
+
+### Security
+- No tokens or secrets exposed in any new or updated error messages
+
+---
+
 ## [Unreleased — Phase 5Q: Retry failed thumbnail cache action] — 2026-06-02
 
 ### Added

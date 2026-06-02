@@ -268,7 +268,8 @@ class _SearchErrorState extends StatelessWidget {
           'Your Discogs token is not valid. Go to Settings to reconnect.',
         RateLimitedError() =>
           'Too many requests. Wait a moment and try again.',
-        NetworkError() => 'No internet connection.',
+        NetworkError() =>
+          'No internet connection. Your collection and wishlist are still available offline.',
         StorageError() => 'Could not load your saved token. Try again.',
         DiscogsUnavailableError() => 'Could not reach Discogs. Try again.',
         UnexpectedApiError() => 'Could not reach Discogs. Try again.',

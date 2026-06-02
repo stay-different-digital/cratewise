@@ -592,13 +592,13 @@ class _ErrorState extends StatelessWidget {
             Icon(
               Icons.error_outline,
               size: 56,
-              color: theme.colorScheme.outlineVariant,
+              color: theme.colorScheme.error,
             ),
             const SizedBox(height: 16),
             Text('Something went wrong', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Check your connection and try again.',
+              'Could not reach Discogs. An internet connection is needed for barcode lookups.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,

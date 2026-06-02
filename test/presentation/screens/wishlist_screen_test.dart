@@ -437,4 +437,84 @@ void main() {
       expect(find.byKey(const Key('wishlist-cached-cover')), findsOneWidget);
     });
   });
+
+  group('WishlistScreen — iPad layout', () {
+    testWidgets('shows GridView at wide breakpoint', (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeWishlistRepository(
+        items: [_makeItem(id: 'a'), _makeItem(id: 'b')],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.byType(GridView), findsOneWidget);
+    });
+
+    testWidgets('GridView shows all item cards', (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeWishlistRepository(
+        items: [
+          _makeItem(id: 'a', artist: 'Artist A'),
+          _makeItem(id: 'b', artist: 'Artist B'),
+          _makeItem(id: 'c', artist: 'Artist C'),
+        ],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.byType(WishlistItemCard), findsNWidgets(3));
+    });
+
+    testWidgets('narrow screen does not show GridView', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeWishlistRepository(
+        items: [_makeItem(id: 'a'), _makeItem(id: 'b')],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.byType(GridView), findsNothing);
+      expect(find.byType(WishlistItemCard), findsNWidgets(2));
+    });
+
+    testWidgets('tapping card in GridView opens WishlistDetailScreen',
+        (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeWishlistRepository(
+        items: [_makeItem(id: 'grid-detail-1', artist: 'Grid Artist')],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(WishlistItemCard).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(WishlistDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('empty state shows without GridView at wide breakpoint',
+        (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeWishlistRepository();
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.byType(GridView), findsNothing);
+      expect(find.text('Your wishlist is empty'), findsOneWidget);
+    });
+  });
 }
