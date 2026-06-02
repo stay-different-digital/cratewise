@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../shared/errors/app_error.dart';
+import 'dto/discogs_collection_item.dart';
 import 'dto/discogs_identity.dart';
 import 'dto/discogs_release.dart';
 import 'dto/discogs_search_result.dart';
@@ -48,6 +49,28 @@ class DiscogsApiClient {
     return results
         .map((e) => DiscogsSearchResultDto.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  /// Fetches one page of the authenticated user's Discogs collection.
+  ///
+  /// [username] must be the Discogs username returned by [fetchIdentity].
+  /// Use folder `0` to read all items across all folders.
+  Future<DiscogsCollectionPageDto> fetchCollectionPage(
+    String username,
+    String token, {
+    int page = 1,
+    int perPage = 50,
+  }) async {
+    final response = await _get(
+      '/users/$username/collection/folders/0/releases',
+      token,
+      queryParameters: {
+        'page': '$page',
+        'per_page': '$perPage',
+      },
+    );
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return DiscogsCollectionPageDto.fromJson(json);
   }
 
   /// Searches Discogs releases by [barcode] identifier.

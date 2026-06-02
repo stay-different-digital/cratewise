@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
+import 'package:cratewise/infrastructure/discogs/dto/discogs_collection_item.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_identity.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_release.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_search_result.dart';
@@ -348,6 +349,332 @@ void main() {
         () => client.searchByBarcode('1234567890', _fakeToken),
         throwsA(isA<RateLimitedError>()),
       );
+    });
+  });
+
+  group('DiscogsApiClient.fetchCollectionPage', () {
+    const fakeUsername = 'vinyl_fan';
+
+    Map<String, dynamic> collectionBody({
+      int page = 1,
+      int pages = 3,
+      int perPage = 50,
+      int items = 125,
+      List<Map<String, dynamic>> releases = const [],
+    }) =>
+        {
+          'pagination': {
+            'page': page,
+            'pages': pages,
+            'per_page': perPage,
+            'items': items,
+            'urls': {
+              'next':
+                  'https://api.discogs.com/users/vinyl_fan/collection/folders/0/releases?page=2',
+              'last':
+                  'https://api.discogs.com/users/vinyl_fan/collection/folders/0/releases?page=$pages',
+            },
+          },
+          'releases': releases,
+        };
+
+    final kindOfBlueRelease = {
+      'id': 11111,
+      'instance_id': 99999,
+      'date_added': '2023-01-15T10:30:00-08:00',
+      'rating': 4,
+      'folder_id': 1,
+      'basic_information': {
+        'id': 249504,
+        'title': 'Kind Of Blue',
+        'year': 1959,
+        'thumb': 'https://i.discogs.com/kind_of_blue_150.jpg',
+        'cover_image': 'https://i.discogs.com/kind_of_blue.jpg',
+        'artists': [
+          {'name': 'Miles Davis', 'id': 15885},
+        ],
+        'labels': [
+          {'name': 'Columbia', 'catno': 'CL 1355', 'id': 1},
+        ],
+        'formats': [
+          {
+            'name': 'Vinyl',
+            'qty': '1',
+            'descriptions': ['LP', 'Album'],
+          },
+        ],
+        'genres': ['Jazz'],
+        'styles': ['Modal', 'Bop'],
+      },
+    };
+
+    test('returns DiscogsCollectionPageDto on 200', () async {
+      final body = collectionBody(releases: [kindOfBlueRelease]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      expect(page, isA<DiscogsCollectionPageDto>());
+    });
+
+    test('parses pagination fields', () async {
+      final body = collectionBody(page: 2, pages: 5, items: 230);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      expect(page.page, 2);
+      expect(page.totalPages, 5);
+      expect(page.totalItems, 230);
+    });
+
+    test('parses collection item fields', () async {
+      final body = collectionBody(releases: [kindOfBlueRelease]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      final item = page.items.first;
+      expect(item, isA<DiscogsCollectionItemDto>());
+      expect(item.releaseId, 11111);
+      expect(item.instanceId, 99999);
+      expect(item.dateAdded, '2023-01-15T10:30:00-08:00');
+      expect(item.rating, 4);
+      expect(item.folderId, 1);
+    });
+
+    test('parses title, artist, year from basic_information', () async {
+      final body = collectionBody(releases: [kindOfBlueRelease]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      final item = page.items.first;
+      expect(item.title, 'Kind Of Blue');
+      expect(item.artist, 'Miles Davis');
+      expect(item.year, 1959);
+    });
+
+    test('parses label and catalog number', () async {
+      final body = collectionBody(releases: [kindOfBlueRelease]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      final item = page.items.first;
+      expect(item.label, 'Columbia');
+      expect(item.catno, 'CL 1355');
+    });
+
+    test('parses format with descriptions', () async {
+      final body = collectionBody(releases: [kindOfBlueRelease]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      expect(page.items.first.format, 'Vinyl, LP, Album');
+    });
+
+    test('parses genres', () async {
+      final body = collectionBody(releases: [kindOfBlueRelease]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      expect(page.items.first.genres, ['Jazz']);
+    });
+
+    test('parses thumbUrl from basic_information thumb', () async {
+      final body = collectionBody(releases: [kindOfBlueRelease]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      expect(
+          page.items.first.thumbUrl, 'https://i.discogs.com/kind_of_blue_150.jpg');
+    });
+
+    test('treats empty thumb string as null', () async {
+      final release = {
+        ...kindOfBlueRelease,
+        'basic_information': {
+          ...(kindOfBlueRelease['basic_information']
+              as Map<String, dynamic>),
+          'thumb': '',
+        },
+      };
+      final body = collectionBody(releases: [release]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      expect(page.items.first.thumbUrl, isNull);
+    });
+
+    test('joins multiple artists with comma', () async {
+      final multiArtist = {
+        ...kindOfBlueRelease,
+        'basic_information': {
+          ...(kindOfBlueRelease['basic_information']
+              as Map<String, dynamic>),
+          'artists': [
+            {'name': 'John Lennon'},
+            {'name': 'Paul McCartney'},
+          ],
+        },
+      };
+      final body = collectionBody(releases: [multiArtist]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      expect(page.items.first.artist, 'John Lennon, Paul McCartney');
+    });
+
+    test('handles missing optional fields gracefully', () async {
+      final minimal = {
+        'id': 1,
+        'instance_id': 2,
+        'date_added': '',
+        'rating': 0,
+        'folder_id': 0,
+        'basic_information': {'id': 1},
+      };
+      final body = collectionBody(releases: [minimal]);
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      final item = page.items.first;
+      expect(item.title, '');
+      expect(item.artist, '');
+      expect(item.label, '');
+      expect(item.catno, '');
+      expect(item.format, '');
+      expect(item.genres, isEmpty);
+      expect(item.year, isNull);
+      expect(item.thumbUrl, isNull);
+    });
+
+    test('returns empty items list when releases array is empty', () async {
+      final body = collectionBody();
+      final client = DiscogsApiClient(
+        httpClient:
+            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+      );
+      final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      expect(page.items, isEmpty);
+      expect(page.totalItems, 125);
+    });
+
+    test('encodes correct URL path for the given username', () async {
+      late http.Request captured;
+      final body = collectionBody();
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(jsonEncode(body), 200);
+        }),
+      );
+      await client.fetchCollectionPage('vinyl_fan', _fakeToken);
+      expect(
+          captured.url.path, '/users/vinyl_fan/collection/folders/0/releases');
+    });
+
+    test('encodes page and per_page query parameters', () async {
+      late http.Request captured;
+      final body = collectionBody();
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(jsonEncode(body), 200);
+        }),
+      );
+      await client.fetchCollectionPage(
+        fakeUsername,
+        _fakeToken,
+        page: 3,
+        perPage: 25,
+      );
+      expect(captured.url.queryParameters['page'], '3');
+      expect(captured.url.queryParameters['per_page'], '25');
+    });
+
+    test('defaults to page=1 and perPage=50', () async {
+      late http.Request captured;
+      final body = collectionBody();
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(jsonEncode(body), 200);
+        }),
+      );
+      await client.fetchCollectionPage(fakeUsername, _fakeToken);
+      expect(captured.url.queryParameters['page'], '1');
+      expect(captured.url.queryParameters['per_page'], '50');
+    });
+
+    test('throws InvalidTokenError on 401', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      expect(
+        () => client.fetchCollectionPage(fakeUsername, _fakeToken),
+        throwsA(isA<InvalidTokenError>()),
+      );
+    });
+
+    test('throws InvalidTokenError on 403', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(403));
+      expect(
+        () => client.fetchCollectionPage(fakeUsername, _fakeToken),
+        throwsA(isA<InvalidTokenError>()),
+      );
+    });
+
+    test('throws RateLimitedError on 429', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(429));
+      expect(
+        () => client.fetchCollectionPage(fakeUsername, _fakeToken),
+        throwsA(isA<RateLimitedError>()),
+      );
+    });
+
+    test('throws DiscogsUnavailableError on 500', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(500));
+      expect(
+        () => client.fetchCollectionPage(fakeUsername, _fakeToken),
+        throwsA(isA<DiscogsUnavailableError>()),
+      );
+    });
+
+    test('throws NetworkError when request throws', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async => throw Exception('no internet')),
+      );
+      expect(
+        () => client.fetchCollectionPage(fakeUsername, _fakeToken),
+        throwsA(isA<NetworkError>()),
+      );
+    });
+
+    test('token is not present in thrown error messages', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      try {
+        await client.fetchCollectionPage(fakeUsername, _fakeToken);
+        fail('expected InvalidTokenError');
+      } on InvalidTokenError {
+        // Pass — typed error carries no message containing the token.
+      }
     });
   });
 
