@@ -1,8 +1,13 @@
 import 'package:cratewise/application/use_cases/build_collection_import_preview_use_case.dart';
+import 'package:cratewise/application/use_cases/execute_collection_import_use_case.dart';
 import 'package:cratewise/application/use_cases/fetch_collection_import_preview_use_case.dart';
 import 'package:cratewise/domain/models/collection_import_preview.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
+import 'package:cratewise/domain/models/import_export_job.dart';
+import 'package:cratewise/domain/models/import_export_row_result.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/import_export_job_repository.dart';
+import 'package:cratewise/domain/repositories/import_export_row_result_repository.dart';
 import 'package:cratewise/presentation/screens/collection_import_preview_screen.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:flutter/material.dart';
@@ -46,6 +51,64 @@ class _FakeUseCase extends FetchCollectionImportPreviewUseCase {
 }
 
 // ---------------------------------------------------------------------------
+// Fakes for execute use case
+// ---------------------------------------------------------------------------
+
+class _FakeJobRepository implements ImportExportJobRepository {
+  final List<ImportExportJob> jobs = [];
+
+  @override
+  Future<void> add(ImportExportJob job) async => jobs.add(job);
+
+  @override
+  Future<void> update(ImportExportJob job) async {
+    final i = jobs.indexWhere((j) => j.id == job.id);
+    if (i >= 0) jobs[i] = job;
+  }
+
+  @override
+  Future<ImportExportJob?> getById(String id) async =>
+      jobs.where((j) => j.id == id).firstOrNull;
+
+  @override
+  Future<List<ImportExportJob>> getRecent({int limit = 20}) async => jobs;
+
+  @override
+  Future<void> remove(String id) async => jobs.removeWhere((j) => j.id == id);
+}
+
+class _FakeRowResultRepository implements ImportExportRowResultRepository {
+  @override
+  Future<void> addResult(String jobId, ImportExportRowResult result) async {}
+
+  @override
+  Future<List<ImportExportRowResult>> getResults(String jobId) async => [];
+
+  @override
+  Future<void> removeAllForJob(String jobId) async {}
+}
+
+class _FakeExecuteUseCase extends ExecuteCollectionImportUseCase {
+  _FakeExecuteUseCase(this._result)
+      : super(
+          collectionRepository: _FakeCollectionRepository(),
+          jobRepository: _FakeJobRepository(),
+          rowResultRepository: _FakeRowResultRepository(),
+        );
+
+  final ExecuteCollectionImportResult _result;
+  bool executeCalled = false;
+
+  @override
+  Future<ExecuteCollectionImportResult> execute(
+    CollectionImportPreview preview,
+  ) async {
+    executeCalled = true;
+    return _result;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -78,9 +141,15 @@ CollectionImportPreview makePreview({
   return CollectionImportPreview(rows: rows);
 }
 
-Widget buildSubject(FetchCollectionImportPreviewUseCase useCase) =>
+Widget buildSubject(
+  FetchCollectionImportPreviewUseCase useCase, {
+  ExecuteCollectionImportUseCase? executeUseCase,
+}) =>
     MaterialApp(
-      home: CollectionImportPreviewScreen(useCase: useCase),
+      home: CollectionImportPreviewScreen(
+        useCase: useCase,
+        executeUseCase: executeUseCase,
+      ),
     );
 
 // ---------------------------------------------------------------------------
@@ -401,6 +470,225 @@ void main() {
       });
     });
 
+    group('import flow', () {
+      testWidgets('confirm button is enabled when execute use case provided and newCount > 0',
+          (tester) async {
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteImportCompleted(
+            jobId: 'j1',
+            imported: 3,
+            skipped: 0,
+            failed: 0,
+          ),
+        );
+        final useCase =
+            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 3)));
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        final button = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Import 3 records'),
+        );
+        expect(button.onPressed, isNotNull);
+      });
+
+      testWidgets('shows spinner while importing', (tester) async {
+        bool importing = false;
+        final executeUseCase = _SlowFakeExecuteUseCase(
+          onExecute: () => importing = true,
+          result: const ExecuteImportCompleted(
+            jobId: 'j1',
+            imported: 1,
+            skipped: 0,
+            failed: 0,
+          ),
+        );
+        final useCase =
+            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 1)));
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump(); // settle preview
+
+        await tester.tap(find.text('Import 1 record'));
+        await tester.pump(); // start import – _Importing state
+
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.textContaining('Saving'), findsOneWidget);
+        expect(importing, isTrue);
+
+        await tester.pumpAndSettle(); // let import complete
+      });
+
+      testWidgets('shows Import complete after import finishes', (tester) async {
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteImportCompleted(
+            jobId: 'j1',
+            imported: 2,
+            skipped: 0,
+            failed: 0,
+          ),
+        );
+        final useCase =
+            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 2)));
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump(); // settle preview
+        await tester.tap(find.text('Import 2 records'));
+        await tester.pump(); // complete import
+        expect(find.text('Import complete'), findsOneWidget);
+      });
+
+      testWidgets('import summary shows Added to collection label',
+          (tester) async {
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteImportCompleted(
+            jobId: 'j1',
+            imported: 4,
+            skipped: 0,
+            failed: 0,
+          ),
+        );
+        final useCase =
+            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 4)));
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Import 4 records'));
+        await tester.pump();
+        expect(find.text('Added to collection'), findsOneWidget);
+      });
+
+      testWidgets('import summary shows imported count', (tester) async {
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteImportCompleted(
+            jobId: 'j1',
+            imported: 7,
+            skipped: 0,
+            failed: 0,
+          ),
+        );
+        final useCase =
+            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 7)));
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Import 7 records'));
+        await tester.pump();
+        expect(find.text('7'), findsOneWidget);
+      });
+
+      testWidgets('import summary shows skipped count when non-zero',
+          (tester) async {
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteImportCompleted(
+            jobId: 'j1',
+            imported: 3,
+            skipped: 5,
+            failed: 0,
+          ),
+        );
+        // Use distinct values: imported=3, skipped=5, newCount=3 in preview
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 3, duplicateCount: 5)),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Import 3 records'));
+        await tester.pump();
+        expect(find.text('Skipped'), findsOneWidget);
+        expect(find.text('5'), findsOneWidget);
+      });
+
+      testWidgets('import summary does not show Skipped when skipped is zero',
+          (tester) async {
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteImportCompleted(
+            jobId: 'j1',
+            imported: 2,
+            skipped: 0,
+            failed: 0,
+          ),
+        );
+        final useCase =
+            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 2)));
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Import 2 records'));
+        await tester.pump();
+        expect(find.text('Skipped'), findsNothing);
+      });
+
+      testWidgets('import summary shows failed count when non-zero',
+          (tester) async {
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteImportCompleted(
+            jobId: 'j1',
+            imported: 1,
+            skipped: 0,
+            failed: 2,
+          ),
+        );
+        final useCase =
+            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 3)));
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Import 3 records'));
+        await tester.pump();
+        expect(find.text('Failed'), findsOneWidget);
+        expect(find.text('2'), findsOneWidget);
+      });
+
+      testWidgets('Done button is shown in import summary', (tester) async {
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteImportCompleted(
+            jobId: 'j1',
+            imported: 1,
+            skipped: 0,
+            failed: 0,
+          ),
+        );
+        final useCase =
+            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 1)));
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Import 1 record'));
+        await tester.pump();
+        expect(find.text('Done'), findsOneWidget);
+      });
+
+      testWidgets(
+          'ExecuteImportFailed shows snackbar and returns to preview',
+          (tester) async {
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteImportFailed('Import could not be completed'),
+        );
+        final useCase =
+            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 2)));
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Import 2 records'));
+        await tester.pump();
+        // Should be back on preview with snackbar
+        expect(find.text('Collection preview'), findsOneWidget);
+        expect(find.byType(SnackBar), findsOneWidget);
+      });
+    });
+
     group('security', () {
       testWidgets('no token state does not show any token value', (tester) async {
         final useCase = _FakeUseCase(const FetchPreviewNoToken());
@@ -458,5 +746,33 @@ class _CountingFakeUseCase extends FetchCollectionImportPreviewUseCase {
     onCall();
     _calls++;
     return _calls == 1 ? firstResult : secondResult;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helper: slow fake execute use case (holds until settled)
+// ---------------------------------------------------------------------------
+
+class _SlowFakeExecuteUseCase extends ExecuteCollectionImportUseCase {
+  _SlowFakeExecuteUseCase({
+    required this.onExecute,
+    required this.result,
+  }) : super(
+          collectionRepository: _FakeCollectionRepository(),
+          jobRepository: _FakeJobRepository(),
+          rowResultRepository: _FakeRowResultRepository(),
+        );
+
+  final VoidCallback onExecute;
+  final ExecuteCollectionImportResult result;
+
+  @override
+  Future<ExecuteCollectionImportResult> execute(
+    CollectionImportPreview preview,
+  ) async {
+    onExecute();
+    // Yield to the event loop once so the _Importing state can render.
+    await Future<void>.delayed(Duration.zero);
+    return result;
   }
 }
