@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5Q: Retry failed thumbnail cache action] — 2026-06-02
+
+### Added
+- `RetryThumbnailUseCase`: looks up cover URL from cached metadata, fetches via HTTP, saves to `ThumbnailRepository` on success, removes retry action; updates `attemptCount` + `lastAttemptedAt` + sets `status=failed` on any HTTP or network failure; result types: `Success`, `NoUrl`, `NetworkError`, `Failed`
+- `FailedActionsScreen._ActionCard` now shows a "Retry" `TextButton` for `cacheThumbnail` actions when `thumbnailUseCase` is provided; dispatches to the correct use case per action type; friendly snackbar result messages
+- `SettingsScreen` and `HomeShellScreen` now thread `RetryThumbnailUseCase` through the composition root using the shared `AppDatabase` and `LocalCachedReleaseMetadataRepository`
+
+### Security
+- No token used or stored — thumbnail fetch is a plain HTTP GET to the cover URL
+- `NoUrl` does NOT increment `attemptCount` (missing URL is a permanent condition, not a transient failure)
+- All snackbar messages are hardcoded safe strings — no raw errors, no tokens
+
+---
+
 ## [Unreleased — Phase 5P: Retry failed metadata refresh] — 2026-06-02
 
 ### Added

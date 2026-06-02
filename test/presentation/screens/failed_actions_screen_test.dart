@@ -1,8 +1,10 @@
 import 'package:cratewise/application/use_cases/retry_metadata_refresh_use_case.dart';
+import 'package:cratewise/application/use_cases/retry_thumbnail_use_case.dart';
 import 'package:cratewise/domain/models/cached_release_metadata.dart';
 import 'package:cratewise/domain/models/retry_action.dart';
 import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
 import 'package:cratewise/domain/repositories/retry_action_repository.dart';
+import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/failed_actions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -68,6 +70,17 @@ class _NullRetryRepoForUseCase implements RetryActionRepository {
   Future<void> remove(String id) async {}
 }
 
+class _NullThumbnailRepo implements ThumbnailRepository {
+  @override
+  Future<String?> getLocalPath(int id) async => null;
+  @override
+  Future<void> save(int id, List<int> bytes) async {}
+  @override
+  Future<void> remove(int id) async {}
+  @override
+  Future<bool> exists(int id) async => false;
+}
+
 /// Fake use case that returns a configurable result without touching repos.
 class _FakeRetryUseCase extends RetryMetadataRefreshUseCase {
   _FakeRetryUseCase(this._result)
@@ -81,6 +94,25 @@ class _FakeRetryUseCase extends RetryMetadataRefreshUseCase {
 
   @override
   Future<RetryMetadataResult> execute(RetryAction action) async {
+    callCount++;
+    return _result;
+  }
+}
+
+/// Fake thumbnail use case that returns a configurable result.
+class _FakeThumbnailUseCase extends RetryThumbnailUseCase {
+  _FakeThumbnailUseCase(this._result)
+      : super(
+          retryRepo: _NullRetryRepoForUseCase(),
+          cacheRepo: _NullCacheRepo(),
+          thumbnailRepo: _NullThumbnailRepo(),
+        );
+
+  final RetryThumbnailResult _result;
+  int callCount = 0;
+
+  @override
+  Future<RetryThumbnailResult> execute(RetryAction action) async {
     callCount++;
     return _result;
   }
@@ -506,6 +538,150 @@ void main() {
       await tester.pumpAndSettle();
 
       // Simulate the action being removed (success removes it from repo).
+      actions.clear();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No failed actions'), findsOneWidget);
+    });
+  });
+
+  group('FailedActionsScreen — thumbnail retry button', () {
+    RetryAction thumbnailAction() => _makeAction(
+          actionType: RetryActionType.cacheThumbnail,
+          safeErrorMessage: 'Cover image could not be cached.',
+        );
+
+    testWidgets(
+        'shows Retry button for cacheThumbnail when thumbnailUseCase provided',
+        (tester) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextButton, 'Retry'), findsOneWidget);
+    });
+
+    testWidgets(
+        'does NOT show Retry button for cacheThumbnail without thumbnailUseCase',
+        (tester) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextButton, 'Retry'), findsNothing);
+    });
+
+    testWidgets('tapping Retry for thumbnail calls thumbnailUseCase.execute',
+        (tester) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(uc.callCount, 1);
+    });
+
+    testWidgets('Success shows snackbar with cached message', (tester) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cover image cached.'), findsOneWidget);
+    });
+
+    testWidgets('NoUrl shows safe snackbar message', (tester) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      final uc = _FakeThumbnailUseCase(const RetryThumbnailNoUrl());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('No cover image available for this release.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('NetworkError shows safe snackbar message', (tester) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      final uc = _FakeThumbnailUseCase(const RetryThumbnailNetworkError());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Network unavailable — try again later.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('thumbnail snackbar does not contain token or secret',
+        (tester) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      for (final result in <RetryThumbnailResult>[
+        const RetryThumbnailSuccess(),
+        const RetryThumbnailNoUrl(),
+        const RetryThumbnailNetworkError(),
+        const RetryThumbnailFailed(),
+      ]) {
+        final uc = _FakeThumbnailUseCase(result);
+        await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+        await tester.pumpAndSettle();
+
+        final snackbar = tester
+            .widgetList<Text>(find.descendant(
+              of: find.byType(SnackBar),
+              matching: find.byType(Text),
+            ))
+            .map((t) => t.data ?? '')
+            .join(' ')
+            .toLowerCase();
+
+        expect(snackbar, isNot(contains('token')));
+        expect(snackbar, isNot(contains('secret')));
+      }
+    });
+
+    testWidgets('after success, list reloads', (tester) async {
+      final actions = [thumbnailAction()];
+      final repo = _FakeRetryRepo(actions: actions);
+      final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
       actions.clear();
 
       await tester.tap(find.widgetWithText(TextButton, 'Retry'));

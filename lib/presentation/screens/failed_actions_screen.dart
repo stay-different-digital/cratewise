@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../application/use_cases/retry_metadata_refresh_use_case.dart';
+import '../../application/use_cases/retry_thumbnail_use_case.dart';
 import '../../domain/models/retry_action.dart';
 import '../../domain/repositories/retry_action_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
@@ -36,10 +37,12 @@ class FailedActionsScreen extends StatefulWidget {
     super.key,
     this.repository,
     this.retryUseCase,
+    this.thumbnailUseCase,
   });
 
   final RetryActionRepository? repository;
   final RetryMetadataRefreshUseCase? retryUseCase;
+  final RetryThumbnailUseCase? thumbnailUseCase;
 
   @override
   State<FailedActionsScreen> createState() => _FailedActionsScreenState();
@@ -93,6 +96,7 @@ class _FailedActionsScreenState extends State<FailedActionsScreen> {
         _Loaded(:final actions) => _ActionList(
             actions: actions,
             retryUseCase: widget.retryUseCase,
+            thumbnailUseCase: widget.thumbnailUseCase,
             onRetried: _load,
           ),
         _LoadError() => _ErrorState(onRetry: _load),
@@ -110,10 +114,12 @@ class _ActionList extends StatelessWidget {
     required this.actions,
     required this.onRetried,
     this.retryUseCase,
+    this.thumbnailUseCase,
   });
 
   final List<RetryAction> actions;
   final RetryMetadataRefreshUseCase? retryUseCase;
+  final RetryThumbnailUseCase? thumbnailUseCase;
   final VoidCallback onRetried;
 
   @override
@@ -125,6 +131,7 @@ class _ActionList extends StatelessWidget {
       itemBuilder: (context, index) => _ActionCard(
         action: actions[index],
         retryUseCase: retryUseCase,
+        thumbnailUseCase: thumbnailUseCase,
         onRetried: onRetried,
       ),
     );
@@ -136,10 +143,12 @@ class _ActionCard extends StatefulWidget {
     required this.action,
     required this.onRetried,
     this.retryUseCase,
+    this.thumbnailUseCase,
   });
 
   final RetryAction action;
   final RetryMetadataRefreshUseCase? retryUseCase;
+  final RetryThumbnailUseCase? thumbnailUseCase;
   final VoidCallback onRetried;
 
   @override
@@ -176,7 +185,8 @@ class _ActionCardState extends State<_ActionCard> {
     return '${dt.day} ${months[dt.month - 1]} ${dt.year}, $h:$m';
   }
 
-  static String _snackbarMessage(RetryMetadataResult result) => switch (result) {
+  static String _metadataSnackbarMessage(RetryMetadataResult result) =>
+      switch (result) {
         RetryMetadataSuccess() => 'Release info updated.',
         RetryMetadataNoToken() => 'Connect your Discogs account to retry.',
         RetryMetadataRateLimited() => 'Rate limited — try again shortly.',
@@ -184,24 +194,43 @@ class _ActionCardState extends State<_ActionCard> {
         RetryMetadataFailed() => 'Refresh failed — try again later.',
       };
 
-  Future<void> _doRetry() async {
-    final useCase = widget.retryUseCase;
-    if (useCase == null) return;
+  static String _thumbnailSnackbarMessage(RetryThumbnailResult result) =>
+      switch (result) {
+        RetryThumbnailSuccess() => 'Cover image cached.',
+        RetryThumbnailNoUrl() => 'No cover image available for this release.',
+        RetryThumbnailNetworkError() =>
+          'Network unavailable — try again later.',
+        RetryThumbnailFailed() =>
+          'Failed to cache cover image — try again later.',
+      };
 
+  Future<void> _doRetry() async {
     setState(() => _retrying = true);
-    final result = await useCase.execute(widget.action);
+
+    final String message;
+    if (widget.action.actionType == RetryActionType.refreshReleaseMetadata) {
+      final result = await widget.retryUseCase!.execute(widget.action);
+      message = _metadataSnackbarMessage(result);
+    } else {
+      // cacheThumbnail — thumbnailUseCase is non-null (guarded by _showRetryButton)
+      final result = await widget.thumbnailUseCase!.execute(widget.action);
+      message = _thumbnailSnackbarMessage(result);
+    }
+
     if (!mounted) return;
     setState(() => _retrying = false);
-
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_snackbarMessage(result))),
+      SnackBar(content: Text(message)),
     );
     widget.onRetried();
   }
 
   bool get _showRetryButton =>
-      widget.retryUseCase != null &&
-      widget.action.actionType == RetryActionType.refreshReleaseMetadata;
+      (widget.retryUseCase != null &&
+          widget.action.actionType ==
+              RetryActionType.refreshReleaseMetadata) ||
+      (widget.thumbnailUseCase != null &&
+          widget.action.actionType == RetryActionType.cacheThumbnail);
 
   @override
   Widget build(BuildContext context) {
