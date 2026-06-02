@@ -2867,6 +2867,595 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
   }
 }
 
+class $RetryActionsTable extends RetryActions
+    with TableInfo<$RetryActionsTable, RetryActionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RetryActionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<RetryActionType, String>
+  actionType = GeneratedColumn<String>(
+    'action_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<RetryActionType>($RetryActionsTable.$converteractionType);
+  @override
+  late final GeneratedColumnWithTypeConverter<RetryActionEntityType, String>
+  entityType =
+      GeneratedColumn<String>(
+        'entity_type',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<RetryActionEntityType>(
+        $RetryActionsTable.$converterentityType,
+      );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+    'entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _safeErrorMessageMeta = const VerificationMeta(
+    'safeErrorMessage',
+  );
+  @override
+  late final GeneratedColumn<String> safeErrorMessage = GeneratedColumn<String>(
+    'safe_error_message',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastAttemptedAtMeta = const VerificationMeta(
+    'lastAttemptedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastAttemptedAt =
+      GeneratedColumn<DateTime>(
+        'last_attempted_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _attemptCountMeta = const VerificationMeta(
+    'attemptCount',
+  );
+  @override
+  late final GeneratedColumn<int> attemptCount = GeneratedColumn<int>(
+    'attempt_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<RetryActionStatus, String>
+  status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<RetryActionStatus>($RetryActionsTable.$converterstatus);
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    actionType,
+    entityType,
+    entityId,
+    safeErrorMessage,
+    createdAt,
+    lastAttemptedAt,
+    attemptCount,
+    status,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'retry_actions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RetryActionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('safe_error_message')) {
+      context.handle(
+        _safeErrorMessageMeta,
+        safeErrorMessage.isAcceptableOrUnknown(
+          data['safe_error_message']!,
+          _safeErrorMessageMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_safeErrorMessageMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('last_attempted_at')) {
+      context.handle(
+        _lastAttemptedAtMeta,
+        lastAttemptedAt.isAcceptableOrUnknown(
+          data['last_attempted_at']!,
+          _lastAttemptedAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('attempt_count')) {
+      context.handle(
+        _attemptCountMeta,
+        attemptCount.isAcceptableOrUnknown(
+          data['attempt_count']!,
+          _attemptCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_attemptCountMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RetryActionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RetryActionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      actionType: $RetryActionsTable.$converteractionType.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}action_type'],
+        )!,
+      ),
+      entityType: $RetryActionsTable.$converterentityType.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}entity_type'],
+        )!,
+      ),
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_id'],
+      )!,
+      safeErrorMessage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}safe_error_message'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      lastAttemptedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_attempted_at'],
+      ),
+      attemptCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempt_count'],
+      )!,
+      status: $RetryActionsTable.$converterstatus.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}status'],
+        )!,
+      ),
+    );
+  }
+
+  @override
+  $RetryActionsTable createAlias(String alias) {
+    return $RetryActionsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<RetryActionType, String> $converteractionType =
+      const RetryActionTypeConverter();
+  static TypeConverter<RetryActionEntityType, String> $converterentityType =
+      const RetryActionEntityTypeConverter();
+  static TypeConverter<RetryActionStatus, String> $converterstatus =
+      const RetryActionStatusConverter();
+}
+
+class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
+  final String id;
+  final RetryActionType actionType;
+  final RetryActionEntityType entityType;
+  final String entityId;
+  final String safeErrorMessage;
+  final DateTime createdAt;
+  final DateTime? lastAttemptedAt;
+  final int attemptCount;
+  final RetryActionStatus status;
+  const RetryActionRow({
+    required this.id,
+    required this.actionType,
+    required this.entityType,
+    required this.entityId,
+    required this.safeErrorMessage,
+    required this.createdAt,
+    this.lastAttemptedAt,
+    required this.attemptCount,
+    required this.status,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    {
+      map['action_type'] = Variable<String>(
+        $RetryActionsTable.$converteractionType.toSql(actionType),
+      );
+    }
+    {
+      map['entity_type'] = Variable<String>(
+        $RetryActionsTable.$converterentityType.toSql(entityType),
+      );
+    }
+    map['entity_id'] = Variable<String>(entityId);
+    map['safe_error_message'] = Variable<String>(safeErrorMessage);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || lastAttemptedAt != null) {
+      map['last_attempted_at'] = Variable<DateTime>(lastAttemptedAt);
+    }
+    map['attempt_count'] = Variable<int>(attemptCount);
+    {
+      map['status'] = Variable<String>(
+        $RetryActionsTable.$converterstatus.toSql(status),
+      );
+    }
+    return map;
+  }
+
+  RetryActionsCompanion toCompanion(bool nullToAbsent) {
+    return RetryActionsCompanion(
+      id: Value(id),
+      actionType: Value(actionType),
+      entityType: Value(entityType),
+      entityId: Value(entityId),
+      safeErrorMessage: Value(safeErrorMessage),
+      createdAt: Value(createdAt),
+      lastAttemptedAt: lastAttemptedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAttemptedAt),
+      attemptCount: Value(attemptCount),
+      status: Value(status),
+    );
+  }
+
+  factory RetryActionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RetryActionRow(
+      id: serializer.fromJson<String>(json['id']),
+      actionType: serializer.fromJson<RetryActionType>(json['actionType']),
+      entityType: serializer.fromJson<RetryActionEntityType>(
+        json['entityType'],
+      ),
+      entityId: serializer.fromJson<String>(json['entityId']),
+      safeErrorMessage: serializer.fromJson<String>(json['safeErrorMessage']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      lastAttemptedAt: serializer.fromJson<DateTime?>(json['lastAttemptedAt']),
+      attemptCount: serializer.fromJson<int>(json['attemptCount']),
+      status: serializer.fromJson<RetryActionStatus>(json['status']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'actionType': serializer.toJson<RetryActionType>(actionType),
+      'entityType': serializer.toJson<RetryActionEntityType>(entityType),
+      'entityId': serializer.toJson<String>(entityId),
+      'safeErrorMessage': serializer.toJson<String>(safeErrorMessage),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'lastAttemptedAt': serializer.toJson<DateTime?>(lastAttemptedAt),
+      'attemptCount': serializer.toJson<int>(attemptCount),
+      'status': serializer.toJson<RetryActionStatus>(status),
+    };
+  }
+
+  RetryActionRow copyWith({
+    String? id,
+    RetryActionType? actionType,
+    RetryActionEntityType? entityType,
+    String? entityId,
+    String? safeErrorMessage,
+    DateTime? createdAt,
+    Value<DateTime?> lastAttemptedAt = const Value.absent(),
+    int? attemptCount,
+    RetryActionStatus? status,
+  }) => RetryActionRow(
+    id: id ?? this.id,
+    actionType: actionType ?? this.actionType,
+    entityType: entityType ?? this.entityType,
+    entityId: entityId ?? this.entityId,
+    safeErrorMessage: safeErrorMessage ?? this.safeErrorMessage,
+    createdAt: createdAt ?? this.createdAt,
+    lastAttemptedAt: lastAttemptedAt.present
+        ? lastAttemptedAt.value
+        : this.lastAttemptedAt,
+    attemptCount: attemptCount ?? this.attemptCount,
+    status: status ?? this.status,
+  );
+  RetryActionRow copyWithCompanion(RetryActionsCompanion data) {
+    return RetryActionRow(
+      id: data.id.present ? data.id.value : this.id,
+      actionType: data.actionType.present
+          ? data.actionType.value
+          : this.actionType,
+      entityType: data.entityType.present
+          ? data.entityType.value
+          : this.entityType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      safeErrorMessage: data.safeErrorMessage.present
+          ? data.safeErrorMessage.value
+          : this.safeErrorMessage,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastAttemptedAt: data.lastAttemptedAt.present
+          ? data.lastAttemptedAt.value
+          : this.lastAttemptedAt,
+      attemptCount: data.attemptCount.present
+          ? data.attemptCount.value
+          : this.attemptCount,
+      status: data.status.present ? data.status.value : this.status,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RetryActionRow(')
+          ..write('id: $id, ')
+          ..write('actionType: $actionType, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('safeErrorMessage: $safeErrorMessage, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastAttemptedAt: $lastAttemptedAt, ')
+          ..write('attemptCount: $attemptCount, ')
+          ..write('status: $status')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    actionType,
+    entityType,
+    entityId,
+    safeErrorMessage,
+    createdAt,
+    lastAttemptedAt,
+    attemptCount,
+    status,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RetryActionRow &&
+          other.id == this.id &&
+          other.actionType == this.actionType &&
+          other.entityType == this.entityType &&
+          other.entityId == this.entityId &&
+          other.safeErrorMessage == this.safeErrorMessage &&
+          other.createdAt == this.createdAt &&
+          other.lastAttemptedAt == this.lastAttemptedAt &&
+          other.attemptCount == this.attemptCount &&
+          other.status == this.status);
+}
+
+class RetryActionsCompanion extends UpdateCompanion<RetryActionRow> {
+  final Value<String> id;
+  final Value<RetryActionType> actionType;
+  final Value<RetryActionEntityType> entityType;
+  final Value<String> entityId;
+  final Value<String> safeErrorMessage;
+  final Value<DateTime> createdAt;
+  final Value<DateTime?> lastAttemptedAt;
+  final Value<int> attemptCount;
+  final Value<RetryActionStatus> status;
+  final Value<int> rowid;
+  const RetryActionsCompanion({
+    this.id = const Value.absent(),
+    this.actionType = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.safeErrorMessage = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastAttemptedAt = const Value.absent(),
+    this.attemptCount = const Value.absent(),
+    this.status = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RetryActionsCompanion.insert({
+    required String id,
+    required RetryActionType actionType,
+    required RetryActionEntityType entityType,
+    required String entityId,
+    required String safeErrorMessage,
+    required DateTime createdAt,
+    this.lastAttemptedAt = const Value.absent(),
+    required int attemptCount,
+    required RetryActionStatus status,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       actionType = Value(actionType),
+       entityType = Value(entityType),
+       entityId = Value(entityId),
+       safeErrorMessage = Value(safeErrorMessage),
+       createdAt = Value(createdAt),
+       attemptCount = Value(attemptCount),
+       status = Value(status);
+  static Insertable<RetryActionRow> custom({
+    Expression<String>? id,
+    Expression<String>? actionType,
+    Expression<String>? entityType,
+    Expression<String>? entityId,
+    Expression<String>? safeErrorMessage,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? lastAttemptedAt,
+    Expression<int>? attemptCount,
+    Expression<String>? status,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (actionType != null) 'action_type': actionType,
+      if (entityType != null) 'entity_type': entityType,
+      if (entityId != null) 'entity_id': entityId,
+      if (safeErrorMessage != null) 'safe_error_message': safeErrorMessage,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastAttemptedAt != null) 'last_attempted_at': lastAttemptedAt,
+      if (attemptCount != null) 'attempt_count': attemptCount,
+      if (status != null) 'status': status,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RetryActionsCompanion copyWith({
+    Value<String>? id,
+    Value<RetryActionType>? actionType,
+    Value<RetryActionEntityType>? entityType,
+    Value<String>? entityId,
+    Value<String>? safeErrorMessage,
+    Value<DateTime>? createdAt,
+    Value<DateTime?>? lastAttemptedAt,
+    Value<int>? attemptCount,
+    Value<RetryActionStatus>? status,
+    Value<int>? rowid,
+  }) {
+    return RetryActionsCompanion(
+      id: id ?? this.id,
+      actionType: actionType ?? this.actionType,
+      entityType: entityType ?? this.entityType,
+      entityId: entityId ?? this.entityId,
+      safeErrorMessage: safeErrorMessage ?? this.safeErrorMessage,
+      createdAt: createdAt ?? this.createdAt,
+      lastAttemptedAt: lastAttemptedAt ?? this.lastAttemptedAt,
+      attemptCount: attemptCount ?? this.attemptCount,
+      status: status ?? this.status,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (actionType.present) {
+      map['action_type'] = Variable<String>(
+        $RetryActionsTable.$converteractionType.toSql(actionType.value),
+      );
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(
+        $RetryActionsTable.$converterentityType.toSql(entityType.value),
+      );
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (safeErrorMessage.present) {
+      map['safe_error_message'] = Variable<String>(safeErrorMessage.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (lastAttemptedAt.present) {
+      map['last_attempted_at'] = Variable<DateTime>(lastAttemptedAt.value);
+    }
+    if (attemptCount.present) {
+      map['attempt_count'] = Variable<int>(attemptCount.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(
+        $RetryActionsTable.$converterstatus.toSql(status.value),
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RetryActionsCompanion(')
+          ..write('id: $id, ')
+          ..write('actionType: $actionType, ')
+          ..write('entityType: $entityType, ')
+          ..write('entityId: $entityId, ')
+          ..write('safeErrorMessage: $safeErrorMessage, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastAttemptedAt: $lastAttemptedAt, ')
+          ..write('attemptCount: $attemptCount, ')
+          ..write('status: $status, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2875,6 +3464,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $WishlistItemsTable wishlistItems = $WishlistItemsTable(this);
   late final $CachedReleasesTable cachedReleases = $CachedReleasesTable(this);
+  late final $RetryActionsTable retryActions = $RetryActionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2883,6 +3473,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     collectionItems,
     wishlistItems,
     cachedReleases,
+    retryActions,
   ];
 }
 
@@ -4210,6 +4801,301 @@ typedef $$CachedReleasesTableProcessedTableManager =
       CachedReleaseRow,
       PrefetchHooks Function()
     >;
+typedef $$RetryActionsTableCreateCompanionBuilder =
+    RetryActionsCompanion Function({
+      required String id,
+      required RetryActionType actionType,
+      required RetryActionEntityType entityType,
+      required String entityId,
+      required String safeErrorMessage,
+      required DateTime createdAt,
+      Value<DateTime?> lastAttemptedAt,
+      required int attemptCount,
+      required RetryActionStatus status,
+      Value<int> rowid,
+    });
+typedef $$RetryActionsTableUpdateCompanionBuilder =
+    RetryActionsCompanion Function({
+      Value<String> id,
+      Value<RetryActionType> actionType,
+      Value<RetryActionEntityType> entityType,
+      Value<String> entityId,
+      Value<String> safeErrorMessage,
+      Value<DateTime> createdAt,
+      Value<DateTime?> lastAttemptedAt,
+      Value<int> attemptCount,
+      Value<RetryActionStatus> status,
+      Value<int> rowid,
+    });
+
+class $$RetryActionsTableFilterComposer
+    extends Composer<_$AppDatabase, $RetryActionsTable> {
+  $$RetryActionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<RetryActionType, RetryActionType, String>
+  get actionType => $composableBuilder(
+    column: $table.actionType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<
+    RetryActionEntityType,
+    RetryActionEntityType,
+    String
+  >
+  get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get safeErrorMessage => $composableBuilder(
+    column: $table.safeErrorMessage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastAttemptedAt => $composableBuilder(
+    column: $table.lastAttemptedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attemptCount => $composableBuilder(
+    column: $table.attemptCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<RetryActionStatus, RetryActionStatus, String>
+  get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+}
+
+class $$RetryActionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RetryActionsTable> {
+  $$RetryActionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actionType => $composableBuilder(
+    column: $table.actionType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get safeErrorMessage => $composableBuilder(
+    column: $table.safeErrorMessage,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastAttemptedAt => $composableBuilder(
+    column: $table.lastAttemptedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attemptCount => $composableBuilder(
+    column: $table.attemptCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RetryActionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RetryActionsTable> {
+  $$RetryActionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<RetryActionType, String> get actionType =>
+      $composableBuilder(
+        column: $table.actionType,
+        builder: (column) => column,
+      );
+
+  GeneratedColumnWithTypeConverter<RetryActionEntityType, String>
+  get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get safeErrorMessage => $composableBuilder(
+    column: $table.safeErrorMessage,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastAttemptedAt => $composableBuilder(
+    column: $table.lastAttemptedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get attemptCount => $composableBuilder(
+    column: $table.attemptCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<RetryActionStatus, String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+}
+
+class $$RetryActionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RetryActionsTable,
+          RetryActionRow,
+          $$RetryActionsTableFilterComposer,
+          $$RetryActionsTableOrderingComposer,
+          $$RetryActionsTableAnnotationComposer,
+          $$RetryActionsTableCreateCompanionBuilder,
+          $$RetryActionsTableUpdateCompanionBuilder,
+          (
+            RetryActionRow,
+            BaseReferences<_$AppDatabase, $RetryActionsTable, RetryActionRow>,
+          ),
+          RetryActionRow,
+          PrefetchHooks Function()
+        > {
+  $$RetryActionsTableTableManager(_$AppDatabase db, $RetryActionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RetryActionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RetryActionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RetryActionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<RetryActionType> actionType = const Value.absent(),
+                Value<RetryActionEntityType> entityType = const Value.absent(),
+                Value<String> entityId = const Value.absent(),
+                Value<String> safeErrorMessage = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime?> lastAttemptedAt = const Value.absent(),
+                Value<int> attemptCount = const Value.absent(),
+                Value<RetryActionStatus> status = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RetryActionsCompanion(
+                id: id,
+                actionType: actionType,
+                entityType: entityType,
+                entityId: entityId,
+                safeErrorMessage: safeErrorMessage,
+                createdAt: createdAt,
+                lastAttemptedAt: lastAttemptedAt,
+                attemptCount: attemptCount,
+                status: status,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required RetryActionType actionType,
+                required RetryActionEntityType entityType,
+                required String entityId,
+                required String safeErrorMessage,
+                required DateTime createdAt,
+                Value<DateTime?> lastAttemptedAt = const Value.absent(),
+                required int attemptCount,
+                required RetryActionStatus status,
+                Value<int> rowid = const Value.absent(),
+              }) => RetryActionsCompanion.insert(
+                id: id,
+                actionType: actionType,
+                entityType: entityType,
+                entityId: entityId,
+                safeErrorMessage: safeErrorMessage,
+                createdAt: createdAt,
+                lastAttemptedAt: lastAttemptedAt,
+                attemptCount: attemptCount,
+                status: status,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RetryActionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RetryActionsTable,
+      RetryActionRow,
+      $$RetryActionsTableFilterComposer,
+      $$RetryActionsTableOrderingComposer,
+      $$RetryActionsTableAnnotationComposer,
+      $$RetryActionsTableCreateCompanionBuilder,
+      $$RetryActionsTableUpdateCompanionBuilder,
+      (
+        RetryActionRow,
+        BaseReferences<_$AppDatabase, $RetryActionsTable, RetryActionRow>,
+      ),
+      RetryActionRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4220,4 +5106,6 @@ class $AppDatabaseManager {
       $$WishlistItemsTableTableManager(_db, _db.wishlistItems);
   $$CachedReleasesTableTableManager get cachedReleases =>
       $$CachedReleasesTableTableManager(_db, _db.cachedReleases);
+  $$RetryActionsTableTableManager get retryActions =>
+      $$RetryActionsTableTableManager(_db, _db.retryActions);
 }

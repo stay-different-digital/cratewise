@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../domain/models/collection_item.dart';
+import '../../domain/models/retry_action.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
 
@@ -58,6 +59,41 @@ class SyncStatusConverter extends TypeConverter<SyncStatus, String> {
 
   @override
   String toSql(SyncStatus value) => value.name;
+}
+
+class RetryActionTypeConverter extends TypeConverter<RetryActionType, String> {
+  const RetryActionTypeConverter();
+
+  @override
+  RetryActionType fromSql(String fromDb) =>
+      RetryActionType.values.byName(fromDb);
+
+  @override
+  String toSql(RetryActionType value) => value.name;
+}
+
+class RetryActionEntityTypeConverter
+    extends TypeConverter<RetryActionEntityType, String> {
+  const RetryActionEntityTypeConverter();
+
+  @override
+  RetryActionEntityType fromSql(String fromDb) =>
+      RetryActionEntityType.values.byName(fromDb);
+
+  @override
+  String toSql(RetryActionEntityType value) => value.name;
+}
+
+class RetryActionStatusConverter
+    extends TypeConverter<RetryActionStatus, String> {
+  const RetryActionStatusConverter();
+
+  @override
+  RetryActionStatus fromSql(String fromDb) =>
+      RetryActionStatus.values.byName(fromDb);
+
+  @override
+  String toSql(RetryActionStatus value) => value.name;
 }
 
 // ---------------------------------------------------------------------------
@@ -141,16 +177,35 @@ class CachedReleases extends Table {
   Set<Column> get primaryKey => {discogsReleaseId};
 }
 
+@DataClassName('RetryActionRow')
+class RetryActions extends Table {
+  TextColumn get id => text()();
+  TextColumn get actionType =>
+      text().map(const RetryActionTypeConverter())();
+  TextColumn get entityType =>
+      text().map(const RetryActionEntityTypeConverter())();
+  TextColumn get entityId => text()();
+  TextColumn get safeErrorMessage => text()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get lastAttemptedAt => dateTime().nullable()();
+  IntColumn get attemptCount => integer()();
+  TextColumn get status =>
+      text().map(const RetryActionStatusConverter())();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
 
-@DriftDatabase(tables: [CollectionItems, WishlistItems, CachedReleases])
+@DriftDatabase(tables: [CollectionItems, WishlistItems, CachedReleases, RetryActions])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -165,6 +220,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 4) {
             await m.addColumn(collectionItems, collectionItems.syncStatus);
             await m.addColumn(wishlistItems, wishlistItems.syncStatus);
+          }
+          if (from < 5) {
+            await m.createTable(retryActions);
           }
         },
       );

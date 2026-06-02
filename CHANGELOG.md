@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5M: Add failed action queue model] — 2026-06-02
+
+### Added
+- `RetryAction` domain model with fields: `id`, `actionType`, `entityType`, `entityId`, `safeErrorMessage`, `createdAt`, `lastAttemptedAt?`, `attemptCount`, `status`; includes `copyWith` with optional `clearLastAttemptedAt`
+- `RetryActionType` enum: `addCollectionItem`, `updateCollectionItem`, `removeCollectionItem`, `addWishlistItem`, `updateWishlistItem`, `removeWishlistItem`
+- `RetryActionEntityType` enum: `collectionItem`, `wishlistItem`
+- `RetryActionStatus` enum: `pending`, `failed`, `abandoned`
+- `RetryActionRepository` abstract interface with `add`, `getAll`, `getById`, `getPending`, `update`, `remove`
+- `LocalRetryActionRepository` Drift implementation; `getPending` orders by `createdAt` ascending
+- `RetryActions` Drift table; `RetryActionTypeConverter`, `RetryActionEntityTypeConverter`, `RetryActionStatusConverter` type converters
+- Schema version bumped to 5; migration creates `retry_actions` table
+- 30 new integration tests covering add/getAll/getById/getPending/update/remove, full enum round-trips, and security assertions
+- Security: `safeErrorMessage` is an explicit safe string field; no token/secret/header fields on the model
+
+---
+
 ## [Unreleased — Phase 5L: Show sync status in Collection and Wishlist details] — 2026-06-02
 
 ### Added
