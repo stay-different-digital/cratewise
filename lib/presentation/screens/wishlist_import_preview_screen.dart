@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../application/use_cases/build_wishlist_import_preview_use_case.dart';
+import '../../application/use_cases/execute_wishlist_import_use_case.dart';
 import '../../application/use_cases/fetch_wishlist_import_preview_use_case.dart';
 import '../../domain/models/wishlist_import_preview.dart';
 import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_import_export_job_repository.dart';
+import '../../infrastructure/local_database/local_import_export_row_result_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 
 const _kWideBreakpoint = 700.0;
@@ -41,14 +44,28 @@ class _Error extends _PreviewState {
   const _Error();
 }
 
+class _Importing extends _PreviewState {
+  const _Importing();
+}
+
+class _ImportDone extends _PreviewState {
+  const _ImportDone(this.result);
+  final ExecuteWishlistImportCompleted result;
+}
+
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
 
 class WishlistImportPreviewScreen extends StatefulWidget {
-  const WishlistImportPreviewScreen({super.key, this.useCase});
+  const WishlistImportPreviewScreen({
+    super.key,
+    this.useCase,
+    this.executeUseCase,
+  });
 
   final FetchWishlistImportPreviewUseCase? useCase;
+  final ExecuteWishlistImportUseCase? executeUseCase;
 
   @override
   State<WishlistImportPreviewScreen> createState() =>
@@ -58,6 +75,7 @@ class WishlistImportPreviewScreen extends StatefulWidget {
 class _WishlistImportPreviewScreenState
     extends State<WishlistImportPreviewScreen> {
   late final FetchWishlistImportPreviewUseCase _useCase;
+  ExecuteWishlistImportUseCase? _executeUseCase;
   AppDatabase? _ownedDb;
   _PreviewState _state = const _Loading();
 
@@ -66,12 +84,18 @@ class _WishlistImportPreviewScreenState
     super.initState();
     if (widget.useCase != null) {
       _useCase = widget.useCase!;
+      _executeUseCase = widget.executeUseCase;
     } else {
       final db = AppDatabase(openAppDatabase());
       _ownedDb = db;
       final wishlistRepo = LocalWishlistRepository(db);
       _useCase = FetchWishlistImportPreviewUseCase(
         previewBuilder: BuildWishlistImportPreviewUseCase(wishlistRepo),
+      );
+      _executeUseCase = ExecuteWishlistImportUseCase(
+        wishlistRepository: wishlistRepo,
+        jobRepository: LocalImportExportJobRepository(db),
+        rowResultRepository: LocalImportExportRowResultRepository(db),
       );
     }
     _load();
@@ -92,6 +116,23 @@ class _WishlistImportPreviewScreenState
     });
   }
 
+  Future<void> _executeImport(WishlistImportPreview preview) async {
+    final uc = _executeUseCase;
+    if (uc == null) return;
+    setState(() => _state = const _Importing());
+    final result = await uc.execute(preview);
+    if (!mounted) return;
+    switch (result) {
+      case ExecuteWishlistImportCompleted():
+        setState(() => _state = _ImportDone(result));
+      case ExecuteWishlistImportFailed():
+        setState(() => _state = _Loaded(preview));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.safeMessage)),
+        );
+    }
+  }
+
   @override
   void dispose() {
     _ownedDb?.close();
@@ -107,6 +148,9 @@ class _WishlistImportPreviewScreenState
         _Loaded(:final preview) => _PreviewBody(
             preview: preview,
             onRetry: _load,
+            onConfirm: _executeUseCase != null
+                ? () => _executeImport(preview)
+                : null,
           ),
         _NoToken() => const _NoTokenState(),
         _RateLimited() => _RetriableErrorState(
@@ -124,6 +168,11 @@ class _WishlistImportPreviewScreenState
                 'Something went wrong. Check your connection and try again.',
             onRetry: _load,
           ),
+        _Importing() => const _ImportingBody(),
+        _ImportDone(:final result) => _ImportSummaryBody(
+            result: result,
+            onDone: () => Navigator.of(context).pop(),
+          ),
       },
     );
   }
@@ -134,10 +183,15 @@ class _WishlistImportPreviewScreenState
 // ---------------------------------------------------------------------------
 
 class _PreviewBody extends StatelessWidget {
-  const _PreviewBody({required this.preview, required this.onRetry});
+  const _PreviewBody({
+    required this.preview,
+    required this.onRetry,
+    this.onConfirm,
+  });
 
   final WishlistImportPreview preview;
   final VoidCallback onRetry;
+  final VoidCallback? onConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +228,7 @@ class _PreviewBody extends StatelessWidget {
                       ),
               ),
             ),
-            _ConfirmBar(newCount: preview.newCount),
+            _ConfirmBar(newCount: preview.newCount, onConfirm: onConfirm),
           ],
         );
       },
@@ -312,13 +366,14 @@ class _WarningCard extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Confirm bar (disabled — import not yet implemented)
+// Confirm bar
 // ---------------------------------------------------------------------------
 
 class _ConfirmBar extends StatelessWidget {
-  const _ConfirmBar({required this.newCount});
+  const _ConfirmBar({required this.newCount, this.onConfirm});
 
   final int newCount;
+  final VoidCallback? onConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -330,10 +385,121 @@ class _ConfirmBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         child: FilledButton(
-          onPressed: null,
+          onPressed: newCount > 0 ? onConfirm : null,
           child: Text(label),
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Importing body
+// ---------------------------------------------------------------------------
+
+class _ImportingBody extends StatelessWidget {
+  const _ImportingBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(
+            'Saving your wishlist…',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Import summary body
+// ---------------------------------------------------------------------------
+
+class _ImportSummaryBody extends StatelessWidget {
+  const _ImportSummaryBody({required this.result, required this.onDone});
+
+  final ExecuteWishlistImportCompleted result;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 64,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Import complete',
+                  style: theme.textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _CountRow(
+                          label: 'Added to wishlist',
+                          value: '${result.imported}',
+                          color: result.imported > 0
+                              ? theme.colorScheme.primary
+                              : null,
+                        ),
+                        if (result.skipped > 0) ...[
+                          const SizedBox(height: 10),
+                          _CountRow(
+                            label: 'Skipped',
+                            value: '${result.skipped}',
+                          ),
+                        ],
+                        if (result.failed > 0) ...[
+                          const SizedBox(height: 10),
+                          _CountRow(
+                            label: 'Failed',
+                            value: '${result.failed}',
+                            color: theme.colorScheme.error,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: FilledButton(
+              onPressed: onDone,
+              child: const Text('Done'),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
