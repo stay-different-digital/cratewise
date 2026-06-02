@@ -1,0 +1,220 @@
+import 'package:flutter/material.dart';
+
+const _kWideBreakpoint = 700.0;
+const _kCardExtent = 96.0;
+
+class ImportExportScreen extends StatelessWidget {
+  const ImportExportScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Import & Export')),
+      body: LayoutBuilder(
+        builder: (context, constraints) => _ActionBody(
+          isWide: constraints.maxWidth >= _kWideBreakpoint,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Action configs
+// ---------------------------------------------------------------------------
+
+class _ActionConfig {
+  const _ActionConfig({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
+}
+
+const _kDiscogsActions = [
+  _ActionConfig(
+    icon: Icons.cloud_download_outlined,
+    title: 'Import Collection from Discogs',
+  ),
+  _ActionConfig(
+    icon: Icons.cloud_download_outlined,
+    title: 'Import Wishlist from Discogs',
+  ),
+  _ActionConfig(
+    icon: Icons.cloud_upload_outlined,
+    title: 'Export Collection to Discogs',
+  ),
+  _ActionConfig(
+    icon: Icons.cloud_upload_outlined,
+    title: 'Export Wishlist to Discogs',
+  ),
+];
+
+const _kCsvActions = [
+  _ActionConfig(
+    icon: Icons.download_outlined,
+    title: 'Export Collection to CSV',
+  ),
+  _ActionConfig(
+    icon: Icons.download_outlined,
+    title: 'Export Wishlist to CSV',
+  ),
+  _ActionConfig(
+    icon: Icons.upload_file_outlined,
+    title: 'Import Collection from CSV',
+  ),
+  _ActionConfig(
+    icon: Icons.upload_file_outlined,
+    title: 'Import Wishlist from CSV',
+  ),
+];
+
+// ---------------------------------------------------------------------------
+// Body
+// ---------------------------------------------------------------------------
+
+class _ActionBody extends StatelessWidget {
+  const _ActionBody({required this.isWide});
+
+  final bool isWide;
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomScrollView(
+      slivers: [
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+        const SliverToBoxAdapter(child: _SectionHeader(title: 'Discogs')),
+        _buildSection(_kDiscogsActions),
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+        const SliverToBoxAdapter(child: _SectionHeader(title: 'CSV files')),
+        _buildSection(_kCsvActions),
+        const SliverToBoxAdapter(child: SizedBox(height: 16)),
+      ],
+    );
+  }
+
+  Widget _buildSection(List<_ActionConfig> actions) {
+    if (isWide) {
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+        sliver: SliverGrid.builder(
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 8,
+            mainAxisExtent: _kCardExtent,
+          ),
+          itemCount: actions.length,
+          itemBuilder: (context, index) => _ActionCard(action: actions[index]),
+        ),
+      );
+    }
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+      sliver: SliverList.separated(
+        itemCount: actions.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (context, index) => _ActionCard(action: actions[index]),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Section header
+// ---------------------------------------------------------------------------
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Text(
+        title,
+        style: theme.textTheme.labelLarge?.copyWith(
+          color: theme.colorScheme.primary,
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Action card
+// ---------------------------------------------------------------------------
+
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({required this.action});
+
+  final _ActionConfig action;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Coming soon'),
+            duration: Duration(seconds: 2),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Icon(
+                action.icon,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      action.title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 2),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Coming soon',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.outlineVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
