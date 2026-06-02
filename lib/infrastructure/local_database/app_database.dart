@@ -7,6 +7,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../domain/models/collection_item.dart';
+import '../../domain/models/import_export_job_type.dart';
+import '../../domain/models/import_export_status.dart';
 import '../../domain/models/retry_action.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
@@ -94,6 +96,30 @@ class RetryActionStatusConverter
 
   @override
   String toSql(RetryActionStatus value) => value.name;
+}
+
+class ImportExportJobTypeConverter
+    extends TypeConverter<ImportExportJobType, String> {
+  const ImportExportJobTypeConverter();
+
+  @override
+  ImportExportJobType fromSql(String fromDb) =>
+      ImportExportJobType.values.byName(fromDb);
+
+  @override
+  String toSql(ImportExportJobType value) => value.name;
+}
+
+class ImportExportStatusConverter
+    extends TypeConverter<ImportExportStatus, String> {
+  const ImportExportStatusConverter();
+
+  @override
+  ImportExportStatus fromSql(String fromDb) =>
+      ImportExportStatus.values.byName(fromDb);
+
+  @override
+  String toSql(ImportExportStatus value) => value.name;
 }
 
 // ---------------------------------------------------------------------------
@@ -196,16 +222,58 @@ class RetryActions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+@DataClassName('ImportExportJobRow')
+class ImportExportJobs extends Table {
+  TextColumn get id => text()();
+  TextColumn get jobType =>
+      text().map(const ImportExportJobTypeConverter())();
+  TextColumn get source => text()();
+  TextColumn get target => text()();
+  TextColumn get status =>
+      text().map(const ImportExportStatusConverter())();
+  IntColumn get totalItems => integer().nullable()();
+  IntColumn get validItems => integer().nullable()();
+  IntColumn get skippedItems => integer().nullable()();
+  IntColumn get failedItems => integer().nullable()();
+  TextColumn get safeErrorMessage => text().nullable()();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Stores per-row results for an import/export job.
+/// [resultType] is 'valid', 'skipped', or 'failed' and determines which
+/// payload column is populated.
+@DataClassName('ImportExportRowResultRow')
+class ImportExportRowResults extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get jobId => text()();
+  TextColumn get resultType => text()();
+  IntColumn get rowIndex => integer()();
+  TextColumn get description => text().nullable()();
+  TextColumn get reason => text().nullable()();
+  TextColumn get safeErrorMessage => text().nullable()();
+}
+
 // ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
 
-@DriftDatabase(tables: [CollectionItems, WishlistItems, CachedReleases, RetryActions])
+@DriftDatabase(tables: [
+  CollectionItems,
+  WishlistItems,
+  CachedReleases,
+  RetryActions,
+  ImportExportJobs,
+  ImportExportRowResults,
+])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -223,6 +291,10 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 5) {
             await m.createTable(retryActions);
+          }
+          if (from < 6) {
+            await m.createTable(importExportJobs);
+            await m.createTable(importExportRowResults);
           }
         },
       );
