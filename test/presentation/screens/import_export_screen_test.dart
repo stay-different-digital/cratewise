@@ -1,5 +1,7 @@
+import 'package:cratewise/application/use_cases/build_collection_export_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/build_collection_import_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/build_wishlist_import_preview_use_case.dart';
+import 'package:cratewise/application/use_cases/check_collection_export_capability_use_case.dart';
 import 'package:cratewise/application/use_cases/fetch_collection_import_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/fetch_wishlist_import_preview_use_case.dart';
 import 'package:cratewise/domain/models/collection_import_preview.dart';
@@ -8,6 +10,7 @@ import 'package:cratewise/domain/models/wishlist_import_preview.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
+import 'package:cratewise/presentation/screens/collection_export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/collection_import_preview_screen.dart';
 import 'package:cratewise/presentation/screens/import_export_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_import_preview_screen.dart';
@@ -74,6 +77,18 @@ class _FakeWishlistImportUseCase extends FetchWishlistImportPreviewUseCase {
       FetchWishlistPreviewReady(const WishlistImportPreview(rows: []));
 }
 
+class _FakeCollectionExportUseCase extends BuildCollectionExportPreviewUseCase {
+  _FakeCollectionExportUseCase()
+      : super(
+          repository: _FakeCollectionRepository(),
+          capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
+        );
+
+  @override
+  Future<BuildCollectionExportPreviewResult> execute() async =>
+      const CollectionExportPreviewNotSupported('Not available yet.');
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -81,11 +96,13 @@ class _FakeWishlistImportUseCase extends FetchWishlistImportPreviewUseCase {
 Widget _buildSubject({
   FetchCollectionImportPreviewUseCase? importUseCase,
   FetchWishlistImportPreviewUseCase? wishlistImportUseCase,
+  BuildCollectionExportPreviewUseCase? collectionExportPreviewUseCase,
 }) =>
     MaterialApp(
       home: ImportExportScreen(
         collectionImportUseCase: importUseCase,
         wishlistImportUseCase: wishlistImportUseCase,
+        collectionExportPreviewUseCase: collectionExportPreviewUseCase,
       ),
     );
 
@@ -143,7 +160,7 @@ void main() {
       });
 
       testWidgets(
-          '6 cards show a Coming soon badge (collection + wishlist import are live)',
+          '5 cards show a Coming soon badge (collection import, wishlist import, and export collection are live)',
           (tester) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
@@ -151,7 +168,7 @@ void main() {
 
         await tester.pumpWidget(_buildSubject());
 
-        expect(find.text('Coming soon'), findsNWidgets(6));
+        expect(find.text('Coming soon'), findsNWidgets(5));
       });
 
     });
@@ -167,7 +184,7 @@ void main() {
         expect(find.byType(SnackBar), findsNothing);
       });
 
-      testWidgets('tapping Export Wishlist to Discogs shows snackbar',
+      testWidgets('tapping Export Wishlist to Discogs shows Coming soon snackbar',
           (tester) async {
         await tester.pumpWidget(_buildSubject());
         await tester.tap(find.text('Export Wishlist to Discogs'));
@@ -203,7 +220,7 @@ void main() {
           'tapping a Coming soon card does not navigate',
           (tester) async {
         await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Export Collection to Discogs'));
+        await tester.tap(find.text('Export Wishlist to Discogs'));
         await tester.pump();
         // Still on the import/export screen
         expect(find.text('Import & Export'), findsOneWidget);
@@ -272,6 +289,40 @@ void main() {
       });
     });
 
+    group('Export Collection to Discogs navigation', () {
+      testWidgets(
+          'tapping Export Collection to Discogs navigates to export preview screen',
+          (tester) async {
+        final exportUseCase = _FakeCollectionExportUseCase();
+        await tester.pumpWidget(
+            _buildSubject(collectionExportPreviewUseCase: exportUseCase));
+        await tester.tap(find.text('Export Collection to Discogs'));
+        await tester.pumpAndSettle();
+        expect(find.byType(CollectionExportPreviewScreen), findsOneWidget);
+      });
+
+      testWidgets('export preview screen shows correct AppBar title',
+          (tester) async {
+        final exportUseCase = _FakeCollectionExportUseCase();
+        await tester.pumpWidget(
+            _buildSubject(collectionExportPreviewUseCase: exportUseCase));
+        await tester.tap(find.text('Export Collection to Discogs'));
+        await tester.pumpAndSettle();
+        expect(find.text('Export Collection to Discogs'), findsOneWidget);
+      });
+
+      testWidgets(
+          'tapping Export Collection to Discogs does not show Coming soon snackbar',
+          (tester) async {
+        final exportUseCase = _FakeCollectionExportUseCase();
+        await tester.pumpWidget(
+            _buildSubject(collectionExportPreviewUseCase: exportUseCase));
+        await tester.tap(find.text('Export Collection to Discogs'));
+        await tester.pump();
+        expect(find.byType(SnackBar), findsNothing);
+      });
+    });
+
     group('wide layout', () {
       testWidgets('renders without error on wide screen', (tester) async {
         _setWideTallScreen(tester);
@@ -309,18 +360,18 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Export Collection to Discogs'));
+        await tester.tap(find.text('Export Wishlist to Discogs'));
         await tester.pump();
         expect(find.byType(SnackBar), findsOneWidget);
       });
 
-      testWidgets('6 cards show Coming soon badge on wide screen', (tester) async {
+      testWidgets('5 cards show Coming soon badge on wide screen', (tester) async {
         _setWideTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(_buildSubject());
-        expect(find.text('Coming soon'), findsNWidgets(6));
+        expect(find.text('Coming soon'), findsNWidgets(5));
       });
     });
   });

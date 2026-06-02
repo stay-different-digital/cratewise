@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../application/use_cases/build_collection_export_preview_use_case.dart';
 import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
 import '../../application/use_cases/fetch_wishlist_import_preview_use_case.dart';
+import 'collection_export_preview_screen.dart';
 import 'collection_import_preview_screen.dart';
 import 'wishlist_import_preview_screen.dart';
 
@@ -13,6 +15,7 @@ class ImportExportScreen extends StatelessWidget {
     super.key,
     this.collectionImportUseCase,
     this.wishlistImportUseCase,
+    this.collectionExportPreviewUseCase,
   });
 
   /// Injected only for testing. Production code passes null.
@@ -20,6 +23,9 @@ class ImportExportScreen extends StatelessWidget {
 
   /// Injected only for testing. Production code passes null.
   final FetchWishlistImportPreviewUseCase? wishlistImportUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final BuildCollectionExportPreviewUseCase? collectionExportPreviewUseCase;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +45,13 @@ class ImportExportScreen extends StatelessWidget {
             MaterialPageRoute<void>(
               builder: (_) => WishlistImportPreviewScreen(
                 useCase: wishlistImportUseCase,
+              ),
+            ),
+          ),
+          onExportCollection: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => CollectionExportPreviewScreen(
+                useCase: collectionExportPreviewUseCase,
               ),
             ),
           ),
@@ -75,11 +88,13 @@ class _ActionBody extends StatelessWidget {
     required this.isWide,
     required this.onImportCollection,
     required this.onImportWishlist,
+    required this.onExportCollection,
   });
 
   final bool isWide;
   final VoidCallback onImportCollection;
   final VoidCallback onImportWishlist;
+  final VoidCallback onExportCollection;
 
   List<_ActionConfig> get _discogsActions => [
         _ActionConfig(
@@ -94,9 +109,11 @@ class _ActionBody extends StatelessWidget {
           badge: null,
           onTap: (ctx) => onImportWishlist(),
         ),
-        const _ActionConfig(
+        _ActionConfig(
           icon: Icons.cloud_upload_outlined,
           title: 'Export Collection to Discogs',
+          badge: null,
+          onTap: (ctx) => onExportCollection(),
         ),
         const _ActionConfig(
           icon: Icons.cloud_upload_outlined,
