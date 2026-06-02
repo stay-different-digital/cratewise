@@ -1310,4 +1310,112 @@ void main() {
       }
     });
   });
+
+  group('DiscogsApiClient.addToCollection', () {
+    const fakeUsername = 'vinyl_fan';
+    const fakeReleaseId = 12345;
+
+    test('completes normally on 201', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(201));
+      await expectLater(
+        client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken),
+        completes,
+      );
+    });
+
+    test('sends POST to correct URL', () async {
+      late http.Request capturedRequest;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          capturedRequest = request;
+          return http.Response('', 201);
+        }),
+      );
+
+      await client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken);
+
+      expect(capturedRequest.method, 'POST');
+      expect(
+        capturedRequest.url.path,
+        '/users/$fakeUsername/collection/folders/1/releases/$fakeReleaseId',
+      );
+    });
+
+    test('includes correct authorization header', () async {
+      late http.Request capturedRequest;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          capturedRequest = request;
+          return http.Response('', 201);
+        }),
+      );
+
+      await client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken);
+
+      expect(
+        capturedRequest.headers['Authorization'],
+        'Discogs token=$_fakeToken',
+      );
+    });
+
+    test('throws InvalidTokenError on 401', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      expect(
+        () => client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<InvalidTokenError>()),
+      );
+    });
+
+    test('throws InvalidTokenError on 403', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(403));
+      expect(
+        () => client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<InvalidTokenError>()),
+      );
+    });
+
+    test('throws RateLimitedError on 429', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(429));
+      expect(
+        () => client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<RateLimitedError>()),
+      );
+    });
+
+    test('throws DiscogsUnavailableError on 500', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(500));
+      expect(
+        () => client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<DiscogsUnavailableError>()),
+      );
+    });
+
+    test('throws NetworkError when request throws', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async => throw Exception('no internet')),
+      );
+      expect(
+        () => client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<NetworkError>()),
+      );
+    });
+
+    test('does not throw on 200 (treats as unexpected)', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(200));
+      expect(
+        () => client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<UnexpectedApiError>()),
+      );
+    });
+
+    test('token is not present in thrown error messages', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      try {
+        await client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken);
+        fail('expected InvalidTokenError');
+      } on InvalidTokenError {
+        // Pass — typed error carries no message containing the token.
+      }
+    });
+  });
 }

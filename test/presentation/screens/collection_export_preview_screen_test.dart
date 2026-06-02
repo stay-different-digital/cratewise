@@ -1,14 +1,23 @@
 import 'package:cratewise/application/use_cases/build_collection_export_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/check_collection_export_capability_use_case.dart';
+import 'package:cratewise/application/use_cases/execute_collection_export_use_case.dart';
 import 'package:cratewise/domain/models/collection_export_preview.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
+import 'package:cratewise/domain/models/import_export_job.dart';
+import 'package:cratewise/domain/models/import_export_row_result.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/import_export_job_repository.dart';
+import 'package:cratewise/domain/repositories/import_export_row_result_repository.dart';
+import 'package:cratewise/domain/repositories/token_storage.dart';
+import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/presentation/screens/collection_export_preview_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 // ---------------------------------------------------------------------------
-// Fakes
+// Preview use case fake
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
@@ -67,6 +76,69 @@ class _CountingFakeUseCase extends BuildCollectionExportPreviewUseCase {
 }
 
 // ---------------------------------------------------------------------------
+// Execute use case fake
+// ---------------------------------------------------------------------------
+
+class _FakeTokenStorage implements TokenStorage {
+  @override
+  Future<String?> loadToken() async => 'tok';
+  @override
+  Future<String?> loadUsername() async => 'user';
+  @override
+  Future<void> saveCredentials({
+    required String token,
+    required String username,
+  }) async {}
+  @override
+  Future<void> deleteCredentials() async {}
+}
+
+class _FakeImportExportJobRepository implements ImportExportJobRepository {
+  @override
+  Future<void> add(ImportExportJob job) async {}
+  @override
+  Future<void> update(ImportExportJob job) async {}
+  @override
+  Future<ImportExportJob?> getById(String id) async => null;
+  @override
+  Future<List<ImportExportJob>> getRecent({int limit = 20}) async => [];
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _FakeRowResultRepository implements ImportExportRowResultRepository {
+  @override
+  Future<void> addResult(String jobId, ImportExportRowResult result) async {}
+  @override
+  Future<List<ImportExportRowResult>> getResults(String jobId) async => [];
+  @override
+  Future<void> removeAllForJob(String jobId) async {}
+}
+
+class _FakeExecuteUseCase extends ExecuteCollectionExportUseCase {
+  _FakeExecuteUseCase(this._override)
+      : super(
+          capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
+          tokenStorage: _FakeTokenStorage(),
+          apiClient: DiscogsApiClient(
+            httpClient:
+                MockClient((_) async => http.Response('', 201)),
+          ),
+          collectionRepository: _FakeCollectionRepository(),
+          jobRepository: _FakeImportExportJobRepository(),
+          rowResultRepository: _FakeRowResultRepository(),
+        );
+
+  final ExecuteCollectionExportResult _override;
+
+  @override
+  Future<ExecuteCollectionExportResult> execute(
+    CollectionExportPreview preview,
+  ) async =>
+      _override;
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -102,9 +174,15 @@ CollectionExportPreview makePreview({
   return CollectionExportPreview(rows: rows);
 }
 
-Widget buildSubject(BuildCollectionExportPreviewUseCase useCase) =>
+Widget buildSubject({
+  required BuildCollectionExportPreviewUseCase useCase,
+  ExecuteCollectionExportUseCase? executeUseCase,
+}) =>
     MaterialApp(
-      home: CollectionExportPreviewScreen(useCase: useCase),
+      home: CollectionExportPreviewScreen(
+        useCase: useCase,
+        executeUseCase: executeUseCase,
+      ),
     );
 
 // ---------------------------------------------------------------------------
@@ -118,7 +196,7 @@ void main() {
           (tester) async {
         final useCase =
             _FakeUseCase(const CollectionExportPreviewNotSupported('N/A'));
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         expect(find.byType(CircularProgressIndicator), findsOneWidget);
       });
 
@@ -126,14 +204,14 @@ void main() {
           (tester) async {
         final useCase =
             _FakeUseCase(const CollectionExportPreviewNotSupported('N/A'));
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         expect(find.text('Export Collection to Discogs'), findsOneWidget);
       });
 
       testWidgets('calls execute on initState', (tester) async {
         final useCase =
             _FakeUseCase(const CollectionExportPreviewNotSupported('N/A'));
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         expect(useCase.executeCalled, isTrue);
       });
     });
@@ -143,7 +221,7 @@ void main() {
         final useCase = _FakeUseCase(
           const CollectionExportPreviewNotSupported('Feature coming soon.'),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Export not available'), findsOneWidget);
       });
@@ -153,7 +231,7 @@ void main() {
         final useCase = _FakeUseCase(
           const CollectionExportPreviewNotSupported(reason),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text(reason), findsOneWidget);
       });
@@ -163,7 +241,7 @@ void main() {
         final useCase = _FakeUseCase(
           const CollectionExportPreviewNotSupported('N/A'),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.byType(FilledButton), findsNothing);
       });
@@ -176,7 +254,7 @@ void main() {
             'You can export your collection as a CSV file instead.',
           ),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         final texts = tester
             .widgetList<Text>(find.byType(Text))
@@ -193,7 +271,7 @@ void main() {
       testWidgets('shows Export preview heading after load', (tester) async {
         final useCase =
             _FakeUseCase(CollectionExportPreviewReady(makePreview()));
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Export preview'), findsOneWidget);
       });
@@ -204,46 +282,43 @@ void main() {
             makePreview(eligibleCount: 2, alreadySyncedCount: 1),
           ),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Total local items'), findsOneWidget);
         expect(find.text('3'), findsOneWidget);
       });
 
       testWidgets('shows eligible count as Ready to export', (tester) async {
-        // alreadySyncedCount=1 keeps totalCount(3) != eligibleCount(2) so '2' appears once.
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(
             makePreview(eligibleCount: 2, alreadySyncedCount: 1),
           ),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Ready to export'), findsOneWidget);
         expect(find.text('2'), findsOneWidget);
       });
 
       testWidgets('shows already synced count', (tester) async {
-        // eligibleCount=1 keeps totalCount(4) != alreadySyncedCount(3) so '3' appears once.
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(
             makePreview(eligibleCount: 1, alreadySyncedCount: 3),
           ),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Already linked to Discogs'), findsOneWidget);
         expect(find.text('3'), findsOneWidget);
       });
 
       testWidgets('shows invalid count as Cannot export', (tester) async {
-        // eligibleCount=1 keeps totalCount(3) != invalidCount(2) so '2' appears once.
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(
             makePreview(eligibleCount: 1, invalidCount: 2),
           ),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Cannot export'), findsOneWidget);
         expect(find.text('2'), findsOneWidget);
@@ -253,7 +328,7 @@ void main() {
           (tester) async {
         final useCase =
             _FakeUseCase(CollectionExportPreviewReady(makePreview()));
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('0'), findsNWidgets(4));
       });
@@ -264,16 +339,17 @@ void main() {
           (tester) async {
         final useCase =
             _FakeUseCase(CollectionExportPreviewReady(makePreview()));
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Nothing to export'), findsOneWidget);
       });
 
-      testWidgets('shows Export N records for eligibleCount > 1', (tester) async {
+      testWidgets('shows Export N records for eligibleCount > 1',
+          (tester) async {
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(makePreview(eligibleCount: 5)),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Export 5 records'), findsOneWidget);
       });
@@ -283,32 +359,61 @@ void main() {
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(makePreview(eligibleCount: 1)),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Export 1 record'), findsOneWidget);
       });
 
-      testWidgets('confirm button is disabled when eligible items exist',
+      testWidgets('confirm button is disabled when nothing to export',
           (tester) async {
-        final useCase = _FakeUseCase(
-          CollectionExportPreviewReady(makePreview(eligibleCount: 3)),
+        final useCase =
+            _FakeUseCase(CollectionExportPreviewReady(makePreview()));
+        final executeUseCase = _FakeExecuteUseCase(
+          ExecuteExportCompleted(
+            jobId: 'j', exported: 0, skipped: 0, failed: 0,
+          ),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
         await tester.pump();
         final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Export 3 records'),
+          find.widgetWithText(FilledButton, 'Nothing to export'),
         );
         expect(button.onPressed, isNull);
       });
 
-      testWidgets('confirm button disabled when nothing to export',
+      testWidgets(
+          'confirm button is enabled when eligible items exist and execute use case provided',
           (tester) async {
-        final useCase =
-            _FakeUseCase(CollectionExportPreviewReady(makePreview()));
-        await tester.pumpWidget(buildSubject(useCase));
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 3)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          ExecuteExportCompleted(
+            jobId: 'j', exported: 3, skipped: 0, failed: 0,
+          ),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
         await tester.pump();
         final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Nothing to export'),
+          find.widgetWithText(FilledButton, 'Export 3 records'),
+        );
+        expect(button.onPressed, isNotNull);
+      });
+
+      testWidgets(
+          'confirm button is disabled when eligible items exist but no execute use case',
+          (tester) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 3)),
+        );
+        await tester.pumpWidget(buildSubject(useCase: useCase));
+        await tester.pump();
+        final button = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Export 3 records'),
         );
         expect(button.onPressed, isNull);
       });
@@ -319,7 +424,7 @@ void main() {
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(makePreview(alreadySyncedCount: 2)),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Notes'), findsOneWidget);
         expect(
@@ -332,7 +437,7 @@ void main() {
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(makePreview(invalidCount: 1)),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Notes'), findsOneWidget);
         expect(find.textContaining('cannot be exported'), findsOneWidget);
@@ -342,7 +447,7 @@ void main() {
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(makePreview(eligibleCount: 3)),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Notes'), findsNothing);
       });
@@ -352,16 +457,17 @@ void main() {
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(makePreview(alreadySyncedCount: 3)),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.textContaining('3 items are'), findsOneWidget);
       });
 
-      testWidgets('singular wording for one already-synced item', (tester) async {
+      testWidgets('singular wording for one already-synced item',
+          (tester) async {
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(makePreview(alreadySyncedCount: 1)),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.textContaining('1 item is'), findsOneWidget);
       });
@@ -370,43 +476,46 @@ void main() {
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(makePreview(invalidCount: 4)),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
-        expect(find.textContaining('4 items cannot be exported'), findsOneWidget);
+        expect(
+          find.textContaining('4 items cannot be exported'),
+          findsOneWidget,
+        );
       });
 
       testWidgets('singular wording for one invalid item', (tester) async {
         final useCase = _FakeUseCase(
           CollectionExportPreviewReady(makePreview(invalidCount: 1)),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
-        expect(find.textContaining('1 item cannot be exported'), findsOneWidget);
+        expect(
+          find.textContaining('1 item cannot be exported'),
+          findsOneWidget,
+        );
       });
     });
 
     group('error state', () {
       testWidgets('shows error message on CollectionExportPreviewError',
           (tester) async {
-        final useCase =
-            _FakeUseCase(const CollectionExportPreviewError());
-        await tester.pumpWidget(buildSubject(useCase));
+        final useCase = _FakeUseCase(const CollectionExportPreviewError());
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.textContaining('Something went wrong'), findsOneWidget);
       });
 
       testWidgets('shows Try again button in error state', (tester) async {
-        final useCase =
-            _FakeUseCase(const CollectionExportPreviewError());
-        await tester.pumpWidget(buildSubject(useCase));
+        final useCase = _FakeUseCase(const CollectionExportPreviewError());
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Try again'), findsOneWidget);
       });
 
       testWidgets('error state does not show confirm button', (tester) async {
-        final useCase =
-            _FakeUseCase(const CollectionExportPreviewError());
-        await tester.pumpWidget(buildSubject(useCase));
+        final useCase = _FakeUseCase(const CollectionExportPreviewError());
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.byType(FilledButton), findsNothing);
       });
@@ -422,13 +531,202 @@ void main() {
           ),
           onCall: () => callCount++,
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Try again'), findsOneWidget);
         await tester.tap(find.text('Try again'));
         await tester.pump();
         await tester.pump();
         expect(callCount, 2);
+      });
+    });
+
+    group('exporting state', () {
+      testWidgets('shows spinner and progress label while exporting',
+          (tester) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 2)),
+        );
+        // Execute use case never completes (completer never resolved) — use
+        // a fake that pauses to let us observe the exporting state.
+        final pauseCompleter = Future<ExecuteCollectionExportResult>.delayed(
+          const Duration(seconds: 10),
+          () => ExecuteExportCompleted(
+            jobId: 'j', exported: 2, skipped: 0, failed: 0,
+          ),
+        );
+        late CollectionExportPreview capturedPreview;
+        final executeUseCase = _PausingExecuteUseCase(
+          pauseCompleter,
+          onExecute: (p) => capturedPreview = p,
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 2 records'));
+        await tester.pump();
+        expect(find.text('Exporting your collection…'), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        // Suppress async leakage.
+        capturedPreview; // suppress unused warning
+        await tester.pumpAndSettle(const Duration(seconds: 11));
+      });
+    });
+
+    group('export done state', () {
+      testWidgets('shows Export complete heading', (tester) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 2)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          ExecuteExportCompleted(
+            jobId: 'j', exported: 2, skipped: 0, failed: 0,
+          ),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 2 records'));
+        await tester.pumpAndSettle();
+        expect(find.text('Export complete'), findsOneWidget);
+      });
+
+      testWidgets('shows exported count', (tester) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 3)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          ExecuteExportCompleted(
+            jobId: 'j', exported: 3, skipped: 0, failed: 0,
+          ),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 3 records'));
+        await tester.pumpAndSettle();
+        expect(find.text('Added to Discogs'), findsOneWidget);
+        expect(find.text('3'), findsOneWidget);
+      });
+
+      testWidgets('shows Done button', (tester) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 1)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          ExecuteExportCompleted(
+            jobId: 'j', exported: 1, skipped: 0, failed: 0,
+          ),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 1 record'));
+        await tester.pumpAndSettle();
+        expect(find.text('Done'), findsOneWidget);
+      });
+
+      testWidgets('shows Failed count when some items failed', (tester) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 3)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          ExecuteExportCompleted(
+            jobId: 'j', exported: 2, skipped: 0, failed: 1,
+          ),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 3 records'));
+        await tester.pumpAndSettle();
+        expect(find.text('Failed'), findsOneWidget);
+        expect(find.text('1'), findsOneWidget);
+      });
+
+      testWidgets('does not show Failed row when failed count is zero',
+          (tester) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 2)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          ExecuteExportCompleted(
+            jobId: 'j', exported: 2, skipped: 0, failed: 0,
+          ),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 2 records'));
+        await tester.pumpAndSettle();
+        expect(find.text('Failed'), findsNothing);
+      });
+    });
+
+    group('execute — not supported transition', () {
+      testWidgets(
+          'transitions to not-supported state when execute returns NotSupported',
+          (tester) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 1)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteExportNotSupported('No write access.'),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 1 record'));
+        await tester.pumpAndSettle();
+        expect(find.text('Export not available'), findsOneWidget);
+      });
+    });
+
+    group('execute — no token transition', () {
+      testWidgets(
+          'transitions to no-token state when execute returns NoToken',
+          (tester) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 1)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteExportNoToken(),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 1 record'));
+        await tester.pumpAndSettle();
+        expect(find.text('No Discogs account connected'), findsOneWidget);
+      });
+    });
+
+    group('execute — failure snackbar', () {
+      testWidgets('shows snackbar and stays on ready state on execute failure',
+          (tester) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 1)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteExportFailed('Export could not be completed'),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 1 record'));
+        await tester.pump();
+        await tester.pump();
+        expect(find.byType(SnackBar), findsOneWidget);
+        expect(find.text('Export preview'), findsOneWidget);
       });
     });
 
@@ -444,7 +742,7 @@ void main() {
             makePreview(eligibleCount: 2, alreadySyncedCount: 1),
           ),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Export Collection to Discogs'), findsOneWidget);
         expect(find.text('Export preview'), findsOneWidget);
@@ -459,10 +757,42 @@ void main() {
         final useCase = _FakeUseCase(
           const CollectionExportPreviewNotSupported('Not available yet.'),
         );
-        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Export not available'), findsOneWidget);
       });
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Helpers for async-state tests
+// ---------------------------------------------------------------------------
+
+class _PausingExecuteUseCase extends ExecuteCollectionExportUseCase {
+  _PausingExecuteUseCase(
+    this._future, {
+    required this.onExecute,
+  }) : super(
+          capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
+          tokenStorage: _FakeTokenStorage(),
+          apiClient: DiscogsApiClient(
+            httpClient:
+                MockClient((_) async => http.Response('', 201)),
+          ),
+          collectionRepository: _FakeCollectionRepository(),
+          jobRepository: _FakeImportExportJobRepository(),
+          rowResultRepository: _FakeRowResultRepository(),
+        );
+
+  final Future<ExecuteCollectionExportResult> _future;
+  final void Function(CollectionExportPreview) onExecute;
+
+  @override
+  Future<ExecuteCollectionExportResult> execute(
+    CollectionExportPreview preview,
+  ) {
+    onExecute(preview);
+    return _future;
+  }
 }

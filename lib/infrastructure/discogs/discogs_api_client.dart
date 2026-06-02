@@ -112,6 +112,21 @@ class DiscogsApiClient {
         .toList();
   }
 
+  /// Adds [releaseId] to the authenticated user's Discogs collection folder 1.
+  ///
+  /// Folder 1 is the default "Uncategorized" folder. Returns normally on
+  /// success (HTTP 201); throws an [AppError] subtype on failure.
+  Future<void> addToCollection(
+    String username,
+    int releaseId,
+    String token,
+  ) async {
+    await _post(
+      '/users/$username/collection/folders/1/releases/$releaseId',
+      token,
+    );
+  }
+
   Future<http.Response> _get(
     String path,
     String token, {
@@ -133,16 +148,29 @@ class DiscogsApiClient {
     return response;
   }
 
+  Future<http.Response> _post(String path, String token) async {
+    final uri = Uri.parse('$_baseUrl$path');
+    final http.Response response;
+    try {
+      response = await _client.post(uri, headers: _headers(token));
+    } on SocketException {
+      throw const NetworkError();
+    } on Exception {
+      throw const NetworkError();
+    }
+    _checkStatus(response, 201);
+    return response;
+  }
+
   Map<String, String> _headers(String token) => {
         'User-Agent': _userAgent,
         'Authorization': 'Discogs token=$token',
         'Accept': _accept,
       };
 
-  void _checkStatus(http.Response response) {
+  void _checkStatus(http.Response response, [int expectedStatus = 200]) {
+    if (response.statusCode == expectedStatus) return;
     switch (response.statusCode) {
-      case 200:
-        return;
       case 401:
       case 403:
         throw const InvalidTokenError();
