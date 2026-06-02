@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 
+import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import 'app_database.dart';
@@ -68,6 +69,7 @@ class LocalWishlistRepository implements WishlistRepository {
       targetPrice: row.targetPrice,
       priority: row.priority,
       notes: row.notes,
+      syncStatus: row.syncStatus ?? SyncStatus.localOnly,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );
@@ -88,6 +90,7 @@ class LocalWishlistRepository implements WishlistRepository {
       targetPrice: Value(item.targetPrice),
       priority: Value(item.priority),
       notes: Value(item.notes),
+      syncStatus: Value(item.syncStatus),
       createdAt: Value(item.createdAt),
       updatedAt: Value(item.updatedAt),
     );

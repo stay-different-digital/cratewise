@@ -1,3 +1,5 @@
+import 'sync_status.dart';
+
 enum WishlistPriority {
   low,
   medium,
@@ -29,6 +31,7 @@ class WishlistItem {
     this.coverUrl,
     this.targetPrice,
     this.notes,
+    this.syncStatus = SyncStatus.localOnly,
   });
 
   final String id;
@@ -44,6 +47,7 @@ class WishlistItem {
   final double? targetPrice;
   final WishlistPriority priority;
   final String? notes;
+  final SyncStatus syncStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -62,6 +66,7 @@ class WishlistItem {
     bool clearTargetPrice = false,
     WishlistPriority? priority,
     String? notes,
+    SyncStatus? syncStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -79,6 +84,7 @@ class WishlistItem {
       targetPrice: clearTargetPrice ? null : (targetPrice ?? this.targetPrice),
       priority: priority ?? this.priority,
       notes: notes ?? this.notes,
+      syncStatus: syncStatus ?? this.syncStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

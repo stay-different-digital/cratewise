@@ -1,3 +1,5 @@
+import 'sync_status.dart';
+
 enum RecordCondition {
   mint,
   nearMint,
@@ -53,6 +55,7 @@ class CollectionItem {
     this.coverUrl,
     this.notes,
     this.storageLocation,
+    this.syncStatus = SyncStatus.localOnly,
   });
 
   final String id;
@@ -70,6 +73,7 @@ class CollectionItem {
   final String? notes;
   final List<String> tags;
   final String? storageLocation;
+  final SyncStatus syncStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -89,6 +93,7 @@ class CollectionItem {
     String? notes,
     List<String>? tags,
     String? storageLocation,
+    SyncStatus? syncStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -108,6 +113,7 @@ class CollectionItem {
       notes: notes ?? this.notes,
       tags: tags ?? this.tags,
       storageLocation: storageLocation ?? this.storageLocation,
+      syncStatus: syncStatus ?? this.syncStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

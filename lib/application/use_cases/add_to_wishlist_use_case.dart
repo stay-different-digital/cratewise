@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 
 import '../../domain/models/release_detail.dart';
+import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 
@@ -45,6 +46,7 @@ class AddToWishlistUseCase {
       year: release.year,
       coverUrl: release.coverUrl,
       priority: WishlistPriority.medium,
+      syncStatus: SyncStatus.localOnly,
       createdAt: now,
       updatedAt: now,
     );

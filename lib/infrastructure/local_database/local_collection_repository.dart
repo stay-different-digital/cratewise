@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../domain/models/collection_item.dart';
+import '../../domain/models/sync_status.dart';
 import '../../domain/repositories/collection_repository.dart';
 import 'app_database.dart';
 
@@ -70,6 +71,7 @@ class LocalCollectionRepository implements CollectionRepository {
       notes: row.notes,
       tags: row.tags,
       storageLocation: row.storageLocation,
+      syncStatus: row.syncStatus ?? SyncStatus.localOnly,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );
@@ -92,6 +94,7 @@ class LocalCollectionRepository implements CollectionRepository {
       notes: Value(item.notes),
       tags: Value(item.tags),
       storageLocation: Value(item.storageLocation),
+      syncStatus: Value(item.syncStatus),
       createdAt: Value(item.createdAt),
       updatedAt: Value(item.updatedAt),
     );

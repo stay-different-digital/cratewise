@@ -7,6 +7,18 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5K: Add sync status to local Collection and Wishlist items] — 2026-06-02
+
+### Added
+- `CollectionItem` and `WishlistItem` domain models now carry a `syncStatus: SyncStatus` field (optional, defaults to `SyncStatus.localOnly`)
+- `CollectionItems` and `WishlistItems` Drift tables gain a nullable `syncStatus` column; existing rows read as `SyncStatus.localOnly`
+- `LocalCollectionRepository` and `LocalWishlistRepository` mappers read and write `syncStatus`; null in existing DB rows is treated as `SyncStatus.localOnly`
+- `AddToCollectionUseCase` and `AddToWishlistUseCase` now explicitly set `syncStatus: SyncStatus.localOnly` on newly created items
+- Schema version bumped to 4; migration adds `syncStatus` column to both tables (nullable `ALTER TABLE ADD COLUMN`)
+- 8 new integration/unit tests: 3 sync-status round-trip tests in each repository test and 1 default-value test in each use-case test
+
+---
+
 ## [Unreleased — Phase 5J: Use cached thumbnails in local Collection and Wishlist views] — 2026-06-01
 
 ### Added

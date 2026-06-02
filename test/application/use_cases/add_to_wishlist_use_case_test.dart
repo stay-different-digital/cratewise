@@ -1,5 +1,6 @@
 import 'package:cratewise/application/use_cases/add_to_wishlist_use_case.dart';
 import 'package:cratewise/domain/models/release_detail.dart';
+import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -141,6 +142,12 @@ void main() {
         final result =
             await useCase.execute(kindOfBlue()) as AddToWishlistSuccess;
         expect(result.item.notes, isNull);
+      });
+
+      test('default syncStatus is localOnly', () async {
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToWishlistSuccess;
+        expect(result.item.syncStatus, SyncStatus.localOnly);
       });
 
       test('generated id is non-empty', () async {

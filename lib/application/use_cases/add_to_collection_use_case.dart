@@ -2,6 +2,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../domain/models/collection_item.dart';
 import '../../domain/models/release_detail.dart';
+import '../../domain/models/sync_status.dart';
 import '../../domain/repositories/collection_repository.dart';
 
 sealed class AddToCollectionResult {
@@ -47,6 +48,7 @@ class AddToCollectionUseCase {
       mediaCondition: RecordCondition.veryGood,
       sleeveCondition: RecordCondition.veryGood,
       tags: const [],
+      syncStatus: SyncStatus.localOnly,
       createdAt: now,
       updatedAt: now,
     );

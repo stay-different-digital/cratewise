@@ -1,4 +1,5 @@
 import 'package:cratewise/domain/models/collection_item.dart';
+import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/infrastructure/local_database/app_database.dart';
 import 'package:cratewise/infrastructure/local_database/local_collection_repository.dart';
 import 'package:drift/native.dart';
@@ -181,6 +182,31 @@ void main() {
         expect(fetched.coverUrl, isNull);
         expect(fetched.notes, isNull);
         expect(fetched.storageLocation, isNull);
+      });
+    });
+
+    group('sync status', () {
+      test('new item gets localOnly sync status by default', () async {
+        await repo.add(makeItem(id: 'sync-default'));
+        final fetched = await repo.getById('sync-default');
+        expect(fetched!.syncStatus, SyncStatus.localOnly);
+      });
+
+      test('sync status round-trips through add and getById', () async {
+        final item = makeItem(id: 'sync-rt').copyWith(
+          syncStatus: SyncStatus.pending,
+        );
+        await repo.add(item);
+        final fetched = await repo.getById('sync-rt');
+        expect(fetched!.syncStatus, SyncStatus.pending);
+      });
+
+      test('update persists changed sync status', () async {
+        await repo.add(makeItem(id: 'sync-upd'));
+        final original = await repo.getById('sync-upd');
+        await repo.update(original!.copyWith(syncStatus: SyncStatus.synced));
+        final fetched = await repo.getById('sync-upd');
+        expect(fetched!.syncStatus, SyncStatus.synced);
       });
     });
   });

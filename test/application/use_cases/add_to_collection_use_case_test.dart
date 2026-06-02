@@ -1,6 +1,7 @@
 import 'package:cratewise/application/use_cases/add_to_collection_use_case.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/release_detail.dart';
+import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -144,6 +145,11 @@ void main() {
       test('default storageLocation is null', () async {
         final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.storageLocation, isNull);
+      });
+
+      test('default syncStatus is localOnly', () async {
+        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        expect(result.item.syncStatus, SyncStatus.localOnly);
       });
 
       test('generated id is non-empty', () async {

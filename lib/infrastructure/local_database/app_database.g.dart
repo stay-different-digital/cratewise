@@ -158,6 +158,15 @@ class $CollectionItemsTable extends CollectionItems
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<SyncStatus?, String> syncStatus =
+      GeneratedColumn<String>(
+        'sync_status',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<SyncStatus?>($CollectionItemsTable.$convertersyncStatusn);
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -197,6 +206,7 @@ class $CollectionItemsTable extends CollectionItems
     notes,
     tags,
     storageLocation,
+    syncStatus,
     createdAt,
     updatedAt,
   ];
@@ -386,6 +396,12 @@ class $CollectionItemsTable extends CollectionItems
         DriftSqlType.string,
         data['${effectivePrefix}storage_location'],
       ),
+      syncStatus: $CollectionItemsTable.$convertersyncStatusn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}sync_status'],
+        ),
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -408,6 +424,10 @@ class $CollectionItemsTable extends CollectionItems
       const RecordConditionConverter();
   static TypeConverter<List<String>, String> $convertertags =
       const StringListConverter();
+  static TypeConverter<SyncStatus, String> $convertersyncStatus =
+      const SyncStatusConverter();
+  static TypeConverter<SyncStatus?, String?> $convertersyncStatusn =
+      NullAwareTypeConverter.wrap($convertersyncStatus);
 }
 
 class CollectionRow extends DataClass implements Insertable<CollectionRow> {
@@ -426,6 +446,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
   final String? notes;
   final List<String> tags;
   final String? storageLocation;
+  final SyncStatus? syncStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
   const CollectionRow({
@@ -444,6 +465,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     this.notes,
     required this.tags,
     this.storageLocation,
+    this.syncStatus,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -493,6 +515,11 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     if (!nullToAbsent || storageLocation != null) {
       map['storage_location'] = Variable<String>(storageLocation);
     }
+    if (!nullToAbsent || syncStatus != null) {
+      map['sync_status'] = Variable<String>(
+        $CollectionItemsTable.$convertersyncStatusn.toSql(syncStatus),
+      );
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -529,6 +556,9 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       storageLocation: storageLocation == null && nullToAbsent
           ? const Value.absent()
           : Value(storageLocation),
+      syncStatus: syncStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(syncStatus),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -559,6 +589,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       notes: serializer.fromJson<String?>(json['notes']),
       tags: serializer.fromJson<List<String>>(json['tags']),
       storageLocation: serializer.fromJson<String?>(json['storageLocation']),
+      syncStatus: serializer.fromJson<SyncStatus?>(json['syncStatus']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -582,6 +613,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       'notes': serializer.toJson<String?>(notes),
       'tags': serializer.toJson<List<String>>(tags),
       'storageLocation': serializer.toJson<String?>(storageLocation),
+      'syncStatus': serializer.toJson<SyncStatus?>(syncStatus),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -603,6 +635,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     Value<String?> notes = const Value.absent(),
     List<String>? tags,
     Value<String?> storageLocation = const Value.absent(),
+    Value<SyncStatus?> syncStatus = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => CollectionRow(
@@ -623,6 +656,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     storageLocation: storageLocation.present
         ? storageLocation.value
         : this.storageLocation,
+    syncStatus: syncStatus.present ? syncStatus.value : this.syncStatus,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -651,6 +685,9 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       storageLocation: data.storageLocation.present
           ? data.storageLocation.value
           : this.storageLocation,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -674,6 +711,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
           ..write('notes: $notes, ')
           ..write('tags: $tags, ')
           ..write('storageLocation: $storageLocation, ')
+          ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -697,6 +735,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     notes,
     tags,
     storageLocation,
+    syncStatus,
     createdAt,
     updatedAt,
   );
@@ -719,6 +758,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
           other.notes == this.notes &&
           other.tags == this.tags &&
           other.storageLocation == this.storageLocation &&
+          other.syncStatus == this.syncStatus &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -739,6 +779,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
   final Value<String?> notes;
   final Value<List<String>> tags;
   final Value<String?> storageLocation;
+  final Value<SyncStatus?> syncStatus;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -758,6 +799,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     this.notes = const Value.absent(),
     this.tags = const Value.absent(),
     this.storageLocation = const Value.absent(),
+    this.syncStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -778,6 +820,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     this.notes = const Value.absent(),
     required List<String> tags,
     this.storageLocation = const Value.absent(),
+    this.syncStatus = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -806,6 +849,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     Expression<String>? notes,
     Expression<String>? tags,
     Expression<String>? storageLocation,
+    Expression<String>? syncStatus,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -826,6 +870,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
       if (notes != null) 'notes': notes,
       if (tags != null) 'tags': tags,
       if (storageLocation != null) 'storage_location': storageLocation,
+      if (syncStatus != null) 'sync_status': syncStatus,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -848,6 +893,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     Value<String?>? notes,
     Value<List<String>>? tags,
     Value<String?>? storageLocation,
+    Value<SyncStatus?>? syncStatus,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -868,6 +914,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
       notes: notes ?? this.notes,
       tags: tags ?? this.tags,
       storageLocation: storageLocation ?? this.storageLocation,
+      syncStatus: syncStatus ?? this.syncStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -932,6 +979,11 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     if (storageLocation.present) {
       map['storage_location'] = Variable<String>(storageLocation.value);
     }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(
+        $CollectionItemsTable.$convertersyncStatusn.toSql(syncStatus.value),
+      );
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -962,6 +1014,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
           ..write('notes: $notes, ')
           ..write('tags: $tags, ')
           ..write('storageLocation: $storageLocation, ')
+          ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -1101,6 +1154,15 @@ class $WishlistItemsTable extends WishlistItems
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  @override
+  late final GeneratedColumnWithTypeConverter<SyncStatus?, String> syncStatus =
+      GeneratedColumn<String>(
+        'sync_status',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<SyncStatus?>($WishlistItemsTable.$convertersyncStatusn);
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -1138,6 +1200,7 @@ class $WishlistItemsTable extends WishlistItems
     targetPrice,
     priority,
     notes,
+    syncStatus,
     createdAt,
     updatedAt,
   ];
@@ -1315,6 +1378,12 @@ class $WishlistItemsTable extends WishlistItems
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      syncStatus: $WishlistItemsTable.$convertersyncStatusn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}sync_status'],
+        ),
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -1333,6 +1402,10 @@ class $WishlistItemsTable extends WishlistItems
 
   static TypeConverter<WishlistPriority, String> $converterpriority =
       const WishlistPriorityConverter();
+  static TypeConverter<SyncStatus, String> $convertersyncStatus =
+      const SyncStatusConverter();
+  static TypeConverter<SyncStatus?, String?> $convertersyncStatusn =
+      NullAwareTypeConverter.wrap($convertersyncStatus);
 }
 
 class WishlistRow extends DataClass implements Insertable<WishlistRow> {
@@ -1349,6 +1422,7 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
   final double? targetPrice;
   final WishlistPriority priority;
   final String? notes;
+  final SyncStatus? syncStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
   const WishlistRow({
@@ -1365,6 +1439,7 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
     this.targetPrice,
     required this.priority,
     this.notes,
+    this.syncStatus,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -1404,6 +1479,11 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
     }
+    if (!nullToAbsent || syncStatus != null) {
+      map['sync_status'] = Variable<String>(
+        $WishlistItemsTable.$convertersyncStatusn.toSql(syncStatus),
+      );
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1438,6 +1518,9 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
+      syncStatus: syncStatus == null && nullToAbsent
+          ? const Value.absent()
+          : Value(syncStatus),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1462,6 +1545,7 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
       targetPrice: serializer.fromJson<double?>(json['targetPrice']),
       priority: serializer.fromJson<WishlistPriority>(json['priority']),
       notes: serializer.fromJson<String?>(json['notes']),
+      syncStatus: serializer.fromJson<SyncStatus?>(json['syncStatus']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1483,6 +1567,7 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
       'targetPrice': serializer.toJson<double?>(targetPrice),
       'priority': serializer.toJson<WishlistPriority>(priority),
       'notes': serializer.toJson<String?>(notes),
+      'syncStatus': serializer.toJson<SyncStatus?>(syncStatus),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1502,6 +1587,7 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
     Value<double?> targetPrice = const Value.absent(),
     WishlistPriority? priority,
     Value<String?> notes = const Value.absent(),
+    Value<SyncStatus?> syncStatus = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => WishlistRow(
@@ -1518,6 +1604,7 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
     targetPrice: targetPrice.present ? targetPrice.value : this.targetPrice,
     priority: priority ?? this.priority,
     notes: notes.present ? notes.value : this.notes,
+    syncStatus: syncStatus.present ? syncStatus.value : this.syncStatus,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -1540,6 +1627,9 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
           : this.targetPrice,
       priority: data.priority.present ? data.priority.value : this.priority,
       notes: data.notes.present ? data.notes.value : this.notes,
+      syncStatus: data.syncStatus.present
+          ? data.syncStatus.value
+          : this.syncStatus,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1561,6 +1651,7 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
           ..write('targetPrice: $targetPrice, ')
           ..write('priority: $priority, ')
           ..write('notes: $notes, ')
+          ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1582,6 +1673,7 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
     targetPrice,
     priority,
     notes,
+    syncStatus,
     createdAt,
     updatedAt,
   );
@@ -1602,6 +1694,7 @@ class WishlistRow extends DataClass implements Insertable<WishlistRow> {
           other.targetPrice == this.targetPrice &&
           other.priority == this.priority &&
           other.notes == this.notes &&
+          other.syncStatus == this.syncStatus &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1620,6 +1713,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistRow> {
   final Value<double?> targetPrice;
   final Value<WishlistPriority> priority;
   final Value<String?> notes;
+  final Value<SyncStatus?> syncStatus;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -1637,6 +1731,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistRow> {
     this.targetPrice = const Value.absent(),
     this.priority = const Value.absent(),
     this.notes = const Value.absent(),
+    this.syncStatus = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1655,6 +1750,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistRow> {
     this.targetPrice = const Value.absent(),
     required WishlistPriority priority,
     this.notes = const Value.absent(),
+    this.syncStatus = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -1679,6 +1775,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistRow> {
     Expression<double>? targetPrice,
     Expression<String>? priority,
     Expression<String>? notes,
+    Expression<String>? syncStatus,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -1697,6 +1794,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistRow> {
       if (targetPrice != null) 'target_price': targetPrice,
       if (priority != null) 'priority': priority,
       if (notes != null) 'notes': notes,
+      if (syncStatus != null) 'sync_status': syncStatus,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1717,6 +1815,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistRow> {
     Value<double?>? targetPrice,
     Value<WishlistPriority>? priority,
     Value<String?>? notes,
+    Value<SyncStatus?>? syncStatus,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -1735,6 +1834,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistRow> {
       targetPrice: targetPrice ?? this.targetPrice,
       priority: priority ?? this.priority,
       notes: notes ?? this.notes,
+      syncStatus: syncStatus ?? this.syncStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1785,6 +1885,11 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistRow> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (syncStatus.present) {
+      map['sync_status'] = Variable<String>(
+        $WishlistItemsTable.$convertersyncStatusn.toSql(syncStatus.value),
+      );
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1813,6 +1918,7 @@ class WishlistItemsCompanion extends UpdateCompanion<WishlistRow> {
           ..write('targetPrice: $targetPrice, ')
           ..write('priority: $priority, ')
           ..write('notes: $notes, ')
+          ..write('syncStatus: $syncStatus, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -2797,6 +2903,7 @@ typedef $$CollectionItemsTableCreateCompanionBuilder =
       Value<String?> notes,
       required List<String> tags,
       Value<String?> storageLocation,
+      Value<SyncStatus?> syncStatus,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -2818,6 +2925,7 @@ typedef $$CollectionItemsTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<List<String>> tags,
       Value<String?> storageLocation,
+      Value<SyncStatus?> syncStatus,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -2908,6 +3016,12 @@ class $$CollectionItemsTableFilterComposer
   ColumnFilters<String> get storageLocation => $composableBuilder(
     column: $table.storageLocation,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<SyncStatus?, SyncStatus, String>
+  get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
@@ -3005,6 +3119,11 @@ class $$CollectionItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3080,6 +3199,12 @@ class $$CollectionItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumnWithTypeConverter<SyncStatus?, String> get syncStatus =>
+      $composableBuilder(
+        column: $table.syncStatus,
+        builder: (column) => column,
+      );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -3135,6 +3260,7 @@ class $$CollectionItemsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<List<String>> tags = const Value.absent(),
                 Value<String?> storageLocation = const Value.absent(),
+                Value<SyncStatus?> syncStatus = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -3154,6 +3280,7 @@ class $$CollectionItemsTableTableManager
                 notes: notes,
                 tags: tags,
                 storageLocation: storageLocation,
+                syncStatus: syncStatus,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -3175,6 +3302,7 @@ class $$CollectionItemsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 required List<String> tags,
                 Value<String?> storageLocation = const Value.absent(),
+                Value<SyncStatus?> syncStatus = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -3194,6 +3322,7 @@ class $$CollectionItemsTableTableManager
                 notes: notes,
                 tags: tags,
                 storageLocation: storageLocation,
+                syncStatus: syncStatus,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -3238,6 +3367,7 @@ typedef $$WishlistItemsTableCreateCompanionBuilder =
       Value<double?> targetPrice,
       required WishlistPriority priority,
       Value<String?> notes,
+      Value<SyncStatus?> syncStatus,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -3257,6 +3387,7 @@ typedef $$WishlistItemsTableUpdateCompanionBuilder =
       Value<double?> targetPrice,
       Value<WishlistPriority> priority,
       Value<String?> notes,
+      Value<SyncStatus?> syncStatus,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -3335,6 +3466,12 @@ class $$WishlistItemsTableFilterComposer
   ColumnFilters<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<SyncStatus?, SyncStatus, String>
+  get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
@@ -3422,6 +3559,11 @@ class $$WishlistItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get syncStatus => $composableBuilder(
+    column: $table.syncStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3485,6 +3627,12 @@ class $$WishlistItemsTableAnnotationComposer
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
+  GeneratedColumnWithTypeConverter<SyncStatus?, String> get syncStatus =>
+      $composableBuilder(
+        column: $table.syncStatus,
+        builder: (column) => column,
+      );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -3536,6 +3684,7 @@ class $$WishlistItemsTableTableManager
                 Value<double?> targetPrice = const Value.absent(),
                 Value<WishlistPriority> priority = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<SyncStatus?> syncStatus = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -3553,6 +3702,7 @@ class $$WishlistItemsTableTableManager
                 targetPrice: targetPrice,
                 priority: priority,
                 notes: notes,
+                syncStatus: syncStatus,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -3572,6 +3722,7 @@ class $$WishlistItemsTableTableManager
                 Value<double?> targetPrice = const Value.absent(),
                 required WishlistPriority priority,
                 Value<String?> notes = const Value.absent(),
+                Value<SyncStatus?> syncStatus = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -3589,6 +3740,7 @@ class $$WishlistItemsTableTableManager
                 targetPrice: targetPrice,
                 priority: priority,
                 notes: notes,
+                syncStatus: syncStatus,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
