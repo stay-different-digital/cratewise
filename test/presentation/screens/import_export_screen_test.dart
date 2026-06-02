@@ -1,15 +1,21 @@
 import 'package:cratewise/application/use_cases/build_collection_import_preview_use_case.dart';
+import 'package:cratewise/application/use_cases/build_wishlist_import_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/fetch_collection_import_preview_use_case.dart';
+import 'package:cratewise/application/use_cases/fetch_wishlist_import_preview_use_case.dart';
 import 'package:cratewise/domain/models/collection_import_preview.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
+import 'package:cratewise/domain/models/wishlist_import_preview.dart';
+import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/collection_import_preview_screen.dart';
 import 'package:cratewise/presentation/screens/import_export_screen.dart';
+import 'package:cratewise/presentation/screens/wishlist_import_preview_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ---------------------------------------------------------------------------
-// Fake use case for navigation tests
+// Fake use cases for navigation tests
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
@@ -27,8 +33,23 @@ class _FakeCollectionRepository implements CollectionRepository {
   Future<void> remove(String id) async {}
 }
 
-class _FakeImportUseCase extends FetchCollectionImportPreviewUseCase {
-  _FakeImportUseCase()
+class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<bool> containsRelease(int id) async => false;
+  @override
+  Future<List<WishlistItem>> getAll() async => [];
+  @override
+  Future<WishlistItem?> getById(String id) async => null;
+  @override
+  Future<void> add(WishlistItem item) async {}
+  @override
+  Future<void> update(WishlistItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _FakeCollectionImportUseCase extends FetchCollectionImportPreviewUseCase {
+  _FakeCollectionImportUseCase()
       : super(
           previewBuilder: BuildCollectionImportPreviewUseCase(
             _FakeCollectionRepository(),
@@ -40,15 +61,32 @@ class _FakeImportUseCase extends FetchCollectionImportPreviewUseCase {
       FetchPreviewReady(const CollectionImportPreview(rows: []));
 }
 
+class _FakeWishlistImportUseCase extends FetchWishlistImportPreviewUseCase {
+  _FakeWishlistImportUseCase()
+      : super(
+          previewBuilder: BuildWishlistImportPreviewUseCase(
+            _FakeWishlistRepository(),
+          ),
+        );
+
+  @override
+  Future<FetchWishlistImportPreviewResult> execute() async =>
+      FetchWishlistPreviewReady(const WishlistImportPreview(rows: []));
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 Widget _buildSubject({
   FetchCollectionImportPreviewUseCase? importUseCase,
+  FetchWishlistImportPreviewUseCase? wishlistImportUseCase,
 }) =>
     MaterialApp(
-      home: ImportExportScreen(collectionImportUseCase: importUseCase),
+      home: ImportExportScreen(
+        collectionImportUseCase: importUseCase,
+        wishlistImportUseCase: wishlistImportUseCase,
+      ),
     );
 
 void _setNarrowTallScreen(WidgetTester tester) {
@@ -104,7 +142,8 @@ void main() {
         expect(find.text('Import Wishlist from CSV'), findsOneWidget);
       });
 
-      testWidgets('7 cards show a Coming soon badge (import collection is live)',
+      testWidgets(
+          '6 cards show a Coming soon badge (collection + wishlist import are live)',
           (tester) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
@@ -112,31 +151,20 @@ void main() {
 
         await tester.pumpWidget(_buildSubject());
 
-        expect(find.text('Coming soon'), findsNWidgets(7));
+        expect(find.text('Coming soon'), findsNWidgets(6));
       });
 
     });
 
     group('action card interactions', () {
-      testWidgets('tapping Import Wishlist from Discogs shows Coming soon snackbar',
+      testWidgets('tapping Import Wishlist from Discogs does not show snackbar',
           (tester) async {
-        await tester.pumpWidget(_buildSubject());
+        final wishlistUseCase = _FakeWishlistImportUseCase();
+        await tester.pumpWidget(
+            _buildSubject(wishlistImportUseCase: wishlistUseCase));
         await tester.tap(find.text('Import Wishlist from Discogs'));
         await tester.pump();
-        expect(find.byType(SnackBar), findsOneWidget);
-      });
-
-      testWidgets('snackbar text is Coming soon', (tester) async {
-        await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Import Wishlist from Discogs'));
-        await tester.pump();
-        expect(
-          find.descendant(
-            of: find.byType(SnackBar),
-            matching: find.text('Coming soon'),
-          ),
-          findsOneWidget,
-        );
+        expect(find.byType(SnackBar), findsNothing);
       });
 
       testWidgets('tapping Export Wishlist to Discogs shows snackbar',
@@ -175,7 +203,7 @@ void main() {
           'tapping a Coming soon card does not navigate',
           (tester) async {
         await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Import Wishlist from Discogs'));
+        await tester.tap(find.text('Export Collection to Discogs'));
         await tester.pump();
         // Still on the import/export screen
         expect(find.text('Import & Export'), findsOneWidget);
@@ -185,7 +213,7 @@ void main() {
     group('Import Collection from Discogs navigation', () {
       testWidgets('tapping Import Collection from Discogs navigates to preview screen',
           (tester) async {
-        final importUseCase = _FakeImportUseCase();
+        final importUseCase = _FakeCollectionImportUseCase();
         await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
         await tester.tap(find.text('Import Collection from Discogs'));
         await tester.pumpAndSettle();
@@ -194,7 +222,7 @@ void main() {
 
       testWidgets('preview screen shows Import from Discogs AppBar title',
           (tester) async {
-        final importUseCase = _FakeImportUseCase();
+        final importUseCase = _FakeCollectionImportUseCase();
         await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
         await tester.tap(find.text('Import Collection from Discogs'));
         await tester.pumpAndSettle();
@@ -203,9 +231,42 @@ void main() {
 
       testWidgets('tapping Import Collection does not show Coming soon snackbar',
           (tester) async {
-        final importUseCase = _FakeImportUseCase();
+        final importUseCase = _FakeCollectionImportUseCase();
         await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
         await tester.tap(find.text('Import Collection from Discogs'));
+        await tester.pump();
+        expect(find.byType(SnackBar), findsNothing);
+      });
+    });
+
+    group('Import Wishlist from Discogs navigation', () {
+      testWidgets(
+          'tapping Import Wishlist from Discogs navigates to preview screen',
+          (tester) async {
+        final wishlistUseCase = _FakeWishlistImportUseCase();
+        await tester.pumpWidget(
+            _buildSubject(wishlistImportUseCase: wishlistUseCase));
+        await tester.tap(find.text('Import Wishlist from Discogs'));
+        await tester.pumpAndSettle();
+        expect(find.byType(WishlistImportPreviewScreen), findsOneWidget);
+      });
+
+      testWidgets('wishlist preview screen shows correct AppBar title',
+          (tester) async {
+        final wishlistUseCase = _FakeWishlistImportUseCase();
+        await tester.pumpWidget(
+            _buildSubject(wishlistImportUseCase: wishlistUseCase));
+        await tester.tap(find.text('Import Wishlist from Discogs'));
+        await tester.pumpAndSettle();
+        expect(find.text('Import Wishlist from Discogs'), findsOneWidget);
+      });
+
+      testWidgets('tapping Import Wishlist does not show Coming soon snackbar',
+          (tester) async {
+        final wishlistUseCase = _FakeWishlistImportUseCase();
+        await tester.pumpWidget(
+            _buildSubject(wishlistImportUseCase: wishlistUseCase));
+        await tester.tap(find.text('Import Wishlist from Discogs'));
         await tester.pump();
         expect(find.byType(SnackBar), findsNothing);
       });
@@ -253,13 +314,13 @@ void main() {
         expect(find.byType(SnackBar), findsOneWidget);
       });
 
-      testWidgets('7 cards show Coming soon badge on wide screen', (tester) async {
+      testWidgets('6 cards show Coming soon badge on wide screen', (tester) async {
         _setWideTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(_buildSubject());
-        expect(find.text('Coming soon'), findsNWidgets(7));
+        expect(find.text('Coming soon'), findsNWidgets(6));
       });
     });
   });

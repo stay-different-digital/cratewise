@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 
 import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
+import '../../application/use_cases/fetch_wishlist_import_preview_use_case.dart';
 import 'collection_import_preview_screen.dart';
+import 'wishlist_import_preview_screen.dart';
 
 const _kWideBreakpoint = 700.0;
 const _kCardExtent = 96.0;
 
 class ImportExportScreen extends StatelessWidget {
-  const ImportExportScreen({super.key, this.collectionImportUseCase});
+  const ImportExportScreen({
+    super.key,
+    this.collectionImportUseCase,
+    this.wishlistImportUseCase,
+  });
 
   /// Injected only for testing. Production code passes null.
   final FetchCollectionImportPreviewUseCase? collectionImportUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final FetchWishlistImportPreviewUseCase? wishlistImportUseCase;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +32,13 @@ class ImportExportScreen extends StatelessWidget {
             MaterialPageRoute<void>(
               builder: (_) => CollectionImportPreviewScreen(
                 useCase: collectionImportUseCase,
+              ),
+            ),
+          ),
+          onImportWishlist: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => WishlistImportPreviewScreen(
+                useCase: wishlistImportUseCase,
               ),
             ),
           ),
@@ -58,10 +74,12 @@ class _ActionBody extends StatelessWidget {
   const _ActionBody({
     required this.isWide,
     required this.onImportCollection,
+    required this.onImportWishlist,
   });
 
   final bool isWide;
   final VoidCallback onImportCollection;
+  final VoidCallback onImportWishlist;
 
   List<_ActionConfig> get _discogsActions => [
         _ActionConfig(
@@ -70,9 +88,11 @@ class _ActionBody extends StatelessWidget {
           badge: null,
           onTap: (ctx) => onImportCollection(),
         ),
-        const _ActionConfig(
+        _ActionConfig(
           icon: Icons.cloud_download_outlined,
           title: 'Import Wishlist from Discogs',
+          badge: null,
+          onTap: (ctx) => onImportWishlist(),
         ),
         const _ActionConfig(
           icon: Icons.cloud_upload_outlined,
