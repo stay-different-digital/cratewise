@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5J: Use cached thumbnails in local Collection and Wishlist views] — 2026-06-01
+
+### Added
+- `CollectionItemCard` and `WishlistItemCard` now accept an optional `ThumbnailRepository`; when a cached path is available they render `Image.file` instead of a placeholder, with `errorBuilder` fallback
+- `CollectionScreen`, `CollectionDetailScreen`, `WishlistScreen`, and `WishlistDetailScreen` each accept an optional `ThumbnailRepository`; when not injected they self-create a `LocalThumbnailRepository`; the repository is threaded down to cards and detail screens (including via `_openDetail` navigation)
+- `_CachedCoverImage` StatefulWidget (narrow + wide detail cover) in `CollectionDetailScreen` and `WishlistDetailScreen` replaces `Image.network` with a FutureBuilder-based cache lookup; `Image.file` used when path is found, placeholder shown otherwise
+- `_LocalCoverThumbnail` StatefulWidget in `CollectionItemCard` and `WishlistItemCard` uses the same FutureBuilder pattern for list thumbnails
+- 8 new widget tests covering null-path and non-null-path thumbnail repository behavior across all four screens
+
+---
+
 ## [Unreleased — Phase 5I: Cache thumbnails after viewing release detail] — 2026-06-01
 
 ### Added

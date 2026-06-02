@@ -1,4 +1,5 @@
 import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/wishlist_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -7,6 +8,20 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 // Fakes
 // ---------------------------------------------------------------------------
+
+class _FakeThumbnailRepository implements ThumbnailRepository {
+  _FakeThumbnailRepository({this.pathToReturn});
+  final String? pathToReturn;
+
+  @override
+  Future<String?> getLocalPath(int releaseId) async => pathToReturn;
+  @override
+  Future<void> save(int releaseId, List<int> bytes) async {}
+  @override
+  Future<void> remove(int releaseId) async {}
+  @override
+  Future<bool> exists(int releaseId) async => pathToReturn != null;
+}
 
 class _FakeWishlistRepository implements WishlistRepository {
   _FakeWishlistRepository({
@@ -839,6 +854,42 @@ void main() {
       await tester.tap(find.byKey(const Key('confirm-remove-button')));
       await tester.pumpAndSettle();
       expect(find.textContaining('Could not remove'), findsOneWidget);
+    });
+  });
+
+  group('WishlistDetailScreen — thumbnail cache', () {
+    testWidgets(
+        'renders loaded state without crash when thumbnailRepository returns null',
+        (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem(artist: 'Thumb Artist'));
+      final thumbRepo = _FakeThumbnailRepository();
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(
+          itemId: 'w-1',
+          repository: repo,
+          thumbnailRepository: thumbRepo,
+        )),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('Thumb Artist'), findsOneWidget);
+    });
+
+    testWidgets(
+        'renders loaded state without crash when thumbnailRepository returns a cached path',
+        (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem(artist: 'Thumb Artist'));
+      final thumbRepo = _FakeThumbnailRepository(pathToReturn: '/fake/thumb.jpg');
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(
+          itemId: 'w-1',
+          repository: repo,
+          thumbnailRepository: thumbRepo,
+        )),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('Thumb Artist'), findsOneWidget);
     });
   });
 }

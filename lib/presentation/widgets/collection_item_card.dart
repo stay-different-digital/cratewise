@@ -1,12 +1,21 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../domain/models/collection_item.dart';
+import '../../domain/repositories/thumbnail_repository.dart';
 
 class CollectionItemCard extends StatelessWidget {
-  const CollectionItemCard({super.key, required this.item, this.onTap});
+  const CollectionItemCard({
+    super.key,
+    required this.item,
+    this.onTap,
+    this.thumbnailRepository,
+  });
 
   final CollectionItem item;
   final VoidCallback? onTap;
+  final ThumbnailRepository? thumbnailRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +29,11 @@ class CollectionItemCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _CoverThumbnail(theme: theme, coverUrl: item.coverUrl),
+              _LocalCoverThumbnail(
+                theme: theme,
+                releaseId: item.discogsReleaseId,
+                repository: thumbnailRepository,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -110,43 +123,67 @@ class _MetaRow extends StatelessWidget {
   }
 }
 
-class _CoverThumbnail extends StatelessWidget {
-  const _CoverThumbnail({required this.theme, this.coverUrl});
+class _LocalCoverThumbnail extends StatefulWidget {
+  const _LocalCoverThumbnail({
+    required this.theme,
+    required this.releaseId,
+    this.repository,
+  });
 
   final ThemeData theme;
-  final String? coverUrl;
+  final int releaseId;
+  final ThumbnailRepository? repository;
 
-  Widget _placeholder() {
-    return Semantics(
-      label: 'No cover image',
-      child: Container(
-        width: 72,
-        height: 72,
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Icon(
-          Icons.album,
-          size: 32,
-          color: theme.colorScheme.outlineVariant,
-        ),
-      ),
-    );
+  @override
+  State<_LocalCoverThumbnail> createState() => _LocalCoverThumbnailState();
+}
+
+class _LocalCoverThumbnailState extends State<_LocalCoverThumbnail> {
+  late final Future<String?> _pathFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _pathFuture = widget.repository?.getLocalPath(widget.releaseId) ??
+        Future<String?>.value();
   }
+
+  Widget _placeholder() => Semantics(
+        label: 'No cover image',
+        child: Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: widget.theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(
+            Icons.album,
+            size: 32,
+            color: widget.theme.colorScheme.outlineVariant,
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
-    if (coverUrl == null) return _placeholder();
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(6),
-      child: Image.network(
-        coverUrl!,
-        width: 72,
-        height: 72,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => _placeholder(),
-      ),
+    return FutureBuilder<String?>(
+      future: _pathFuture,
+      builder: (context, snapshot) {
+        final path = snapshot.data;
+        if (path == null) return _placeholder();
+        return ClipRRect(
+          key: const Key('collection-cached-cover'),
+          borderRadius: BorderRadius.circular(6),
+          child: Image.file(
+            File(path),
+            width: 72,
+            height: 72,
+            fit: BoxFit.cover,
+            errorBuilder: (_, _, _) => _placeholder(),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/wishlist_detail_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_screen.dart';
@@ -39,6 +40,20 @@ class _FakeWishlistRepository implements WishlistRepository {
 
   @override
   Future<void> remove(String id) async {}
+}
+
+class _FakeThumbnailRepository implements ThumbnailRepository {
+  _FakeThumbnailRepository({this.pathToReturn});
+  final String? pathToReturn;
+
+  @override
+  Future<String?> getLocalPath(int releaseId) async => pathToReturn;
+  @override
+  Future<void> save(int releaseId, List<int> bytes) async {}
+  @override
+  Future<void> remove(int releaseId) async {}
+  @override
+  Future<bool> exists(int releaseId) async => pathToReturn != null;
 }
 
 class _FlippingWishlistRepository implements WishlistRepository {
@@ -394,6 +409,32 @@ void main() {
       navigator.pop();
       await tester.pumpAndSettle();
       expect(find.text('Return Artist'), findsOneWidget);
+    });
+  });
+
+  group('WishlistScreen — thumbnail cache', () {
+    testWidgets('renders list without crash when thumbnailRepository returns null',
+        (tester) async {
+      final repo = _FakeWishlistRepository(items: [_makeItem()]);
+      final thumbRepo = _FakeThumbnailRepository();
+      await tester.pumpWidget(
+        _wrap(WishlistScreen(repository: repo, thumbnailRepository: thumbRepo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(WishlistItemCard), findsOneWidget);
+    });
+
+    testWidgets(
+        'renders list without crash when thumbnailRepository returns a cached path',
+        (tester) async {
+      final repo = _FakeWishlistRepository(items: [_makeItem()]);
+      final thumbRepo = _FakeThumbnailRepository(pathToReturn: '/fake/thumb.jpg');
+      await tester.pumpWidget(
+        _wrap(WishlistScreen(repository: repo, thumbnailRepository: thumbRepo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(WishlistItemCard), findsOneWidget);
+      expect(find.byKey(const Key('wishlist-cached-cover')), findsOneWidget);
     });
   });
 }

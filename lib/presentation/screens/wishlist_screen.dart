@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/models/wishlist_item.dart';
+import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../widgets/wishlist_item_card.dart';
 import 'wishlist_detail_screen.dart';
@@ -33,9 +35,10 @@ class _WishlistError extends _WishlistState {
 // ---------------------------------------------------------------------------
 
 class WishlistScreen extends StatefulWidget {
-  const WishlistScreen({super.key, this.repository});
+  const WishlistScreen({super.key, this.repository, this.thumbnailRepository});
 
   final WishlistRepository? repository;
+  final ThumbnailRepository? thumbnailRepository;
 
   @override
   State<WishlistScreen> createState() => _WishlistScreenState();
@@ -43,12 +46,15 @@ class WishlistScreen extends StatefulWidget {
 
 class _WishlistScreenState extends State<WishlistScreen> {
   late final WishlistRepository _repository;
+  late final ThumbnailRepository _thumbnailRepository;
   AppDatabase? _ownedDb;
   _WishlistState _state = const _Loading();
 
   @override
   void initState() {
     super.initState();
+    _thumbnailRepository =
+        widget.thumbnailRepository ?? LocalThumbnailRepository();
     if (widget.repository != null) {
       _repository = widget.repository!;
     } else {
@@ -85,6 +91,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
       _Loaded(:final items) => _WishlistList(
           items: items,
           repository: _repository,
+          thumbnailRepository: _thumbnailRepository,
         ),
       _WishlistError() => _WishlistErrorState(onRetry: _load),
     };
@@ -96,10 +103,15 @@ class _WishlistScreenState extends State<WishlistScreen> {
 // ---------------------------------------------------------------------------
 
 class _WishlistList extends StatelessWidget {
-  const _WishlistList({required this.items, required this.repository});
+  const _WishlistList({
+    required this.items,
+    required this.repository,
+    required this.thumbnailRepository,
+  });
 
   final List<WishlistItem> items;
   final WishlistRepository repository;
+  final ThumbnailRepository thumbnailRepository;
 
   void _openDetail(BuildContext context, int index) {
     Navigator.of(context).push(
@@ -107,6 +119,7 @@ class _WishlistList extends StatelessWidget {
         builder: (_) => WishlistDetailScreen(
           itemId: items[index].id,
           repository: repository,
+          thumbnailRepository: thumbnailRepository,
         ),
       ),
     );
@@ -121,6 +134,7 @@ class _WishlistList extends StatelessWidget {
       itemBuilder: (context, index) => WishlistItemCard(
         item: items[index],
         onTap: () => _openDetail(context, index),
+        thumbnailRepository: thumbnailRepository,
       ),
     );
   }

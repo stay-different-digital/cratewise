@@ -1,8 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../domain/models/wishlist_item.dart';
+import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 
 // ---------------------------------------------------------------------------
@@ -41,10 +45,12 @@ class WishlistDetailScreen extends StatefulWidget {
     super.key,
     required this.itemId,
     this.repository,
+    this.thumbnailRepository,
   });
 
   final String itemId;
   final WishlistRepository? repository;
+  final ThumbnailRepository? thumbnailRepository;
 
   @override
   State<WishlistDetailScreen> createState() => _WishlistDetailScreenState();
@@ -52,12 +58,15 @@ class WishlistDetailScreen extends StatefulWidget {
 
 class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   late final WishlistRepository _repository;
+  late final ThumbnailRepository _thumbnailRepository;
   AppDatabase? _ownedDb;
   _DetailState _state = const _Loading();
 
   @override
   void initState() {
     super.initState();
+    _thumbnailRepository =
+        widget.thumbnailRepository ?? LocalThumbnailRepository();
     if (widget.repository != null) {
       _repository = widget.repository!;
     } else {
@@ -228,7 +237,10 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
             key: Key('wishlist-detail-loading'),
             child: CircularProgressIndicator(),
           ),
-        _Loaded(:final item) => _WishlistDetailBody(item: item),
+        _Loaded(:final item) => _WishlistDetailBody(
+            item: item,
+            thumbnailRepository: _thumbnailRepository,
+          ),
         _NotFound() => const _NotFoundBody(),
         _DetailError() => _ErrorBody(onRetry: _load),
       },
@@ -569,9 +581,13 @@ class _EditNotesSheetState extends State<_EditNotesSheet> {
 // ---------------------------------------------------------------------------
 
 class _WishlistDetailBody extends StatelessWidget {
-  const _WishlistDetailBody({required this.item});
+  const _WishlistDetailBody({
+    required this.item,
+    required this.thumbnailRepository,
+  });
 
   final WishlistItem item;
+  final ThumbnailRepository thumbnailRepository;
 
   static const _kWideBreakpoint = 700.0;
 
@@ -590,7 +606,7 @@ class _WishlistDetailBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _CoverSection(item: item),
+          _CoverSection(item: item, thumbnailRepository: thumbnailRepository),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: _TitleArtist(item: item),
@@ -610,7 +626,6 @@ class _WishlistDetailBody extends StatelessWidget {
   }
 
   Widget _buildWide(BuildContext context) {
-    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -621,22 +636,10 @@ class _WishlistDetailBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ClipRRect(
+                _CachedCoverImage(
+                  releaseId: item.discogsReleaseId,
                   borderRadius: BorderRadius.circular(8),
-                  child: item.coverUrl != null
-                      ? AspectRatio(
-                          aspectRatio: 1,
-                          child: Image.network(
-                            item.coverUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
-                                _coverPlaceholder(theme),
-                          ),
-                        )
-                      : AspectRatio(
-                          aspectRatio: 1,
-                          child: _coverPlaceholder(theme),
-                        ),
+                  thumbnailRepository: thumbnailRepository,
                 ),
                 const SizedBox(height: 20),
                 _TitleArtist(item: item),
@@ -692,27 +695,70 @@ Widget _coverPlaceholder(ThemeData theme) => Semantics(
 // Sub-widgets
 // ---------------------------------------------------------------------------
 
-class _CoverSection extends StatelessWidget {
-  const _CoverSection({required this.item});
+class _CachedCoverImage extends StatefulWidget {
+  const _CachedCoverImage({
+    required this.releaseId,
+    required this.borderRadius,
+    this.thumbnailRepository,
+  });
 
-  final WishlistItem item;
+  final int releaseId;
+  final BorderRadius borderRadius;
+  final ThumbnailRepository? thumbnailRepository;
+
+  @override
+  State<_CachedCoverImage> createState() => _CachedCoverImageState();
+}
+
+class _CachedCoverImageState extends State<_CachedCoverImage> {
+  late final Future<String?> _pathFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _pathFuture =
+        widget.thumbnailRepository?.getLocalPath(widget.releaseId) ??
+            Future<String?>.value();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    if (item.coverUrl == null) {
-      return AspectRatio(
-        aspectRatio: 1,
-        child: _coverPlaceholder(theme),
-      );
-    }
     return AspectRatio(
       aspectRatio: 1,
-      child: Image.network(
-        item.coverUrl!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => _coverPlaceholder(theme),
+      child: ClipRRect(
+        borderRadius: widget.borderRadius,
+        child: FutureBuilder<String?>(
+          future: _pathFuture,
+          builder: (_, snapshot) {
+            final path = snapshot.data;
+            if (path != null) {
+              return Image.file(
+                File(path),
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _coverPlaceholder(theme),
+              );
+            }
+            return _coverPlaceholder(theme);
+          },
+        ),
       ),
+    );
+  }
+}
+
+class _CoverSection extends StatelessWidget {
+  const _CoverSection({required this.item, this.thumbnailRepository});
+
+  final WishlistItem item;
+  final ThumbnailRepository? thumbnailRepository;
+
+  @override
+  Widget build(BuildContext context) {
+    return _CachedCoverImage(
+      releaseId: item.discogsReleaseId,
+      borderRadius: BorderRadius.zero,
+      thumbnailRepository: thumbnailRepository,
     );
   }
 }

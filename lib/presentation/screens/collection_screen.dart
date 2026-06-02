@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../domain/models/collection_item.dart';
 import '../../domain/repositories/collection_repository.dart';
+import '../../domain/repositories/thumbnail_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../widgets/collection_item_card.dart';
 import 'collection_detail_screen.dart';
 
@@ -33,9 +35,10 @@ class _CollectionError extends _CollectionState {
 // ---------------------------------------------------------------------------
 
 class CollectionScreen extends StatefulWidget {
-  const CollectionScreen({super.key, this.repository});
+  const CollectionScreen({super.key, this.repository, this.thumbnailRepository});
 
   final CollectionRepository? repository;
+  final ThumbnailRepository? thumbnailRepository;
 
   @override
   State<CollectionScreen> createState() => _CollectionScreenState();
@@ -43,6 +46,7 @@ class CollectionScreen extends StatefulWidget {
 
 class _CollectionScreenState extends State<CollectionScreen> {
   late final CollectionRepository _repository;
+  late final ThumbnailRepository _thumbnailRepository;
   AppDatabase? _ownedDb;
   _CollectionState _state = const _Loading();
   final _searchController = TextEditingController();
@@ -50,6 +54,8 @@ class _CollectionScreenState extends State<CollectionScreen> {
   @override
   void initState() {
     super.initState();
+    _thumbnailRepository =
+        widget.thumbnailRepository ?? LocalThumbnailRepository();
     if (widget.repository != null) {
       _repository = widget.repository!;
     } else {
@@ -130,8 +136,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
     return switch (_state) {
       _Loading() => const Center(child: CircularProgressIndicator()),
       _Loaded(:final items) when items.isEmpty => const _EmptyCollectionState(),
-      _Loaded(:final items) =>
-        _CollectionList(items: items, repository: _repository),
+      _Loaded(:final items) => _CollectionList(
+          items: items,
+          repository: _repository,
+          thumbnailRepository: _thumbnailRepository,
+        ),
       _CollectionError() => _CollectionErrorState(onRetry: _load),
     };
   }
@@ -142,10 +151,15 @@ class _CollectionScreenState extends State<CollectionScreen> {
 // ---------------------------------------------------------------------------
 
 class _CollectionList extends StatelessWidget {
-  const _CollectionList({required this.items, required this.repository});
+  const _CollectionList({
+    required this.items,
+    required this.repository,
+    required this.thumbnailRepository,
+  });
 
   final List<CollectionItem> items;
   final CollectionRepository repository;
+  final ThumbnailRepository thumbnailRepository;
 
   static const _kWideBreakpoint = 700.0;
   static const _kGridItemExtent = 124.0;
@@ -168,6 +182,7 @@ class _CollectionList extends StatelessWidget {
       itemBuilder: (context, index) => CollectionItemCard(
         item: items[index],
         onTap: () => _openDetail(context, index),
+        thumbnailRepository: thumbnailRepository,
       ),
     );
   }
@@ -185,6 +200,7 @@ class _CollectionList extends StatelessWidget {
       itemBuilder: (context, index) => CollectionItemCard(
         item: items[index],
         onTap: () => _openDetail(context, index),
+        thumbnailRepository: thumbnailRepository,
       ),
     );
   }
@@ -195,6 +211,7 @@ class _CollectionList extends StatelessWidget {
         builder: (_) => CollectionDetailScreen(
           itemId: items[index].id,
           repository: repository,
+          thumbnailRepository: thumbnailRepository,
         ),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
 import 'package:cratewise/presentation/screens/collection_screen.dart';
 import 'package:cratewise/presentation/widgets/collection_item_card.dart';
@@ -39,6 +40,20 @@ class _FakeCollectionRepository implements CollectionRepository {
 
   @override
   Future<void> remove(String id) async {}
+}
+
+class _FakeThumbnailRepository implements ThumbnailRepository {
+  _FakeThumbnailRepository({this.pathToReturn});
+  final String? pathToReturn;
+
+  @override
+  Future<String?> getLocalPath(int releaseId) async => pathToReturn;
+  @override
+  Future<void> save(int releaseId, List<int> bytes) async {}
+  @override
+  Future<void> remove(int releaseId) async {}
+  @override
+  Future<bool> exists(int releaseId) async => pathToReturn != null;
 }
 
 class _FlippingCollectionRepository implements CollectionRepository {
@@ -487,6 +502,32 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(GridView), findsNothing);
       expect(find.text('Your collection is empty'), findsOneWidget);
+    });
+  });
+
+  group('CollectionScreen — thumbnail cache', () {
+    testWidgets('renders list without crash when thumbnailRepository returns null',
+        (tester) async {
+      final repo = _FakeCollectionRepository(items: [_makeItem()]);
+      final thumbRepo = _FakeThumbnailRepository();
+      await tester.pumpWidget(
+        _wrap(CollectionScreen(repository: repo, thumbnailRepository: thumbRepo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CollectionItemCard), findsOneWidget);
+    });
+
+    testWidgets(
+        'renders list without crash when thumbnailRepository returns a cached path',
+        (tester) async {
+      final repo = _FakeCollectionRepository(items: [_makeItem()]);
+      final thumbRepo = _FakeThumbnailRepository(pathToReturn: '/fake/thumb.jpg');
+      await tester.pumpWidget(
+        _wrap(CollectionScreen(repository: repo, thumbnailRepository: thumbRepo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(CollectionItemCard), findsOneWidget);
+      expect(find.byKey(const Key('collection-cached-cover')), findsOneWidget);
     });
   });
 }
