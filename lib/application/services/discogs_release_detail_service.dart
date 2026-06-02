@@ -7,6 +7,7 @@ import '../../infrastructure/discogs/discogs_api_client.dart';
 import '../../infrastructure/discogs/dto/discogs_release.dart';
 import '../../infrastructure/secure_storage/discogs_token_storage.dart';
 import '../../shared/errors/app_error.dart';
+import 'cache_retry_recorder.dart';
 import 'thumbnail_cache_service.dart';
 
 class DiscogsReleaseDetailService {
@@ -15,6 +16,7 @@ class DiscogsReleaseDetailService {
     DiscogsApiClient? apiClient,
     this._cacheRepository,
     this._thumbnailCacheService,
+    this._cacheRetryRecorder,
   })  : _storage = storage ?? DiscogsTokenStorage(),
         _apiClient = apiClient ?? DiscogsApiClient();
 
@@ -22,6 +24,7 @@ class DiscogsReleaseDetailService {
   final DiscogsApiClient _apiClient;
   final CachedReleaseMetadataRepository? _cacheRepository;
   final ThumbnailCacheService? _thumbnailCacheService;
+  final CacheRetryRecorder? _cacheRetryRecorder;
 
   /// Fetches full release details for [releaseId] using the saved token.
   /// Throws [NoTokenError] if no token is stored.
@@ -29,17 +32,26 @@ class DiscogsReleaseDetailService {
   Future<ReleaseDetail> fetchDetail(int releaseId) async {
     final token = await _storage.loadToken();
     if (token == null) throw const NoTokenError();
-    final dto = await _apiClient.fetchRelease(releaseId, token);
-    final detail = _toDetail(dto);
-    await _tryCache(detail);
-    await _tryThumbnailCache(detail);
-    return detail;
+    try {
+      final dto = await _apiClient.fetchRelease(releaseId, token);
+      final detail = _toDetail(dto);
+      await _tryCache(detail);
+      await _tryThumbnailCache(detail);
+      return detail;
+    } on AppError catch (e) {
+      await _cacheRetryRecorder?.recordMetadataFailure(releaseId, e);
+      rethrow;
+    }
   }
 
   Future<void> _tryThumbnailCache(ReleaseDetail detail) async {
     if (_thumbnailCacheService == null) return;
+    final url = detail.coverUrl;
     try {
-      await _thumbnailCacheService.getOrFetch(detail.id, detail.coverUrl);
+      final path = await _thumbnailCacheService.getOrFetch(detail.id, url);
+      if (path == null && url != null && url.isNotEmpty) {
+        await _cacheRetryRecorder?.recordThumbnailFailure(detail.id);
+      }
     } catch (_) {
       // thumbnail cache failure must not break the detail load
     }

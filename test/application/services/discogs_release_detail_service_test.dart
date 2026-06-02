@@ -1,10 +1,13 @@
 import 'dart:convert';
 
+import 'package:cratewise/application/services/cache_retry_recorder.dart';
 import 'package:cratewise/application/services/discogs_release_detail_service.dart';
 import 'package:cratewise/application/services/thumbnail_cache_service.dart';
 import 'package:cratewise/domain/models/cached_release_metadata.dart';
 import 'package:cratewise/domain/models/release_detail.dart';
+import 'package:cratewise/domain/models/retry_action.dart';
 import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
+import 'package:cratewise/domain/repositories/retry_action_repository.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
@@ -58,6 +61,31 @@ class _SpyCacheRepository implements CachedReleaseMetadataRepository {
   Future<void> remove(int id) async {}
 }
 
+class _SpyRetryRepo implements RetryActionRepository {
+  final List<RetryAction> _actions = [];
+
+  @override
+  Future<void> add(RetryAction action) async => _actions.add(action);
+
+  @override
+  Future<List<RetryAction>> getAll() async => List.unmodifiable(_actions);
+
+  @override
+  Future<RetryAction?> getById(String id) async =>
+      _actions.where((a) => a.id == id).firstOrNull;
+
+  @override
+  Future<List<RetryAction>> getPending() async =>
+      _actions.where((a) => a.status == RetryActionStatus.pending).toList();
+
+  @override
+  Future<void> update(RetryAction action) async {}
+
+  @override
+  Future<void> remove(String id) async =>
+      _actions.removeWhere((a) => a.id == id);
+}
+
 class _FakeStorage implements TokenStorage {
   _FakeStorage({this.token});
   final String? token;
@@ -80,12 +108,14 @@ DiscogsReleaseDetailService _makeService(
   http.Client httpClient, {
   CachedReleaseMetadataRepository? cacheRepo,
   ThumbnailCacheService? thumbnailService,
+  CacheRetryRecorder? retryRecorder,
 }) {
   return DiscogsReleaseDetailService(
     storage: _FakeStorage(token: token),
     apiClient: DiscogsApiClient(httpClient: httpClient),
     cacheRepository: cacheRepo,
     thumbnailCacheService: thumbnailService,
+    cacheRetryRecorder: retryRecorder,
   );
 }
 
@@ -418,6 +448,150 @@ void main() {
       );
       final detail = await service.fetchDetail(249504);
       expect(detail.title, 'Kind Of Blue');
+    });
+  });
+
+  group('DiscogsReleaseDetailService — retry recording', () {
+    test('records metadata retry action when API throws NetworkError', () async {
+      final retryRepo = _SpyRetryRepo();
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => throw Exception('no internet')),
+        retryRecorder: CacheRetryRecorder(retryRepo),
+      );
+      await expectLater(
+        () => service.fetchDetail(249504),
+        throwsA(isA<NetworkError>()),
+      );
+      expect(retryRepo._actions, hasLength(1));
+      expect(retryRepo._actions.first.actionType,
+          RetryActionType.refreshReleaseMetadata);
+      expect(retryRepo._actions.first.entityId, '249504');
+    });
+
+    test('records metadata retry action when API throws RateLimitedError',
+        () async {
+      final retryRepo = _SpyRetryRepo();
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response('', 429)),
+        retryRecorder: CacheRetryRecorder(retryRepo),
+      );
+      await expectLater(
+        () => service.fetchDetail(1),
+        throwsA(isA<RateLimitedError>()),
+      );
+      expect(retryRepo._actions, hasLength(1));
+      expect(retryRepo._actions.first.actionType,
+          RetryActionType.refreshReleaseMetadata);
+    });
+
+    test('does not record retry action when API throws InvalidTokenError',
+        () async {
+      final retryRepo = _SpyRetryRepo();
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response('', 401)),
+        retryRecorder: CacheRetryRecorder(retryRepo),
+      );
+      await expectLater(
+        () => service.fetchDetail(1),
+        throwsA(isA<InvalidTokenError>()),
+      );
+      expect(retryRepo._actions, isEmpty);
+    });
+
+    test('still throws original error after recording retry action', () async {
+      final retryRepo = _SpyRetryRepo();
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response('', 429)),
+        retryRecorder: CacheRetryRecorder(retryRepo),
+      );
+      expect(
+        () => service.fetchDetail(1),
+        throwsA(isA<RateLimitedError>()),
+      );
+    });
+
+    test('does not record retry action when no retry recorder is set', () async {
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => throw Exception('no internet')),
+      );
+      await expectLater(
+        () => service.fetchDetail(1),
+        throwsA(isA<NetworkError>()),
+      );
+    });
+
+    test('records thumbnail retry action when thumbnail fetch returns null',
+        () async {
+      final retryRepo = _SpyRetryRepo();
+      final repo = _SpyThumbnailRepository();
+      final thumbService = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient((_) async => http.Response('Not Found', 404)),
+      );
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        thumbnailService: thumbService,
+        retryRecorder: CacheRetryRecorder(retryRepo),
+      );
+      await service.fetchDetail(249504);
+      expect(
+        retryRepo._actions.where(
+          (a) => a.actionType == RetryActionType.cacheThumbnail,
+        ),
+        hasLength(1),
+      );
+      expect(
+        retryRepo._actions.first.entityId,
+        '249504',
+      );
+    });
+
+    test('does not record thumbnail retry when cover URL is absent', () async {
+      final noCoverJson = Map<String, dynamic>.from(_kindOfBlueJson)
+        ..remove('images');
+      final retryRepo = _SpyRetryRepo();
+      final repo = _SpyThumbnailRepository();
+      final thumbService = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient((_) async => http.Response('', 200)),
+      );
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response(jsonEncode(noCoverJson), 200)),
+        thumbnailService: thumbService,
+        retryRecorder: CacheRetryRecorder(retryRepo),
+      );
+      await service.fetchDetail(249504);
+      expect(
+        retryRepo._actions.where(
+          (a) => a.actionType == RetryActionType.cacheThumbnail,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('recorded retry action does not contain token', () async {
+      const sensitiveToken = 'secret_token_xyz';
+      final retryRepo = _SpyRetryRepo();
+      final service = _makeService(
+        sensitiveToken,
+        MockClient((_) async => throw Exception('no internet')),
+        retryRecorder: CacheRetryRecorder(retryRepo),
+      );
+      await expectLater(
+        () => service.fetchDetail(1),
+        throwsA(isA<NetworkError>()),
+      );
+      expect(retryRepo._actions, hasLength(1));
+      final action = retryRepo._actions.first;
+      expect(action.safeErrorMessage, isNot(contains(sensitiveToken)));
+      expect(action.entityId, isNot(contains(sensitiveToken)));
     });
   });
 }

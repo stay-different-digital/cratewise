@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5N: Record failed cache refresh actions] — 2026-06-02
+
+### Added
+- `RetryActionType.refreshReleaseMetadata` and `RetryActionType.cacheThumbnail` enum values
+- `RetryActionEntityType.cachedRelease` enum value
+- `CacheRetryRecorder` service: records pending retry actions for failed metadata refresh (retryable errors only: `NetworkError`, `RateLimitedError`, `DiscogsUnavailableError`) and failed thumbnail caching; deduplicates pending actions by release ID + action type; swallows its own errors
+- `DiscogsReleaseDetailService` now accepts an optional `CacheRetryRecorder`; records metadata retry on retryable API failures; records thumbnail retry when fetch returns null for a non-empty cover URL
+
+### Security
+- Retry actions store only `safeErrorMessage` strings — never tokens, secrets, or raw API responses
+- `CacheRetryRecorder` never propagates errors to callers
+
+---
+
 ## [Unreleased — Phase 5M: Add failed action queue model] — 2026-06-02
 
 ### Added

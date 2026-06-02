@@ -5,11 +5,14 @@ enum RetryActionType {
   addWishlistItem,
   updateWishlistItem,
   removeWishlistItem,
+  refreshReleaseMetadata,
+  cacheThumbnail,
 }
 
 enum RetryActionEntityType {
   collectionItem,
   wishlistItem,
+  cachedRelease,
 }
 
 enum RetryActionStatus {
