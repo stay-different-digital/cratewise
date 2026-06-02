@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/discogs_token_section.dart';
+import 'failed_actions_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -9,8 +10,21 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(24),
-      children: const [
-        DiscogsTokenSection(),
+      children: [
+        const DiscogsTokenSection(),
+        const SizedBox(height: 24),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.history_toggle_off_outlined),
+          title: const Text('Failed Actions'),
+          subtitle: const Text('View actions waiting to be retried'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const FailedActionsScreen(),
+            ),
+          ),
+        ),
       ],
     );
   }

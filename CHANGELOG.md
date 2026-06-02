@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5O: Failed Actions screen] — 2026-06-02
+
+### Added
+- `FailedActionsScreen`: lists all non-abandoned retry actions (pending + failed); shows friendly action type label, status chip (Queued/Failed), safe error message, attempt count, last tried date, and queued date; empty state "No failed actions — Everything is up to date."; error state with retry button; self-creates `LocalRetryActionRepository` when none injected
+- Settings screen now shows a "Failed Actions" list tile that navigates to `FailedActionsScreen`
+
+### Security
+- `FailedActionsScreen` displays only `safeErrorMessage` text — never tokens, secrets, or internal details
+
+---
+
 ## [Unreleased — Phase 5N: Record failed cache refresh actions] — 2026-06-02
 
 ### Added
