@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 5L: Show sync status in Collection and Wishlist details] — 2026-06-02
+
+### Added
+- `CollectionDetailScreen` now shows a "Status" row in the info section with friendly wording derived from `syncStatus`
+- `WishlistDetailScreen` now shows a "Status" row in the info section with the same wording
+- Wording: `localOnly` → "Saved on this device", `synced` → "Synced", `pending` → "Waiting to sync", `failed` → "Sync failed", `conflict` → "Needs review", `offline` → "Offline"
+- 12 new widget tests (6 per detail screen) verifying each status label renders correctly
+
+---
+
 ## [Unreleased — Phase 5K: Add sync status to local Collection and Wishlist items] — 2026-06-02
 
 ### Added

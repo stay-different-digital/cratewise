@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../domain/models/collection_item.dart';
+import '../../domain/models/sync_status.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
@@ -1005,6 +1006,7 @@ class _InfoRows extends StatelessWidget {
         _InfoRow('Sleeve', item.sleeveCondition.label),
         if (item.storageLocation != null && item.storageLocation!.isNotEmpty)
           _InfoRow('Location', item.storageLocation!),
+        _InfoRow('Status', _syncStatusLabel(item.syncStatus)),
       ],
     );
   }
@@ -1224,3 +1226,12 @@ String _formatDate(DateTime dt) {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 }
+
+String _syncStatusLabel(SyncStatus status) => switch (status) {
+      SyncStatus.localOnly => 'Saved on this device',
+      SyncStatus.synced => 'Synced',
+      SyncStatus.pending => 'Waiting to sync',
+      SyncStatus.failed => 'Sync failed',
+      SyncStatus.conflict => 'Needs review',
+      SyncStatus.offline => 'Offline',
+    };

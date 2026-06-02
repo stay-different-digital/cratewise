@@ -1,4 +1,5 @@
 import 'package:cratewise/domain/models/collection_item.dart';
+import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
@@ -1724,6 +1725,134 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text('Thumb Artist'), findsOneWidget);
+    });
+  });
+
+  group('CollectionDetailScreen — sync status', () {
+    testWidgets('shows "Saved on this device" for localOnly', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: _makeItem(),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Saved on this device'), findsOneWidget);
+    });
+
+    testWidgets('shows "Synced" for synced status', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: CollectionItem(
+          id: 'test-1',
+          discogsReleaseId: 1,
+          artist: 'Test Artist',
+          title: 'Test Album',
+          coverUrl: null,
+          mediaCondition: RecordCondition.veryGood,
+          sleeveCondition: RecordCondition.nearMint,
+          tags: const [],
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 3, 15),
+          syncStatus: SyncStatus.synced,
+        ),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Synced'), findsOneWidget);
+    });
+
+    testWidgets('shows "Waiting to sync" for pending status', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: CollectionItem(
+          id: 'test-1',
+          discogsReleaseId: 1,
+          artist: 'Test Artist',
+          title: 'Test Album',
+          coverUrl: null,
+          mediaCondition: RecordCondition.veryGood,
+          sleeveCondition: RecordCondition.nearMint,
+          tags: const [],
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 3, 15),
+          syncStatus: SyncStatus.pending,
+        ),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Waiting to sync'), findsOneWidget);
+    });
+
+    testWidgets('shows "Sync failed" for failed status', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: CollectionItem(
+          id: 'test-1',
+          discogsReleaseId: 1,
+          artist: 'Test Artist',
+          title: 'Test Album',
+          coverUrl: null,
+          mediaCondition: RecordCondition.veryGood,
+          sleeveCondition: RecordCondition.nearMint,
+          tags: const [],
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 3, 15),
+          syncStatus: SyncStatus.failed,
+        ),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Sync failed'), findsOneWidget);
+    });
+
+    testWidgets('shows "Needs review" for conflict status', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: CollectionItem(
+          id: 'test-1',
+          discogsReleaseId: 1,
+          artist: 'Test Artist',
+          title: 'Test Album',
+          coverUrl: null,
+          mediaCondition: RecordCondition.veryGood,
+          sleeveCondition: RecordCondition.nearMint,
+          tags: const [],
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 3, 15),
+          syncStatus: SyncStatus.conflict,
+        ),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Needs review'), findsOneWidget);
+    });
+
+    testWidgets('shows "Offline" for offline status', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: CollectionItem(
+          id: 'test-1',
+          discogsReleaseId: 1,
+          artist: 'Test Artist',
+          title: 'Test Album',
+          coverUrl: null,
+          mediaCondition: RecordCondition.veryGood,
+          sleeveCondition: RecordCondition.nearMint,
+          tags: const [],
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 3, 15),
+          syncStatus: SyncStatus.offline,
+        ),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Offline'), findsOneWidget);
     });
   });
 }

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
@@ -826,6 +827,7 @@ class _InfoRows extends StatelessWidget {
         if (item.year != null) _InfoRow('Year', '${item.year}'),
         _InfoRow('Priority', item.priority.label),
         _InfoRow('Target price', targetPriceText),
+        _InfoRow('Status', _syncStatusLabel(item.syncStatus)),
       ],
     );
   }
@@ -1021,3 +1023,12 @@ String _formatDate(DateTime dt) {
       '${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
 }
+
+String _syncStatusLabel(SyncStatus status) => switch (status) {
+      SyncStatus.localOnly => 'Saved on this device',
+      SyncStatus.synced => 'Synced',
+      SyncStatus.pending => 'Waiting to sync',
+      SyncStatus.failed => 'Sync failed',
+      SyncStatus.conflict => 'Needs review',
+      SyncStatus.offline => 'Offline',
+    };
