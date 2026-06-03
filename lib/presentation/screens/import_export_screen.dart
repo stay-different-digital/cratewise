@@ -7,9 +7,11 @@ import '../../application/use_cases/build_wishlist_export_preview_use_case.dart'
 import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
 import '../../application/use_cases/fetch_wishlist_import_preview_use_case.dart';
 import 'collection_csv_export_preview_screen.dart';
+import 'collection_csv_import_preview_screen.dart';
 import 'collection_export_preview_screen.dart';
 import 'collection_import_preview_screen.dart';
 import 'wishlist_csv_export_preview_screen.dart';
+import 'wishlist_csv_import_preview_screen.dart';
 import 'wishlist_export_preview_screen.dart';
 import 'wishlist_import_preview_screen.dart';
 
@@ -94,6 +96,16 @@ class ImportExportScreen extends StatelessWidget {
               ),
             ),
           ),
+          onImportCollectionCsv: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const CollectionCsvImportPreviewScreen(),
+            ),
+          ),
+          onImportWishlistCsv: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => const WishlistCsvImportPreviewScreen(),
+            ),
+          ),
         ),
       ),
     );
@@ -131,6 +143,8 @@ class _ActionBody extends StatelessWidget {
     required this.onExportWishlist,
     required this.onExportCollectionCsv,
     required this.onExportWishlistCsv,
+    required this.onImportCollectionCsv,
+    required this.onImportWishlistCsv,
   });
 
   final bool isWide;
@@ -140,6 +154,8 @@ class _ActionBody extends StatelessWidget {
   final VoidCallback onExportWishlist;
   final VoidCallback onExportCollectionCsv;
   final VoidCallback onExportWishlistCsv;
+  final VoidCallback onImportCollectionCsv;
+  final VoidCallback onImportWishlistCsv;
 
   List<_ActionConfig> get _discogsActions => [
         _ActionConfig(
@@ -181,13 +197,17 @@ class _ActionBody extends StatelessWidget {
           badge: null,
           onTap: (ctx) => onExportWishlistCsv(),
         ),
-        const _ActionConfig(
+        _ActionConfig(
           icon: Icons.upload_file_outlined,
           title: 'Import Collection from CSV',
+          badge: null,
+          onTap: (ctx) => onImportCollectionCsv(),
         ),
-        const _ActionConfig(
+        _ActionConfig(
           icon: Icons.upload_file_outlined,
           title: 'Import Wishlist from CSV',
+          badge: null,
+          onTap: (ctx) => onImportWishlistCsv(),
         ),
       ];
 

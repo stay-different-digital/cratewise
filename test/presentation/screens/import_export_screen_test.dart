@@ -15,10 +15,12 @@ import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/collection_csv_export_preview_screen.dart';
+import 'package:cratewise/presentation/screens/collection_csv_import_preview_screen.dart';
 import 'package:cratewise/presentation/screens/collection_export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/collection_import_preview_screen.dart';
 import 'package:cratewise/presentation/screens/import_export_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_csv_export_preview_screen.dart';
+import 'package:cratewise/presentation/screens/wishlist_csv_import_preview_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_import_preview_screen.dart';
 import 'package:flutter/material.dart';
@@ -204,16 +206,14 @@ void main() {
         expect(find.text('Import Wishlist from CSV'), findsOneWidget);
       });
 
-      testWidgets(
-          '2 cards show a Coming soon badge (CSV import cards are still coming soon)',
-          (tester) async {
+      testWidgets('no cards show a Coming soon badge', (tester) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(_buildSubject());
 
-        expect(find.text('Coming soon'), findsNWidgets(2));
+        expect(find.text('Coming soon'), findsNothing);
       });
 
     });
@@ -239,7 +239,8 @@ void main() {
         expect(find.byType(SnackBar), findsNothing);
       });
 
-      testWidgets('tapping Import Collection from CSV shows Coming soon snackbar',
+      testWidgets(
+          'tapping Import Collection from CSV navigates to preview screen',
           (tester) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
@@ -247,11 +248,12 @@ void main() {
 
         await tester.pumpWidget(_buildSubject());
         await tester.tap(find.text('Import Collection from CSV'));
-        await tester.pump();
-        expect(find.byType(SnackBar), findsOneWidget);
+        await tester.pumpAndSettle();
+        expect(find.byType(CollectionCsvImportPreviewScreen), findsOneWidget);
       });
 
-      testWidgets('tapping Import Wishlist from CSV shows snackbar',
+      testWidgets(
+          'tapping Import Wishlist from CSV navigates to preview screen',
           (tester) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
@@ -259,21 +261,8 @@ void main() {
 
         await tester.pumpWidget(_buildSubject());
         await tester.tap(find.text('Import Wishlist from CSV'));
-        await tester.pump();
-        expect(find.byType(SnackBar), findsOneWidget);
-      });
-
-      testWidgets('tapping a Coming soon card does not navigate',
-          (tester) async {
-        _setNarrowTallScreen(tester);
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-
-        await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Import Collection from CSV'));
-        await tester.pump();
-        // Still on the import/export screen
-        expect(find.text('Import & Export'), findsOneWidget);
+        await tester.pumpAndSettle();
+        expect(find.byType(WishlistCsvImportPreviewScreen), findsOneWidget);
       });
     });
 
@@ -534,7 +523,8 @@ void main() {
         expect(find.text('Import Wishlist from CSV'), findsOneWidget);
       });
 
-      testWidgets('tapping Import Collection from CSV on wide screen shows snackbar',
+      testWidgets(
+          'tapping Import Collection from CSV on wide screen navigates',
           (tester) async {
         _setWideTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
@@ -542,17 +532,17 @@ void main() {
 
         await tester.pumpWidget(_buildSubject());
         await tester.tap(find.text('Import Collection from CSV'));
-        await tester.pump();
-        expect(find.byType(SnackBar), findsOneWidget);
+        await tester.pumpAndSettle();
+        expect(find.byType(CollectionCsvImportPreviewScreen), findsOneWidget);
       });
 
-      testWidgets('2 cards show Coming soon badge on wide screen', (tester) async {
+      testWidgets('no cards show Coming soon badge on wide screen', (tester) async {
         _setWideTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(_buildSubject());
-        expect(find.text('Coming soon'), findsNWidgets(2));
+        expect(find.text('Coming soon'), findsNothing);
       });
     });
   });
