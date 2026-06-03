@@ -6,10 +6,12 @@ import '../../application/use_cases/build_wishlist_csv_export_preview_use_case.d
 import '../../application/use_cases/build_wishlist_export_preview_use_case.dart';
 import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
 import '../../application/use_cases/fetch_wishlist_import_preview_use_case.dart';
+import '../../domain/repositories/import_export_job_repository.dart';
 import 'collection_csv_export_preview_screen.dart';
 import 'collection_csv_import_preview_screen.dart';
 import 'collection_export_preview_screen.dart';
 import 'collection_import_preview_screen.dart';
+import 'import_export_history_screen.dart';
 import 'wishlist_csv_export_preview_screen.dart';
 import 'wishlist_csv_import_preview_screen.dart';
 import 'wishlist_export_preview_screen.dart';
@@ -27,6 +29,7 @@ class ImportExportScreen extends StatelessWidget {
     this.wishlistExportPreviewUseCase,
     this.collectionCsvExportPreviewUseCase,
     this.wishlistCsvExportPreviewUseCase,
+    this.jobRepository,
   });
 
   /// Injected only for testing. Production code passes null.
@@ -46,6 +49,9 @@ class ImportExportScreen extends StatelessWidget {
 
   /// Injected only for testing. Production code passes null.
   final BuildWishlistCsvExportPreviewUseCase? wishlistCsvExportPreviewUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final ImportExportJobRepository? jobRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +112,13 @@ class ImportExportScreen extends StatelessWidget {
               builder: (_) => const WishlistCsvImportPreviewScreen(),
             ),
           ),
+          onViewHistory: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => ImportExportHistoryScreen(
+                repository: jobRepository,
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -145,6 +158,7 @@ class _ActionBody extends StatelessWidget {
     required this.onExportWishlistCsv,
     required this.onImportCollectionCsv,
     required this.onImportWishlistCsv,
+    required this.onViewHistory,
   });
 
   final bool isWide;
@@ -156,6 +170,7 @@ class _ActionBody extends StatelessWidget {
   final VoidCallback onExportWishlistCsv;
   final VoidCallback onImportCollectionCsv;
   final VoidCallback onImportWishlistCsv;
+  final VoidCallback onViewHistory;
 
   List<_ActionConfig> get _discogsActions => [
         _ActionConfig(
@@ -221,6 +236,16 @@ class _ActionBody extends StatelessWidget {
         const SliverToBoxAdapter(child: SizedBox(height: 8)),
         const SliverToBoxAdapter(child: _SectionHeader(title: 'CSV files')),
         _buildSection(context, _csvActions),
+        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+        const SliverToBoxAdapter(child: _SectionHeader(title: 'History')),
+        _buildSection(context, [
+          _ActionConfig(
+            icon: Icons.history_outlined,
+            title: 'View import & export history',
+            badge: null,
+            onTap: (_) => onViewHistory(),
+          ),
+        ]),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
       ],
     );

@@ -10,14 +10,17 @@ import 'package:cratewise/application/use_cases/fetch_collection_import_preview_
 import 'package:cratewise/application/use_cases/fetch_wishlist_import_preview_use_case.dart';
 import 'package:cratewise/domain/models/collection_import_preview.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
+import 'package:cratewise/domain/models/import_export_job.dart';
 import 'package:cratewise/domain/models/wishlist_import_preview.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/import_export_job_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/collection_csv_export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/collection_csv_import_preview_screen.dart';
 import 'package:cratewise/presentation/screens/collection_export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/collection_import_preview_screen.dart';
+import 'package:cratewise/presentation/screens/import_export_history_screen.dart';
 import 'package:cratewise/presentation/screens/import_export_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_csv_export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_csv_import_preview_screen.dart';
@@ -130,6 +133,23 @@ class _FakeWishlistCsvExportUseCase
       const WishlistCsvExportPreviewError();
 }
 
+class _FakeJobRepository implements ImportExportJobRepository {
+  @override
+  Future<List<ImportExportJob>> getRecent({int limit = 20}) async => [];
+
+  @override
+  Future<ImportExportJob?> getById(String id) async => null;
+
+  @override
+  Future<void> add(ImportExportJob job) async {}
+
+  @override
+  Future<void> update(ImportExportJob job) async {}
+
+  @override
+  Future<void> remove(String id) async {}
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -141,6 +161,7 @@ Widget _buildSubject({
   BuildWishlistExportPreviewUseCase? wishlistExportPreviewUseCase,
   BuildCollectionCsvExportPreviewUseCase? collectionCsvExportPreviewUseCase,
   BuildWishlistCsvExportPreviewUseCase? wishlistCsvExportPreviewUseCase,
+  ImportExportJobRepository? jobRepository,
 }) =>
     MaterialApp(
       home: ImportExportScreen(
@@ -150,6 +171,7 @@ Widget _buildSubject({
         wishlistExportPreviewUseCase: wishlistExportPreviewUseCase,
         collectionCsvExportPreviewUseCase: collectionCsvExportPreviewUseCase,
         wishlistCsvExportPreviewUseCase: wishlistCsvExportPreviewUseCase,
+        jobRepository: jobRepository,
       ),
     );
 
@@ -545,5 +567,52 @@ void main() {
         expect(find.text('Coming soon'), findsNothing);
       });
     });
+
+    group('History navigation', () {
+      testWidgets('shows History section header', (tester) async {
+        _setNarrowTallScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(_buildSubject());
+        expect(find.text('History'), findsOneWidget);
+      });
+
+      testWidgets('shows View import & export history card', (tester) async {
+        _setNarrowTallScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(_buildSubject());
+        expect(find.text('View import & export history'), findsOneWidget);
+      });
+
+      testWidgets('tapping history card navigates to ImportExportHistoryScreen',
+          (tester) async {
+        _setNarrowTallScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final jobRepo = _FakeJobRepository();
+        await tester.pumpWidget(_buildSubject(jobRepository: jobRepo));
+        await tester.tap(find.text('View import & export history'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ImportExportHistoryScreen), findsOneWidget);
+      });
+
+      testWidgets('history screen shows Import & Export History AppBar title',
+          (tester) async {
+        _setNarrowTallScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final jobRepo = _FakeJobRepository();
+        await tester.pumpWidget(_buildSubject(jobRepository: jobRepo));
+        await tester.tap(find.text('View import & export history'));
+        await tester.pumpAndSettle();
+        expect(find.text('Import & Export History'), findsOneWidget);
+      });
+    });
   });
 }
+
