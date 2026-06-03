@@ -91,28 +91,30 @@ void main() {
       );
     });
 
-    test('request includes correct User-Agent and Authorization headers',
-        () async {
-      late http.Request capturedRequest;
-      final body = jsonEncode({
-        'username': 'vinyl_fan',
-        'resource_url': 'https://api.discogs.com/users/vinyl_fan',
-      });
-      final client = DiscogsApiClient(
-        httpClient: MockClient((request) async {
-          capturedRequest = request;
-          return http.Response(body, 200);
-        }),
-      );
+    test(
+      'request includes correct User-Agent and Authorization headers',
+      () async {
+        late http.Request capturedRequest;
+        final body = jsonEncode({
+          'username': 'vinyl_fan',
+          'resource_url': 'https://api.discogs.com/users/vinyl_fan',
+        });
+        final client = DiscogsApiClient(
+          httpClient: MockClient((request) async {
+            capturedRequest = request;
+            return http.Response(body, 200);
+          }),
+        );
 
-      await client.fetchIdentity(_fakeToken);
+        await client.fetchIdentity(_fakeToken);
 
-      expect(capturedRequest.headers['User-Agent'], 'Cratewise/1.0');
-      expect(
-        capturedRequest.headers['Authorization'],
-        'Discogs token=$_fakeToken',
-      );
-    });
+        expect(capturedRequest.headers['User-Agent'], 'Cratewise/1.0');
+        expect(
+          capturedRequest.headers['Authorization'],
+          'Discogs token=$_fakeToken',
+        );
+      },
+    );
 
     test('error messages do not contain the token', () async {
       final client = DiscogsApiClient(httpClient: _mockClient(401));
@@ -126,8 +128,20 @@ void main() {
   });
 
   group('DiscogsApiClient.searchReleases', () {
-    String searchBody(List<Map<String, dynamic>> results) =>
-        jsonEncode({'results': results, 'pagination': {}});
+    String searchBody(
+      List<Map<String, dynamic>> results, {
+      int page = 1,
+      int pages = 1,
+      int items = 0,
+    }) => jsonEncode({
+      'results': results,
+      'pagination': {
+        'page': page,
+        'pages': pages,
+        'items': items,
+        'per_page': 50,
+      },
+    });
 
     final kindOfBlue = {
       'id': 249504,
@@ -139,15 +153,42 @@ void main() {
       'country': 'US',
     };
 
-    test('returns list of DTOs on 200', () async {
+    test('returns DiscogsSearchPageDto on 200', () async {
       final client = DiscogsApiClient(
         httpClient: MockClient(
           (_) async => http.Response(searchBody([kindOfBlue]), 200),
         ),
       );
-      final results = await client.searchReleases('kind of blue', _fakeToken);
-      expect(results, hasLength(1));
-      expect(results.first, isA<DiscogsSearchResultDto>());
+      final page = await client.searchReleases('kind of blue', _fakeToken);
+      expect(page, isA<DiscogsSearchPageDto>());
+      expect(page.results, hasLength(1));
+      expect(page.results.first, isA<DiscogsSearchResultDto>());
+    });
+
+    test('parses pagination fields', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            searchBody([kindOfBlue], page: 2, pages: 7, items: 340),
+            200,
+          ),
+        ),
+      );
+      final page = await client.searchReleases('kind of blue', _fakeToken);
+      expect(page.currentPage, 2);
+      expect(page.totalPages, 7);
+      expect(page.totalResults, 340);
+    });
+
+    test('defaults pagination when pagination object is empty', () async {
+      final body = jsonEncode({'results': [], 'pagination': {}});
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async => http.Response(body, 200)),
+      );
+      final page = await client.searchReleases('test', _fakeToken);
+      expect(page.currentPage, 1);
+      expect(page.totalPages, 1);
+      expect(page.totalResults, 0);
     });
 
     test('parses artist and title from combined field', () async {
@@ -156,9 +197,9 @@ void main() {
           (_) async => http.Response(searchBody([kindOfBlue]), 200),
         ),
       );
-      final results = await client.searchReleases('kind of blue', _fakeToken);
-      expect(results.first.artist, 'Miles Davis');
-      expect(results.first.title, 'Kind Of Blue');
+      final page = await client.searchReleases('kind of blue', _fakeToken);
+      expect(page.results.first.artist, 'Miles Davis');
+      expect(page.results.first.title, 'Kind Of Blue');
     });
 
     test('uses first format from array', () async {
@@ -167,8 +208,8 @@ void main() {
           (_) async => http.Response(searchBody([kindOfBlue]), 200),
         ),
       );
-      final results = await client.searchReleases('kind of blue', _fakeToken);
-      expect(results.first.format, 'Vinyl');
+      final page = await client.searchReleases('kind of blue', _fakeToken);
+      expect(page.results.first.format, 'Vinyl');
     });
 
     test('uses first label from array', () async {
@@ -177,8 +218,8 @@ void main() {
           (_) async => http.Response(searchBody([kindOfBlue]), 200),
         ),
       );
-      final results = await client.searchReleases('kind of blue', _fakeToken);
-      expect(results.first.label, 'Columbia');
+      final page = await client.searchReleases('kind of blue', _fakeToken);
+      expect(page.results.first.label, 'Columbia');
     });
 
     test('parses year from string', () async {
@@ -187,8 +228,8 @@ void main() {
           (_) async => http.Response(searchBody([kindOfBlue]), 200),
         ),
       );
-      final results = await client.searchReleases('kind of blue', _fakeToken);
-      expect(results.first.year, 1959);
+      final page = await client.searchReleases('kind of blue', _fakeToken);
+      expect(page.results.first.year, 1959);
     });
 
     test('parses country and id', () async {
@@ -197,10 +238,10 @@ void main() {
           (_) async => http.Response(searchBody([kindOfBlue]), 200),
         ),
       );
-      final results = await client.searchReleases('kind of blue', _fakeToken);
-      expect(results.first.country, 'US');
-      expect(results.first.id, 249504);
-      expect(results.first.thumbUrl, 'https://i.discogs.com/cover.jpg');
+      final page = await client.searchReleases('kind of blue', _fakeToken);
+      expect(page.results.first.country, 'US');
+      expect(page.results.first.id, 249504);
+      expect(page.results.first.thumbUrl, 'https://i.discogs.com/cover.jpg');
     });
 
     test('treats empty thumb string as null', () async {
@@ -210,8 +251,8 @@ void main() {
           (_) async => http.Response(searchBody([result]), 200),
         ),
       );
-      final results = await client.searchReleases('kind of blue', _fakeToken);
-      expect(results.first.thumbUrl, isNull);
+      final page = await client.searchReleases('kind of blue', _fakeToken);
+      expect(page.results.first.thumbUrl, isNull);
     });
 
     test('handles missing optional fields gracefully', () async {
@@ -221,27 +262,25 @@ void main() {
           (_) async => http.Response(searchBody([minimal]), 200),
         ),
       );
-      final results = await client.searchReleases('test', _fakeToken);
-      expect(results.first.artist, '');
-      expect(results.first.title, 'Unknown Release');
-      expect(results.first.format, '');
-      expect(results.first.label, '');
-      expect(results.first.country, '');
-      expect(results.first.year, isNull);
-      expect(results.first.thumbUrl, isNull);
+      final page = await client.searchReleases('test', _fakeToken);
+      expect(page.results.first.artist, '');
+      expect(page.results.first.title, 'Unknown Release');
+      expect(page.results.first.format, '');
+      expect(page.results.first.label, '');
+      expect(page.results.first.country, '');
+      expect(page.results.first.year, isNull);
+      expect(page.results.first.thumbUrl, isNull);
     });
 
-    test('returns empty list when results array is empty', () async {
+    test('returns empty results list when results array is empty', () async {
       final client = DiscogsApiClient(
-        httpClient: MockClient(
-          (_) async => http.Response(searchBody([]), 200),
-        ),
+        httpClient: MockClient((_) async => http.Response(searchBody([]), 200)),
       );
-      final results = await client.searchReleases('nothing', _fakeToken);
-      expect(results, isEmpty);
+      final page = await client.searchReleases('nothing', _fakeToken);
+      expect(page.results, isEmpty);
     });
 
-    test('encodes query and type in request URL', () async {
+    test('encodes query, type, page and per_page in request URL', () async {
       late http.Request captured;
       final client = DiscogsApiClient(
         httpClient: MockClient((request) async {
@@ -253,6 +292,20 @@ void main() {
       expect(captured.url.path, '/database/search');
       expect(captured.url.queryParameters['q'], 'kind of blue');
       expect(captured.url.queryParameters['type'], 'release');
+      expect(captured.url.queryParameters['page'], '1');
+      expect(captured.url.queryParameters['per_page'], '50');
+    });
+
+    test('passes custom page number in request URL', () async {
+      late http.Request captured;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(searchBody([]), 200);
+        }),
+      );
+      await client.searchReleases('test', _fakeToken, page: 3);
+      expect(captured.url.queryParameters['page'], '3');
     });
 
     test('throws InvalidTokenError on 401', () async {
@@ -301,8 +354,20 @@ void main() {
   });
 
   group('DiscogsApiClient.searchByBarcode', () {
-    String searchBody(List<Map<String, dynamic>> results) =>
-        jsonEncode({'results': results, 'pagination': {}});
+    String searchBody(
+      List<Map<String, dynamic>> results, {
+      int page = 1,
+      int pages = 1,
+      int items = 0,
+    }) => jsonEncode({
+      'results': results,
+      'pagination': {
+        'page': page,
+        'pages': pages,
+        'items': items,
+        'per_page': 50,
+      },
+    });
 
     final kindOfBlue = {
       'id': 249504,
@@ -314,18 +379,34 @@ void main() {
       'country': 'US',
     };
 
-    test('returns list of DTOs on 200', () async {
+    test('returns DiscogsSearchPageDto on 200', () async {
       final client = DiscogsApiClient(
         httpClient: MockClient(
           (_) async => http.Response(searchBody([kindOfBlue]), 200),
         ),
       );
-      final results = await client.searchByBarcode('5099706035422', _fakeToken);
-      expect(results, hasLength(1));
-      expect(results.first, isA<DiscogsSearchResultDto>());
+      final page = await client.searchByBarcode('5099706035422', _fakeToken);
+      expect(page, isA<DiscogsSearchPageDto>());
+      expect(page.results, hasLength(1));
+      expect(page.results.first, isA<DiscogsSearchResultDto>());
     });
 
-    test('encodes barcode and type in request URL', () async {
+    test('parses pagination fields', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(
+            searchBody([kindOfBlue], page: 1, pages: 3, items: 120),
+            200,
+          ),
+        ),
+      );
+      final page = await client.searchByBarcode('5099706035422', _fakeToken);
+      expect(page.currentPage, 1);
+      expect(page.totalPages, 3);
+      expect(page.totalResults, 120);
+    });
+
+    test('encodes barcode, type, page and per_page in request URL', () async {
       late http.Request captured;
       final client = DiscogsApiClient(
         httpClient: MockClient((request) async {
@@ -338,16 +419,16 @@ void main() {
       expect(captured.url.queryParameters['barcode'], '5099706035422');
       expect(captured.url.queryParameters['type'], 'release');
       expect(captured.url.queryParameters.containsKey('q'), isFalse);
+      expect(captured.url.queryParameters['page'], '1');
+      expect(captured.url.queryParameters['per_page'], '50');
     });
 
-    test('returns empty list when results array is empty', () async {
+    test('returns empty results when results array is empty', () async {
       final client = DiscogsApiClient(
-        httpClient: MockClient(
-          (_) async => http.Response(searchBody([]), 200),
-        ),
+        httpClient: MockClient((_) async => http.Response(searchBody([]), 200)),
       );
-      final results = await client.searchByBarcode('0000000000000', _fakeToken);
-      expect(results, isEmpty);
+      final page = await client.searchByBarcode('0000000000000', _fakeToken);
+      expect(page.results, isEmpty);
     });
 
     test('throws InvalidTokenError on 401', () async {
@@ -376,22 +457,21 @@ void main() {
       int perPage = 50,
       int items = 125,
       List<Map<String, dynamic>> releases = const [],
-    }) =>
-        {
-          'pagination': {
-            'page': page,
-            'pages': pages,
-            'per_page': perPage,
-            'items': items,
-            'urls': {
-              'next':
-                  'https://api.discogs.com/users/vinyl_fan/collection/folders/0/releases?page=2',
-              'last':
-                  'https://api.discogs.com/users/vinyl_fan/collection/folders/0/releases?page=$pages',
-            },
-          },
-          'releases': releases,
-        };
+    }) => {
+      'pagination': {
+        'page': page,
+        'pages': pages,
+        'per_page': perPage,
+        'items': items,
+        'urls': {
+          'next':
+              'https://api.discogs.com/users/vinyl_fan/collection/folders/0/releases?page=2',
+          'last':
+              'https://api.discogs.com/users/vinyl_fan/collection/folders/0/releases?page=$pages',
+        },
+      },
+      'releases': releases,
+    };
 
     final kindOfBlueRelease = {
       'id': 11111,
@@ -426,8 +506,9 @@ void main() {
     test('returns DiscogsCollectionPageDto on 200', () async {
       final body = collectionBody(releases: [kindOfBlueRelease]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       expect(page, isA<DiscogsCollectionPageDto>());
@@ -436,8 +517,9 @@ void main() {
     test('parses pagination fields', () async {
       final body = collectionBody(page: 2, pages: 5, items: 230);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       expect(page.page, 2);
@@ -448,8 +530,9 @@ void main() {
     test('parses collection item fields', () async {
       final body = collectionBody(releases: [kindOfBlueRelease]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       final item = page.items.first;
@@ -464,8 +547,9 @@ void main() {
     test('parses title, artist, year from basic_information', () async {
       final body = collectionBody(releases: [kindOfBlueRelease]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       final item = page.items.first;
@@ -477,8 +561,9 @@ void main() {
     test('parses label and catalog number', () async {
       final body = collectionBody(releases: [kindOfBlueRelease]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       final item = page.items.first;
@@ -489,8 +574,9 @@ void main() {
     test('parses format with descriptions', () async {
       final body = collectionBody(releases: [kindOfBlueRelease]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       expect(page.items.first.format, 'Vinyl, LP, Album');
@@ -499,8 +585,9 @@ void main() {
     test('parses genres', () async {
       final body = collectionBody(releases: [kindOfBlueRelease]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       expect(page.items.first.genres, ['Jazz']);
@@ -509,27 +596,30 @@ void main() {
     test('parses thumbUrl from basic_information thumb', () async {
       final body = collectionBody(releases: [kindOfBlueRelease]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       expect(
-          page.items.first.thumbUrl, 'https://i.discogs.com/kind_of_blue_150.jpg');
+        page.items.first.thumbUrl,
+        'https://i.discogs.com/kind_of_blue_150.jpg',
+      );
     });
 
     test('treats empty thumb string as null', () async {
       final release = {
         ...kindOfBlueRelease,
         'basic_information': {
-          ...(kindOfBlueRelease['basic_information']
-              as Map<String, dynamic>),
+          ...(kindOfBlueRelease['basic_information'] as Map<String, dynamic>),
           'thumb': '',
         },
       };
       final body = collectionBody(releases: [release]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       expect(page.items.first.thumbUrl, isNull);
@@ -539,8 +629,7 @@ void main() {
       final multiArtist = {
         ...kindOfBlueRelease,
         'basic_information': {
-          ...(kindOfBlueRelease['basic_information']
-              as Map<String, dynamic>),
+          ...(kindOfBlueRelease['basic_information'] as Map<String, dynamic>),
           'artists': [
             {'name': 'John Lennon'},
             {'name': 'Paul McCartney'},
@@ -549,8 +638,9 @@ void main() {
       };
       final body = collectionBody(releases: [multiArtist]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       expect(page.items.first.artist, 'John Lennon, Paul McCartney');
@@ -567,8 +657,9 @@ void main() {
       };
       final body = collectionBody(releases: [minimal]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       final item = page.items.first;
@@ -585,8 +676,9 @@ void main() {
     test('returns empty items list when releases array is empty', () async {
       final body = collectionBody();
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
       expect(page.items, isEmpty);
@@ -604,7 +696,9 @@ void main() {
       );
       await client.fetchCollectionPage('vinyl_fan', _fakeToken);
       expect(
-          captured.url.path, '/users/vinyl_fan/collection/folders/0/releases');
+        captured.url.path,
+        '/users/vinyl_fan/collection/folders/0/releases',
+      );
     });
 
     test('encodes page and per_page query parameters', () async {
@@ -735,12 +829,7 @@ void main() {
           'title': 'Freddie Freeloader',
           'duration': '9:46',
         },
-        {
-          'position': '',
-          'type_': 'heading',
-          'title': 'Side B',
-          'duration': '',
-        },
+        {'position': '', 'type_': 'heading', 'title': 'Side B', 'duration': ''},
         {
           'position': 'B1',
           'type_': 'track',
@@ -838,7 +927,11 @@ void main() {
       );
       final release = await client.fetchRelease(249504, _fakeToken);
       expect(release.tracklist, hasLength(3));
-      expect(release.tracklist.map((t) => t.title), ['So What', 'Freddie Freeloader', 'Blue In Green']);
+      expect(release.tracklist.map((t) => t.title), [
+        'So What',
+        'Freddie Freeloader',
+        'Blue In Green',
+      ]);
       expect(release.tracklist.first.position, 'A1');
       expect(release.tracklist.first.duration, '9:22');
     });
@@ -876,10 +969,7 @@ void main() {
       final noPrimary = {
         ...kindOfBlueRelease,
         'images': [
-          {
-            'type': 'secondary',
-            'uri': 'https://i.discogs.com/back.jpg',
-          },
+          {'type': 'secondary', 'uri': 'https://i.discogs.com/back.jpg'},
         ],
       };
       final client = DiscogsApiClient(
@@ -979,22 +1069,19 @@ void main() {
       int perPage = 50,
       int items = 125,
       List<Map<String, dynamic>> wants = const [],
-    }) =>
-        {
-          'pagination': {
-            'page': page,
-            'pages': pages,
-            'per_page': perPage,
-            'items': items,
-            'urls': {
-              'next':
-                  'https://api.discogs.com/users/vinyl_fan/wants?page=2',
-              'last':
-                  'https://api.discogs.com/users/vinyl_fan/wants?page=$pages',
-            },
-          },
-          'wants': wants,
-        };
+    }) => {
+      'pagination': {
+        'page': page,
+        'pages': pages,
+        'per_page': perPage,
+        'items': items,
+        'urls': {
+          'next': 'https://api.discogs.com/users/vinyl_fan/wants?page=2',
+          'last': 'https://api.discogs.com/users/vinyl_fan/wants?page=$pages',
+        },
+      },
+      'wants': wants,
+    };
 
     final bridgeStrippedBare = {
       'id': 3003339,
@@ -1029,8 +1116,9 @@ void main() {
     test('returns DiscogsWantlistPageDto on 200', () async {
       final body = wantlistBody(wants: [bridgeStrippedBare]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page, isA<DiscogsWantlistPageDto>());
@@ -1039,8 +1127,9 @@ void main() {
     test('parses pagination fields', () async {
       final body = wantlistBody(page: 2, pages: 5, items: 230);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.page, 2);
@@ -1051,8 +1140,9 @@ void main() {
     test('parses wantlist item fields', () async {
       final body = wantlistBody(wants: [bridgeStrippedBare]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       final item = page.items.first;
@@ -1065,8 +1155,9 @@ void main() {
     test('parses title, artist, year from basic_information', () async {
       final body = wantlistBody(wants: [bridgeStrippedBare]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       final item = page.items.first;
@@ -1078,8 +1169,9 @@ void main() {
     test('parses label and catalog number', () async {
       final body = wantlistBody(wants: [bridgeStrippedBare]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       final item = page.items.first;
@@ -1090,8 +1182,9 @@ void main() {
     test('parses format with descriptions', () async {
       final body = wantlistBody(wants: [bridgeStrippedBare]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.items.first.format, 'Vinyl, LP, Album');
@@ -1100,8 +1193,9 @@ void main() {
     test('parses genres', () async {
       final body = wantlistBody(wants: [bridgeStrippedBare]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.items.first.genres, ['Rock']);
@@ -1110,8 +1204,9 @@ void main() {
     test('parses thumbUrl from basic_information thumb', () async {
       final body = wantlistBody(wants: [bridgeStrippedBare]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.items.first.thumbUrl, 'https://i.discogs.com/bride_150.jpg');
@@ -1121,15 +1216,15 @@ void main() {
       final item = {
         ...bridgeStrippedBare,
         'basic_information': {
-          ...(bridgeStrippedBare['basic_information']
-              as Map<String, dynamic>),
+          ...(bridgeStrippedBare['basic_information'] as Map<String, dynamic>),
           'thumb': '',
         },
       };
       final body = wantlistBody(wants: [item]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.items.first.thumbUrl, isNull);
@@ -1138,21 +1233,21 @@ void main() {
     test('parses notes field', () async {
       final body = wantlistBody(wants: [bridgeStrippedBare]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.items.first.notes, 'Great album, need to find a copy.');
     });
 
     test('treats absent notes as null', () async {
-      final noNotes = {
-        ...bridgeStrippedBare,
-      }..remove('notes');
+      final noNotes = {...bridgeStrippedBare}..remove('notes');
       final body = wantlistBody(wants: [noNotes]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.items.first.notes, isNull);
@@ -1162,8 +1257,9 @@ void main() {
       final emptyNotes = {...bridgeStrippedBare, 'notes': ''};
       final body = wantlistBody(wants: [emptyNotes]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.items.first.notes, isNull);
@@ -1173,8 +1269,7 @@ void main() {
       final multiArtist = {
         ...bridgeStrippedBare,
         'basic_information': {
-          ...(bridgeStrippedBare['basic_information']
-              as Map<String, dynamic>),
+          ...(bridgeStrippedBare['basic_information'] as Map<String, dynamic>),
           'artists': [
             {'name': 'John Lennon'},
             {'name': 'Paul McCartney'},
@@ -1183,8 +1278,9 @@ void main() {
       };
       final body = wantlistBody(wants: [multiArtist]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.items.first.artist, 'John Lennon, Paul McCartney');
@@ -1199,8 +1295,9 @@ void main() {
       };
       final body = wantlistBody(wants: [minimal]);
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       final item = page.items.first;
@@ -1218,8 +1315,9 @@ void main() {
     test('returns empty items list when wants array is empty', () async {
       final body = wantlistBody();
       final client = DiscogsApiClient(
-        httpClient:
-            MockClient((_) async => http.Response(jsonEncode(body), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(body), 200),
+        ),
       );
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.items, isEmpty);

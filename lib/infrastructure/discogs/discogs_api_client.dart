@@ -18,8 +18,8 @@ const _kDefaultTimeout = Duration(seconds: 15);
 
 class DiscogsApiClient {
   DiscogsApiClient({http.Client? httpClient, Duration? requestTimeout})
-      : _client = httpClient ?? http.Client(),
-        _timeout = requestTimeout ?? _kDefaultTimeout;
+    : _client = httpClient ?? http.Client(),
+      _timeout = requestTimeout ?? _kDefaultTimeout;
 
   final http.Client _client;
   final Duration _timeout;
@@ -40,20 +40,26 @@ class DiscogsApiClient {
   }
 
   /// Searches Discogs releases by [query] text.
-  Future<List<DiscogsSearchResultDto>> searchReleases(
+  ///
+  /// [page] is 1-based. [perPage] defaults to 50.
+  Future<DiscogsSearchPageDto> searchReleases(
     String query,
-    String token,
-  ) async {
+    String token, {
+    int page = 1,
+    int perPage = 50,
+  }) async {
     final response = await _get(
       '/database/search',
       token,
-      queryParameters: {'q': query, 'type': 'release'},
+      queryParameters: {
+        'q': query,
+        'type': 'release',
+        'page': '$page',
+        'per_page': '$perPage',
+      },
     );
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    final results = json['results'] as List<dynamic>? ?? [];
-    return results
-        .map((e) => DiscogsSearchResultDto.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return DiscogsSearchPageDto.fromJson(json);
   }
 
   /// Fetches one page of the authenticated user's Discogs collection.
@@ -69,10 +75,7 @@ class DiscogsApiClient {
     final response = await _get(
       '/users/$username/collection/folders/0/releases',
       token,
-      queryParameters: {
-        'page': '$page',
-        'per_page': '$perPage',
-      },
+      queryParameters: {'page': '$page', 'per_page': '$perPage'},
     );
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return DiscogsCollectionPageDto.fromJson(json);
@@ -90,30 +93,33 @@ class DiscogsApiClient {
     final response = await _get(
       '/users/$username/wants',
       token,
-      queryParameters: {
-        'page': '$page',
-        'per_page': '$perPage',
-      },
+      queryParameters: {'page': '$page', 'per_page': '$perPage'},
     );
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return DiscogsWantlistPageDto.fromJson(json);
   }
 
   /// Searches Discogs releases by [barcode] identifier.
-  Future<List<DiscogsSearchResultDto>> searchByBarcode(
+  ///
+  /// [page] is 1-based. [perPage] defaults to 50.
+  Future<DiscogsSearchPageDto> searchByBarcode(
     String barcode,
-    String token,
-  ) async {
+    String token, {
+    int page = 1,
+    int perPage = 50,
+  }) async {
     final response = await _get(
       '/database/search',
       token,
-      queryParameters: {'barcode': barcode, 'type': 'release'},
+      queryParameters: {
+        'barcode': barcode,
+        'type': 'release',
+        'page': '$page',
+        'per_page': '$perPage',
+      },
     );
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    final results = json['results'] as List<dynamic>? ?? [];
-    return results
-        .map((e) => DiscogsSearchResultDto.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return DiscogsSearchPageDto.fromJson(json);
   }
 
   /// Adds [releaseId] to the authenticated user's Discogs collection folder 1.
@@ -139,10 +145,7 @@ class DiscogsApiClient {
     int releaseId,
     String token,
   ) async {
-    await _post(
-      '/users/$username/wants/$releaseId',
-      token,
-    );
+    await _post('/users/$username/wants/$releaseId', token);
   }
 
   Future<http.Response> _get(
@@ -189,10 +192,10 @@ class DiscogsApiClient {
   }
 
   Map<String, String> _headers(String token) => {
-        'User-Agent': _userAgent,
-        'Authorization': 'Discogs token=$token',
-        'Accept': _accept,
-      };
+    'User-Agent': _userAgent,
+    'Authorization': 'Discogs token=$token',
+    'Accept': _accept,
+  };
 
   void _checkStatus(http.Response response, [int expectedStatus = 200]) {
     if (response.statusCode == expectedStatus) return;

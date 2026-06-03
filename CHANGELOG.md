@@ -7,6 +7,29 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7C: Search results pagination (US-03)] — 2026-06-03
+
+### Added
+- `SearchResultPage` domain model (`lib/domain/models/search_result_page.dart`) carrying `items`, `currentPage`, `totalPages`, `totalResults`, and a `hasMore` getter
+- `DiscogsSearchPageDto` (`lib/infrastructure/discogs/dto/discogs_search_result.dart`) parses the Discogs `pagination` object (`page`, `pages`, `items`) from both search and barcode endpoints
+- `DiscogsApiClient.searchReleases` and `searchByBarcode` now accept `page` / `perPage` parameters (default 1 / 50) and return `DiscogsSearchPageDto` instead of a bare list
+- `DiscogsSearchService.search` now accepts `int page = 1` and returns `SearchResultPage`
+- `BarcodeLookupSuccess` now holds `SearchResultPage page` instead of a flat list; `BarcodeLookupUseCase.execute` accepts `int page = 1`
+- `SearchScreen._ResultsList` is now a `StatefulWidget` with a `ScrollController`; a post-frame hook automatically fires `onLoadMore` when the content fits within the viewport (eager pre-fetch), and a scroll listener fires it again when the user scrolls within 300 px of the bottom
+- `SearchScreen` state machine gains `isLoadingMore` / `paginationError` fields on `_Results`; pagination transitions are handled entirely within `_Results.copyWith` — no new top-level states needed
+- Result count label (key `result-count`) shows "1–N of total" above the results list on both Search and Barcode scan screens
+- Bottom loading spinner (key `pagination-loading`) shown while the next page is in-flight
+- Inline retry button (key `pagination-retry`) shown when pagination fails with any `AppError` (rate-limit error shows "Rate limited — tap to retry"; other errors show "Failed to load more — tap to retry") — existing page 1 results remain visible
+- `BarcodeScanScreen._ResultsList` receives the same pagination treatment (post-frame trigger, scroll listener, count label, spinner, retry button)
+- 18 new tests: `SearchResultPage` model (5), `DiscogsApiClient` pagination fields (5), `DiscogsSearchService` pagination mapping (3), `BarcodeLookupUseCase` page forwarding (2), `SearchScreen` result-count and pagination UI (5), `BarcodeLookupSuccess` page field (2)
+
+### Changed
+- `DiscogsApiClient.searchReleases` and `searchByBarcode` return type changed from `List<DiscogsSearchResultDto>` to `DiscogsSearchPageDto`
+- `DiscogsSearchService.search` return type changed from `Future<List<ReleaseSearchResult>>` to `Future<SearchResultPage>`
+- `BarcodeLookupSuccess` field renamed from `results: List<ReleaseSearchResult>` to `page: SearchResultPage`; all callers and test doubles updated
+
+---
+
 ## [Unreleased — Phase 7B: iOS token save reliability (US-02)] — 2026-06-03
 
 ### Added

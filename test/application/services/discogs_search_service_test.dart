@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cratewise/application/services/discogs_search_service.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
+import 'package:cratewise/domain/models/search_result_page.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
@@ -37,8 +38,15 @@ DiscogsSearchService _makeService(String? token, http.Client httpClient) {
   );
 }
 
-String _searchBody(List<Map<String, dynamic>> results) =>
-    jsonEncode({'results': results, 'pagination': {}});
+String _searchBody(
+  List<Map<String, dynamic>> results, {
+  int page = 1,
+  int pages = 1,
+  int items = 0,
+}) => jsonEncode({
+  'results': results,
+  'pagination': {'page': page, 'pages': pages, 'items': items, 'per_page': 50},
+});
 
 const _kindOfBlue = {
   'id': 249504,
@@ -61,30 +69,32 @@ void main() {
         null,
         MockClient((_) async => http.Response(_searchBody([]), 200)),
       );
-      expect(
-        () => service.search('test'),
-        throwsA(isA<NoTokenError>()),
-      );
+      expect(() => service.search('test'), throwsA(isA<NoTokenError>()));
     });
 
-    test('returns mapped results when token is present and API succeeds',
-        () async {
-      final service = _makeService(
-        'fake_token',
-        MockClient((_) async => http.Response(_searchBody([_kindOfBlue]), 200)),
-      );
-      final results = await service.search('kind of blue');
-      expect(results, hasLength(1));
-      expect(results.first, isA<ReleaseSearchResult>());
-    });
+    test(
+      'returns SearchResultPage when token is present and API succeeds',
+      () async {
+        final service = _makeService(
+          'fake_token',
+          MockClient(
+            (_) async => http.Response(_searchBody([_kindOfBlue]), 200),
+          ),
+        );
+        final page = await service.search('kind of blue');
+        expect(page, isA<SearchResultPage>());
+        expect(page.items, hasLength(1));
+        expect(page.items.first, isA<ReleaseSearchResult>());
+      },
+    );
 
     test('maps all DTO fields to ReleaseSearchResult correctly', () async {
       final service = _makeService(
         'fake_token',
         MockClient((_) async => http.Response(_searchBody([_kindOfBlue]), 200)),
       );
-      final results = await service.search('kind of blue');
-      final r = results.first;
+      final page = await service.search('kind of blue');
+      final r = page.items.first;
       expect(r.id, 249504);
       expect(r.artist, 'Miles Davis');
       expect(r.title, 'Kind Of Blue');
@@ -95,13 +105,44 @@ void main() {
       expect(r.coverUrl, 'https://i.discogs.com/cover.jpg');
     });
 
-    test('returns empty list when API returns no results', () async {
+    test('returns empty items list when API returns no results', () async {
       final service = _makeService(
         'fake_token',
         MockClient((_) async => http.Response(_searchBody([]), 200)),
       );
-      final results = await service.search('nothing');
-      expect(results, isEmpty);
+      final page = await service.search('nothing');
+      expect(page.items, isEmpty);
+    });
+
+    test('maps pagination fields onto SearchResultPage', () async {
+      final service = _makeService(
+        'fake_token',
+        MockClient(
+          (_) async => http.Response(
+            _searchBody([_kindOfBlue], page: 2, pages: 7, items: 340),
+            200,
+          ),
+        ),
+      );
+      final page = await service.search('kind of blue', page: 2);
+      expect(page.currentPage, 2);
+      expect(page.totalPages, 7);
+      expect(page.totalResults, 340);
+      expect(page.hasMore, isTrue);
+    });
+
+    test('hasMore is false on the last page', () async {
+      final service = _makeService(
+        'fake_token',
+        MockClient(
+          (_) async => http.Response(
+            _searchBody([_kindOfBlue], page: 7, pages: 7, items: 340),
+            200,
+          ),
+        ),
+      );
+      final page = await service.search('kind of blue', page: 7);
+      expect(page.hasMore, isFalse);
     });
 
     test('propagates RateLimitedError from API client', () async {
@@ -109,10 +150,7 @@ void main() {
         'fake_token',
         MockClient((_) async => http.Response('', 429)),
       );
-      expect(
-        () => service.search('test'),
-        throwsA(isA<RateLimitedError>()),
-      );
+      expect(() => service.search('test'), throwsA(isA<RateLimitedError>()));
     });
 
     test('propagates InvalidTokenError from API client', () async {
@@ -120,10 +158,7 @@ void main() {
         'fake_token',
         MockClient((_) async => http.Response('', 401)),
       );
-      expect(
-        () => service.search('test'),
-        throwsA(isA<InvalidTokenError>()),
-      );
+      expect(() => service.search('test'), throwsA(isA<InvalidTokenError>()));
     });
 
     test('propagates NetworkError from API client', () async {
@@ -131,10 +166,7 @@ void main() {
         'fake_token',
         MockClient((_) async => throw Exception('no internet')),
       );
-      expect(
-        () => service.search('test'),
-        throwsA(isA<NetworkError>()),
-      );
+      expect(() => service.search('test'), throwsA(isA<NetworkError>()));
     });
 
     test('token is not present in thrown errors', () async {

@@ -27,9 +27,47 @@ class _Loading extends _SearchState {
   const _Loading();
 }
 
+/// Stable results state. Also used for the "loading more" and "pagination
+/// error" sub-states via [isLoadingMore] and [paginationError].
 class _Results extends _SearchState {
-  const _Results(this.items);
+  const _Results({
+    required this.items,
+    required this.currentPage,
+    required this.totalPages,
+    required this.totalResults,
+    this.isLoadingMore = false,
+    this.paginationError,
+  });
+
   final List<ReleaseSearchResult> items;
+  final int currentPage;
+  final int totalPages;
+  final int totalResults;
+  final bool isLoadingMore;
+  final AppError? paginationError;
+
+  bool get hasMore => currentPage < totalPages;
+
+  _Results copyWith({
+    List<ReleaseSearchResult>? items,
+    int? currentPage,
+    int? totalPages,
+    int? totalResults,
+    bool? isLoadingMore,
+    AppError? paginationError,
+    bool clearPaginationError = false,
+  }) {
+    return _Results(
+      items: items ?? this.items,
+      currentPage: currentPage ?? this.currentPage,
+      totalPages: totalPages ?? this.totalPages,
+      totalResults: totalResults ?? this.totalResults,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      paginationError: clearPaginationError
+          ? null
+          : (paginationError ?? this.paginationError),
+    );
+  }
 }
 
 class _SearchError extends _SearchState {
@@ -92,18 +130,62 @@ class _SearchScreenState extends State<SearchScreen> {
     _debounce?.cancel();
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
-    if (trimmed == _lastQuery && (_state is _Loading || _state is _Results)) {
+    final alreadyHasResults =
+        _state is _Results && !(_state as _Results).isLoadingMore;
+    if (trimmed == _lastQuery && (_state is _Loading || alreadyHasResults)) {
       return;
     }
     _lastQuery = trimmed;
     setState(() => _state = const _Loading());
     try {
-      final results = await _service.search(trimmed);
+      final page = await _service.search(trimmed);
       if (!mounted) return;
-      setState(() => _state = _Results(results));
+      setState(
+        () => _state = _Results(
+          items: page.items,
+          currentPage: page.currentPage,
+          totalPages: page.totalPages,
+          totalResults: page.totalResults,
+        ),
+      );
     } on AppError catch (e) {
       if (!mounted) return;
       setState(() => _state = _SearchError(e));
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_state is! _Results) return;
+    final current = _state as _Results;
+    if (!current.hasMore || current.isLoadingMore) return;
+
+    setState(
+      () => _state = current.copyWith(
+        isLoadingMore: true,
+        clearPaginationError: true,
+      ),
+    );
+
+    try {
+      final page = await _service.search(
+        _lastQuery,
+        page: current.currentPage + 1,
+      );
+      if (!mounted) return;
+      setState(
+        () => _state = _Results(
+          items: [...current.items, ...page.items],
+          currentPage: page.currentPage,
+          totalPages: page.totalPages,
+          totalResults: page.totalResults,
+        ),
+      );
+    } on AppError catch (e) {
+      if (!mounted) return;
+      setState(
+        () =>
+            _state = current.copyWith(isLoadingMore: false, paginationError: e),
+      );
     }
   }
 
@@ -164,8 +246,20 @@ class _SearchScreenState extends State<SearchScreen> {
       _Idle() => const _EmptyState(),
       _Loading() => const _LoadingIndicator(),
       _Results(:final items) when items.isEmpty => const _NoResultsState(),
-      _Results(:final items) => _ResultsList(
+      _Results(
+        :final items,
+        :final totalResults,
+        :final isLoadingMore,
+        :final paginationError,
+        :final hasMore,
+      ) =>
+        _ResultsList(
           items: items,
+          totalResults: totalResults,
+          isLoadingMore: isLoadingMore,
+          paginationError: paginationError,
+          onLoadMore: hasMore && !isLoadingMore ? _loadMore : null,
+          onRetry: _loadMore,
           addToCollectionUseCase: widget.addToCollectionUseCase,
           addToWishlistUseCase: widget.addToWishlistUseCase,
           cacheRepository: widget.cacheRepository,
@@ -262,18 +356,16 @@ class _SearchErrorState extends StatelessWidget {
   final AppError error;
 
   String get _message => switch (error) {
-        NoTokenError() =>
-          'Connect a Discogs token in Settings to search.',
-        InvalidTokenError() =>
-          'Your Discogs token is not valid. Go to Settings to reconnect.',
-        RateLimitedError() =>
-          'Too many requests. Wait a moment and try again.',
-        NetworkError() =>
-          'No internet connection. Your collection and wishlist are still available offline.',
-        StorageError() => 'Could not load your saved token. Try again.',
-        DiscogsUnavailableError() => 'Could not reach Discogs. Try again.',
-        UnexpectedApiError() => 'Could not reach Discogs. Try again.',
-      };
+    NoTokenError() => 'Connect a Discogs token in Settings to search.',
+    InvalidTokenError() =>
+      'Your Discogs token is not valid. Go to Settings to reconnect.',
+    RateLimitedError() => 'Too many requests. Wait a moment and try again.',
+    NetworkError() =>
+      'No internet connection. Your collection and wishlist are still available offline.',
+    StorageError() => 'Could not load your saved token. Try again.',
+    DiscogsUnavailableError() => 'Could not reach Discogs. Try again.',
+    UnexpectedApiError() => 'Could not reach Discogs. Try again.',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -284,11 +376,7 @@ class _SearchErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 56,
-              color: theme.colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(
               _message,
@@ -304,38 +392,151 @@ class _SearchErrorState extends StatelessWidget {
   }
 }
 
-class _ResultsList extends StatelessWidget {
+// ---------------------------------------------------------------------------
+// Paginated results list
+// ---------------------------------------------------------------------------
+
+class _ResultsList extends StatefulWidget {
   const _ResultsList({
     required this.items,
+    required this.totalResults,
+    required this.isLoadingMore,
+    required this.paginationError,
+    required this.onLoadMore,
+    required this.onRetry,
     this.addToCollectionUseCase,
     this.addToWishlistUseCase,
     this.cacheRepository,
   });
 
   final List<ReleaseSearchResult> items;
+  final int totalResults;
+  final bool isLoadingMore;
+  final AppError? paginationError;
+  final VoidCallback? onLoadMore;
+  final VoidCallback? onRetry;
   final AddToCollectionUseCase? addToCollectionUseCase;
   final AddToWishlistUseCase? addToWishlistUseCase;
   final CachedReleaseMetadataRepository? cacheRepository;
 
   @override
+  State<_ResultsList> createState() => _ResultsListState();
+}
+
+class _ResultsListState extends State<_ResultsList> {
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    // If the first page fits entirely within the viewport, the scroll listener
+    // never fires. Check after the first frame so we can pre-fetch page 2.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _onScroll();
+    });
+  }
+
+  @override
+  void didUpdateWidget(_ResultsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // onLoadMore becoming available means we just finished loading — check
+    // again in case the new items still don't require scrolling.
+    if (oldWidget.onLoadMore == null && widget.onLoadMore != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _onScroll();
+      });
+    }
+  }
+
+  void _onScroll() {
+    if (widget.onLoadMore == null || widget.isLoadingMore) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      widget.onLoadMore!();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildFooter(BuildContext context) {
+    if (widget.isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: CircularProgressIndicator(key: Key('pagination-loading')),
+        ),
+      );
+    }
+    if (widget.paginationError != null) {
+      final isRateLimit = widget.paginationError is RateLimitedError;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: TextButton.icon(
+          key: const Key('pagination-retry'),
+          onPressed: widget.onRetry,
+          icon: const Icon(Icons.refresh),
+          label: Text(
+            isRateLimit
+                ? 'Rate limited — tap to retry'
+                : 'Failed to load more — tap to retry',
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      itemCount: items.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => ReleaseSearchResultCard(
-        result: items[index],
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => ReleaseDetailScreen(
-              releaseId: items[index].id,
-              addToCollectionUseCase: addToCollectionUseCase,
-              addToWishlistUseCase: addToWishlistUseCase,
-              cacheRepository: cacheRepository,
+    final theme = Theme.of(context);
+    final countText = '1–${widget.items.length} of ${widget.totalResults}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+          child: Text(
+            countText,
+            key: const Key('result-count'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ),
-      ),
+        Expanded(
+          child: ListView.separated(
+            controller: _scrollController,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            itemCount: widget.items.length + 1,
+            separatorBuilder: (_, index) => index < widget.items.length - 1
+                ? const SizedBox(height: 8)
+                : const SizedBox.shrink(),
+            itemBuilder: (context, index) {
+              if (index == widget.items.length) return _buildFooter(context);
+              final item = widget.items[index];
+              return ReleaseSearchResultCard(
+                result: item,
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ReleaseDetailScreen(
+                      releaseId: item.id,
+                      addToCollectionUseCase: widget.addToCollectionUseCase,
+                      addToWishlistUseCase: widget.addToWishlistUseCase,
+                      cacheRepository: widget.cacheRepository,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

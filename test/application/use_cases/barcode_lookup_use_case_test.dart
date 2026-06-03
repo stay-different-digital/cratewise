@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cratewise/application/use_cases/barcode_lookup_use_case.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
+import 'package:cratewise/domain/models/search_result_page.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
@@ -51,8 +52,15 @@ BarcodeLookupUseCase _makeUseCase({
   );
 }
 
-String _searchBody(List<Map<String, dynamic>> results) =>
-    jsonEncode({'results': results, 'pagination': {}});
+String _searchBody(
+  List<Map<String, dynamic>> results, {
+  int page = 1,
+  int pages = 1,
+  int items = 0,
+}) => jsonEncode({
+  'results': results,
+  'pagination': {'page': page, 'pages': pages, 'items': items, 'per_page': 50},
+});
 
 const _kindOfBlue = {
   'id': 249504,
@@ -73,7 +81,9 @@ void main() {
     test('returns EmptyInput when barcode is empty string', () async {
       final useCase = _makeUseCase(
         token: 'fake_token',
-        httpClient: MockClient((_) async => http.Response(_searchBody([]), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(_searchBody([]), 200),
+        ),
       );
       final result = await useCase.execute('');
       expect(result, isA<BarcodeLookupEmptyInput>());
@@ -82,7 +92,9 @@ void main() {
     test('returns EmptyInput when barcode is whitespace-only', () async {
       final useCase = _makeUseCase(
         token: 'fake_token',
-        httpClient: MockClient((_) async => http.Response(_searchBody([]), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(_searchBody([]), 200),
+        ),
       );
       final result = await useCase.execute('   ');
       expect(result, isA<BarcodeLookupEmptyInput>());
@@ -93,7 +105,9 @@ void main() {
     test('returns NoToken when no token stored', () async {
       final useCase = _makeUseCase(
         token: null,
-        httpClient: MockClient((_) async => http.Response(_searchBody([]), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(_searchBody([]), 200),
+        ),
       );
       final result = await useCase.execute('1234567890');
       expect(result, isA<BarcodeLookupNoToken>());
@@ -102,7 +116,9 @@ void main() {
     test('returns Error when storage throws StorageError', () async {
       final useCase = _makeUseCase(
         storageThrows: true,
-        httpClient: MockClient((_) async => http.Response(_searchBody([]), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(_searchBody([]), 200),
+        ),
       );
       final result = await useCase.execute('1234567890');
       expect(result, isA<BarcodeLookupError>());
@@ -115,34 +131,37 @@ void main() {
       final useCase = _makeUseCase(
         token: 'fake_token',
         httpClient: MockClient(
-          (_) async => http.Response(_searchBody([_kindOfBlue]), 200),
+          (_) async => http.Response(_searchBody([_kindOfBlue], items: 1), 200),
         ),
       );
       final result = await useCase.execute('5099706035422');
       expect(result, isA<BarcodeLookupSuccess>());
     });
 
-    test('Success results are ReleaseSearchResult instances', () async {
+    test('Success.page.items are ReleaseSearchResult instances', () async {
       final useCase = _makeUseCase(
         token: 'fake_token',
         httpClient: MockClient(
-          (_) async => http.Response(_searchBody([_kindOfBlue]), 200),
+          (_) async => http.Response(_searchBody([_kindOfBlue], items: 1), 200),
         ),
       );
-      final result = await useCase.execute('5099706035422') as BarcodeLookupSuccess;
-      expect(result.results, hasLength(1));
-      expect(result.results.first, isA<ReleaseSearchResult>());
+      final result =
+          await useCase.execute('5099706035422') as BarcodeLookupSuccess;
+      expect(result.page, isA<SearchResultPage>());
+      expect(result.page.items, hasLength(1));
+      expect(result.page.items.first, isA<ReleaseSearchResult>());
     });
 
     test('maps all result fields correctly', () async {
       final useCase = _makeUseCase(
         token: 'fake_token',
         httpClient: MockClient(
-          (_) async => http.Response(_searchBody([_kindOfBlue]), 200),
+          (_) async => http.Response(_searchBody([_kindOfBlue], items: 1), 200),
         ),
       );
-      final result = await useCase.execute('5099706035422') as BarcodeLookupSuccess;
-      final r = result.results.first;
+      final result =
+          await useCase.execute('5099706035422') as BarcodeLookupSuccess;
+      final r = result.page.items.first;
       expect(r.id, 249504);
       expect(r.artist, 'Miles Davis');
       expect(r.title, 'Kind Of Blue');
@@ -153,15 +172,37 @@ void main() {
       expect(r.coverUrl, 'https://i.discogs.com/cover.jpg');
     });
 
-    test('returns NoResults when API returns empty list', () async {
+    test('Success.page carries pagination info', () async {
       final useCase = _makeUseCase(
         token: 'fake_token',
-        httpClient:
-            MockClient((_) async => http.Response(_searchBody([]), 200)),
+        httpClient: MockClient(
+          (_) async => http.Response(
+            _searchBody([_kindOfBlue], page: 1, pages: 3, items: 120),
+            200,
+          ),
+        ),
       );
-      final result = await useCase.execute('0000000000000');
-      expect(result, isA<BarcodeLookupNoResults>());
+      final result =
+          await useCase.execute('5099706035422') as BarcodeLookupSuccess;
+      expect(result.page.currentPage, 1);
+      expect(result.page.totalPages, 3);
+      expect(result.page.totalResults, 120);
+      expect(result.page.hasMore, isTrue);
     });
+
+    test(
+      'returns NoResults when API returns empty results and totalResults==0',
+      () async {
+        final useCase = _makeUseCase(
+          token: 'fake_token',
+          httpClient: MockClient(
+            (_) async => http.Response(_searchBody([]), 200),
+          ),
+        );
+        final result = await useCase.execute('0000000000000');
+        expect(result, isA<BarcodeLookupNoResults>());
+      },
+    );
 
     test('uses trimmed barcode in API call', () async {
       late http.Request captured;
@@ -189,6 +230,22 @@ void main() {
       expect(captured.url.queryParameters.containsKey('barcode'), isTrue);
       expect(captured.url.queryParameters.containsKey('q'), isFalse);
     });
+
+    test('passes page number to API', () async {
+      late http.Request captured;
+      final useCase = _makeUseCase(
+        token: 'fake_token',
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(
+            _searchBody([_kindOfBlue], page: 2, pages: 3, items: 120),
+            200,
+          );
+        }),
+      );
+      await useCase.execute('1234567890', page: 2);
+      expect(captured.url.queryParameters['page'], '2');
+    });
   });
 
   group('BarcodeLookupUseCase.execute — error paths', () {
@@ -214,8 +271,9 @@ void main() {
     test('returns Error when network fails', () async {
       final useCase = _makeUseCase(
         token: 'fake_token',
-        httpClient:
-            MockClient((_) async => throw Exception('socket exception')),
+        httpClient: MockClient(
+          (_) async => throw Exception('socket exception'),
+        ),
       );
       final result = await useCase.execute('1234567890');
       expect(result, isA<BarcodeLookupError>());

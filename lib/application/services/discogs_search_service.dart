@@ -1,4 +1,5 @@
 import '../../domain/models/release_search_result.dart';
+import '../../domain/models/search_result_page.dart';
 import '../../domain/repositories/token_storage.dart';
 import '../../infrastructure/discogs/discogs_api_client.dart';
 import '../../infrastructure/discogs/dto/discogs_search_result.dart';
@@ -6,23 +7,28 @@ import '../../infrastructure/secure_storage/discogs_token_storage.dart';
 import '../../shared/errors/app_error.dart';
 
 class DiscogsSearchService {
-  DiscogsSearchService({
-    TokenStorage? storage,
-    DiscogsApiClient? apiClient,
-  })  : _storage = storage ?? DiscogsTokenStorage(),
-        _apiClient = apiClient ?? DiscogsApiClient();
+  DiscogsSearchService({TokenStorage? storage, DiscogsApiClient? apiClient})
+    : _storage = storage ?? DiscogsTokenStorage(),
+      _apiClient = apiClient ?? DiscogsApiClient();
 
   final TokenStorage _storage;
   final DiscogsApiClient _apiClient;
 
   /// Searches Discogs releases for [query] using the saved token.
+  ///
+  /// [page] is 1-based; defaults to the first page.
   /// Throws [NoTokenError] if no token is stored.
   /// Propagates [AppError] subtypes from the API client.
-  Future<List<ReleaseSearchResult>> search(String query) async {
+  Future<SearchResultPage> search(String query, {int page = 1}) async {
     final token = await _storage.loadToken();
     if (token == null) throw const NoTokenError();
-    final dtos = await _apiClient.searchReleases(query, token);
-    return dtos.map(_toResult).toList();
+    final dto = await _apiClient.searchReleases(query, token, page: page);
+    return SearchResultPage(
+      items: dto.results.map(_toResult).toList(),
+      currentPage: dto.currentPage,
+      totalPages: dto.totalPages,
+      totalResults: dto.totalResults,
+    );
   }
 
   ReleaseSearchResult _toResult(DiscogsSearchResultDto dto) {

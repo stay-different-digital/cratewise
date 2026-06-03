@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cratewise/application/services/discogs_search_service.dart';
 import 'package:cratewise/presentation/screens/release_detail_screen.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
+import 'package:cratewise/domain/models/search_result_page.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/presentation/screens/search_screen.dart';
@@ -29,71 +30,101 @@ class _FakeTokenStorage implements TokenStorage {
   Future<void> deleteCredentials() async {}
 }
 
+SearchResultPage _singlePage(List<ReleaseSearchResult> items) {
+  return SearchResultPage(
+    items: items,
+    currentPage: 1,
+    totalPages: 1,
+    totalResults: items.length,
+  );
+}
+
 class _FakeSearchService extends DiscogsSearchService {
   _FakeSearchService({this.results, this.throws})
-      : super(
-          storage: _FakeTokenStorage(),
-          apiClient: DiscogsApiClient(),
-        );
+    : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
 
   final List<ReleaseSearchResult>? results;
   final AppError? throws;
 
   @override
-  Future<List<ReleaseSearchResult>> search(String query) async {
+  Future<SearchResultPage> search(String query, {int page = 1}) async {
     if (throws != null) throw throws!;
-    return results ?? [];
+    return _singlePage(results ?? []);
   }
 }
 
 class _CountingSearchService extends DiscogsSearchService {
   _CountingSearchService({required this.results})
-      : super(
-          storage: _FakeTokenStorage(),
-          apiClient: DiscogsApiClient(),
-        );
+    : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
 
   final List<ReleaseSearchResult> results;
   int callCount = 0;
 
   @override
-  Future<List<ReleaseSearchResult>> search(String query) async {
+  Future<SearchResultPage> search(String query, {int page = 1}) async {
     callCount++;
-    return results;
+    return _singlePage(results);
   }
 }
 
 class _FlippingSearchService extends DiscogsSearchService {
   _FlippingSearchService({required this.firstError, required this.results})
-      : super(
-          storage: _FakeTokenStorage(),
-          apiClient: DiscogsApiClient(),
-        );
+    : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
 
   final AppError firstError;
   final List<ReleaseSearchResult> results;
   int _callCount = 0;
 
   @override
-  Future<List<ReleaseSearchResult>> search(String query) async {
+  Future<SearchResultPage> search(String query, {int page = 1}) async {
     _callCount++;
     if (_callCount == 1) throw firstError;
-    return results;
+    return _singlePage(results);
   }
 }
 
 class _DelayedSearchService extends DiscogsSearchService {
   _DelayedSearchService(this._completer)
-      : super(
-          storage: _FakeTokenStorage(),
-          apiClient: DiscogsApiClient(),
-        );
+    : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
 
-  final Completer<List<ReleaseSearchResult>> _completer;
+  final Completer<SearchResultPage> _completer;
 
   @override
-  Future<List<ReleaseSearchResult>> search(String query) =>
+  Future<SearchResultPage> search(String query, {int page = 1}) =>
       _completer.future;
+}
+
+/// Returns page 1 with [page1Items] (hasMore = true), then page 2 with
+/// [page2Items] on subsequent calls.
+class _PaginatingSearchService extends DiscogsSearchService {
+  _PaginatingSearchService({
+    required this.page1Items,
+    required this.page2Items,
+    this.page2Error,
+  }) : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
+
+  final List<ReleaseSearchResult> page1Items;
+  final List<ReleaseSearchResult> page2Items;
+  final AppError? page2Error;
+
+  @override
+  Future<SearchResultPage> search(String query, {int page = 1}) async {
+    if (page == 1) {
+      return SearchResultPage(
+        items: page1Items,
+        currentPage: 1,
+        totalPages: 2,
+        totalResults: page1Items.length + page2Items.length,
+      );
+    }
+    if (page2Error != null) throw page2Error!;
+    return SearchResultPage(
+      items: page2Items,
+      currentPage: 2,
+      totalPages: 2,
+      totalResults: page1Items.length + page2Items.length,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +157,16 @@ const _abbeyRoad = ReleaseSearchResult(
   year: 1969,
 );
 
+const _nevermind = ReleaseSearchResult(
+  id: 555555,
+  title: 'Nevermind',
+  artist: 'Nirvana',
+  format: 'Vinyl',
+  label: 'DGC',
+  country: 'US',
+  year: 1991,
+);
+
 Future<void> submitSearch(WidgetTester tester, String query) async {
   await tester.enterText(find.byType(TextField), query);
   await tester.testTextInput.receiveAction(TextInputAction.search);
@@ -142,10 +183,7 @@ void main() {
     testWidgets('shows heading and prompt when query is empty', (tester) async {
       await tester.pumpWidget(_buildScreen(_FakeSearchService()));
       expect(find.text('Search Discogs'), findsOneWidget);
-      expect(
-        find.textContaining('Type an artist'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Type an artist'), findsOneWidget);
     });
 
     testWidgets('shows search icons when query is empty', (tester) async {
@@ -154,13 +192,16 @@ void main() {
       expect(find.byIcon(Icons.search), findsWidgets);
     });
 
-    testWidgets('does not show result cards when query is empty', (tester) async {
+    testWidgets('does not show result cards when query is empty', (
+      tester,
+    ) async {
       await tester.pumpWidget(_buildScreen(_FakeSearchService()));
       expect(find.byType(ReleaseSearchResultCard), findsNothing);
     });
 
-    testWidgets('shows empty state with text entered but before submitting',
-        (tester) async {
+    testWidgets('shows empty state with text entered but before submitting', (
+      tester,
+    ) async {
       await tester.pumpWidget(_buildScreen(_FakeSearchService()));
       await tester.enterText(find.byType(TextField), 'miles');
       await tester.pump(const Duration(milliseconds: 100));
@@ -172,11 +213,11 @@ void main() {
   });
 
   group('SearchScreen search', () {
-    testWidgets('shows loading indicator while search is in progress',
-        (tester) async {
-      final completer = Completer<List<ReleaseSearchResult>>();
-      await tester.pumpWidget(
-          _buildScreen(_DelayedSearchService(completer)));
+    testWidgets('shows loading indicator while search is in progress', (
+      tester,
+    ) async {
+      final completer = Completer<SearchResultPage>();
+      await tester.pumpWidget(_buildScreen(_DelayedSearchService(completer)));
 
       await tester.enterText(find.byType(TextField), 'miles');
       await tester.testTextInput.receiveAction(TextInputAction.search);
@@ -184,13 +225,12 @@ void main() {
 
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-      completer.complete([_kindOfBlue]);
+      completer.complete(_singlePage([_kindOfBlue]));
       await tester.pumpAndSettle();
     });
 
     testWidgets('shows result cards after successful search', (tester) async {
-      final service =
-          _FakeSearchService(results: [_kindOfBlue, _abbeyRoad]);
+      final service = _FakeSearchService(results: [_kindOfBlue, _abbeyRoad]);
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'vinyl');
       expect(find.byType(ReleaseSearchResultCard), findsNWidgets(2));
@@ -238,16 +278,18 @@ void main() {
       expect(find.text('#249504'), findsOneWidget);
     });
 
-    testWidgets('result card shows cover placeholder icon when no coverUrl',
-        (tester) async {
+    testWidgets('result card shows cover placeholder icon when no coverUrl', (
+      tester,
+    ) async {
       final service = _FakeSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
       expect(find.byIcon(Icons.album), findsWidgets);
     });
 
-    testWidgets('shows no-results message when search returns empty',
-        (tester) async {
+    testWidgets('shows no-results message when search returns empty', (
+      tester,
+    ) async {
       final service = _FakeSearchService(results: []);
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'xyzzy');
@@ -255,9 +297,10 @@ void main() {
       expect(find.byType(ReleaseSearchResultCard), findsNothing);
     });
 
-    testWidgets('shows no-token message when no token is saved', (tester) async {
-      final service =
-          _FakeSearchService(throws: const NoTokenError());
+    testWidgets('shows no-token message when no token is saved', (
+      tester,
+    ) async {
+      final service = _FakeSearchService(throws: const NoTokenError());
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
       expect(
@@ -266,7 +309,9 @@ void main() {
       );
     });
 
-    testWidgets('shows network error message on network failure', (tester) async {
+    testWidgets('shows network error message on network failure', (
+      tester,
+    ) async {
       final service = _FakeSearchService(throws: const NetworkError());
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
@@ -281,12 +326,97 @@ void main() {
     });
 
     testWidgets('shows invalid token message on 401 error', (tester) async {
-      final service =
-          _FakeSearchService(throws: const InvalidTokenError());
+      final service = _FakeSearchService(throws: const InvalidTokenError());
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
       expect(find.textContaining('not valid'), findsOneWidget);
     });
+  });
+
+  group('SearchScreen result count', () {
+    testWidgets('shows result count when results are present', (tester) async {
+      // _singlePage: totalPages=1 → hasMore=false → no auto-pagination
+      final service = _FakeSearchService(results: [_kindOfBlue, _abbeyRoad]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'vinyl');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('result-count')), findsOneWidget);
+      expect(find.textContaining('1–2 of 2'), findsOneWidget);
+    });
+
+    testWidgets('count reflects all loaded items after auto-pagination',
+        (tester) async {
+      // The post-frame trigger auto-loads page 2 because page 1 fits in view.
+      final service = _PaginatingSearchService(
+        page1Items: [_kindOfBlue],
+        page2Items: [_abbeyRoad, _nevermind],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'vinyl');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('1–3 of 3'), findsOneWidget);
+    });
+  });
+
+  group('SearchScreen pagination', () {
+    testWidgets('shows pagination loading indicator when loading more',
+        (tester) async {
+      final completer = Completer<SearchResultPage>();
+
+      // Page 2 blocks; the post-frame trigger fires _loadMore automatically.
+      final service = _BlockingPaginationService(
+        page1Items: [_kindOfBlue],
+        page2Completer: completer,
+      );
+
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'vinyl');
+      // One more pump fires the post-frame callback → isLoadingMore=true
+      await tester.pump();
+
+      expect(find.byKey(const Key('pagination-loading')), findsOneWidget);
+
+      completer.complete(_singlePage([_abbeyRoad]));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('pagination-loading')), findsNothing);
+      expect(find.byType(ReleaseSearchResultCard), findsNWidgets(2));
+    });
+
+    testWidgets(
+      'shows inline retry button when page 2 returns rate-limit error',
+      (tester) async {
+        // The post-frame trigger fires _loadMore → RateLimitedError → retry shown.
+        final service = _BlockingPaginationService(
+          page1Items: [_kindOfBlue],
+          page2Error: const RateLimitedError(),
+        );
+
+        await tester.pumpWidget(_buildScreen(service));
+        await submitSearch(tester, 'vinyl');
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('pagination-retry')), findsOneWidget);
+        expect(find.textContaining('Rate limited'), findsOneWidget);
+        // Original page 1 results still visible
+        expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'page 1 results remain visible after rate-limit pagination error',
+      (tester) async {
+        final service = _BlockingPaginationService(
+          page1Items: [_kindOfBlue, _abbeyRoad],
+          page2Error: const RateLimitedError(),
+        );
+        await tester.pumpWidget(_buildScreen(service));
+        await submitSearch(tester, 'vinyl');
+        await tester.pumpAndSettle();
+
+        expect(find.byType(ReleaseSearchResultCard), findsNWidgets(2));
+        expect(find.byKey(const Key('pagination-retry')), findsOneWidget);
+      },
+    );
   });
 
   group('SearchScreen clear', () {
@@ -310,7 +440,9 @@ void main() {
       expect(find.byType(ReleaseSearchResultCard), findsNothing);
     });
 
-    testWidgets('tapping clear after results shows empty state', (tester) async {
+    testWidgets('tapping clear after results shows empty state', (
+      tester,
+    ) async {
       final service = _FakeSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
@@ -334,7 +466,9 @@ void main() {
   });
 
   group('SearchScreen debounce', () {
-    testWidgets('does not search before debounce delay elapses', (tester) async {
+    testWidgets('does not search before debounce delay elapses', (
+      tester,
+    ) async {
       final service = _FakeSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
 
@@ -374,7 +508,9 @@ void main() {
       // 400ms elapsed but the second timer is only at 200ms — no search yet
       expect(service.callCount, 0);
 
-      await tester.pump(const Duration(milliseconds: 200)); // second timer fires
+      await tester.pump(
+        const Duration(milliseconds: 200),
+      ); // second timer fires
       await tester.pumpAndSettle();
       expect(service.callCount, 1); // only one search, for the final query
     });
@@ -395,8 +531,9 @@ void main() {
   });
 
   group('SearchScreen dedup', () {
-    testWidgets('does not fire a duplicate request when results are showing',
-        (tester) async {
+    testWidgets('does not fire a duplicate request when results are showing', (
+      tester,
+    ) async {
       final service = _CountingSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
 
@@ -409,7 +546,9 @@ void main() {
       expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
     });
 
-    testWidgets('allows retry after an error for the same query', (tester) async {
+    testWidgets('allows retry after an error for the same query', (
+      tester,
+    ) async {
       final service = _FlippingSearchService(
         firstError: const NetworkError(),
         results: [_kindOfBlue],
@@ -424,8 +563,9 @@ void main() {
       expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
     });
 
-    testWidgets('fires again after clearing and retyping same query',
-        (tester) async {
+    testWidgets('fires again after clearing and retyping same query', (
+      tester,
+    ) async {
       final service = _CountingSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
 
@@ -441,8 +581,9 @@ void main() {
   });
 
   group('SearchScreen navigation', () {
-    testWidgets('tapping a result card opens release detail screen',
-        (tester) async {
+    testWidgets('tapping a result card opens release detail screen', (
+      tester,
+    ) async {
       final service = _FakeSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
@@ -457,8 +598,9 @@ void main() {
       expect(find.byKey(const Key('release-detail-loading')), findsOneWidget);
     });
 
-    testWidgets('back from detail screen returns to search results',
-        (tester) async {
+    testWidgets('back from detail screen returns to search results', (
+      tester,
+    ) async {
       final service = _FakeSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
@@ -477,12 +619,11 @@ void main() {
   });
 
   group('SearchScreen security', () {
-    testWidgets('token value is not visible in any rendered Text widget',
-        (tester) async {
+    testWidgets('token value is not visible in any rendered Text widget', (
+      tester,
+    ) async {
       const sensitiveToken = 'super_secret_token_xyz_123';
-      final service = _FakeSearchService(
-        throws: const InvalidTokenError(),
-      );
+      final service = _FakeSearchService(throws: const InvalidTokenError());
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
       final tokenInText = tester
@@ -491,4 +632,45 @@ void main() {
       expect(tokenInText, isEmpty);
     });
   });
+}
+
+// ---------------------------------------------------------------------------
+// Helper fakes for pagination tests
+// ---------------------------------------------------------------------------
+
+/// Page 1 returns [page1Items] immediately (totalPages = 2).
+/// Page 2 returns [page2Items] immediately, throws [page2Error] if set,
+/// or blocks on [page2Completer] if provided.
+class _BlockingPaginationService extends DiscogsSearchService {
+  _BlockingPaginationService({
+    required this.page1Items,
+    this.page2Items = const [],
+    this.page2Completer,
+    this.page2Error,
+  }) : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
+
+  final List<ReleaseSearchResult> page1Items;
+  final List<ReleaseSearchResult> page2Items;
+  final Completer<SearchResultPage>? page2Completer;
+  final AppError? page2Error;
+
+  @override
+  Future<SearchResultPage> search(String query, {int page = 1}) async {
+    if (page == 1) {
+      return SearchResultPage(
+        items: page1Items,
+        currentPage: 1,
+        totalPages: 2,
+        totalResults: page1Items.length + page2Items.length,
+      );
+    }
+    if (page2Error != null) throw page2Error!;
+    if (page2Completer != null) return page2Completer!.future;
+    return SearchResultPage(
+      items: page2Items,
+      currentPage: 2,
+      totalPages: 2,
+      totalResults: page1Items.length + page2Items.length,
+    );
+  }
 }

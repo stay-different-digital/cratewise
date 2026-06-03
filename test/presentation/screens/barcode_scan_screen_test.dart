@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cratewise/application/use_cases/barcode_lookup_use_case.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
+import 'package:cratewise/domain/models/search_result_page.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/presentation/screens/barcode_scan_screen.dart';
@@ -30,13 +31,13 @@ class _FakeStorage implements TokenStorage {
 
 class _FakeLookupUseCase extends BarcodeLookupUseCase {
   _FakeLookupUseCase(this._result)
-      : super(storage: _FakeStorage(), apiClient: DiscogsApiClient());
+    : super(storage: _FakeStorage(), apiClient: DiscogsApiClient());
 
   final BarcodeLookupResult _result;
   String? lastBarcode;
 
   @override
-  Future<BarcodeLookupResult> execute(String barcode) async {
+  Future<BarcodeLookupResult> execute(String barcode, {int page = 1}) async {
     lastBarcode = barcode;
     return _result;
   }
@@ -44,14 +45,15 @@ class _FakeLookupUseCase extends BarcodeLookupUseCase {
 
 class _BlockingLookupUseCase extends BarcodeLookupUseCase {
   _BlockingLookupUseCase()
-      : super(storage: _FakeStorage(), apiClient: DiscogsApiClient());
+    : super(storage: _FakeStorage(), apiClient: DiscogsApiClient());
 
   final _completer = Completer<BarcodeLookupResult>();
 
   void complete(BarcodeLookupResult result) => _completer.complete(result);
 
   @override
-  Future<BarcodeLookupResult> execute(String barcode) => _completer.future;
+  Future<BarcodeLookupResult> execute(String barcode, {int page = 1}) =>
+      _completer.future;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,6 +71,15 @@ const _kResult = ReleaseSearchResult(
   country: 'US',
   year: 1959,
 );
+
+final _kSinglePage = SearchResultPage(
+  items: const [_kResult],
+  currentPage: 1,
+  totalPages: 1,
+  totalResults: 1,
+);
+
+BarcodeLookupSuccess get _kSuccess => BarcodeLookupSuccess(_kSinglePage);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -116,8 +127,9 @@ void main() {
       expect(find.byType(ReleaseSearchResultCard), findsNothing);
     });
 
-    testWidgets('Scan barcode button tap does not change idle state',
-        (tester) async {
+    testWidgets('Scan barcode button tap does not change idle state', (
+      tester,
+    ) async {
       await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
       await tester.tap(find.byKey(const Key('scan-barcode-button')));
       await tester.pump();
@@ -126,8 +138,9 @@ void main() {
   });
 
   group('BarcodeScanScreen — loading state', () {
-    testWidgets('shows loading indicator while use case is pending',
-        (tester) async {
+    testWidgets('shows loading indicator while use case is pending', (
+      tester,
+    ) async {
       final useCase = _BlockingLookupUseCase();
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
@@ -144,9 +157,7 @@ void main() {
 
   group('BarcodeScanScreen — search results', () {
     testWidgets('shows result cards on success', (tester) async {
-      final useCase = _FakeLookupUseCase(
-        const BarcodeLookupSuccess([_kResult]),
-      );
+      final useCase = _FakeLookupUseCase(_kSuccess);
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
         find.byKey(const Key('barcode-input')),
@@ -158,9 +169,7 @@ void main() {
     });
 
     testWidgets('result card shows artist', (tester) async {
-      final useCase = _FakeLookupUseCase(
-        const BarcodeLookupSuccess([_kResult]),
-      );
+      final useCase = _FakeLookupUseCase(_kSuccess);
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
         find.byKey(const Key('barcode-input')),
@@ -172,9 +181,7 @@ void main() {
     });
 
     testWidgets('result card shows title', (tester) async {
-      final useCase = _FakeLookupUseCase(
-        const BarcodeLookupSuccess([_kResult]),
-      );
+      final useCase = _FakeLookupUseCase(_kSuccess);
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
         find.byKey(const Key('barcode-input')),
@@ -186,9 +193,7 @@ void main() {
     });
 
     testWidgets('result card shows Discogs release ID', (tester) async {
-      final useCase = _FakeLookupUseCase(
-        const BarcodeLookupSuccess([_kResult]),
-      );
+      final useCase = _FakeLookupUseCase(_kSuccess);
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
         find.byKey(const Key('barcode-input')),
@@ -200,9 +205,7 @@ void main() {
     });
 
     testWidgets('calls use case with trimmed barcode', (tester) async {
-      final useCase = _FakeLookupUseCase(
-        const BarcodeLookupSuccess([_kResult]),
-      );
+      final useCase = _FakeLookupUseCase(_kSuccess);
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
         find.byKey(const Key('barcode-input')),
@@ -214,9 +217,7 @@ void main() {
     });
 
     testWidgets('whitespace-only barcode keeps idle state', (tester) async {
-      final useCase = _FakeLookupUseCase(
-        const BarcodeLookupSuccess([_kResult]),
-      );
+      final useCase = _FakeLookupUseCase(_kSuccess);
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(find.byKey(const Key('barcode-input')), '   ');
       await tester.tap(find.byKey(const Key('search-barcode-button')));
@@ -226,9 +227,7 @@ void main() {
     });
 
     testWidgets('submitting keyboard triggers search', (tester) async {
-      final useCase = _FakeLookupUseCase(
-        const BarcodeLookupSuccess([_kResult]),
-      );
+      final useCase = _FakeLookupUseCase(_kSuccess);
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
         find.byKey(const Key('barcode-input')),

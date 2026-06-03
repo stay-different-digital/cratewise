@@ -6,6 +6,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../application/use_cases/barcode_lookup_use_case.dart';
 import '../../domain/models/release_search_result.dart';
+import '../../shared/errors/app_error.dart';
 import '../widgets/release_search_result_card.dart';
 
 // ---------------------------------------------------------------------------
@@ -24,10 +25,46 @@ class _Loading extends _ScanState {
   const _Loading();
 }
 
+/// Stable results state. Tracks accumulated items and pagination sub-states.
 class _HasResults extends _ScanState {
-  const _HasResults(this.results);
+  const _HasResults({
+    required this.items,
+    required this.currentPage,
+    required this.totalPages,
+    required this.totalResults,
+    this.isLoadingMore = false,
+    this.paginationError,
+  });
 
-  final List<ReleaseSearchResult> results;
+  final List<ReleaseSearchResult> items;
+  final int currentPage;
+  final int totalPages;
+  final int totalResults;
+  final bool isLoadingMore;
+  final AppError? paginationError;
+
+  bool get hasMore => currentPage < totalPages;
+
+  _HasResults copyWith({
+    List<ReleaseSearchResult>? items,
+    int? currentPage,
+    int? totalPages,
+    int? totalResults,
+    bool? isLoadingMore,
+    AppError? paginationError,
+    bool clearPaginationError = false,
+  }) {
+    return _HasResults(
+      items: items ?? this.items,
+      currentPage: currentPage ?? this.currentPage,
+      totalPages: totalPages ?? this.totalPages,
+      totalResults: totalResults ?? this.totalResults,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      paginationError: clearPaginationError
+          ? null
+          : (paginationError ?? this.paginationError),
+    );
+  }
 }
 
 class _NoResults extends _ScanState {
@@ -70,8 +107,10 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   late final BarcodeLookupUseCase _useCase;
   _ScanState _state = const _Idle();
   _ScanAreaState _scanAreaState = _ScanAreaState.placeholder;
+  String _lastBarcode = '';
 
-  static bool get _supportsScanner => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+  static bool get _supportsScanner =>
+      !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
   @override
   void initState() {
@@ -88,17 +127,60 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   Future<void> _onSearch() async {
     final barcode = _controller.text.trim();
     if (barcode.isEmpty) return;
+    _lastBarcode = barcode;
     setState(() => _state = const _Loading());
     final result = await _useCase.execute(barcode);
     if (!mounted) return;
     setState(() {
       _state = switch (result) {
-        BarcodeLookupSuccess(:final results) => _HasResults(results),
+        BarcodeLookupSuccess(:final page) => _HasResults(
+          items: page.items,
+          currentPage: page.currentPage,
+          totalPages: page.totalPages,
+          totalResults: page.totalResults,
+        ),
         BarcodeLookupNoResults() => const _NoResults(),
         BarcodeLookupEmptyInput() => const _Idle(),
         BarcodeLookupNoToken() => const _NoToken(),
         BarcodeLookupRateLimited() => const _RateLimited(),
         BarcodeLookupError() => const _LookupError(),
+      };
+    });
+  }
+
+  Future<void> _loadMore() async {
+    if (_state is! _HasResults) return;
+    final current = _state as _HasResults;
+    if (!current.hasMore || current.isLoadingMore) return;
+
+    setState(
+      () => _state = current.copyWith(
+        isLoadingMore: true,
+        clearPaginationError: true,
+      ),
+    );
+
+    final result = await _useCase.execute(
+      _lastBarcode,
+      page: current.currentPage + 1,
+    );
+    if (!mounted) return;
+    setState(() {
+      _state = switch (result) {
+        BarcodeLookupSuccess(:final page) => _HasResults(
+          items: [...current.items, ...page.items],
+          currentPage: page.currentPage,
+          totalPages: page.totalPages,
+          totalResults: page.totalResults,
+        ),
+        BarcodeLookupRateLimited() => current.copyWith(
+          isLoadingMore: false,
+          paginationError: const RateLimitedError(),
+        ),
+        _ => current.copyWith(
+          isLoadingMore: false,
+          paginationError: const NetworkError(),
+        ),
       };
     });
   }
@@ -126,7 +208,9 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
 
   Widget _buildScanArea({double height = 160}) => switch (_scanAreaState) {
     _ScanAreaState.placeholder => _ScanAreaPlaceholder(height: height),
-    _ScanAreaState.permissionDenied => _PermissionDeniedScanArea(height: height),
+    _ScanAreaState.permissionDenied => _PermissionDeniedScanArea(
+      height: height,
+    ),
     _ScanAreaState.scanning => _CameraScanArea(
       height: height,
       onDetect: _onBarcodeDetected,
@@ -137,7 +221,21 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   Widget _buildResults() => switch (_state) {
     _Idle() => const _EmptyState(),
     _Loading() => const _LoadingIndicator(),
-    _HasResults(:final results) => _ResultsList(results: results),
+    _HasResults(
+      :final items,
+      :final totalResults,
+      :final isLoadingMore,
+      :final paginationError,
+      :final hasMore,
+    ) =>
+      _ResultsList(
+        items: items,
+        totalResults: totalResults,
+        isLoadingMore: isLoadingMore,
+        paginationError: paginationError,
+        onLoadMore: hasMore && !isLoadingMore ? _loadMore : null,
+        onRetry: _loadMore,
+      ),
     _NoResults() => const _NoResultsState(),
     _NoToken() => const _NoTokenState(),
     _RateLimited() => const _RateLimitedState(),
@@ -262,8 +360,8 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     return LayoutBuilder(
       builder: (context, constraints) =>
           constraints.maxWidth >= _kWideBreakpoint
-              ? _buildWide(context)
-              : _buildNarrow(context),
+          ? _buildWide(context)
+          : _buildNarrow(context),
     );
   }
 }
@@ -287,10 +385,7 @@ class _ScanAreaPlaceholder extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant,
-          width: 1.5,
-        ),
+        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1.5),
       ),
       child: Center(
         child: Column(
@@ -330,10 +425,7 @@ class _PermissionDeniedScanArea extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant,
-          width: 1.5,
-        ),
+        border: Border.all(color: theme.colorScheme.outlineVariant, width: 1.5),
       ),
       child: Center(
         child: Padding(
@@ -436,10 +528,7 @@ class _EmptyState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text(
-              'Scan or enter a barcode',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('Scan or enter a barcode', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
               'Point your camera at a barcode or type one above.',
@@ -455,19 +544,124 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _ResultsList extends StatelessWidget {
-  const _ResultsList({required this.results});
+class _ResultsList extends StatefulWidget {
+  const _ResultsList({
+    required this.items,
+    required this.totalResults,
+    required this.isLoadingMore,
+    required this.paginationError,
+    required this.onLoadMore,
+    required this.onRetry,
+  });
 
-  final List<ReleaseSearchResult> results;
+  final List<ReleaseSearchResult> items;
+  final int totalResults;
+  final bool isLoadingMore;
+  final AppError? paginationError;
+  final VoidCallback? onLoadMore;
+  final VoidCallback? onRetry;
+
+  @override
+  State<_ResultsList> createState() => _ResultsListState();
+}
+
+class _ResultsListState extends State<_ResultsList> {
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _onScroll();
+    });
+  }
+
+  @override
+  void didUpdateWidget(_ResultsList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.onLoadMore == null && widget.onLoadMore != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _onScroll();
+      });
+    }
+  }
+
+  void _onScroll() {
+    if (widget.onLoadMore == null || widget.isLoadingMore) return;
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300) {
+      widget.onLoadMore!();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildFooter(BuildContext context) {
+    if (widget.isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 20),
+        child: Center(
+          child: CircularProgressIndicator(key: Key('pagination-loading')),
+        ),
+      );
+    }
+    if (widget.paginationError != null) {
+      final isRateLimit = widget.paginationError is RateLimitedError;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: TextButton.icon(
+          key: const Key('pagination-retry'),
+          onPressed: widget.onRetry,
+          icon: const Icon(Icons.refresh),
+          label: Text(
+            isRateLimit
+                ? 'Rate limited — tap to retry'
+                : 'Failed to load more — tap to retry',
+          ),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: results.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) =>
-          ReleaseSearchResultCard(result: results[index]),
+    final theme = Theme.of(context);
+    final countText = '1–${widget.items.length} of ${widget.totalResults}';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Text(
+            countText,
+            key: const Key('result-count'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.separated(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
+            itemCount: widget.items.length + 1,
+            separatorBuilder: (_, index) => index < widget.items.length - 1
+                ? const SizedBox(height: 8)
+                : const SizedBox.shrink(),
+            itemBuilder: (context, index) {
+              if (index == widget.items.length) return _buildFooter(context);
+              return ReleaseSearchResultCard(result: widget.items[index]);
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -589,11 +783,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 56,
-              color: theme.colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text('Something went wrong', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
