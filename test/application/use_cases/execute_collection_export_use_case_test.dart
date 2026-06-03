@@ -544,7 +544,7 @@ void main() {
         expect(results.whereType<FailedRow>(), hasLength(3));
       });
 
-      test('failed export does not update sync status', () async {
+      test('failed export updates sync status to failed', () async {
         final items = [makeItem(id: 'e-0', releaseId: 100)];
         final repo = _FakeCollectionRepository(items);
         final uc = makeUseCase(
@@ -553,7 +553,8 @@ void main() {
           apiClient: _apiClientReturning(401),
         );
         await uc.execute(makePreview(eligibleCount: 1));
-        expect(repo.updatedItems, isEmpty);
+        expect(repo.updatedItems, hasLength(1));
+        expect(repo.updatedItems.first.syncStatus, SyncStatus.failed);
       });
 
       test('network error on one item counts as failure', () async {

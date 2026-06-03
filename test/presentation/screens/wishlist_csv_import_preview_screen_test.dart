@@ -1,7 +1,14 @@
+import 'dart:async';
+
 import 'package:cratewise/application/use_cases/build_wishlist_csv_import_preview_use_case.dart';
+import 'package:cratewise/application/use_cases/execute_wishlist_csv_import_use_case.dart';
 import 'package:cratewise/domain/models/csv_wishlist_import_preview.dart';
+import 'package:cratewise/domain/models/import_export_job.dart';
 import 'package:cratewise/domain/models/import_export_row_result.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/domain/repositories/import_export_job_repository.dart';
+import 'package:cratewise/domain/repositories/import_export_row_result_repository.dart';
+import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/infrastructure/csv/csv_file_picker_service.dart';
 import 'package:cratewise/presentation/screens/wishlist_csv_import_preview_screen.dart';
 import 'package:flutter/material.dart';
@@ -25,11 +32,13 @@ Future<CsvPickedFile?> _cancelledPicker() async => null;
 Widget _buildSubject({
   Future<CsvPickedFile?> Function()? picker,
   BuildWishlistCsvImportPreviewUseCase? useCase,
+  ExecuteWishlistCsvImportUseCase? executeUseCase,
 }) =>
     MaterialApp(
       home: WishlistCsvImportPreviewScreen(
         onPickFile: picker,
         previewUseCase: useCase,
+        executeUseCase: executeUseCase,
       ),
     );
 
@@ -145,7 +154,8 @@ void main() {
         expect(find.text('Import 1 record'), findsOneWidget);
       });
 
-      testWidgets('confirm button is disabled', (tester) async {
+      testWidgets('confirm button is disabled without execute use case',
+          (tester) async {
         _setNarrowScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -392,6 +402,128 @@ void main() {
         expect(find.text('Validation errors'), findsOneWidget);
       });
     });
+
+    group('confirm and import', () {
+      testWidgets('confirm button is enabled with execute use case and valid rows',
+          (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () => _pickerWith('wishlist.csv', _kValidCsv),
+            executeUseCase: _FakeExecuteUseCase(
+              const ExecuteWishlistCsvImportCompleted(
+                jobId: 'j1',
+                imported: 1,
+                skipped: 0,
+                failed: 0,
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        final button = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Import 1 record'),
+        );
+        expect(button.onPressed, isNotNull);
+      });
+
+      testWidgets('tapping confirm enters importing state', (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () => _pickerWith('wishlist.csv', _kValidCsv),
+            executeUseCase: _HangingFakeExecuteUseCase(),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Import 1 record'));
+        await tester.pump();
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      });
+
+      testWidgets('shows done body after successful import', (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () => _pickerWith('wishlist.csv', _kValidCsv),
+            executeUseCase: _FakeExecuteUseCase(
+              const ExecuteWishlistCsvImportCompleted(
+                jobId: 'j1',
+                imported: 1,
+                skipped: 0,
+                failed: 0,
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Import 1 record'));
+        await tester.pumpAndSettle();
+        expect(find.text('Import complete'), findsOneWidget);
+      });
+
+      testWidgets('done body shows added to wishlist label', (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () => _pickerWith('wishlist.csv', _kValidCsv),
+            executeUseCase: _FakeExecuteUseCase(
+              const ExecuteWishlistCsvImportCompleted(
+                jobId: 'j1',
+                imported: 1,
+                skipped: 0,
+                failed: 0,
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Import 1 record'));
+        await tester.pumpAndSettle();
+        expect(find.text('Added to wishlist'), findsOneWidget);
+      });
+
+      testWidgets('done body shows Done button', (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () => _pickerWith('wishlist.csv', _kValidCsv),
+            executeUseCase: _FakeExecuteUseCase(
+              const ExecuteWishlistCsvImportCompleted(
+                jobId: 'j1',
+                imported: 1,
+                skipped: 0,
+                failed: 0,
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Import 1 record'));
+        await tester.pumpAndSettle();
+        expect(find.text('Done'), findsOneWidget);
+      });
+    });
   });
 }
 
@@ -410,4 +542,73 @@ class _FakeUseCase extends BuildWishlistCsvImportPreviewUseCase {
     required String content,
   }) =>
       _result;
+}
+
+class _NoOpWishlistRepo implements WishlistRepository {
+  @override
+  Future<void> add(WishlistItem item) async {}
+  @override
+  Future<bool> containsRelease(int id) async => false;
+  @override
+  Future<List<WishlistItem>> getAll() async => [];
+  @override
+  Future<WishlistItem?> getById(String id) async => null;
+  @override
+  Future<void> update(WishlistItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _NoOpJobRepo implements ImportExportJobRepository {
+  @override
+  Future<void> add(ImportExportJob job) async {}
+  @override
+  Future<void> update(ImportExportJob job) async {}
+  @override
+  Future<ImportExportJob?> getById(String id) async => null;
+  @override
+  Future<List<ImportExportJob>> getRecent({int limit = 20}) async => [];
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _NoOpRowResultRepo implements ImportExportRowResultRepository {
+  @override
+  Future<void> addResult(String jobId, ImportExportRowResult result) async {}
+  @override
+  Future<List<ImportExportRowResult>> getResults(String jobId) async => [];
+  @override
+  Future<void> removeAllForJob(String jobId) async {}
+}
+
+class _FakeExecuteUseCase extends ExecuteWishlistCsvImportUseCase {
+  _FakeExecuteUseCase(this._result)
+      : super(
+          wishlistRepository: _NoOpWishlistRepo(),
+          jobRepository: _NoOpJobRepo(),
+          rowResultRepository: _NoOpRowResultRepo(),
+        );
+
+  final ExecuteWishlistCsvImportResult _result;
+
+  @override
+  Future<ExecuteWishlistCsvImportResult> execute(
+    CsvWishlistImportPreview preview,
+  ) async =>
+      _result;
+}
+
+class _HangingFakeExecuteUseCase extends ExecuteWishlistCsvImportUseCase {
+  _HangingFakeExecuteUseCase()
+      : super(
+          wishlistRepository: _NoOpWishlistRepo(),
+          jobRepository: _NoOpJobRepo(),
+          rowResultRepository: _NoOpRowResultRepo(),
+        );
+
+  @override
+  Future<ExecuteWishlistCsvImportResult> execute(
+    CsvWishlistImportPreview preview,
+  ) =>
+      Completer<ExecuteWishlistCsvImportResult>().future;
 }

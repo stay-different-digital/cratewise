@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../application/use_cases/build_collection_csv_import_preview_use_case.dart';
+import '../../application/use_cases/execute_collection_csv_import_use_case.dart';
 import '../../domain/models/csv_collection_import_preview.dart';
 import '../../domain/models/import_export_row_result.dart';
 import '../../infrastructure/csv/csv_file_picker_service.dart';
+import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_import_export_job_repository.dart';
+import '../../infrastructure/local_database/local_import_export_row_result_repository.dart';
 
 const _kWideBreakpoint = 700.0;
 const _kMaxVisibleErrors = 5;
@@ -35,6 +40,15 @@ class _Error extends _State {
   const _Error();
 }
 
+class _Importing extends _State {
+  const _Importing();
+}
+
+class _Done extends _State {
+  const _Done(this.result);
+  final ExecuteCollectionCsvImportCompleted result;
+}
+
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
@@ -43,11 +57,15 @@ class CollectionCsvImportPreviewScreen extends StatefulWidget {
   const CollectionCsvImportPreviewScreen({
     super.key,
     this.previewUseCase,
+    this.executeUseCase,
     this.onPickFile,
   });
 
   /// Injected only for testing. Production code passes null.
   final BuildCollectionCsvImportPreviewUseCase? previewUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final ExecuteCollectionCsvImportUseCase? executeUseCase;
 
   /// Injected only for testing. Production code passes null.
   final Future<CsvPickedFile?> Function()? onPickFile;
@@ -59,16 +77,38 @@ class CollectionCsvImportPreviewScreen extends StatefulWidget {
 
 class _CollectionCsvImportPreviewScreenState
     extends State<CollectionCsvImportPreviewScreen> {
-  late final BuildCollectionCsvImportPreviewUseCase _useCase;
+  late final BuildCollectionCsvImportPreviewUseCase _previewUseCase;
   late final Future<CsvPickedFile?> Function() _picker;
+  ExecuteCollectionCsvImportUseCase? _executeUseCase;
+  AppDatabase? _ownedDb;
   _State _state = const _Idle();
 
   @override
   void initState() {
     super.initState();
-    _useCase =
+    _previewUseCase =
         widget.previewUseCase ?? const BuildCollectionCsvImportPreviewUseCase();
     _picker = widget.onPickFile ?? const CsvFilePickerService().pick;
+
+    if (widget.onPickFile != null || widget.previewUseCase != null) {
+      // Test mode — use injected execute use case (may be null = confirm disabled)
+      _executeUseCase = widget.executeUseCase;
+    } else {
+      // Production mode — create execute use case from local DB
+      final db = AppDatabase(openAppDatabase());
+      _ownedDb = db;
+      _executeUseCase = ExecuteCollectionCsvImportUseCase(
+        collectionRepository: LocalCollectionRepository(db),
+        jobRepository: LocalImportExportJobRepository(db),
+        rowResultRepository: LocalImportExportRowResultRepository(db),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _ownedDb?.close();
+    super.dispose();
   }
 
   Future<void> _pickAndPreview() async {
@@ -77,7 +117,7 @@ class _CollectionCsvImportPreviewScreenState
     if (file == null) return;
 
     final result =
-        _useCase.execute(filename: file.filename, content: file.content);
+        _previewUseCase.execute(filename: file.filename, content: file.content);
     setState(() {
       _state = switch (result) {
         CollectionCsvImportPreviewReady(:final filename, :final preview) =>
@@ -87,6 +127,26 @@ class _CollectionCsvImportPreviewScreenState
         CollectionCsvImportPreviewError() => const _Error(),
       };
     });
+  }
+
+  Future<void> _executeImport(CsvCollectionImportPreview preview) async {
+    final uc = _executeUseCase;
+    if (uc == null) return;
+    setState(() => _state = const _Importing());
+    final result = await uc.execute(preview);
+    if (!mounted) return;
+    switch (result) {
+      case ExecuteCollectionCsvImportCompleted():
+        setState(() => _state = _Done(result));
+      case ExecuteCollectionCsvImportFailed():
+        setState(() => _state = _Preview(
+              filename: '',
+              preview: preview,
+            ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result.safeMessage)),
+        );
+    }
   }
 
   void _reset() => setState(() => _state = const _Idle());
@@ -101,12 +161,20 @@ class _CollectionCsvImportPreviewScreenState
             filename: filename,
             preview: preview,
             onPickDifferentFile: _reset,
+            onConfirm: _executeUseCase != null && preview.validCount > 0
+                ? () => _executeImport(preview)
+                : null,
           ),
         _ParseFailed(:final reason) => _ParseFailedBody(
             reason: reason,
             onTryAgain: _reset,
           ),
         _Error() => _ErrorBody(onTryAgain: _reset),
+        _Importing() => const _ImportingBody(),
+        _Done(:final result) => _DoneBody(
+            result: result,
+            onDone: () => Navigator.of(context).pop(),
+          ),
       },
     );
   }
@@ -171,11 +239,13 @@ class _PreviewBody extends StatelessWidget {
     required this.filename,
     required this.preview,
     required this.onPickDifferentFile,
+    this.onConfirm,
   });
 
   final String filename;
   final CsvCollectionImportPreview preview;
   final VoidCallback onPickDifferentFile;
+  final VoidCallback? onConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -225,7 +295,7 @@ class _PreviewBody extends StatelessWidget {
               ),
             ),
             _PickDifferentFileBar(onPickDifferentFile: onPickDifferentFile),
-            _ConfirmBar(validCount: preview.validCount),
+            _ConfirmBar(validCount: preview.validCount, onConfirm: onConfirm),
           ],
         );
       },
@@ -416,9 +486,10 @@ class _PickDifferentFileBar extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ConfirmBar extends StatelessWidget {
-  const _ConfirmBar({required this.validCount});
+  const _ConfirmBar({required this.validCount, this.onConfirm});
 
   final int validCount;
+  final VoidCallback? onConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -430,10 +501,121 @@ class _ConfirmBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
         child: FilledButton(
-          onPressed: null,
+          onPressed: validCount > 0 ? onConfirm : null,
           child: Text(label),
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Importing body
+// ---------------------------------------------------------------------------
+
+class _ImportingBody extends StatelessWidget {
+  const _ImportingBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(
+            'Saving your collection…',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Done body
+// ---------------------------------------------------------------------------
+
+class _DoneBody extends StatelessWidget {
+  const _DoneBody({required this.result, required this.onDone});
+
+  final ExecuteCollectionCsvImportCompleted result;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 64,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Import complete',
+                  style: theme.textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _CountRow(
+                          label: 'Added to collection',
+                          value: '${result.imported}',
+                          color: result.imported > 0
+                              ? theme.colorScheme.primary
+                              : null,
+                        ),
+                        if (result.skipped > 0) ...[
+                          const SizedBox(height: 10),
+                          _CountRow(
+                            label: 'Skipped',
+                            value: '${result.skipped}',
+                          ),
+                        ],
+                        if (result.failed > 0) ...[
+                          const SizedBox(height: 10),
+                          _CountRow(
+                            label: 'Failed',
+                            value: '${result.failed}',
+                            color: theme.colorScheme.error,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            child: FilledButton(
+              onPressed: onDone,
+              child: const Text('Done'),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

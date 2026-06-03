@@ -156,7 +156,7 @@ class ExecuteCollectionImportUseCase {
       mediaCondition: RecordCondition.notSet,
       sleeveCondition: RecordCondition.notSet,
       tags: const [],
-      syncStatus: SyncStatus.localOnly,
+      syncStatus: SyncStatus.synced,
       createdAt: now,
       updatedAt: now,
     );

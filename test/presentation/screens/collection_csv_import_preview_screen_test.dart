@@ -1,7 +1,14 @@
+import 'dart:async';
+
 import 'package:cratewise/application/use_cases/build_collection_csv_import_preview_use_case.dart';
+import 'package:cratewise/application/use_cases/execute_collection_csv_import_use_case.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/csv_collection_import_preview.dart';
+import 'package:cratewise/domain/models/import_export_job.dart';
 import 'package:cratewise/domain/models/import_export_row_result.dart';
+import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/import_export_job_repository.dart';
+import 'package:cratewise/domain/repositories/import_export_row_result_repository.dart';
 import 'package:cratewise/infrastructure/csv/csv_file_picker_service.dart';
 import 'package:cratewise/presentation/screens/collection_csv_import_preview_screen.dart';
 import 'package:flutter/material.dart';
@@ -25,11 +32,13 @@ Future<CsvPickedFile?> _cancelledPicker() async => null;
 Widget _buildSubject({
   Future<CsvPickedFile?> Function()? picker,
   BuildCollectionCsvImportPreviewUseCase? useCase,
+  ExecuteCollectionCsvImportUseCase? executeUseCase,
 }) =>
     MaterialApp(
       home: CollectionCsvImportPreviewScreen(
         onPickFile: picker,
         previewUseCase: useCase,
+        executeUseCase: executeUseCase,
       ),
     );
 
@@ -146,7 +155,8 @@ void main() {
         expect(find.text('Import 1 record'), findsOneWidget);
       });
 
-      testWidgets('confirm button is disabled', (tester) async {
+      testWidgets('confirm button is disabled without execute use case',
+          (tester) async {
         _setNarrowScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -511,6 +521,169 @@ void main() {
         expect(find.text('Import 2 records'), findsOneWidget);
       });
     });
+    group('confirm and import', () {
+      testWidgets('confirm button is enabled with execute use case and valid rows',
+          (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () => _pickerWith('collection.csv', _kValidCsv),
+            executeUseCase: _FakeExecuteUseCase(
+              ExecuteCollectionCsvImportCompleted(
+                jobId: 'j1',
+                imported: 1,
+                skipped: 0,
+                failed: 0,
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        final button = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Import 1 record'),
+        );
+        expect(button.onPressed, isNotNull);
+      });
+
+      testWidgets('confirm button is disabled when validCount is 0 even with execute use case',
+          (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final preview = CsvCollectionImportPreview(
+          validRows: const [],
+          skippedRows: const [],
+          failedRows: [
+            const FailedRow(rowIndex: 0, safeErrorMessage: 'Missing artist'),
+          ],
+        );
+        final fakePreviewUseCase = _FakeUseCase(
+          CollectionCsvImportPreviewReady(
+            filename: 'bad.csv',
+            preview: preview,
+          ),
+        );
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () async =>
+                const CsvPickedFile(filename: 'bad.csv', content: ''),
+            useCase: fakePreviewUseCase,
+            executeUseCase: _FakeExecuteUseCase(
+              const ExecuteCollectionCsvImportCompleted(
+                jobId: 'j1',
+                imported: 0,
+                skipped: 0,
+                failed: 0,
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        final button = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Nothing to import'),
+        );
+        expect(button.onPressed, isNull);
+      });
+
+      testWidgets('tapping confirm enters importing state', (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () => _pickerWith('collection.csv', _kValidCsv),
+            executeUseCase: _HangingFakeExecuteUseCase(),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Import 1 record'));
+        await tester.pump();
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      });
+
+      testWidgets('shows done body after successful import', (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () => _pickerWith('collection.csv', _kValidCsv),
+            executeUseCase: _FakeExecuteUseCase(
+              const ExecuteCollectionCsvImportCompleted(
+                jobId: 'j1',
+                imported: 1,
+                skipped: 0,
+                failed: 0,
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Import 1 record'));
+        await tester.pumpAndSettle();
+        expect(find.text('Import complete'), findsOneWidget);
+      });
+
+      testWidgets('done body shows added to collection count', (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () => _pickerWith('collection.csv', _kValidCsv),
+            executeUseCase: _FakeExecuteUseCase(
+              const ExecuteCollectionCsvImportCompleted(
+                jobId: 'j1',
+                imported: 1,
+                skipped: 0,
+                failed: 0,
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Import 1 record'));
+        await tester.pumpAndSettle();
+        expect(find.text('Added to collection'), findsOneWidget);
+      });
+
+      testWidgets('done body shows Done button', (tester) async {
+        _setNarrowScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          _buildSubject(
+            picker: () => _pickerWith('collection.csv', _kValidCsv),
+            executeUseCase: _FakeExecuteUseCase(
+              const ExecuteCollectionCsvImportCompleted(
+                jobId: 'j1',
+                imported: 1,
+                skipped: 0,
+                failed: 0,
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('Choose file'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Import 1 record'));
+        await tester.pumpAndSettle();
+        expect(find.text('Done'), findsOneWidget);
+      });
+    });
   });
 }
 
@@ -529,4 +702,73 @@ class _FakeUseCase extends BuildCollectionCsvImportPreviewUseCase {
     required String content,
   }) =>
       _result;
+}
+
+class _NoOpCollectionRepo implements CollectionRepository {
+  @override
+  Future<void> add(CollectionItem item) async {}
+  @override
+  Future<bool> containsRelease(int id) async => false;
+  @override
+  Future<List<CollectionItem>> getAll() async => [];
+  @override
+  Future<CollectionItem?> getById(String id) async => null;
+  @override
+  Future<void> update(CollectionItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _NoOpJobRepo implements ImportExportJobRepository {
+  @override
+  Future<void> add(ImportExportJob job) async {}
+  @override
+  Future<void> update(ImportExportJob job) async {}
+  @override
+  Future<ImportExportJob?> getById(String id) async => null;
+  @override
+  Future<List<ImportExportJob>> getRecent({int limit = 20}) async => [];
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _NoOpRowResultRepo implements ImportExportRowResultRepository {
+  @override
+  Future<void> addResult(String jobId, ImportExportRowResult result) async {}
+  @override
+  Future<List<ImportExportRowResult>> getResults(String jobId) async => [];
+  @override
+  Future<void> removeAllForJob(String jobId) async {}
+}
+
+class _FakeExecuteUseCase extends ExecuteCollectionCsvImportUseCase {
+  _FakeExecuteUseCase(this._result)
+      : super(
+          collectionRepository: _NoOpCollectionRepo(),
+          jobRepository: _NoOpJobRepo(),
+          rowResultRepository: _NoOpRowResultRepo(),
+        );
+
+  final ExecuteCollectionCsvImportResult _result;
+
+  @override
+  Future<ExecuteCollectionCsvImportResult> execute(
+    CsvCollectionImportPreview preview,
+  ) async =>
+      _result;
+}
+
+class _HangingFakeExecuteUseCase extends ExecuteCollectionCsvImportUseCase {
+  _HangingFakeExecuteUseCase()
+      : super(
+          collectionRepository: _NoOpCollectionRepo(),
+          jobRepository: _NoOpJobRepo(),
+          rowResultRepository: _NoOpRowResultRepo(),
+        );
+
+  @override
+  Future<ExecuteCollectionCsvImportResult> execute(
+    CsvCollectionImportPreview preview,
+  ) =>
+      Completer<ExecuteCollectionCsvImportResult>().future;
 }

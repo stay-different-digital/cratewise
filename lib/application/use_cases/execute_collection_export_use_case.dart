@@ -138,6 +138,18 @@ class ExecuteCollectionExportUseCase {
               );
               exported++;
             } catch (_) {
+              try {
+                final failedItem =
+                    await _collectionRepository.getById(row.itemId);
+                if (failedItem != null) {
+                  await _collectionRepository.update(
+                    failedItem.copyWith(
+                      syncStatus: SyncStatus.failed,
+                      updatedAt: DateTime.now(),
+                    ),
+                  );
+                }
+              } catch (_) {}
               await _rowResultRepository.addResult(
                 jobId,
                 FailedRow(

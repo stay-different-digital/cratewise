@@ -4,7 +4,9 @@
       "Bash(find ~/.gradle -name \"*.gradle\" -newer /Users/fred/Projects/Crate/pubspec.yaml 2>/dev/null | grep -i \"file_picker\" | head -5)",
       "Read(//Users/fred/.gradle/**)",
       "Bash(find ~/.pub-cache -path \"*file_picker*/android*\" -name \"*.gradle\" 2>/dev/null | head -3)",
-      "Read(//Users/fred/.pub-cache/**)"
+      "Read(//Users/fred/.pub-cache/**)",
+      "Bash(cat)",
+      "Bash(dart /tmp/test_dart2.dart)"
     ]
   }
 }

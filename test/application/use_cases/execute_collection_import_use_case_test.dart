@@ -4,6 +4,7 @@ import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/import_export_job.dart';
 import 'package:cratewise/domain/models/import_export_row_result.dart';
 import 'package:cratewise/domain/models/import_export_status.dart';
+import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/import_export_job_repository.dart';
 import 'package:cratewise/domain/repositories/import_export_row_result_repository.dart';
@@ -249,6 +250,26 @@ void main() {
           ),
         );
         expect(collectionRepo.added.first.discogsReleaseId, 42);
+      });
+
+      test('imported item has syncStatus synced', () async {
+        final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+            makeUseCase();
+        await useCase.execute(
+          CollectionImportPreview(
+            rows: [
+              const NewCollectionRow(
+                releaseId: 42,
+                title: 'T',
+                artist: 'A',
+              ),
+            ],
+          ),
+        );
+        expect(
+          collectionRepo.added.first.syncStatus,
+          SyncStatus.synced,
+        );
       });
 
       test('imported count matches new rows', () async {
