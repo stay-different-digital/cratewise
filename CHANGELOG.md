@@ -7,6 +7,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7A: HTTP request timeout (US-01)] — 2026-06-03
+
+### Added
+- `DiscogsApiClient` now enforces a 15-second request timeout on all outgoing HTTP calls (GET and POST)
+- Timeout fires `TimeoutException` which is caught at the same level as `SocketException` and mapped to `NetworkError` — no loading state can remain active indefinitely
+- `requestTimeout` constructor parameter (injectable) so tests can supply a short duration without real delay
+- 2 new unit tests: timeout on GET (`fetchIdentity`) and timeout on POST (`addToCollection`)
+
+### Security
+- `TimeoutException` carries no token value; the resulting `NetworkError` is the same opaque typed error surfaced for all other network failures
+
+---
+
 ## [Unreleased — Phase 6Q: Wishlist export preview UI] — 2026-06-03
 
 ### Added

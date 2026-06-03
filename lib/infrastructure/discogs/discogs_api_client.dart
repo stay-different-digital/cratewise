@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -13,12 +14,15 @@ import 'dto/discogs_wantlist_item.dart';
 const _baseUrl = 'https://api.discogs.com';
 const _userAgent = 'Cratewise/1.0';
 const _accept = 'application/vnd.discogs.v2.discogs+json';
+const _kDefaultTimeout = Duration(seconds: 15);
 
 class DiscogsApiClient {
-  DiscogsApiClient({http.Client? httpClient})
-      : _client = httpClient ?? http.Client();
+  DiscogsApiClient({http.Client? httpClient, Duration? requestTimeout})
+      : _client = httpClient ?? http.Client(),
+        _timeout = requestTimeout ?? _kDefaultTimeout;
 
   final http.Client _client;
+  final Duration _timeout;
 
   /// Fetches the authenticated user's Discogs identity.
   /// Suitable for checking whether a token is valid.
@@ -152,7 +156,11 @@ class DiscogsApiClient {
     }
     final http.Response response;
     try {
-      response = await _client.get(uri, headers: _headers(token));
+      response = await _client
+          .get(uri, headers: _headers(token))
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw const NetworkError();
     } on SocketException {
       throw const NetworkError();
     } on Exception {
@@ -166,7 +174,11 @@ class DiscogsApiClient {
     final uri = Uri.parse('$_baseUrl$path');
     final http.Response response;
     try {
-      response = await _client.post(uri, headers: _headers(token));
+      response = await _client
+          .post(uri, headers: _headers(token))
+          .timeout(_timeout);
+    } on TimeoutException {
+      throw const NetworkError();
     } on SocketException {
       throw const NetworkError();
     } on Exception {

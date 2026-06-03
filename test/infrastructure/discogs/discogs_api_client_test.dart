@@ -77,6 +77,20 @@ void main() {
       );
     });
 
+    test('throws NetworkError when request times out', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async {
+          await Future.delayed(const Duration(milliseconds: 200));
+          return http.Response('', 200);
+        }),
+        requestTimeout: const Duration(milliseconds: 50),
+      );
+      expect(
+        () => client.fetchIdentity(_fakeToken),
+        throwsA(isA<NetworkError>()),
+      );
+    });
+
     test('request includes correct User-Agent and Authorization headers',
         () async {
       late http.Request capturedRequest;
@@ -1393,6 +1407,20 @@ void main() {
     test('throws NetworkError when request throws', () async {
       final client = DiscogsApiClient(
         httpClient: MockClient((_) async => throw Exception('no internet')),
+      );
+      expect(
+        () => client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<NetworkError>()),
+      );
+    });
+
+    test('throws NetworkError when request times out', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async {
+          await Future.delayed(const Duration(milliseconds: 200));
+          return http.Response('', 201);
+        }),
+        requestTimeout: const Duration(milliseconds: 50),
       );
       expect(
         () => client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken),
