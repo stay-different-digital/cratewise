@@ -1,24 +1,42 @@
 import 'dart:developer' as dev;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../domain/repositories/token_storage.dart';
 import '../../shared/errors/app_error.dart';
+import 'secure_key_value_store.dart';
 
-class DiscogsTokenStorage implements TokenStorage {
-  DiscogsTokenStorage({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
-
-  static const _tokenKey = 'discogs_token';
-  static const _usernameKey = 'discogs_username';
+class _FlutterSecureStorageAdapter implements SecureKeyValueStore {
+  _FlutterSecureStorageAdapter() : _storage = const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
 
   @override
+  Future<String?> read({required String key}) => _storage.read(key: key);
+
+  @override
+  Future<void> write({required String key, required String value}) =>
+      _storage.write(key: key, value: value);
+
+  @override
+  Future<void> delete({required String key}) => _storage.delete(key: key);
+}
+
+class DiscogsTokenStorage implements TokenStorage {
+  DiscogsTokenStorage({SecureKeyValueStore? store})
+      : _store = store ?? _FlutterSecureStorageAdapter();
+
+  static const _tokenKey = 'discogs_token';
+  static const _usernameKey = 'discogs_username';
+
+  final SecureKeyValueStore _store;
+
+  @override
   Future<String?> loadToken() async {
     try {
-      return await _storage.read(key: _tokenKey);
+      return await _store.read(key: _tokenKey);
     } catch (_) {
       throw const StorageError();
     }
@@ -27,7 +45,7 @@ class DiscogsTokenStorage implements TokenStorage {
   @override
   Future<String?> loadUsername() async {
     try {
-      return await _storage.read(key: _usernameKey);
+      return await _store.read(key: _usernameKey);
     } catch (_) {
       throw const StorageError();
     }
@@ -39,12 +57,23 @@ class DiscogsTokenStorage implements TokenStorage {
     required String username,
   }) async {
     try {
-      await _storage.write(key: _tokenKey, value: token);
-      await _storage.write(key: _usernameKey, value: username);
+      await _store.write(key: _tokenKey, value: token);
+      await _store.write(key: _usernameKey, value: username);
+      // Read back both values to guard against the iOS Keychain silent-write
+      // bug where write() returns without error but nothing is stored.
+      // Fix for the specific Keychain error code is pending device reproduction.
+      final savedToken = await _store.read(key: _tokenKey);
+      final savedUsername = await _store.read(key: _usernameKey);
+      if (savedToken != token || savedUsername != username) {
+        throw const StorageError();
+      }
+    } on StorageError {
+      rethrow;
     } catch (e) {
       if (kDebugMode) {
+        final detail = e is PlatformException ? ' code=${e.code}' : '';
         dev.log(
-          'Keychain write failed: ${e.runtimeType}: $e',
+          'Keychain write failed: ${e.runtimeType}$detail',
           name: 'DiscogsTokenStorage',
           level: 900,
         );
@@ -56,8 +85,8 @@ class DiscogsTokenStorage implements TokenStorage {
   @override
   Future<void> deleteCredentials() async {
     try {
-      await _storage.delete(key: _tokenKey);
-      await _storage.delete(key: _usernameKey);
+      await _store.delete(key: _tokenKey);
+      await _store.delete(key: _usernameKey);
     } catch (_) {
       throw const StorageError();
     }

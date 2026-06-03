@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7B: iOS token save reliability (US-02)] — 2026-06-03
+
+### Added
+- `SecureKeyValueStore` abstract interface in `lib/infrastructure/secure_storage/` — thin wrapper contract over the platform's secure storage; makes `DiscogsTokenStorage` fully unit-testable without platform channels
+- `DiscogsTokenStorage` now performs a read-back verification after both `write` calls in `saveCredentials`; if either read returns a mismatched value the method throws `StorageError` — catches the iOS Keychain silent-write bug where `write()` returns without error but the value is never persisted
+- `DiscogsTokenStorage` constructor now accepts `SecureKeyValueStore?` (replaces the old `FlutterSecureStorage?` parameter); production code defaults to `_FlutterSecureStorageAdapter` (private wrapper)
+- 13 new unit tests in `test/infrastructure/secure_storage/discogs_token_storage_test.dart` covering: normal save + read-back, write throws, silent write failure, read-back throws, load returns null when absent, load throws on error, delete clears values, delete throws, `StorageError` never contains the token value
+
+### Changed
+- Debug log in `saveCredentials` no longer includes raw `$e.toString()`; now logs `runtimeType` and, when the exception is a `PlatformException`, the platform error `code` only — prevents any theoretical token leakage through exception messages
+
+### Security
+- `StorageError` is a const sealed class with no payload; it is structurally impossible for the thrown error to carry the token value
+
+---
+
 ## [Unreleased — Phase 7A: HTTP request timeout (US-01)] — 2026-06-03
 
 ### Added
