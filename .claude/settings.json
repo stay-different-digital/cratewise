@@ -6,7 +6,9 @@
       "Bash(find ~/.pub-cache -path \"*file_picker*/android*\" -name \"*.gradle\" 2>/dev/null | head -3)",
       "Read(//Users/fred/.pub-cache/**)",
       "Bash(cat)",
-      "Bash(dart /tmp/test_dart2.dart)"
+      "Bash(dart /tmp/test_dart2.dart)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3)"
     ]
   }
 }
