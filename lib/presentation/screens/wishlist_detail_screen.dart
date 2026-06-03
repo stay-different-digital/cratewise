@@ -83,12 +83,27 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     try {
       final item = await _repository.getById(widget.itemId);
       if (!mounted) return;
-      setState(
-        () => _state = item != null ? _Loaded(item) : const _NotFound(),
-      );
+      setState(() => _state = item != null ? _Loaded(item) : const _NotFound());
     } catch (_) {
       if (!mounted) return;
       setState(() => _state = const _DetailError());
+    }
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final item = await _repository.getById(widget.itemId);
+      if (!mounted) return;
+      setState(() => _state = item != null ? _Loaded(item) : const _NotFound());
+    } catch (_) {
+      if (!mounted) return;
+      if (_state is _Loaded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not refresh. Please try again.')),
+        );
+      } else {
+        setState(() => _state = const _DetailError());
+      }
     }
   }
 
@@ -107,9 +122,9 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     );
     if (updated != null && mounted) {
       setState(() => _state = _Loaded(updated));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Priority saved.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Priority saved.')));
     }
   }
 
@@ -123,9 +138,9 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     );
     if (updated != null && mounted) {
       setState(() => _state = _Loaded(updated));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Target price saved.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Target price saved.')));
     }
   }
 
@@ -138,9 +153,9 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     );
     if (updated != null && mounted) {
       setState(() => _state = _Loaded(updated));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Notes saved.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Notes saved.')));
     }
   }
 
@@ -235,13 +250,16 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
       ),
       body: switch (state) {
         _Loading() => const Center(
-            key: Key('wishlist-detail-loading'),
-            child: CircularProgressIndicator(),
-          ),
-        _Loaded(:final item) => _WishlistDetailBody(
+          key: Key('wishlist-detail-loading'),
+          child: CircularProgressIndicator(),
+        ),
+        _Loaded(:final item) => RefreshIndicator(
+          onRefresh: _refresh,
+          child: _WishlistDetailBody(
             item: item,
             thumbnailRepository: _thumbnailRepository,
           ),
+        ),
         _NotFound() => const _NotFoundBody(),
         _DetailError() => _ErrorBody(onRetry: _load),
       },
@@ -388,8 +406,10 @@ class _EditTargetPriceSheetState extends State<_EditTargetPriceSheet> {
     if (text.isNotEmpty) {
       parsed = double.tryParse(text);
       if (parsed == null) {
-        setState(() =>
-            _validationError = 'Enter a valid price, or leave empty to clear.');
+        setState(
+          () => _validationError =
+              'Enter a valid price, or leave empty to clear.',
+        );
         return;
       }
     }
@@ -437,8 +457,7 @@ class _EditTargetPriceSheetState extends State<_EditTargetPriceSheet> {
             key: const Key('target-price-text-field'),
             controller: _controller,
             enabled: !_saving,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
               labelText: 'Target price',
               hintText: 'Leave empty to clear',
@@ -597,13 +616,14 @@ class _WishlistDetailBody extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) =>
           constraints.maxWidth >= _kWideBreakpoint
-              ? _buildWide(context)
-              : _buildNarrow(context),
+          ? _buildWide(context)
+          : _buildNarrow(context),
     );
   }
 
   Widget _buildNarrow(BuildContext context) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -628,6 +648,7 @@ class _WishlistDetailBody extends StatelessWidget {
 
   Widget _buildWide(BuildContext context) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(24),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -667,30 +688,26 @@ class _WishlistDetailBody extends StatelessWidget {
 }
 
 Widget _coverPlaceholder(ThemeData theme) => Semantics(
-      label: 'No cover image',
-      child: ColoredBox(
-        color: theme.colorScheme.surfaceContainerHighest,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.album,
-                size: 72,
-                color: theme.colorScheme.outlineVariant,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'No cover',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.outlineVariant,
-                ),
-              ),
-            ],
+  label: 'No cover image',
+  child: ColoredBox(
+    color: theme.colorScheme.surfaceContainerHighest,
+    child: Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.album, size: 72, color: theme.colorScheme.outlineVariant),
+          const SizedBox(height: 8),
+          Text(
+            'No cover',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.outlineVariant,
+            ),
           ),
-        ),
+        ],
       ),
-    );
+    ),
+  ),
+);
 
 // ---------------------------------------------------------------------------
 // Sub-widgets
@@ -719,7 +736,7 @@ class _CachedCoverImageState extends State<_CachedCoverImage> {
     super.initState();
     _pathFuture =
         widget.thumbnailRepository?.getLocalPath(widget.releaseId) ??
-            Future<String?>.value();
+        Future<String?>.value();
   }
 
   @override
@@ -931,11 +948,7 @@ class _ErrorBody extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 56,
-              color: theme.colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(
               'Could not load this item from device storage.',
@@ -1004,9 +1017,7 @@ class _InfoRow extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            child: Text(value, style: theme.textTheme.bodyMedium),
-          ),
+          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
         ],
       ),
     );
@@ -1025,10 +1036,10 @@ String _formatDate(DateTime dt) {
 }
 
 String _syncStatusLabel(SyncStatus status) => switch (status) {
-      SyncStatus.localOnly => 'Saved on this device',
-      SyncStatus.synced => 'Synced',
-      SyncStatus.pending => 'Waiting to sync',
-      SyncStatus.failed => 'Sync failed',
-      SyncStatus.conflict => 'Needs review',
-      SyncStatus.offline => 'Offline',
-    };
+  SyncStatus.localOnly => 'Saved on this device',
+  SyncStatus.synced => 'Synced',
+  SyncStatus.pending => 'Waiting to sync',
+  SyncStatus.failed => 'Sync failed',
+  SyncStatus.conflict => 'Needs review',
+  SyncStatus.offline => 'Offline',
+};

@@ -7,6 +7,24 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7D: Pull-to-refresh on key screens (US-04)] — 2026-06-03
+
+### Added
+- Pull-to-refresh (`RefreshIndicator`) on **Release Detail**, **Collection list**, **Collection Detail**, **Wishlist list**, and **Wishlist Detail** screens — all 5 acceptance criteria screens covered
+- `_refresh()` method on each screen's state: reloads data without first clearing the existing content (distinct from `_retry()` / `_load()` which reset to a loading state)
+- Release Detail: refresh failure while content is already loaded shows a `SnackBar` (friendly message — rate-limited, no internet, or generic) and keeps the loaded detail visible; refresh failure from an error state transitions to `_DetailError` as normal
+- Collection list / Wishlist list: refresh failure while items are already visible shows a `SnackBar` and keeps the existing list; failure from a non-loaded state transitions to the full error state
+- Collection Detail / Wishlist Detail: same snackbar-and-preserve pattern as the list screens
+- `AlwaysScrollableScrollPhysics` added to all inner `ListView`, `GridView`, and `SingleChildScrollView` widgets that underlie the `RefreshIndicator`, ensuring pull-to-refresh triggers even when the content is shorter than the viewport
+- 27 new tests across 5 test files (5–6 per screen): `RefreshIndicator` present on loaded state; PTR triggers the data-fetch again; PTR updates displayed content; PTR error keeps existing content visible; no `RefreshIndicator` in error/loading states
+
+### Notes
+- Snackbar messages for Release Detail refresh errors: `RateLimitedError` → "Too many requests — wait a moment and try again."; `NetworkError` → "No internet connection."; other → "Could not refresh. Try again."
+- PTR is intentionally absent from the loading state (initial fetch in progress) and the error state (user should use the Retry button); it is also absent from the empty-collection/empty-wishlist state (no content to preserve)
+- Test pattern: PTR tests call `tester.widget<RefreshIndicator>(...).onRefresh()` directly (bypasses the animation to avoid `pumpAndSettle` hanging on `AlwaysScrollableScrollPhysics` overscroll)
+
+---
+
 ## [Unreleased — Phase 7C: Search results pagination (US-03)] — 2026-06-03
 
 ### Added

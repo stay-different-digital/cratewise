@@ -81,6 +81,56 @@ class _FlippingCollectionRepository implements CollectionRepository {
   Future<void> remove(String id) async {}
 }
 
+class _UpdatingCollectionRepository implements CollectionRepository {
+  _UpdatingCollectionRepository({required this.first, required this.second});
+
+  final List<CollectionItem> first;
+  final List<CollectionItem> second;
+  int _calls = 0;
+
+  @override
+  Future<List<CollectionItem>> getAll() async {
+    _calls++;
+    return _calls == 1 ? List.of(first) : List.of(second);
+  }
+
+  @override
+  Future<CollectionItem?> getById(String id) async => null;
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => false;
+  @override
+  Future<void> add(CollectionItem item) async {}
+  @override
+  Future<void> update(CollectionItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _SuccessThenErrorCollectionRepository implements CollectionRepository {
+  _SuccessThenErrorCollectionRepository({required this.successItems});
+
+  final List<CollectionItem> successItems;
+  int _calls = 0;
+
+  @override
+  Future<List<CollectionItem>> getAll() async {
+    _calls++;
+    if (_calls == 1) return List.of(successItems);
+    throw Exception('refresh error');
+  }
+
+  @override
+  Future<CollectionItem?> getById(String id) async => null;
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => false;
+  @override
+  Future<void> add(CollectionItem item) async {}
+  @override
+  Future<void> update(CollectionItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -94,23 +144,22 @@ CollectionItem _makeItem({
   int? year,
   String? format,
   String? storageLocation,
-}) =>
-    CollectionItem(
-      id: id,
-      discogsReleaseId: releaseId,
-      artist: artist,
-      title: title,
-      label: label,
-      format: format,
-      year: year,
-      coverUrl: null,
-      mediaCondition: RecordCondition.veryGood,
-      sleeveCondition: RecordCondition.veryGood,
-      tags: const [],
-      storageLocation: storageLocation,
-      createdAt: DateTime(2026, 1, 1),
-      updatedAt: DateTime(2026, 1, 1),
-    );
+}) => CollectionItem(
+  id: id,
+  discogsReleaseId: releaseId,
+  artist: artist,
+  title: title,
+  label: label,
+  format: format,
+  year: year,
+  coverUrl: null,
+  mediaCondition: RecordCondition.veryGood,
+  sleeveCondition: RecordCondition.veryGood,
+  tags: const [],
+  storageLocation: storageLocation,
+  createdAt: DateTime(2026, 1, 1),
+  updatedAt: DateTime(2026, 1, 1),
+);
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
@@ -136,16 +185,18 @@ void main() {
   });
 
   group('CollectionScreen — empty state', () {
-    testWidgets('shows empty state title when collection is empty',
-        (tester) async {
+    testWidgets('shows empty state title when collection is empty', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository();
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.text('Your collection is empty'), findsOneWidget);
     });
 
-    testWidgets('shows offline capability in empty state body text',
-        (tester) async {
+    testWidgets('shows offline capability in empty state body text', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository();
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -159,8 +210,9 @@ void main() {
       expect(find.textContaining('Search tab'), findsOneWidget);
     });
 
-    testWidgets('does not show any CollectionItemCard when empty',
-        (tester) async {
+    testWidgets('does not show any CollectionItemCard when empty', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository();
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -171,7 +223,11 @@ void main() {
   group('CollectionScreen — list', () {
     testWidgets('shows one card per item', (tester) async {
       final repo = _FakeCollectionRepository(
-        items: [_makeItem(id: 'a'), _makeItem(id: 'b'), _makeItem(id: 'c')],
+        items: [
+          _makeItem(id: 'a'),
+          _makeItem(id: 'b'),
+          _makeItem(id: 'c'),
+        ],
       );
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -179,8 +235,9 @@ void main() {
     });
 
     testWidgets('shows artist name', (tester) async {
-      final repo =
-          _FakeCollectionRepository(items: [_makeItem(artist: 'Miles Davis')]);
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(artist: 'Miles Davis')],
+      );
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.text('Miles Davis'), findsOneWidget);
@@ -188,14 +245,16 @@ void main() {
 
     testWidgets('shows title', (tester) async {
       final repo = _FakeCollectionRepository(
-          items: [_makeItem(title: 'Kind of Blue')]);
+        items: [_makeItem(title: 'Kind of Blue')],
+      );
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.text('Kind of Blue'), findsOneWidget);
     });
 
-    testWidgets('does not show empty state text when items present',
-        (tester) async {
+    testWidgets('does not show empty state text when items present', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(items: [_makeItem()]);
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -330,41 +389,49 @@ void main() {
 
   group('CollectionItemCard — optional fields', () {
     testWidgets('shows label when provided', (tester) async {
-      final repo =
-          _FakeCollectionRepository(items: [_makeItem(label: 'Blue Note')]);
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(label: 'Blue Note')],
+      );
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.textContaining('Blue Note'), findsOneWidget);
     });
 
     testWidgets('shows year when provided', (tester) async {
-      final repo =
-          _FakeCollectionRepository(items: [_makeItem(year: 1959)]);
+      final repo = _FakeCollectionRepository(items: [_makeItem(year: 1959)]);
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.textContaining('1959'), findsOneWidget);
     });
 
     testWidgets('shows format when provided', (tester) async {
-      final repo =
-          _FakeCollectionRepository(items: [_makeItem(format: 'LP')]);
+      final repo = _FakeCollectionRepository(items: [_makeItem(format: 'LP')]);
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.textContaining('LP'), findsOneWidget);
     });
 
     testWidgets('shows storage location when provided', (tester) async {
-      final repo =
-          _FakeCollectionRepository(items: [_makeItem(storageLocation: 'Shelf B3')]);
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(storageLocation: 'Shelf B3')],
+      );
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.textContaining('Shelf B3'), findsOneWidget);
     });
 
-    testWidgets('renders without error when all optional fields are null',
-        (tester) async {
+    testWidgets('renders without error when all optional fields are null', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(
-        items: [_makeItem(label: null, year: null, format: null, storageLocation: null)],
+        items: [
+          _makeItem(
+            label: null,
+            year: null,
+            format: null,
+            storageLocation: null,
+          ),
+        ],
       );
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -392,8 +459,9 @@ void main() {
       expect(find.text('Offline Artist'), findsOneWidget);
     });
 
-    testWidgets('loads without network (simulated by local-only fake repo)',
-        (tester) async {
+    testWidgets('loads without network (simulated by local-only fake repo)', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(
         items: [_makeItem(artist: 'No Network Artist')],
       );
@@ -432,7 +500,10 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       final repo = _FakeCollectionRepository(
-        items: [_makeItem(id: 'a'), _makeItem(id: 'b')],
+        items: [
+          _makeItem(id: 'a'),
+          _makeItem(id: 'b'),
+        ],
       );
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -465,7 +536,10 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       final repo = _FakeCollectionRepository(
-        items: [_makeItem(id: 'a'), _makeItem(id: 'b')],
+        items: [
+          _makeItem(id: 'a'),
+          _makeItem(id: 'b'),
+        ],
       );
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -473,8 +547,9 @@ void main() {
       expect(find.byType(CollectionItemCard), findsNWidgets(2));
     });
 
-    testWidgets('tapping card in GridView opens CollectionDetailScreen',
-        (tester) async {
+    testWidgets('tapping card in GridView opens CollectionDetailScreen', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1024, 768);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -490,8 +565,9 @@ void main() {
       expect(find.byType(CollectionDetailScreen), findsOneWidget);
     });
 
-    testWidgets('empty state shows without GridView at wide breakpoint',
-        (tester) async {
+    testWidgets('empty state shows without GridView at wide breakpoint', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1024, 768);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -505,29 +581,100 @@ void main() {
     });
   });
 
-  group('CollectionScreen — thumbnail cache', () {
-    testWidgets('renders list without crash when thumbnailRepository returns null',
-        (tester) async {
+  group('CollectionScreen — pull-to-refresh', () {
+    testWidgets('RefreshIndicator present on loaded list', (tester) async {
       final repo = _FakeCollectionRepository(items: [_makeItem()]);
-      final thumbRepo = _FakeThumbnailRepository();
-      await tester.pumpWidget(
-        _wrap(CollectionScreen(repository: repo, thumbnailRepository: thumbRepo)),
-      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
-      expect(find.byType(CollectionItemCard), findsOneWidget);
+      expect(find.byType(RefreshIndicator), findsOneWidget);
     });
 
-    testWidgets(
-        'renders list without crash when thumbnailRepository returns a cached path',
-        (tester) async {
+    testWidgets('PTR triggers getAll again', (tester) async {
       final repo = _FakeCollectionRepository(items: [_makeItem()]);
-      final thumbRepo = _FakeThumbnailRepository(pathToReturn: '/fake/thumb.jpg');
-      await tester.pumpWidget(
-        _wrap(CollectionScreen(repository: repo, thumbnailRepository: thumbRepo)),
-      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
-      expect(find.byType(CollectionItemCard), findsOneWidget);
-      expect(find.byKey(const Key('collection-cached-cover')), findsOneWidget);
+      expect(repo.loadCallCount, 1);
+
+      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester.pump();
+
+      expect(repo.loadCallCount, 2);
     });
+
+    testWidgets('PTR updates list with new items', (tester) async {
+      final repo = _UpdatingCollectionRepository(
+        first: [_makeItem(id: 'a', artist: 'Before')],
+        second: [_makeItem(id: 'b', artist: 'After')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.text('Before'), findsOneWidget);
+
+      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester.pump();
+
+      expect(find.text('After'), findsOneWidget);
+      expect(find.text('Before'), findsNothing);
+    });
+
+    testWidgets('PTR error keeps existing items visible', (tester) async {
+      final repo = _SuccessThenErrorCollectionRepository(
+        successItems: [_makeItem(artist: 'Kept Artist')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.text('Kept Artist'), findsOneWidget);
+
+      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester.pump();
+
+      // Items still visible after error
+      expect(find.text('Kept Artist'), findsOneWidget);
+    });
+
+    testWidgets('no RefreshIndicator in error state', (tester) async {
+      final repo = _FakeCollectionRepository(throwsOnLoad: true);
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(find.byType(RefreshIndicator), findsNothing);
+    });
+  });
+
+  group('CollectionScreen — thumbnail cache', () {
+    testWidgets(
+      'renders list without crash when thumbnailRepository returns null',
+      (tester) async {
+        final repo = _FakeCollectionRepository(items: [_makeItem()]);
+        final thumbRepo = _FakeThumbnailRepository();
+        await tester.pumpWidget(
+          _wrap(
+            CollectionScreen(repository: repo, thumbnailRepository: thumbRepo),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(CollectionItemCard), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'renders list without crash when thumbnailRepository returns a cached path',
+      (tester) async {
+        final repo = _FakeCollectionRepository(items: [_makeItem()]);
+        final thumbRepo = _FakeThumbnailRepository(
+          pathToReturn: '/fake/thumb.jpg',
+        );
+        await tester.pumpWidget(
+          _wrap(
+            CollectionScreen(repository: repo, thumbnailRepository: thumbRepo),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(CollectionItemCard), findsOneWidget);
+        expect(
+          find.byKey(const Key('collection-cached-cover')),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

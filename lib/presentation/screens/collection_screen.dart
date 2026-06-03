@@ -35,7 +35,11 @@ class _CollectionError extends _CollectionState {
 // ---------------------------------------------------------------------------
 
 class CollectionScreen extends StatefulWidget {
-  const CollectionScreen({super.key, this.repository, this.thumbnailRepository});
+  const CollectionScreen({
+    super.key,
+    this.repository,
+    this.thumbnailRepository,
+  });
 
   final CollectionRepository? repository;
   final ThumbnailRepository? thumbnailRepository;
@@ -75,6 +79,27 @@ class _CollectionScreenState extends State<CollectionScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _state = const _CollectionError());
+    }
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final items = await _repository.getAll();
+      if (!mounted) return;
+      setState(() => _state = _Loaded(items));
+    } catch (_) {
+      if (!mounted) return;
+      if (_state is _Loaded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not refresh your collection. Please try again.',
+            ),
+          ),
+        );
+      } else {
+        setState(() => _state = const _CollectionError());
+      }
     }
   }
 
@@ -136,11 +161,14 @@ class _CollectionScreenState extends State<CollectionScreen> {
     return switch (_state) {
       _Loading() => const Center(child: CircularProgressIndicator()),
       _Loaded(:final items) when items.isEmpty => const _EmptyCollectionState(),
-      _Loaded(:final items) => _CollectionList(
+      _Loaded(:final items) => RefreshIndicator(
+        onRefresh: _refresh,
+        child: _CollectionList(
           items: items,
           repository: _repository,
           thumbnailRepository: _thumbnailRepository,
         ),
+      ),
       _CollectionError() => _CollectionErrorState(onRetry: _load),
     };
   }
@@ -169,13 +197,14 @@ class _CollectionList extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) =>
           constraints.maxWidth >= _kWideBreakpoint
-              ? _buildGrid(context)
-              : _buildList(context),
+          ? _buildGrid(context)
+          : _buildList(context),
     );
   }
 
   Widget _buildList(BuildContext context) {
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
@@ -189,6 +218,7 @@ class _CollectionList extends StatelessWidget {
 
   Widget _buildGrid(BuildContext context) {
     return GridView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -277,11 +307,7 @@ class _CollectionErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 56,
-              color: theme.colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(
               'Could not load your collection from device storage.',
@@ -291,10 +317,7 @@ class _CollectionErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton.tonal(
-              onPressed: onRetry,
-              child: const Text('Retry'),
-            ),
+            FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
           ],
         ),
       ),

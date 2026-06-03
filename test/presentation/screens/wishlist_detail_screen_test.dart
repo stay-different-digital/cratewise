@@ -96,6 +96,56 @@ class _FlippingWishlistRepository implements WishlistRepository {
   Future<void> remove(String id) async {}
 }
 
+class _UpdatingWishlistRepository implements WishlistRepository {
+  _UpdatingWishlistRepository({required this.first, required this.second});
+
+  final WishlistItem first;
+  final WishlistItem second;
+  int _calls = 0;
+
+  @override
+  Future<WishlistItem?> getById(String id) async {
+    _calls++;
+    return _calls == 1 ? first : second;
+  }
+
+  @override
+  Future<List<WishlistItem>> getAll() async => [];
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => false;
+  @override
+  Future<void> add(WishlistItem item) async {}
+  @override
+  Future<void> update(WishlistItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _SuccessThenErrorWishlistRepository implements WishlistRepository {
+  _SuccessThenErrorWishlistRepository({required this.successItem});
+
+  final WishlistItem successItem;
+  int _calls = 0;
+
+  @override
+  Future<WishlistItem?> getById(String id) async {
+    _calls++;
+    if (_calls == 1) return successItem;
+    throw Exception('refresh error');
+  }
+
+  @override
+  Future<List<WishlistItem>> getAll() async => [];
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => false;
+  @override
+  Future<void> add(WishlistItem item) async {}
+  @override
+  Future<void> update(WishlistItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -115,24 +165,23 @@ WishlistItem _makeItem({
   String? notes,
   DateTime? createdAt,
   DateTime? updatedAt,
-}) =>
-    WishlistItem(
-      id: id,
-      discogsReleaseId: 1,
-      artist: artist,
-      title: title,
-      priority: priority,
-      label: label,
-      catno: catno,
-      format: format,
-      country: country,
-      year: year,
-      coverUrl: coverUrl,
-      targetPrice: targetPrice,
-      notes: notes,
-      createdAt: createdAt ?? DateTime(2026, 1, 15),
-      updatedAt: updatedAt ?? DateTime(2026, 3, 20),
-    );
+}) => WishlistItem(
+  id: id,
+  discogsReleaseId: 1,
+  artist: artist,
+  title: title,
+  priority: priority,
+  label: label,
+  catno: catno,
+  format: format,
+  country: country,
+  year: year,
+  coverUrl: coverUrl,
+  targetPrice: targetPrice,
+  notes: notes,
+  createdAt: createdAt ?? DateTime(2026, 1, 15),
+  updatedAt: updatedAt ?? DateTime(2026, 3, 20),
+);
 
 Widget _wrap(Widget child) => MaterialApp(home: child);
 
@@ -161,8 +210,9 @@ void main() {
   });
 
   group('WishlistDetailScreen — not found state', () {
-    testWidgets('shows not found message when item does not exist',
-        (tester) async {
+    testWidgets('shows not found message when item does not exist', (
+      tester,
+    ) async {
       final repo = _FakeWishlistRepository();
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'missing', repository: repo)),
@@ -171,8 +221,9 @@ void main() {
       expect(find.text('Item not found.'), findsOneWidget);
     });
 
-    testWidgets('not found state does not show loading indicator',
-        (tester) async {
+    testWidgets('not found state does not show loading indicator', (
+      tester,
+    ) async {
       final repo = _FakeWishlistRepository();
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'missing', repository: repo)),
@@ -234,7 +285,9 @@ void main() {
 
   group('WishlistDetailScreen — loaded header', () {
     testWidgets('app bar shows item title when loaded', (tester) async {
-      final repo = _FakeWishlistRepository(item: _makeItem(title: 'Wish Title'));
+      final repo = _FakeWishlistRepository(
+        item: _makeItem(title: 'Wish Title'),
+      );
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
@@ -243,8 +296,9 @@ void main() {
     });
 
     testWidgets('shows artist name', (tester) async {
-      final repo =
-          _FakeWishlistRepository(item: _makeItem(artist: 'Wish Artist'));
+      final repo = _FakeWishlistRepository(
+        item: _makeItem(artist: 'Wish Artist'),
+      );
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
@@ -266,8 +320,7 @@ void main() {
     });
 
     testWidgets('shows formatted target price when set', (tester) async {
-      final repo =
-          _FakeWishlistRepository(item: _makeItem(targetPrice: 29.99));
+      final repo = _FakeWishlistRepository(item: _makeItem(targetPrice: 29.99));
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
@@ -309,8 +362,7 @@ void main() {
 
   group('WishlistDetailScreen — optional info fields', () {
     testWidgets('shows label when provided', (tester) async {
-      final repo =
-          _FakeWishlistRepository(item: _makeItem(label: 'Blue Note'));
+      final repo = _FakeWishlistRepository(item: _makeItem(label: 'Blue Note'));
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
@@ -327,8 +379,9 @@ void main() {
       expect(find.text('Label'), findsNothing);
     });
 
-    testWidgets('shows catno when label is null but catno is set',
-        (tester) async {
+    testWidgets('shows catno when label is null but catno is set', (
+      tester,
+    ) async {
       final repo = _FakeWishlistRepository(item: _makeItem(catno: 'BN-1568'));
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
@@ -350,8 +403,9 @@ void main() {
     });
 
     testWidgets('shows format when provided', (tester) async {
-      final repo =
-          _FakeWishlistRepository(item: _makeItem(format: 'Vinyl, LP'));
+      final repo = _FakeWishlistRepository(
+        item: _makeItem(format: 'Vinyl, LP'),
+      );
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
@@ -425,10 +479,7 @@ void main() {
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const Key('edit-target-price-button')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('edit-target-price-button')), findsOneWidget);
     });
 
     testWidgets('edit-notes-button visible when loaded', (tester) async {
@@ -492,16 +543,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('save-priority-button')));
       await tester.pumpAndSettle();
-      expect(
-        find.textContaining('Could not save priority'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Could not save priority'), findsOneWidget);
     });
   });
 
   group('WishlistDetailScreen — edit target price', () {
-    testWidgets('tapping edit-target-price-button opens sheet',
-        (tester) async {
+    testWidgets('tapping edit-target-price-button opens sheet', (tester) async {
       final repo = _FakeWishlistRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
@@ -531,8 +578,7 @@ void main() {
     });
 
     testWidgets('saving empty price clears to Not set', (tester) async {
-      final repo =
-          _FakeWishlistRepository(item: _makeItem(targetPrice: 29.99));
+      final repo = _FakeWishlistRepository(item: _makeItem(targetPrice: 29.99));
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
@@ -631,11 +677,10 @@ void main() {
       expect(find.text('Notes saved.'), findsOneWidget);
     });
 
-    testWidgets('clearing notes hides notes section after save',
-        (tester) async {
-      final repo = _FakeWishlistRepository(
-        item: _makeItem(notes: 'Old note'),
-      );
+    testWidgets('clearing notes hides notes section after save', (
+      tester,
+    ) async {
+      final repo = _FakeWishlistRepository(item: _makeItem(notes: 'Old note'));
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
@@ -643,10 +688,7 @@ void main() {
       expect(find.text('Old note'), findsOneWidget);
       await tester.tap(find.byKey(const Key('edit-notes-button')));
       await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byKey(const Key('notes-text-field')),
-        '',
-      );
+      await tester.enterText(find.byKey(const Key('notes-text-field')), '');
       await tester.tap(find.byKey(const Key('save-notes-button')));
       await tester.pumpAndSettle();
       expect(find.text('Notes'), findsNothing);
@@ -672,8 +714,9 @@ void main() {
 
   group('WishlistDetailScreen — local-first', () {
     testWidgets('loads without a Discogs token', (tester) async {
-      final repo =
-          _FakeWishlistRepository(item: _makeItem(artist: 'Offline Artist'));
+      final repo = _FakeWishlistRepository(
+        item: _makeItem(artist: 'Offline Artist'),
+      );
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
@@ -681,8 +724,9 @@ void main() {
       expect(find.text('Offline Artist'), findsOneWidget);
     });
 
-    testWidgets('loads without network (simulated by local-only fake repo)',
-        (tester) async {
+    testWidgets('loads without network (simulated by local-only fake repo)', (
+      tester,
+    ) async {
       final repo = _FakeWishlistRepository(
         item: _makeItem(artist: 'No Network Artist'),
       );
@@ -730,8 +774,9 @@ void main() {
       expect(find.byKey(const Key('detail-overflow-menu')), findsNothing);
     });
 
-    testWidgets('tapping overflow menu shows Remove from wishlist option',
-        (tester) async {
+    testWidgets('tapping overflow menu shows Remove from wishlist option', (
+      tester,
+    ) async {
       final repo = _FakeWishlistRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
@@ -742,8 +787,9 @@ void main() {
       expect(find.text('Remove from wishlist'), findsOneWidget);
     });
 
-    testWidgets('tapping Remove option shows confirmation dialog',
-        (tester) async {
+    testWidgets('tapping Remove option shows confirmation dialog', (
+      tester,
+    ) async {
       final repo = _FakeWishlistRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
@@ -756,8 +802,9 @@ void main() {
       expect(find.text('Remove from wishlist?'), findsOneWidget);
     });
 
-    testWidgets('confirmation dialog mentions Discogs not affected',
-        (tester) async {
+    testWidgets('confirmation dialog mentions Discogs not affected', (
+      tester,
+    ) async {
       final repo = _FakeWishlistRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
@@ -770,8 +817,9 @@ void main() {
       expect(find.textContaining('Discogs'), findsOneWidget);
     });
 
-    testWidgets('tapping Cancel does not call repository.remove',
-        (tester) async {
+    testWidgets('tapping Cancel does not call repository.remove', (
+      tester,
+    ) async {
       final repo = _FakeWishlistRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
@@ -812,10 +860,8 @@ void main() {
                   key: const Key('go-to-detail'),
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => WishlistDetailScreen(
-                        itemId: 'w-1',
-                        repository: repo,
-                      ),
+                      builder: (_) =>
+                          WishlistDetailScreen(itemId: 'w-1', repository: repo),
                     ),
                   ),
                   child: const Text('Go to detail'),
@@ -860,38 +906,50 @@ void main() {
 
   group('WishlistDetailScreen — thumbnail cache', () {
     testWidgets(
-        'renders loaded state without crash when thumbnailRepository returns null',
-        (tester) async {
-      final repo = _FakeWishlistRepository(item: _makeItem(artist: 'Thumb Artist'));
-      final thumbRepo = _FakeThumbnailRepository();
-      await tester.pumpWidget(
-        _wrap(WishlistDetailScreen(
-          itemId: 'w-1',
-          repository: repo,
-          thumbnailRepository: thumbRepo,
-        )),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text('Thumb Artist'), findsOneWidget);
-    });
+      'renders loaded state without crash when thumbnailRepository returns null',
+      (tester) async {
+        final repo = _FakeWishlistRepository(
+          item: _makeItem(artist: 'Thumb Artist'),
+        );
+        final thumbRepo = _FakeThumbnailRepository();
+        await tester.pumpWidget(
+          _wrap(
+            WishlistDetailScreen(
+              itemId: 'w-1',
+              repository: repo,
+              thumbnailRepository: thumbRepo,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.text('Thumb Artist'), findsOneWidget);
+      },
+    );
 
     testWidgets(
-        'renders loaded state without crash when thumbnailRepository returns a cached path',
-        (tester) async {
-      final repo = _FakeWishlistRepository(item: _makeItem(artist: 'Thumb Artist'));
-      final thumbRepo = _FakeThumbnailRepository(pathToReturn: '/fake/thumb.jpg');
-      await tester.pumpWidget(
-        _wrap(WishlistDetailScreen(
-          itemId: 'w-1',
-          repository: repo,
-          thumbnailRepository: thumbRepo,
-        )),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text('Thumb Artist'), findsOneWidget);
-    });
+      'renders loaded state without crash when thumbnailRepository returns a cached path',
+      (tester) async {
+        final repo = _FakeWishlistRepository(
+          item: _makeItem(artist: 'Thumb Artist'),
+        );
+        final thumbRepo = _FakeThumbnailRepository(
+          pathToReturn: '/fake/thumb.jpg',
+        );
+        await tester.pumpWidget(
+          _wrap(
+            WishlistDetailScreen(
+              itemId: 'w-1',
+              repository: repo,
+              thumbnailRepository: thumbRepo,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.text('Thumb Artist'), findsOneWidget);
+      },
+    );
   });
 
   group('WishlistDetailScreen — sync status', () {
@@ -1002,6 +1060,73 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Offline'), findsOneWidget);
+    });
+  });
+
+  group('WishlistDetailScreen — pull-to-refresh', () {
+    testWidgets('RefreshIndicator present on loaded state', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(RefreshIndicator), findsOneWidget);
+    });
+
+    testWidgets('PTR triggers getById again', (tester) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(repo.loadCallCount, 1);
+
+      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester.pump();
+
+      expect(repo.loadCallCount, 2);
+    });
+
+    testWidgets('PTR updates displayed item', (tester) async {
+      final repo = _UpdatingWishlistRepository(
+        first: _makeItem(title: 'Old Title'),
+        second: _makeItem(title: 'New Title'),
+      );
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Old Title'), findsWidgets);
+
+      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester.pump();
+
+      expect(find.text('New Title'), findsWidgets);
+    });
+
+    testWidgets('PTR error keeps existing item visible', (tester) async {
+      final repo = _SuccessThenErrorWishlistRepository(
+        successItem: _makeItem(artist: 'Kept Artist'),
+      );
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Kept Artist'), findsOneWidget);
+
+      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester.pump();
+
+      expect(find.text('Kept Artist'), findsOneWidget);
+    });
+
+    testWidgets('no RefreshIndicator in error state', (tester) async {
+      final repo = _FakeWishlistRepository(throwsOnLoad: true);
+      await tester.pumpWidget(
+        _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(RefreshIndicator), findsNothing);
     });
   });
 }

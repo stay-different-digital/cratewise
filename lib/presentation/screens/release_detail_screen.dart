@@ -98,30 +98,32 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
       _addUseCase = widget.addToCollectionUseCase!;
       _addWishlistUseCase = widget.addToWishlistUseCase!;
       _cacheRepository = widget.cacheRepository;
-      _service = widget.detailService ??
+      _service =
+          widget.detailService ??
           DiscogsReleaseDetailService(
             cacheRepository: _cacheRepository,
-            thumbnailCacheService: widget.thumbnailCacheService ??
-                ThumbnailCacheService(
-                  repository: LocalThumbnailRepository(),
-                ),
+            thumbnailCacheService:
+                widget.thumbnailCacheService ??
+                ThumbnailCacheService(repository: LocalThumbnailRepository()),
           );
     } else {
       final db = AppDatabase(openAppDatabase());
       _ownedDb = db;
-      _addUseCase = widget.addToCollectionUseCase ??
+      _addUseCase =
+          widget.addToCollectionUseCase ??
           AddToCollectionUseCase(LocalCollectionRepository(db));
-      _addWishlistUseCase = widget.addToWishlistUseCase ??
+      _addWishlistUseCase =
+          widget.addToWishlistUseCase ??
           AddToWishlistUseCase(LocalWishlistRepository(db));
       _cacheRepository =
           widget.cacheRepository ?? LocalCachedReleaseMetadataRepository(db);
-      _service = widget.detailService ??
+      _service =
+          widget.detailService ??
           DiscogsReleaseDetailService(
             cacheRepository: _cacheRepository,
-            thumbnailCacheService: widget.thumbnailCacheService ??
-                ThumbnailCacheService(
-                  repository: LocalThumbnailRepository(),
-                ),
+            thumbnailCacheService:
+                widget.thumbnailCacheService ??
+                ThumbnailCacheService(repository: LocalThumbnailRepository()),
           );
     }
     _fetch();
@@ -163,6 +165,29 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     _fetch();
   }
 
+  Future<void> _refresh() async {
+    try {
+      final detail = await _service.fetchDetail(widget.releaseId);
+      if (!mounted) return;
+      setState(() => _state = _Loaded(detail));
+    } on AppError catch (e) {
+      if (!mounted) return;
+      if (_state is _Loaded || _state is _CachedLoaded) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_refreshErrorMessage(e))));
+      } else {
+        setState(() => _state = _DetailError(e));
+      }
+    }
+  }
+
+  static String _refreshErrorMessage(AppError e) => switch (e) {
+    RateLimitedError() => 'Too many requests — wait a moment and try again.',
+    NetworkError() => 'No internet connection.',
+    _ => 'Could not refresh. Try again.',
+  };
+
   ReleaseDetail? _currentDetail() {
     final state = _state;
     if (state is _Loaded) return state.detail;
@@ -199,9 +224,9 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     switch (result) {
       case AddToWishlistSuccess():
         setState(() => _addWishlistState = _AddState.added);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Added to your wishlist')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Added to your wishlist')));
       case AddToWishlistDuplicate():
         setState(() => _addWishlistState = _AddState.duplicate);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -228,20 +253,24 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   Widget build(BuildContext context) {
     final state = _state;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_appBarTitle),
-      ),
+      appBar: AppBar(title: Text(_appBarTitle)),
       body: switch (state) {
         _Loading() => const _SkeletonBody(),
         _DetailError(:final error) => _ErrorBody(
-            error: error,
-            onRetry: _isRetriable(error) ? _retry : null,
-          ),
-        _Loaded(:final detail) => _DetailBody(detail: detail),
-        _CachedLoaded(:final metadata) => _CachedDetailBody(
+          error: error,
+          onRetry: _isRetriable(error) ? _retry : null,
+        ),
+        _Loaded(:final detail) => RefreshIndicator(
+          onRefresh: _refresh,
+          child: _DetailBody(detail: detail),
+        ),
+        _CachedLoaded(:final metadata) => RefreshIndicator(
+          onRefresh: _refresh,
+          child: _CachedDetailBody(
             metadata: metadata,
             thumbnailRepository: widget.thumbnailRepository,
           ),
+        ),
       },
       bottomNavigationBar: (state is _Loaded || state is _CachedLoaded)
           ? _AddActionsBar(
@@ -280,15 +309,9 @@ class _AddActionsBar extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: double.infinity,
-              child: _buildCollectionButton(),
-            ),
+            SizedBox(width: double.infinity, child: _buildCollectionButton()),
             const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: _buildWishlistButton(),
-            ),
+            SizedBox(width: double.infinity, child: _buildWishlistButton()),
           ],
         ),
       ),
@@ -364,13 +387,13 @@ class _SkeletonBody extends StatelessWidget {
     final color = Theme.of(context).colorScheme.surfaceContainerHighest;
 
     Widget block({double? width, required double height}) => Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        );
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(4),
+      ),
+    );
 
     return SingleChildScrollView(
       key: const Key('release-detail-loading'),
@@ -450,17 +473,17 @@ class _ErrorBody extends StatelessWidget {
   final VoidCallback? onRetry;
 
   String get _message => switch (error) {
-        NoTokenError() =>
-          'Connect a Discogs token in Settings to view release details.',
-        InvalidTokenError() =>
-          'Your Discogs token is not valid. Go to Settings to reconnect.',
-        RateLimitedError() => 'Too many requests. Wait a moment and try again.',
-        NetworkError() =>
-          'No internet connection. Visit this release while online to save data for offline viewing.',
-        StorageError() => 'Could not load your saved token. Try again.',
-        DiscogsUnavailableError() => 'Could not reach Discogs. Try again.',
-        UnexpectedApiError() => 'Could not reach Discogs. Try again.',
-      };
+    NoTokenError() =>
+      'Connect a Discogs token in Settings to view release details.',
+    InvalidTokenError() =>
+      'Your Discogs token is not valid. Go to Settings to reconnect.',
+    RateLimitedError() => 'Too many requests. Wait a moment and try again.',
+    NetworkError() =>
+      'No internet connection. Visit this release while online to save data for offline viewing.',
+    StorageError() => 'Could not load your saved token. Try again.',
+    DiscogsUnavailableError() => 'Could not reach Discogs. Try again.',
+    UnexpectedApiError() => 'Could not reach Discogs. Try again.',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -471,11 +494,7 @@ class _ErrorBody extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 56,
-              color: theme.colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(
               _message,
@@ -486,10 +505,7 @@ class _ErrorBody extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 24),
-              FilledButton(
-                onPressed: onRetry,
-                child: const Text('Retry'),
-              ),
+              FilledButton(onPressed: onRetry, child: const Text('Retry')),
             ],
           ],
         ),
@@ -523,13 +539,14 @@ class _DetailBody extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) =>
           constraints.maxWidth >= _kWideBreakpoint
-              ? _buildWide(context)
-              : _buildNarrow(context),
+          ? _buildWide(context)
+          : _buildNarrow(context),
     );
   }
 
   Widget _buildNarrow(BuildContext context) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -589,6 +606,7 @@ class _DetailBody extends StatelessWidget {
 
   Widget _buildWide(BuildContext context) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(24),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -631,10 +649,7 @@ class _DetailBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _CachedDetailBody extends StatelessWidget {
-  const _CachedDetailBody({
-    required this.metadata,
-    this.thumbnailRepository,
-  });
+  const _CachedDetailBody({required this.metadata, this.thumbnailRepository});
 
   final CachedReleaseMetadata metadata;
   final ThumbnailRepository? thumbnailRepository;
@@ -704,32 +719,42 @@ class _CachedBanner extends StatelessWidget {
 
 String _formatCachedDate(DateTime dt) {
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
 }
 
 ReleaseDetail _cachedMetadataToDetail(CachedReleaseMetadata m) => ReleaseDetail(
-      id: m.discogsReleaseId,
-      title: m.title,
-      artist: m.artist,
-      label: m.label ?? '',
-      catno: m.catno ?? '',
-      format: m.format ?? '',
-      country: m.country ?? '',
-      year: m.year,
-      genres: m.genres,
-      styles: m.styles,
-      tracklist: m.tracklist
-          .map((t) => ReleaseTrack(position: '', title: t, duration: ''))
-          .toList(),
-      notes: m.notes,
-      coverUrl: m.coverUrl,
-      identifiers: m.barcodes
-          .map((b) => ReleaseIdentifier(type: 'Barcode', value: b))
-          .toList(),
-    );
+  id: m.discogsReleaseId,
+  title: m.title,
+  artist: m.artist,
+  label: m.label ?? '',
+  catno: m.catno ?? '',
+  format: m.format ?? '',
+  country: m.country ?? '',
+  year: m.year,
+  genres: m.genres,
+  styles: m.styles,
+  tracklist: m.tracklist
+      .map((t) => ReleaseTrack(position: '', title: t, duration: ''))
+      .toList(),
+  notes: m.notes,
+  coverUrl: m.coverUrl,
+  identifiers: m.barcodes
+      .map((b) => ReleaseIdentifier(type: 'Barcode', value: b))
+      .toList(),
+);
 
 // ---------------------------------------------------------------------------
 // Shared sub-widgets
@@ -848,8 +873,9 @@ class _IdentifiersSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Column(
-            children:
-                identifiers.map((i) => _InfoRow(i.type, i.value)).toList(),
+            children: identifiers
+                .map((i) => _InfoRow(i.type, i.value))
+                .toList(),
           ),
         ),
       ],
@@ -957,9 +983,7 @@ class _InfoRow extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            child: Text(value, style: theme.textTheme.bodyMedium),
-          ),
+          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
         ],
       ),
     );
@@ -987,9 +1011,7 @@ class _TrackRow extends StatelessWidget {
               ),
             ),
           ),
-          Expanded(
-            child: Text(track.title, style: theme.textTheme.bodyMedium),
-          ),
+          Expanded(child: Text(track.title, style: theme.textTheme.bodyMedium)),
           if (track.duration.isNotEmpty)
             Text(
               track.duration,

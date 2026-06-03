@@ -93,6 +93,56 @@ class _FlippingCollectionRepository implements CollectionRepository {
   Future<void> remove(String id) async {}
 }
 
+class _UpdatingCollectionRepository implements CollectionRepository {
+  _UpdatingCollectionRepository({required this.first, required this.second});
+
+  final CollectionItem first;
+  final CollectionItem second;
+  int _calls = 0;
+
+  @override
+  Future<CollectionItem?> getById(String id) async {
+    _calls++;
+    return _calls == 1 ? first : second;
+  }
+
+  @override
+  Future<List<CollectionItem>> getAll() async => [];
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => false;
+  @override
+  Future<void> add(CollectionItem item) async {}
+  @override
+  Future<void> update(CollectionItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _SuccessThenErrorCollectionRepository implements CollectionRepository {
+  _SuccessThenErrorCollectionRepository({required this.successItem});
+
+  final CollectionItem successItem;
+  int _calls = 0;
+
+  @override
+  Future<CollectionItem?> getById(String id) async {
+    _calls++;
+    if (_calls == 1) return successItem;
+    throw Exception('refresh error');
+  }
+
+  @override
+  Future<List<CollectionItem>> getAll() async => [];
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => false;
+  @override
+  Future<void> add(CollectionItem item) async {}
+  @override
+  Future<void> update(CollectionItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -112,24 +162,24 @@ CollectionItem _makeItem({
   DateTime? createdAt,
   DateTime? updatedAt,
 }) => CollectionItem(
-      id: id,
-      discogsReleaseId: 1,
-      artist: artist,
-      title: title,
-      label: label,
-      catno: catno,
-      format: format,
-      country: country,
-      year: year,
-      coverUrl: null,
-      notes: notes,
-      mediaCondition: RecordCondition.veryGood,
-      sleeveCondition: RecordCondition.nearMint,
-      tags: tags,
-      storageLocation: storageLocation,
-      createdAt: createdAt ?? DateTime(2026, 1, 1),
-      updatedAt: updatedAt ?? DateTime(2026, 3, 15),
-    );
+  id: id,
+  discogsReleaseId: 1,
+  artist: artist,
+  title: title,
+  label: label,
+  catno: catno,
+  format: format,
+  country: country,
+  year: year,
+  coverUrl: null,
+  notes: notes,
+  mediaCondition: RecordCondition.veryGood,
+  sleeveCondition: RecordCondition.nearMint,
+  tags: tags,
+  storageLocation: storageLocation,
+  createdAt: createdAt ?? DateTime(2026, 1, 1),
+  updatedAt: updatedAt ?? DateTime(2026, 3, 15),
+);
 
 Widget _wrap(Widget child) => MaterialApp(home: child);
 
@@ -216,9 +266,7 @@ void main() {
     });
 
     testWidgets('shows catno when provided without label', (tester) async {
-      final repo = _FakeCollectionRepository(
-        item: _makeItem(catno: 'BN 1577'),
-      );
+      final repo = _FakeCollectionRepository(item: _makeItem(catno: 'BN 1577'));
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
       );
@@ -247,8 +295,7 @@ void main() {
     });
 
     testWidgets('shows country when provided', (tester) async {
-      final repo =
-          _FakeCollectionRepository(item: _makeItem(country: 'US'));
+      final repo = _FakeCollectionRepository(item: _makeItem(country: 'US'));
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
       );
@@ -276,8 +323,9 @@ void main() {
       expect(find.text('Original pressing. Excellent.'), findsOneWidget);
     });
 
-    testWidgets('does not show notes section when notes is null',
-        (tester) async {
+    testWidgets('does not show notes section when notes is null', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem(notes: null));
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -298,8 +346,9 @@ void main() {
       expect(find.text('essential'), findsOneWidget);
     });
 
-    testWidgets('does not show tags section when tags list is empty',
-        (tester) async {
+    testWidgets('does not show tags section when tags list is empty', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem(tags: []));
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -341,8 +390,9 @@ void main() {
       expect(find.textContaining('2026-06-20'), findsOneWidget);
     });
 
-    testWidgets('renders without error when all optional fields are null',
-        (tester) async {
+    testWidgets('renders without error when all optional fields are null', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(
         item: _makeItem(
           label: null,
@@ -366,8 +416,9 @@ void main() {
   });
 
   group('CollectionDetailScreen — not found state', () {
-    testWidgets('shows not found message when item does not exist',
-        (tester) async {
+    testWidgets('shows not found message when item does not exist', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository();
       await tester.pumpWidget(
         _wrap(
@@ -467,10 +518,7 @@ void main() {
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
       );
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const Key('edit-conditions-button')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const Key('edit-conditions-button')), findsOneWidget);
     });
 
     testWidgets('does not show edit button while loading', (tester) async {
@@ -484,9 +532,7 @@ void main() {
     testWidgets('does not show edit button in not-found state', (tester) async {
       final repo = _FakeCollectionRepository();
       await tester.pumpWidget(
-        _wrap(
-          CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
-        ),
+        _wrap(CollectionDetailScreen(itemId: 'nonexistent', repository: repo)),
       );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('edit-conditions-button')), findsNothing);
@@ -617,9 +663,9 @@ void main() {
       expect(find.byKey(const Key('save-conditions-button')), findsOneWidget);
     });
 
-    testWidgets(
-        'changing media condition and saving updates displayed value',
-        (tester) async {
+    testWidgets('changing media condition and saving updates displayed value', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -659,20 +705,20 @@ void main() {
       expect(find.byKey(const Key('edit-tags-button')), findsNothing);
     });
 
-    testWidgets('does not show edit tags button in not-found state',
-        (tester) async {
+    testWidgets('does not show edit tags button in not-found state', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository();
       await tester.pumpWidget(
-        _wrap(
-          CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
-        ),
+        _wrap(CollectionDetailScreen(itemId: 'nonexistent', repository: repo)),
       );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('edit-tags-button')), findsNothing);
     });
 
-    testWidgets('does not show edit tags button in error state',
-        (tester) async {
+    testWidgets('does not show edit tags button in error state', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(throwsOnLoad: true);
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -681,8 +727,9 @@ void main() {
       expect(find.byKey(const Key('edit-tags-button')), findsNothing);
     });
 
-    testWidgets('tapping edit tags button opens sheet with title',
-        (tester) async {
+    testWidgets('tapping edit tags button opens sheet with title', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -721,10 +768,7 @@ void main() {
       await tester.tap(find.byKey(const Key('edit-tags-button')));
       await tester.pumpAndSettle();
 
-      await tester.enterText(
-        find.byKey(const Key('tag-input-field')),
-        'soul',
-      );
+      await tester.enterText(find.byKey(const Key('tag-input-field')), 'soul');
       await tester.tap(find.byKey(const Key('add-tag-button')));
       await tester.pump();
 
@@ -732,9 +776,7 @@ void main() {
     });
 
     testWidgets('can remove a tag', (tester) async {
-      final repo = _FakeCollectionRepository(
-        item: _makeItem(tags: ['jazz']),
-      );
+      final repo = _FakeCollectionRepository(item: _makeItem(tags: ['jazz']));
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
       );
@@ -770,10 +812,10 @@ void main() {
       expect(find.byType(InputChip), findsNothing);
     });
 
-    testWidgets('does not add duplicate tag (case-insensitive)', (tester) async {
-      final repo = _FakeCollectionRepository(
-        item: _makeItem(tags: ['jazz']),
-      );
+    testWidgets('does not add duplicate tag (case-insensitive)', (
+      tester,
+    ) async {
+      final repo = _FakeCollectionRepository(item: _makeItem(tags: ['jazz']));
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
       );
@@ -782,10 +824,7 @@ void main() {
       await tester.tap(find.byKey(const Key('edit-tags-button')));
       await tester.pumpAndSettle();
 
-      await tester.enterText(
-        find.byKey(const Key('tag-input-field')),
-        'Jazz',
-      );
+      await tester.enterText(find.byKey(const Key('tag-input-field')), 'Jazz');
       await tester.tap(find.byKey(const Key('add-tag-button')));
       await tester.pump();
 
@@ -825,9 +864,7 @@ void main() {
     });
 
     testWidgets('save updates tags shown on screen', (tester) async {
-      final repo = _FakeCollectionRepository(
-        item: _makeItem(tags: ['jazz']),
-      );
+      final repo = _FakeCollectionRepository(item: _makeItem(tags: ['jazz']));
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
       );
@@ -836,10 +873,7 @@ void main() {
       await tester.tap(find.byKey(const Key('edit-tags-button')));
       await tester.pumpAndSettle();
 
-      await tester.enterText(
-        find.byKey(const Key('tag-input-field')),
-        'soul',
-      );
+      await tester.enterText(find.byKey(const Key('tag-input-field')), 'soul');
       await tester.tap(find.byKey(const Key('add-tag-button')));
       await tester.pump();
 
@@ -918,7 +952,9 @@ void main() {
       expect(find.byKey(const Key('edit-notes-button')), findsOneWidget);
     });
 
-    testWidgets('does not show edit notes button while loading', (tester) async {
+    testWidgets('does not show edit notes button while loading', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -926,20 +962,20 @@ void main() {
       expect(find.byKey(const Key('edit-notes-button')), findsNothing);
     });
 
-    testWidgets('does not show edit notes button in not-found state',
-        (tester) async {
+    testWidgets('does not show edit notes button in not-found state', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository();
       await tester.pumpWidget(
-        _wrap(
-          CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
-        ),
+        _wrap(CollectionDetailScreen(itemId: 'nonexistent', repository: repo)),
       );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('edit-notes-button')), findsNothing);
     });
 
-    testWidgets('does not show edit notes button in error state',
-        (tester) async {
+    testWidgets('does not show edit notes button in error state', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(throwsOnLoad: true);
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -948,8 +984,9 @@ void main() {
       expect(find.byKey(const Key('edit-notes-button')), findsNothing);
     });
 
-    testWidgets('tapping edit notes button opens sheet with title',
-        (tester) async {
+    testWidgets('tapping edit notes button opens sheet with title', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -1134,8 +1171,9 @@ void main() {
   });
 
   group('CollectionDetailScreen — edit storage location', () {
-    testWidgets('shows edit storage location button when loaded',
-        (tester) async {
+    testWidgets('shows edit storage location button when loaded', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -1147,8 +1185,9 @@ void main() {
       );
     });
 
-    testWidgets('does not show edit storage location button while loading',
-        (tester) async {
+    testWidgets('does not show edit storage location button while loading', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -1160,23 +1199,25 @@ void main() {
     });
 
     testWidgets(
-        'does not show edit storage location button in not-found state',
-        (tester) async {
-      final repo = _FakeCollectionRepository();
-      await tester.pumpWidget(
-        _wrap(
-          CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const Key('edit-storage-location-button')),
-        findsNothing,
-      );
-    });
+      'does not show edit storage location button in not-found state',
+      (tester) async {
+        final repo = _FakeCollectionRepository();
+        await tester.pumpWidget(
+          _wrap(
+            CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const Key('edit-storage-location-button')),
+          findsNothing,
+        );
+      },
+    );
 
-    testWidgets('does not show edit storage location button in error state',
-        (tester) async {
+    testWidgets('does not show edit storage location button in error state', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(throwsOnLoad: true);
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -1195,9 +1236,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('edit-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
 
       expect(find.text('Edit Storage Location'), findsOneWidget);
@@ -1210,9 +1249,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('edit-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
 
       expect(
@@ -1230,9 +1267,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('edit-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
 
       expect(
@@ -1251,14 +1286,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('edit-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('save-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('save-storage-location-button')));
       await tester.pumpAndSettle();
 
       expect(repo.updateCallCount, 1);
@@ -1271,21 +1302,18 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('edit-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('save-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('save-storage-location-button')));
       await tester.pumpAndSettle();
 
       expect(find.text('Storage location saved.'), findsOneWidget);
     });
 
-    testWidgets('save updates storage location shown on screen',
-        (tester) async {
+    testWidgets('save updates storage location shown on screen', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(
         item: _makeItem(storageLocation: 'Box A'),
       );
@@ -1296,18 +1324,14 @@ void main() {
 
       expect(find.textContaining('Box A'), findsOneWidget);
 
-      await tester.tap(
-        find.byKey(const Key('edit-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
 
       await tester.enterText(
         find.byKey(const Key('storage-location-text-field')),
         'Shelf 2',
       );
-      await tester.tap(
-        find.byKey(const Key('save-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('save-storage-location-button')));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Shelf 2'), findsOneWidget);
@@ -1325,21 +1349,16 @@ void main() {
 
       expect(find.textContaining('2025-09-03'), findsOneWidget);
 
-      await tester.tap(
-        find.byKey(const Key('edit-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('save-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('save-storage-location-button')));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('2025-09-03'), findsNothing);
     });
 
-    testWidgets('clearing storage location hides Location row',
-        (tester) async {
+    testWidgets('clearing storage location hides Location row', (tester) async {
       final repo = _FakeCollectionRepository(
         item: _makeItem(storageLocation: 'Living room shelf'),
       );
@@ -1350,18 +1369,14 @@ void main() {
 
       expect(find.textContaining('Living room shelf'), findsOneWidget);
 
-      await tester.tap(
-        find.byKey(const Key('edit-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
 
       await tester.enterText(
         find.byKey(const Key('storage-location-text-field')),
         '',
       );
-      await tester.tap(
-        find.byKey(const Key('save-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('save-storage-location-button')));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Living room shelf'), findsNothing);
@@ -1378,14 +1393,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('edit-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('save-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('save-storage-location-button')));
       await tester.pumpAndSettle();
 
       expect(
@@ -1404,14 +1415,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('edit-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const Key('save-storage-location-button')),
-      );
+      await tester.tap(find.byKey(const Key('save-storage-location-button')));
       await tester.pumpAndSettle();
 
       expect(
@@ -1431,8 +1438,9 @@ void main() {
       expect(find.byKey(const Key('detail-overflow-menu')), findsOneWidget);
     });
 
-    testWidgets('does not show overflow menu button while loading',
-        (tester) async {
+    testWidgets('does not show overflow menu button while loading', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -1440,20 +1448,20 @@ void main() {
       expect(find.byKey(const Key('detail-overflow-menu')), findsNothing);
     });
 
-    testWidgets('does not show overflow menu button in not-found state',
-        (tester) async {
+    testWidgets('does not show overflow menu button in not-found state', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository();
       await tester.pumpWidget(
-        _wrap(
-          CollectionDetailScreen(itemId: 'nonexistent', repository: repo),
-        ),
+        _wrap(CollectionDetailScreen(itemId: 'nonexistent', repository: repo)),
       );
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('detail-overflow-menu')), findsNothing);
     });
 
-    testWidgets('does not show overflow menu button in error state',
-        (tester) async {
+    testWidgets('does not show overflow menu button in error state', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(throwsOnLoad: true);
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -1462,8 +1470,9 @@ void main() {
       expect(find.byKey(const Key('detail-overflow-menu')), findsNothing);
     });
 
-    testWidgets('tapping overflow menu shows Remove from Cratewise option',
-        (tester) async {
+    testWidgets('tapping overflow menu shows Remove from Cratewise option', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -1476,8 +1485,9 @@ void main() {
       expect(find.text('Remove from Cratewise'), findsOneWidget);
     });
 
-    testWidgets('tapping Remove option shows confirmation dialog',
-        (tester) async {
+    testWidgets('tapping Remove option shows confirmation dialog', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -1492,8 +1502,9 @@ void main() {
       expect(find.byType(AlertDialog), findsOneWidget);
     });
 
-    testWidgets('confirmation dialog mentions Discogs not affected',
-        (tester) async {
+    testWidgets('confirmation dialog mentions Discogs not affected', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
@@ -1508,25 +1519,27 @@ void main() {
       expect(find.textContaining('Discogs'), findsOneWidget);
     });
 
-    testWidgets('tapping Cancel closes dialog without calling repository.remove',
-        (tester) async {
-      final repo = _FakeCollectionRepository(item: _makeItem());
-      await tester.pumpWidget(
-        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
-      );
-      await tester.pumpAndSettle();
+    testWidgets(
+      'tapping Cancel closes dialog without calling repository.remove',
+      (tester) async {
+        final repo = _FakeCollectionRepository(item: _makeItem());
+        await tester.pumpWidget(
+          _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+        );
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Remove from Cratewise'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Remove from Cratewise'));
+        await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('cancel-remove-button')));
-      await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('cancel-remove-button')));
+        await tester.pumpAndSettle();
 
-      expect(find.byType(AlertDialog), findsNothing);
-      expect(repo.removeCallCount, 0);
-    });
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(repo.removeCallCount, 0);
+      },
+    );
 
     testWidgets('tapping Remove calls repository.remove', (tester) async {
       final repo = _FakeCollectionRepository(item: _makeItem());
@@ -1659,8 +1672,9 @@ void main() {
       expect(find.text('Offline Artist'), findsOneWidget);
     });
 
-    testWidgets('loads without network (simulated by local-only fake repo)',
-        (tester) async {
+    testWidgets('loads without network (simulated by local-only fake repo)', (
+      tester,
+    ) async {
       final repo = _FakeCollectionRepository(
         item: _makeItem(artist: 'No Network Artist'),
       );
@@ -1694,45 +1708,55 @@ void main() {
 
   group('CollectionDetailScreen — thumbnail cache', () {
     testWidgets(
-        'renders loaded state without crash when thumbnailRepository returns null',
-        (tester) async {
-      final repo = _FakeCollectionRepository(item: _makeItem(artist: 'Thumb Artist'));
-      final thumbRepo = _FakeThumbnailRepository();
-      await tester.pumpWidget(
-        _wrap(CollectionDetailScreen(
-          itemId: 'test-1',
-          repository: repo,
-          thumbnailRepository: thumbRepo,
-        )),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text('Thumb Artist'), findsOneWidget);
-    });
+      'renders loaded state without crash when thumbnailRepository returns null',
+      (tester) async {
+        final repo = _FakeCollectionRepository(
+          item: _makeItem(artist: 'Thumb Artist'),
+        );
+        final thumbRepo = _FakeThumbnailRepository();
+        await tester.pumpWidget(
+          _wrap(
+            CollectionDetailScreen(
+              itemId: 'test-1',
+              repository: repo,
+              thumbnailRepository: thumbRepo,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.text('Thumb Artist'), findsOneWidget);
+      },
+    );
 
     testWidgets(
-        'renders loaded state without crash when thumbnailRepository returns a cached path',
-        (tester) async {
-      final repo = _FakeCollectionRepository(item: _makeItem(artist: 'Thumb Artist'));
-      final thumbRepo = _FakeThumbnailRepository(pathToReturn: '/fake/thumb.jpg');
-      await tester.pumpWidget(
-        _wrap(CollectionDetailScreen(
-          itemId: 'test-1',
-          repository: repo,
-          thumbnailRepository: thumbRepo,
-        )),
-      );
-      await tester.pumpAndSettle();
-      expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text('Thumb Artist'), findsOneWidget);
-    });
+      'renders loaded state without crash when thumbnailRepository returns a cached path',
+      (tester) async {
+        final repo = _FakeCollectionRepository(
+          item: _makeItem(artist: 'Thumb Artist'),
+        );
+        final thumbRepo = _FakeThumbnailRepository(
+          pathToReturn: '/fake/thumb.jpg',
+        );
+        await tester.pumpWidget(
+          _wrap(
+            CollectionDetailScreen(
+              itemId: 'test-1',
+              repository: repo,
+              thumbnailRepository: thumbRepo,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.text('Thumb Artist'), findsOneWidget);
+      },
+    );
   });
 
   group('CollectionDetailScreen — sync status', () {
     testWidgets('shows "Saved on this device" for localOnly', (tester) async {
-      final repo = _FakeCollectionRepository(
-        item: _makeItem(),
-      );
+      final repo = _FakeCollectionRepository(item: _makeItem());
       await tester.pumpWidget(
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
       );
@@ -1853,6 +1877,73 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Offline'), findsOneWidget);
+    });
+  });
+
+  group('CollectionDetailScreen — pull-to-refresh', () {
+    testWidgets('RefreshIndicator present on loaded state', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(RefreshIndicator), findsOneWidget);
+    });
+
+    testWidgets('PTR triggers getById again', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(repo.loadCallCount, 1);
+
+      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester.pump();
+
+      expect(repo.loadCallCount, 2);
+    });
+
+    testWidgets('PTR updates displayed item', (tester) async {
+      final repo = _UpdatingCollectionRepository(
+        first: _makeItem(title: 'Old Title'),
+        second: _makeItem(title: 'New Title'),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Old Title'), findsWidgets);
+
+      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester.pump();
+
+      expect(find.text('New Title'), findsWidgets);
+    });
+
+    testWidgets('PTR error keeps existing item visible', (tester) async {
+      final repo = _SuccessThenErrorCollectionRepository(
+        successItem: _makeItem(artist: 'Kept Artist'),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Kept Artist'), findsOneWidget);
+
+      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester.pump();
+
+      expect(find.text('Kept Artist'), findsOneWidget);
+    });
+
+    testWidgets('no RefreshIndicator in error state', (tester) async {
+      final repo = _FakeCollectionRepository(throwsOnLoad: true);
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(RefreshIndicator), findsNothing);
     });
   });
 }

@@ -77,6 +77,25 @@ class _WishlistScreenState extends State<WishlistScreen> {
     }
   }
 
+  Future<void> _refresh() async {
+    try {
+      final items = await _repository.getAll();
+      if (!mounted) return;
+      setState(() => _state = _Loaded(items));
+    } catch (_) {
+      if (!mounted) return;
+      if (_state is _Loaded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not refresh your wishlist. Please try again.'),
+          ),
+        );
+      } else {
+        setState(() => _state = const _WishlistError());
+      }
+    }
+  }
+
   @override
   void dispose() {
     _ownedDb?.close();
@@ -88,11 +107,14 @@ class _WishlistScreenState extends State<WishlistScreen> {
     return switch (_state) {
       _Loading() => const Center(child: CircularProgressIndicator()),
       _Loaded(:final items) when items.isEmpty => const _EmptyWishlistState(),
-      _Loaded(:final items) => _WishlistList(
+      _Loaded(:final items) => RefreshIndicator(
+        onRefresh: _refresh,
+        child: _WishlistList(
           items: items,
           repository: _repository,
           thumbnailRepository: _thumbnailRepository,
         ),
+      ),
       _WishlistError() => _WishlistErrorState(onRetry: _load),
     };
   }
@@ -133,13 +155,14 @@ class _WishlistList extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) =>
           constraints.maxWidth >= _kWideBreakpoint
-              ? _buildGrid(context)
-              : _buildList(context),
+          ? _buildGrid(context)
+          : _buildList(context),
     );
   }
 
   Widget _buildList(BuildContext context) {
     return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
@@ -153,6 +176,7 @@ class _WishlistList extends StatelessWidget {
 
   Widget _buildGrid(BuildContext context) {
     return GridView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -188,10 +212,7 @@ class _EmptyWishlistState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text(
-              'Your wishlist is empty',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('Your wishlist is empty', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
               'Your wishlist is saved on this device and works without internet.',
@@ -229,11 +250,7 @@ class _WishlistErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 56,
-              color: theme.colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(
               'Could not load your wishlist from device storage.',
@@ -243,10 +260,7 @@ class _WishlistErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton.tonal(
-              onPressed: onRetry,
-              child: const Text('Retry'),
-            ),
+            FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
           ],
         ),
       ),
