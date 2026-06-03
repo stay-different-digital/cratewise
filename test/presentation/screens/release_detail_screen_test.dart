@@ -1243,6 +1243,95 @@ void main() {
     );
   });
 
+  group('ReleaseDetailScreen — app bar title', () {
+    testWidgets('shows artist and title combined in app bar when loaded', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _LoadedService(detail: _kindOfBlue),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // Combined string only exists in the app bar; body renders artist and
+      // title as separate widgets.
+      expect(find.text('Miles Davis — Kind Of Blue'), findsOneWidget);
+    });
+
+    testWidgets('shows only title in app bar when artist is empty', (
+      tester,
+    ) async {
+      const noArtist = ReleaseDetail(
+        id: 1,
+        title: 'Untitled Album',
+        artist: '',
+        label: '',
+        catno: '',
+        format: '',
+        country: '',
+        genres: [],
+        styles: [],
+        tracklist: [],
+        identifiers: [],
+      );
+      await tester.pumpWidget(
+        _wrap(
+          ReleaseDetailScreen(
+            releaseId: 1,
+            detailService: _LoadedService(detail: noArtist),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // No "—" separator when artist is absent.
+      expect(find.textContaining(' — '), findsNothing);
+      expect(find.text('Untitled Album'), findsWidgets);
+    });
+
+    testWidgets('shows Release Detail in app bar on error', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          ReleaseDetailScreen(
+            releaseId: 1,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Release Detail'), findsOneWidget);
+    });
+
+    testWidgets('shows artist and title combined in app bar from cache', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _ErrorService(error: const NetworkError()),
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+            cacheRepository: _FakeCacheRepository(
+              cachedMetadata: _cachedKindOfBlue,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Miles Davis — Kind Of Blue'), findsOneWidget);
+    });
+  });
+
   group('ReleaseDetailScreen — pull-to-refresh', () {
     testWidgets('RefreshIndicator present on loaded state', (tester) async {
       await tester.pumpWidget(
@@ -1274,7 +1363,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(service.callCount, 1);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(service.callCount, 2);
@@ -1309,7 +1400,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Kind Of Blue'), findsWidgets);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(find.text('Updated Title'), findsWidgets);
@@ -1335,7 +1428,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Kind Of Blue'), findsWidgets);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       // Content still visible — no full-screen error
@@ -1362,7 +1457,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       // Still on loaded state — no transition to error screen

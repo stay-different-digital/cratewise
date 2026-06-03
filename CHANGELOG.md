@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7E: Release detail app bar shows album title (US-05)] — 2026-06-03
+
+### Changed
+- **Release Detail app bar** now shows **"Artist — Title"** once data has loaded (e.g. "Miles Davis — Kind Of Blue"), replacing the static "Release Detail" placeholder
+- When only a title is available (no artist), the app bar shows the title alone
+- When the release is shown from the offline cache (`_CachedLoaded`), the app bar uses the cached artist and title in the same format
+- Loading and error states continue to show "Release Detail" as a placeholder
+- `Text` widget in the app bar now sets `overflow: TextOverflow.ellipsis` and `maxLines: 1` so long titles truncate cleanly rather than overflowing
+
+### Tests
+- 4 new tests in `release_detail_screen_test.dart` (group: "app bar title"): combined artist+title format in loaded state; title-only when artist is absent; "Release Detail" placeholder in error state; combined format from offline cache
+
+---
+
 ## [Unreleased — Phase 7D: Pull-to-refresh on key screens (US-04)] — 2026-06-03
 
 ### Added

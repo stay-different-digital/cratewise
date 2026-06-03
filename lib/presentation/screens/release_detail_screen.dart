@@ -241,10 +241,12 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   String get _appBarTitle {
     final state = _state;
     if (state is _Loaded && state.detail.title.isNotEmpty) {
-      return state.detail.title;
+      final d = state.detail;
+      return d.artist.isNotEmpty ? '${d.artist} — ${d.title}' : d.title;
     }
     if (state is _CachedLoaded && state.metadata.title.isNotEmpty) {
-      return state.metadata.title;
+      final m = state.metadata;
+      return m.artist.isNotEmpty ? '${m.artist} — ${m.title}' : m.title;
     }
     return 'Release Detail';
   }
@@ -253,7 +255,9 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   Widget build(BuildContext context) {
     final state = _state;
     return Scaffold(
-      appBar: AppBar(title: Text(_appBarTitle)),
+      appBar: AppBar(
+        title: Text(_appBarTitle, overflow: TextOverflow.ellipsis, maxLines: 1),
+      ),
       body: switch (state) {
         _Loading() => const _SkeletonBody(),
         _DetailError(:final error) => _ErrorBody(
