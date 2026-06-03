@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../application/use_cases/build_collection_csv_export_preview_use_case.dart';
 import '../../application/use_cases/build_collection_export_preview_use_case.dart';
+import '../../application/use_cases/build_wishlist_csv_export_preview_use_case.dart';
 import '../../application/use_cases/build_wishlist_export_preview_use_case.dart';
 import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
 import '../../application/use_cases/fetch_wishlist_import_preview_use_case.dart';
+import 'collection_csv_export_preview_screen.dart';
 import 'collection_export_preview_screen.dart';
 import 'collection_import_preview_screen.dart';
+import 'wishlist_csv_export_preview_screen.dart';
 import 'wishlist_export_preview_screen.dart';
 import 'wishlist_import_preview_screen.dart';
 
@@ -19,6 +23,8 @@ class ImportExportScreen extends StatelessWidget {
     this.wishlistImportUseCase,
     this.collectionExportPreviewUseCase,
     this.wishlistExportPreviewUseCase,
+    this.collectionCsvExportPreviewUseCase,
+    this.wishlistCsvExportPreviewUseCase,
   });
 
   /// Injected only for testing. Production code passes null.
@@ -32,6 +38,12 @@ class ImportExportScreen extends StatelessWidget {
 
   /// Injected only for testing. Production code passes null.
   final BuildWishlistExportPreviewUseCase? wishlistExportPreviewUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final BuildCollectionCsvExportPreviewUseCase? collectionCsvExportPreviewUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final BuildWishlistCsvExportPreviewUseCase? wishlistCsvExportPreviewUseCase;
 
   @override
   Widget build(BuildContext context) {
@@ -65,6 +77,20 @@ class ImportExportScreen extends StatelessWidget {
             MaterialPageRoute<void>(
               builder: (_) => WishlistExportPreviewScreen(
                 useCase: wishlistExportPreviewUseCase,
+              ),
+            ),
+          ),
+          onExportCollectionCsv: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => CollectionCsvExportPreviewScreen(
+                previewUseCase: collectionCsvExportPreviewUseCase,
+              ),
+            ),
+          ),
+          onExportWishlistCsv: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => WishlistCsvExportPreviewScreen(
+                previewUseCase: wishlistCsvExportPreviewUseCase,
               ),
             ),
           ),
@@ -103,6 +129,8 @@ class _ActionBody extends StatelessWidget {
     required this.onImportWishlist,
     required this.onExportCollection,
     required this.onExportWishlist,
+    required this.onExportCollectionCsv,
+    required this.onExportWishlistCsv,
   });
 
   final bool isWide;
@@ -110,6 +138,8 @@ class _ActionBody extends StatelessWidget {
   final VoidCallback onImportWishlist;
   final VoidCallback onExportCollection;
   final VoidCallback onExportWishlist;
+  final VoidCallback onExportCollectionCsv;
+  final VoidCallback onExportWishlistCsv;
 
   List<_ActionConfig> get _discogsActions => [
         _ActionConfig(
@@ -138,24 +168,28 @@ class _ActionBody extends StatelessWidget {
         ),
       ];
 
-  static const _kCsvActions = [
-    _ActionConfig(
-      icon: Icons.download_outlined,
-      title: 'Export Collection to CSV',
-    ),
-    _ActionConfig(
-      icon: Icons.download_outlined,
-      title: 'Export Wishlist to CSV',
-    ),
-    _ActionConfig(
-      icon: Icons.upload_file_outlined,
-      title: 'Import Collection from CSV',
-    ),
-    _ActionConfig(
-      icon: Icons.upload_file_outlined,
-      title: 'Import Wishlist from CSV',
-    ),
-  ];
+  List<_ActionConfig> get _csvActions => [
+        _ActionConfig(
+          icon: Icons.download_outlined,
+          title: 'Export Collection to CSV',
+          badge: null,
+          onTap: (ctx) => onExportCollectionCsv(),
+        ),
+        _ActionConfig(
+          icon: Icons.download_outlined,
+          title: 'Export Wishlist to CSV',
+          badge: null,
+          onTap: (ctx) => onExportWishlistCsv(),
+        ),
+        const _ActionConfig(
+          icon: Icons.upload_file_outlined,
+          title: 'Import Collection from CSV',
+        ),
+        const _ActionConfig(
+          icon: Icons.upload_file_outlined,
+          title: 'Import Wishlist from CSV',
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +200,7 @@ class _ActionBody extends StatelessWidget {
         _buildSection(context, _discogsActions),
         const SliverToBoxAdapter(child: SizedBox(height: 8)),
         const SliverToBoxAdapter(child: _SectionHeader(title: 'CSV files')),
-        _buildSection(context, _kCsvActions),
+        _buildSection(context, _csvActions),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
       ],
     );

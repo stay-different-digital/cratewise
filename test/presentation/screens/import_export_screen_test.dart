@@ -1,5 +1,7 @@
+import 'package:cratewise/application/use_cases/build_collection_csv_export_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/build_collection_export_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/build_collection_import_preview_use_case.dart';
+import 'package:cratewise/application/use_cases/build_wishlist_csv_export_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/build_wishlist_export_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/build_wishlist_import_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/check_collection_export_capability_use_case.dart';
@@ -12,9 +14,11 @@ import 'package:cratewise/domain/models/wishlist_import_preview.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
+import 'package:cratewise/presentation/screens/collection_csv_export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/collection_export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/collection_import_preview_screen.dart';
 import 'package:cratewise/presentation/screens/import_export_screen.dart';
+import 'package:cratewise/presentation/screens/wishlist_csv_export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_import_preview_screen.dart';
 import 'package:flutter/material.dart';
@@ -104,6 +108,26 @@ class _FakeWishlistExportUseCase extends BuildWishlistExportPreviewUseCase {
       const WishlistExportPreviewNotSupported('Not available yet.');
 }
 
+class _FakeCollectionCsvExportUseCase
+    extends BuildCollectionCsvExportPreviewUseCase {
+  _FakeCollectionCsvExportUseCase()
+      : super(repository: _FakeCollectionRepository());
+
+  @override
+  Future<BuildCollectionCsvExportPreviewResult> execute() async =>
+      const CollectionCsvExportPreviewError();
+}
+
+class _FakeWishlistCsvExportUseCase
+    extends BuildWishlistCsvExportPreviewUseCase {
+  _FakeWishlistCsvExportUseCase()
+      : super(repository: _FakeWishlistRepository());
+
+  @override
+  Future<BuildWishlistCsvExportPreviewResult> execute() async =>
+      const WishlistCsvExportPreviewError();
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -113,6 +137,8 @@ Widget _buildSubject({
   FetchWishlistImportPreviewUseCase? wishlistImportUseCase,
   BuildCollectionExportPreviewUseCase? collectionExportPreviewUseCase,
   BuildWishlistExportPreviewUseCase? wishlistExportPreviewUseCase,
+  BuildCollectionCsvExportPreviewUseCase? collectionCsvExportPreviewUseCase,
+  BuildWishlistCsvExportPreviewUseCase? wishlistCsvExportPreviewUseCase,
 }) =>
     MaterialApp(
       home: ImportExportScreen(
@@ -120,6 +146,8 @@ Widget _buildSubject({
         wishlistImportUseCase: wishlistImportUseCase,
         collectionExportPreviewUseCase: collectionExportPreviewUseCase,
         wishlistExportPreviewUseCase: wishlistExportPreviewUseCase,
+        collectionCsvExportPreviewUseCase: collectionCsvExportPreviewUseCase,
+        wishlistCsvExportPreviewUseCase: wishlistCsvExportPreviewUseCase,
       ),
     );
 
@@ -177,7 +205,7 @@ void main() {
       });
 
       testWidgets(
-          '4 cards show a Coming soon badge (collection import, wishlist import, collection export, and wishlist export are live)',
+          '2 cards show a Coming soon badge (CSV import cards are still coming soon)',
           (tester) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
@@ -185,7 +213,7 @@ void main() {
 
         await tester.pumpWidget(_buildSubject());
 
-        expect(find.text('Coming soon'), findsNWidgets(4));
+        expect(find.text('Coming soon'), findsNWidgets(2));
       });
 
     });
@@ -211,14 +239,14 @@ void main() {
         expect(find.byType(SnackBar), findsNothing);
       });
 
-      testWidgets('tapping a CSV card shows Coming soon snackbar',
+      testWidgets('tapping Import Collection from CSV shows Coming soon snackbar',
           (tester) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Export Collection to CSV'));
+        await tester.tap(find.text('Import Collection from CSV'));
         await tester.pump();
         expect(find.byType(SnackBar), findsOneWidget);
       });
@@ -235,15 +263,14 @@ void main() {
         expect(find.byType(SnackBar), findsOneWidget);
       });
 
-      testWidgets(
-          'tapping a Coming soon card does not navigate',
+      testWidgets('tapping a Coming soon card does not navigate',
           (tester) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Export Collection to CSV'));
+        await tester.tap(find.text('Import Collection from CSV'));
         await tester.pump();
         // Still on the import/export screen
         expect(find.text('Import & Export'), findsOneWidget);
@@ -380,6 +407,103 @@ void main() {
       });
     });
 
+    group('Export Collection to CSV navigation', () {
+      testWidgets(
+          'tapping Export Collection to CSV navigates to CSV export preview screen',
+          (tester) async {
+        _setNarrowTallScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final csvUseCase = _FakeCollectionCsvExportUseCase();
+        await tester.pumpWidget(
+          _buildSubject(collectionCsvExportPreviewUseCase: csvUseCase),
+        );
+        await tester.tap(find.text('Export Collection to CSV'));
+        await tester.pumpAndSettle();
+        expect(find.byType(CollectionCsvExportPreviewScreen), findsOneWidget);
+      });
+
+      testWidgets(
+          'CSV collection export screen shows correct AppBar title',
+          (tester) async {
+        _setNarrowTallScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final csvUseCase = _FakeCollectionCsvExportUseCase();
+        await tester.pumpWidget(
+          _buildSubject(collectionCsvExportPreviewUseCase: csvUseCase),
+        );
+        await tester.tap(find.text('Export Collection to CSV'));
+        await tester.pumpAndSettle();
+        expect(find.text('Export Collection to CSV'), findsOneWidget);
+      });
+
+      testWidgets('tapping Export Collection to CSV does not show snackbar',
+          (tester) async {
+        _setNarrowTallScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final csvUseCase = _FakeCollectionCsvExportUseCase();
+        await tester.pumpWidget(
+          _buildSubject(collectionCsvExportPreviewUseCase: csvUseCase),
+        );
+        await tester.tap(find.text('Export Collection to CSV'));
+        await tester.pump();
+        expect(find.byType(SnackBar), findsNothing);
+      });
+    });
+
+    group('Export Wishlist to CSV navigation', () {
+      testWidgets(
+          'tapping Export Wishlist to CSV navigates to CSV export preview screen',
+          (tester) async {
+        _setNarrowTallScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final csvUseCase = _FakeWishlistCsvExportUseCase();
+        await tester.pumpWidget(
+          _buildSubject(wishlistCsvExportPreviewUseCase: csvUseCase),
+        );
+        await tester.tap(find.text('Export Wishlist to CSV'));
+        await tester.pumpAndSettle();
+        expect(find.byType(WishlistCsvExportPreviewScreen), findsOneWidget);
+      });
+
+      testWidgets('CSV wishlist export screen shows correct AppBar title',
+          (tester) async {
+        _setNarrowTallScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final csvUseCase = _FakeWishlistCsvExportUseCase();
+        await tester.pumpWidget(
+          _buildSubject(wishlistCsvExportPreviewUseCase: csvUseCase),
+        );
+        await tester.tap(find.text('Export Wishlist to CSV'));
+        await tester.pumpAndSettle();
+        expect(find.text('Export Wishlist to CSV'), findsOneWidget);
+      });
+
+      testWidgets('tapping Export Wishlist to CSV does not show snackbar',
+          (tester) async {
+        _setNarrowTallScreen(tester);
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final csvUseCase = _FakeWishlistCsvExportUseCase();
+        await tester.pumpWidget(
+          _buildSubject(wishlistCsvExportPreviewUseCase: csvUseCase),
+        );
+        await tester.tap(find.text('Export Wishlist to CSV'));
+        await tester.pump();
+        expect(find.byType(SnackBar), findsNothing);
+      });
+    });
+
     group('wide layout', () {
       testWidgets('renders without error on wide screen', (tester) async {
         _setWideTallScreen(tester);
@@ -410,25 +534,25 @@ void main() {
         expect(find.text('Import Wishlist from CSV'), findsOneWidget);
       });
 
-      testWidgets('tapping a Coming soon card on wide screen shows snackbar',
+      testWidgets('tapping Import Collection from CSV on wide screen shows snackbar',
           (tester) async {
         _setWideTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Export Collection to CSV'));
+        await tester.tap(find.text('Import Collection from CSV'));
         await tester.pump();
         expect(find.byType(SnackBar), findsOneWidget);
       });
 
-      testWidgets('4 cards show Coming soon badge on wide screen', (tester) async {
+      testWidgets('2 cards show Coming soon badge on wide screen', (tester) async {
         _setWideTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(_buildSubject());
-        expect(find.text('Coming soon'), findsNWidgets(4));
+        expect(find.text('Coming soon'), findsNWidgets(2));
       });
     });
   });
