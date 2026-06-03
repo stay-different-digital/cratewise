@@ -154,7 +154,7 @@ class ExecuteWishlistImportUseCase {
       year: row.year,
       coverUrl: row.thumbUrl,
       priority: WishlistPriority.medium,
-      syncStatus: SyncStatus.localOnly,
+      syncStatus: SyncStatus.synced,
       createdAt: now,
       updatedAt: now,
     );

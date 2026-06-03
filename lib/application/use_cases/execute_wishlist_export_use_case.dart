@@ -138,6 +138,18 @@ class ExecuteWishlistExportUseCase {
               );
               exported++;
             } catch (_) {
+              try {
+                final failedItem =
+                    await _wishlistRepository.getById(row.itemId);
+                if (failedItem != null) {
+                  await _wishlistRepository.update(
+                    failedItem.copyWith(
+                      syncStatus: SyncStatus.failed,
+                      updatedAt: DateTime.now(),
+                    ),
+                  );
+                }
+              } catch (_) {}
               await _rowResultRepository.addResult(
                 jobId,
                 FailedRow(

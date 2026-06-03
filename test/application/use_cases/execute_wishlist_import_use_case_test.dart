@@ -2,6 +2,7 @@ import 'package:cratewise/application/use_cases/execute_wishlist_import_use_case
 import 'package:cratewise/domain/models/import_export_job.dart';
 import 'package:cratewise/domain/models/import_export_row_result.dart';
 import 'package:cratewise/domain/models/import_export_status.dart';
+import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/models/wishlist_import_preview.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/import_export_job_repository.dart';
@@ -249,6 +250,26 @@ void main() {
           ),
         );
         expect(wishlistRepo.added.first.discogsReleaseId, 42);
+      });
+
+      test('imported item has syncStatus synced', () async {
+        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
+            makeUseCase();
+        await useCase.execute(
+          WishlistImportPreview(
+            rows: [
+              const NewWishlistRow(
+                releaseId: 42,
+                title: 'T',
+                artist: 'A',
+              ),
+            ],
+          ),
+        );
+        expect(
+          wishlistRepo.added.first.syncStatus,
+          SyncStatus.synced,
+        );
       });
 
       test('saved item has medium priority by default', () async {
