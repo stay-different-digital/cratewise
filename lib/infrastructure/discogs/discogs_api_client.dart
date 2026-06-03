@@ -127,6 +127,20 @@ class DiscogsApiClient {
     );
   }
 
+  /// Adds [releaseId] to the authenticated user's Discogs wantlist.
+  ///
+  /// Returns normally on success (HTTP 201); throws an [AppError] subtype on failure.
+  Future<void> addToWantlist(
+    String username,
+    int releaseId,
+    String token,
+  ) async {
+    await _post(
+      '/users/$username/wants/$releaseId',
+      token,
+    );
+  }
+
   Future<http.Response> _get(
     String path,
     String token, {

@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../application/use_cases/build_wishlist_export_preview_use_case.dart';
 import '../../application/use_cases/check_wishlist_export_capability_use_case.dart';
+import '../../application/use_cases/execute_wishlist_export_use_case.dart';
 import '../../domain/models/wishlist_export_preview.dart';
+import '../../infrastructure/discogs/discogs_api_client.dart';
 import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_import_export_job_repository.dart';
+import '../../infrastructure/local_database/local_import_export_row_result_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
+import '../../infrastructure/secure_storage/discogs_token_storage.dart';
 
 const _kWideBreakpoint = 700.0;
 
@@ -34,6 +39,19 @@ class _Error extends _PreviewState {
   const _Error();
 }
 
+class _NoToken extends _PreviewState {
+  const _NoToken();
+}
+
+class _Exporting extends _PreviewState {
+  const _Exporting();
+}
+
+class _ExportDone extends _PreviewState {
+  const _ExportDone(this.result);
+  final ExecuteWishlistExportCompleted result;
+}
+
 // ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
@@ -42,10 +60,14 @@ class WishlistExportPreviewScreen extends StatefulWidget {
   const WishlistExportPreviewScreen({
     super.key,
     this.useCase,
+    this.executeUseCase,
   });
 
   /// Injected only for testing. Production code passes null.
   final BuildWishlistExportPreviewUseCase? useCase;
+
+  /// Injected only for testing. Production code passes null.
+  final ExecuteWishlistExportUseCase? executeUseCase;
 
   @override
   State<WishlistExportPreviewScreen> createState() =>
@@ -55,6 +77,7 @@ class WishlistExportPreviewScreen extends StatefulWidget {
 class _WishlistExportPreviewScreenState
     extends State<WishlistExportPreviewScreen> {
   late final BuildWishlistExportPreviewUseCase _useCase;
+  ExecuteWishlistExportUseCase? _executeUseCase;
   AppDatabase? _ownedDb;
   _PreviewState _state = const _Loading();
 
@@ -63,12 +86,22 @@ class _WishlistExportPreviewScreenState
     super.initState();
     if (widget.useCase != null) {
       _useCase = widget.useCase!;
+      _executeUseCase = widget.executeUseCase;
     } else {
       final db = AppDatabase(openAppDatabase());
       _ownedDb = db;
+      final wishlistRepo = LocalWishlistRepository(db);
       _useCase = BuildWishlistExportPreviewUseCase(
-        repository: LocalWishlistRepository(db),
+        repository: wishlistRepo,
         capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
+      );
+      _executeUseCase = ExecuteWishlistExportUseCase(
+        capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
+        tokenStorage: DiscogsTokenStorage(),
+        apiClient: DiscogsApiClient(),
+        wishlistRepository: wishlistRepo,
+        jobRepository: LocalImportExportJobRepository(db),
+        rowResultRepository: LocalImportExportRowResultRepository(db),
       );
     }
     _load();
@@ -88,6 +121,27 @@ class _WishlistExportPreviewScreenState
     });
   }
 
+  Future<void> _executeExport(WishlistExportPreview preview) async {
+    final uc = _executeUseCase;
+    if (uc == null) return;
+    setState(() => _state = const _Exporting());
+    final result = await uc.execute(preview);
+    if (!mounted) return;
+    switch (result) {
+      case ExecuteWishlistExportCompleted():
+        setState(() => _state = _ExportDone(result));
+      case ExecuteWishlistExportNotSupported(:final reason):
+        setState(() => _state = _NotSupported(reason));
+      case ExecuteWishlistExportNoToken():
+        setState(() => _state = const _NoToken());
+      case ExecuteWishlistExportFailed(:final safeMessage):
+        setState(() => _state = _Ready(preview));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(safeMessage)),
+        );
+    }
+  }
+
   @override
   void dispose() {
     _ownedDb?.close();
@@ -100,12 +154,23 @@ class _WishlistExportPreviewScreenState
       appBar: AppBar(title: const Text('Export Wishlist to Discogs')),
       body: switch (_state) {
         _Loading() => const Center(child: CircularProgressIndicator()),
-        _Ready(:final preview) => _PreviewBody(preview: preview),
+        _Ready(:final preview) => _PreviewBody(
+            preview: preview,
+            onConfirm: _executeUseCase != null
+                ? () => _executeExport(preview)
+                : null,
+          ),
         _NotSupported(:final reason) => _NotSupportedState(reason: reason),
         _Error() => _RetriableErrorState(
             message:
                 'Something went wrong. Check your connection and try again.',
             onRetry: _load,
+          ),
+        _NoToken() => const _NoTokenState(),
+        _Exporting() => const _ExportingBody(),
+        _ExportDone(:final result) => _ExportSummaryBody(
+            result: result,
+            onDone: () => Navigator.of(context).pop(),
           ),
       },
     );
@@ -117,9 +182,10 @@ class _WishlistExportPreviewScreenState
 // ---------------------------------------------------------------------------
 
 class _PreviewBody extends StatelessWidget {
-  const _PreviewBody({required this.preview});
+  const _PreviewBody({required this.preview, this.onConfirm});
 
   final WishlistExportPreview preview;
+  final VoidCallback? onConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +222,10 @@ class _PreviewBody extends StatelessWidget {
                       ),
               ),
             ),
-            _ConfirmBar(eligibleCount: preview.eligibleCount),
+            _ConfirmBar(
+              eligibleCount: preview.eligibleCount,
+              onConfirm: onConfirm,
+            ),
           ],
         );
       },
@@ -303,9 +372,10 @@ class _NotesCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ConfirmBar extends StatelessWidget {
-  const _ConfirmBar({required this.eligibleCount});
+  const _ConfirmBar({required this.eligibleCount, this.onConfirm});
 
   final int eligibleCount;
+  final VoidCallback? onConfirm;
 
   @override
   Widget build(BuildContext context) {
@@ -317,10 +387,121 @@ class _ConfirmBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         child: FilledButton(
-          onPressed: null,
+          onPressed: eligibleCount > 0 ? onConfirm : null,
           child: Text(label),
         ),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Exporting body
+// ---------------------------------------------------------------------------
+
+class _ExportingBody extends StatelessWidget {
+  const _ExportingBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(
+            'Exporting your wishlist…',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Export summary body
+// ---------------------------------------------------------------------------
+
+class _ExportSummaryBody extends StatelessWidget {
+  const _ExportSummaryBody({required this.result, required this.onDone});
+
+  final ExecuteWishlistExportCompleted result;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 64,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Export complete',
+                  style: theme.textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _CountRow(
+                          label: 'Added to Discogs',
+                          value: '${result.exported}',
+                          color: result.exported > 0
+                              ? theme.colorScheme.primary
+                              : null,
+                        ),
+                        if (result.skipped > 0) ...[
+                          const SizedBox(height: 10),
+                          _CountRow(
+                            label: 'Skipped',
+                            value: '${result.skipped}',
+                          ),
+                        ],
+                        if (result.failed > 0) ...[
+                          const SizedBox(height: 10),
+                          _CountRow(
+                            label: 'Failed',
+                            value: '${result.failed}',
+                            color: theme.colorScheme.error,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: FilledButton(
+              onPressed: onDone,
+              child: const Text('Done'),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -357,6 +538,48 @@ class _NotSupportedState extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               reason,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// No token state
+// ---------------------------------------------------------------------------
+
+class _NoTokenState extends StatelessWidget {
+  const _NoTokenState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.link_off,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No Discogs account connected',
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Connect your Discogs account in Settings to export your wishlist.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
