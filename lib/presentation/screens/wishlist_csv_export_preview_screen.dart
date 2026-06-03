@@ -223,6 +223,15 @@ class _SummaryCard extends StatelessWidget {
               valueColor:
                   preview.rowCount > 0 ? theme.colorScheme.primary : null,
             ),
+            if (preview.rowCount == 0) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Your wishlist is empty. Add items before exporting.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
             const SizedBox(height: 10),
             _LabelValue(
               label: 'Columns',
@@ -501,26 +510,29 @@ class _ErrorBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
-            const SizedBox(height: 16),
-            Text(
-              'Something went wrong. Check your connection and try again.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+              const SizedBox(height: 16),
+              Text(
+                'Something went wrong. Check your connection and try again.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            OutlinedButton(
-              onPressed: onRetry,
-              child: const Text('Try again'),
-            ),
-          ],
+              const SizedBox(height: 24),
+              OutlinedButton(
+                onPressed: onRetry,
+                child: const Text('Try again'),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -232,6 +232,31 @@ void main() {
         await tester.pump();
         expect(find.text('No data to preview'), findsOneWidget);
       });
+
+      testWidgets('shows empty note when collection has no items', (tester) async {
+        final uc = _FakePreviewUseCase(
+          CollectionCsvExportPreviewReady(_preview(count: 0)),
+        );
+        await tester.pumpWidget(_buildSubject(previewUseCase: uc));
+        await tester.pump();
+        expect(
+          find.text('Your collection is empty. Add items before exporting.'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('does not show empty note when collection has items',
+          (tester) async {
+        final uc = _FakePreviewUseCase(
+          CollectionCsvExportPreviewReady(_preview(count: 2)),
+        );
+        await tester.pumpWidget(_buildSubject(previewUseCase: uc));
+        await tester.pump();
+        expect(
+          find.text('Your collection is empty. Add items before exporting.'),
+          findsNothing,
+        );
+      });
     });
 
     group('confirm button', () {

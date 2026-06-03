@@ -24,8 +24,8 @@ class CheckCollectionExportCapabilityUseCase {
 
   CheckCollectionExportCapabilityResult execute() {
     return const CollectionExportNotSupported(
-      'Export to Discogs is not available yet. '
-      'You can export your collection as a CSV file instead.',
+      'Exporting to Discogs is not yet available. '
+      "Use 'Export Collection to CSV' to save a backup of your collection.",
     );
   }
 }

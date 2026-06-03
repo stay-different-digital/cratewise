@@ -241,6 +241,29 @@ void main() {
         await tester.pump();
         expect(find.text('0'), findsNWidgets(4));
       });
+
+      testWidgets('shows empty explanation when Discogs collection is empty',
+          (tester) async {
+        final useCase = _FakeUseCase(FetchPreviewReady(makePreview()));
+        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pump();
+        expect(
+          find.text('Your Discogs collection appears to be empty.'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('does not show empty explanation when collection has items',
+          (tester) async {
+        final useCase =
+            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 3)));
+        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pump();
+        expect(
+          find.text('Your Discogs collection appears to be empty.'),
+          findsNothing,
+        );
+      });
     });
 
     group('confirm button', () {

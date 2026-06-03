@@ -243,6 +243,30 @@ void main() {
         await tester.pump();
         expect(find.text('0'), findsNWidgets(4));
       });
+
+      testWidgets('shows empty explanation when Discogs wantlist is empty',
+          (tester) async {
+        final useCase =
+            _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
+        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pump();
+        expect(
+          find.text('Your Discogs wantlist appears to be empty.'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('does not show empty explanation when wantlist has items',
+          (tester) async {
+        final useCase =
+            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 2)));
+        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pump();
+        expect(
+          find.text('Your Discogs wantlist appears to be empty.'),
+          findsNothing,
+        );
+      });
     });
 
     group('confirm button', () {
