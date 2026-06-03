@@ -7,6 +7,23 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 6Q: Wishlist export preview UI] — 2026-06-03
+
+### Added
+- `WishlistExportPreviewScreen` with four states: `_Loading` (spinner), `_Ready` (preview summary + confirm bar), `_NotSupported` (explains CSV alternative), `_Error` (retry button)
+- Summary card shows: total local wishlist items, ready to export count, already linked to Discogs count, cannot export count
+- Notes card shown when there are already-synced or invalid items; already-synced wording uses "already in your Discogs wantlist and will be skipped" (wantlist-specific terminology)
+- Disabled confirm bar with dynamic label ("Nothing to export" / "Export N record(s)"); button remains disabled until an execute use case is wired in
+- `LayoutBuilder` wide layout ≥700dp: summary card and confirm bar side-by-side (iPad)
+- `ImportExportScreen` wires the "Export Wishlist to Discogs" card to navigate to `WishlistExportPreviewScreen`; "Coming soon" badge removed from that card (Coming soon badge count: 5 → 4)
+- 27 new screen widget tests and 3 navigation tests in `import_export_screen_test.dart`
+
+### Security
+- No tokens read or written in the preview screen
+- `_NotSupportedState` displays only the capability reason string — never internal details or credentials
+
+---
+
 ## [Unreleased — Phase 6P: Wishlist export preview builder] — 2026-06-02
 
 ### Added
