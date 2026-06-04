@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 ThemeData buildCratewiseTheme(Brightness brightness) {
-  const seedColor = Color(0xFFB22222);
+  const seedColor = Color(0xFFFA003F);
   final colorScheme = ColorScheme.fromSeed(
     seedColor: seedColor,
     brightness: brightness,
