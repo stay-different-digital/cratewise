@@ -9,7 +9,8 @@
       "Bash(dart /tmp/test_dart2.dart)",
       "Bash(python3 -c ' *)",
       "Bash(python3)",
-      "Bash(dart run *)"
+      "Bash(dart run *)",
+      "Bash(xxd)"
     ]
   }
 }

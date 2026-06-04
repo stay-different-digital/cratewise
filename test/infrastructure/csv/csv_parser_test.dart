@@ -129,5 +129,40 @@ void main() {
         expect(s.headers.length, 4);
       });
     });
+
+    group('BOM handling', () {
+      test('UTF-8 BOM at start of file is stripped before parsing', () {
+        // A file written by TempCsvFileWriter starts with U+FEFF.
+        final csv = '﻿Artist,Title\nMiles Davis,Kind of Blue';
+        final result = parser.parse(csv);
+        final s = result as CsvParseSuccess;
+        expect(s.headers, ['Artist', 'Title']);
+        expect(s.rows.first, ['Miles Davis', 'Kind of Blue']);
+      });
+
+      test('first header does not contain the BOM character', () {
+        final csv = '﻿Artist,Title\nA,B';
+        final result = parser.parse(csv);
+        final s = result as CsvParseSuccess;
+        expect(s.headers.first, 'Artist');
+        expect(s.headers.first.startsWith('﻿'), isFalse);
+      });
+
+      test('file without BOM is parsed correctly', () {
+        final csv = 'Artist,Title\nMiles Davis,Kind of Blue';
+        final result = parser.parse(csv);
+        final s = result as CsvParseSuccess;
+        expect(s.headers, ['Artist', 'Title']);
+        expect(s.rows.first, ['Miles Davis', 'Kind of Blue']);
+      });
+
+      test('BOM-only content returns empty success', () {
+        final result = parser.parse('﻿');
+        expect(result, isA<CsvParseSuccess>());
+        final s = result as CsvParseSuccess;
+        expect(s.headers, isEmpty);
+        expect(s.rows, isEmpty);
+      });
+    });
   });
 }

@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7Y: CSV export is compatible with Excel on Windows (US-25)] — 2026-06-04
+
+### Changed
+- `TempCsvFileWriter` — written CSV files now start with a UTF-8 BOM (`U+FEFF` / `\xEF\xBB\xBF`) so Excel on Windows opens them with correct encoding for non-ASCII characters; `writeAsString` encodes the BOM as UTF-8 bytes automatically
+- `CsvParser` — strips a leading `U+FEFF` BOM character before normalising content, so files with or without the BOM are imported correctly
+
+### Tests
+- 4 new tests in `csv_parser_test.dart` (`BOM handling` group): UTF-8 BOM is stripped before parsing; first header contains no BOM character; file without BOM parses correctly; BOM-only content returns empty success
+
+---
+
 ## [Unreleased — Phase 7X: Discogs exports back off on rate limits (US-24)] — 2026-06-04
 
 ### Changed

@@ -25,7 +25,7 @@ class TempCsvFileWriter implements CsvFileWriter {
     final csvString = converter.convert(allRows);
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/$filename');
-    await file.writeAsString(csvString);
+    await file.writeAsString('﻿$csvString');
     return file.path;
   }
 }

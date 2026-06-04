@@ -30,7 +30,8 @@ class CsvParser {
   const CsvParser();
 
   CsvParseResult parse(String content) {
-    final normalised = content
+    final stripped = content.startsWith('﻿') ? content.substring(1) : content;
+    final normalised = stripped
         .replaceAll('\r\n', '\n')
         .replaceAll('\r', '\n')
         .trim();
