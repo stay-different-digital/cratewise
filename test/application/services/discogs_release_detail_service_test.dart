@@ -685,6 +685,54 @@ void main() {
       },
     );
 
+    test('records metadata retry action when cache write fails', () async {
+      final retryRepo = _SpyRetryRepo();
+      final cache = _SpyCacheRepository()..shouldThrow = true;
+      final service = _makeService(
+        'fake_token',
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
+        cacheRepo: cache,
+        retryRecorder: CacheRetryRecorder(retryRepo),
+      );
+      await service.fetchDetail(249504);
+      expect(
+        retryRepo._actions.where(
+          (a) => a.actionType == RetryActionType.refreshReleaseMetadata,
+        ),
+        hasLength(1),
+      );
+      expect(retryRepo._actions.first.entityId, '249504');
+    });
+
+    test('records thumbnail retry action when thumbnail save fails', () async {
+      final retryRepo = _SpyRetryRepo();
+      final repo = _SpyThumbnailRepository()..saveThrows = true;
+      final thumbService = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient(
+          (_) async => http.Response.bytes([0xff, 0xd8], 200),
+        ),
+      );
+      final service = _makeService(
+        'fake_token',
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
+        thumbnailService: thumbService,
+        retryRecorder: CacheRetryRecorder(retryRepo),
+      );
+      await service.fetchDetail(249504);
+      expect(
+        retryRepo._actions.where(
+          (a) => a.actionType == RetryActionType.cacheThumbnail,
+        ),
+        hasLength(1),
+      );
+      expect(retryRepo._actions.first.entityId, '249504');
+    });
+
     test('does not record thumbnail retry when cover URL is absent', () async {
       final noCoverJson = Map<String, dynamic>.from(_kindOfBlueJson)
         ..remove('images');

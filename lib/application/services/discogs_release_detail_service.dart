@@ -62,7 +62,7 @@ class DiscogsReleaseDetailService {
     try {
       await _cacheRepository.save(_toCachedMetadata(detail));
     } catch (_) {
-      // cache failure must not break the detail load
+      await _cacheRetryRecorder?.recordMetadataCacheWriteFailure(detail.id);
     }
   }
 

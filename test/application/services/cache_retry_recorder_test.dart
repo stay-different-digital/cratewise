@@ -159,6 +159,79 @@ void main() {
     });
   });
 
+  group('CacheRetryRecorder.recordMetadataCacheWriteFailure', () {
+    test('records action with refreshReleaseMetadata type', () async {
+      final repo = _FakeRetryRepo();
+      await CacheRetryRecorder(repo).recordMetadataCacheWriteFailure(249504);
+      expect(repo._actions, hasLength(1));
+      expect(
+        repo._actions.first.actionType,
+        RetryActionType.refreshReleaseMetadata,
+      );
+    });
+
+    test('stores entityId as the release ID string', () async {
+      final repo = _FakeRetryRepo();
+      await CacheRetryRecorder(repo).recordMetadataCacheWriteFailure(42);
+      expect(repo._actions.first.entityId, '42');
+    });
+
+    test('stores cachedRelease entity type', () async {
+      final repo = _FakeRetryRepo();
+      await CacheRetryRecorder(repo).recordMetadataCacheWriteFailure(1);
+      expect(
+        repo._actions.first.entityType,
+        RetryActionEntityType.cachedRelease,
+      );
+    });
+
+    test('stores pending status and zero attemptCount', () async {
+      final repo = _FakeRetryRepo();
+      await CacheRetryRecorder(repo).recordMetadataCacheWriteFailure(1);
+      final action = repo._actions.first;
+      expect(action.status, RetryActionStatus.pending);
+      expect(action.attemptCount, 0);
+    });
+
+    test(
+      'does not record duplicate when pending metadata action exists',
+      () async {
+        final repo = _FakeRetryRepo();
+        final recorder = CacheRetryRecorder(repo);
+        await recorder.recordMetadataCacheWriteFailure(249504);
+        await recorder.recordMetadataCacheWriteFailure(249504);
+        expect(repo._actions, hasLength(1));
+      },
+    );
+
+    test(
+      'deduplicates against existing refreshReleaseMetadata action',
+      () async {
+        final repo = _FakeRetryRepo();
+        final recorder = CacheRetryRecorder(repo);
+        await recorder.recordMetadataFailure(1, const NetworkError());
+        await recorder.recordMetadataCacheWriteFailure(1);
+        expect(repo._actions, hasLength(1));
+      },
+    );
+
+    test('safe error message does not contain token or secret', () async {
+      final repo = _FakeRetryRepo();
+      await CacheRetryRecorder(repo).recordMetadataCacheWriteFailure(1);
+      final msg = repo._actions.first.safeErrorMessage.toLowerCase();
+      expect(msg, isNot(contains('token')));
+      expect(msg, isNot(contains('secret')));
+    });
+
+    test('swallows repository errors without throwing', () async {
+      final repo = _FakeRetryRepo()..addThrows = true;
+      await expectLater(
+        CacheRetryRecorder(repo).recordMetadataCacheWriteFailure(1),
+        completes,
+      );
+    });
+  });
+
   group('CacheRetryRecorder.recordThumbnailFailure', () {
     test('records action with cacheThumbnail type', () async {
       final repo = _FakeRetryRepo();

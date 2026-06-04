@@ -7,6 +7,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7T: Failed cache writes are silently retried (US-20)] — 2026-06-04
+
+### Changed
+- `CacheRetryRecorder` — new `recordMetadataCacheWriteFailure(int releaseId)` method: unconditionally records a `refreshReleaseMetadata` retry action when a local metadata write fails (no `_isRetryable` gate — I/O failures are always retryable)
+- `DiscogsReleaseDetailService._tryCache` — on save failure, now calls `_cacheRetryRecorder?.recordMetadataCacheWriteFailure(detail.id)` so a retry is queued silently; the detail load is still not blocked
+
+### Tests
+- 10 new tests across 2 files:
+  - `cache_retry_recorder_test.dart` — 8 new tests in `recordMetadataCacheWriteFailure` group: records `refreshReleaseMetadata` action, correct entityId, entityType, status and attemptCount, deduplicates against existing `refreshReleaseMetadata` action (from API failure), safe error message, swallows repo errors
+  - `discogs_release_detail_service_test.dart` — 2 new tests in `retry recording` group: records metadata retry when cache write fails; records thumbnail retry when thumbnail save fails (explicit I/O-failure coverage complementing the existing 404 test)
+
+---
+
 ## [Unreleased — Phase 7S: Thumbnail cache storage limit and eviction policy (US-19)] — 2026-06-04
 
 ### Added

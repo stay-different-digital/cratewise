@@ -26,6 +26,17 @@ class CacheRetryRecorder {
     );
   }
 
+  /// Records a pending retry action when writing release metadata to the local
+  /// cache fails (e.g. storage full or I/O error), regardless of the error
+  /// type.  No pending-duplicate check is skipped.
+  Future<void> recordMetadataCacheWriteFailure(int releaseId) async {
+    await _recordIfNoDuplicate(
+      releaseId: releaseId,
+      actionType: RetryActionType.refreshReleaseMetadata,
+      safeErrorMessage: 'Release metadata could not be saved locally.',
+    );
+  }
+
   /// Records a pending retry action for a failed thumbnail cache attempt, if
   /// no pending action for this release already exists.
   Future<void> recordThumbnailFailure(int releaseId) async {
