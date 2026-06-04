@@ -40,6 +40,7 @@ class DiscogsReleaseDetailService {
       return detail;
     } on AppError catch (e) {
       await _cacheRetryRecorder?.recordMetadataFailure(releaseId, e);
+      await _storage.clearIfRevoked(e);
       rethrow;
     }
   }

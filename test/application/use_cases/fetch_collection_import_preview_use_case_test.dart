@@ -34,6 +34,25 @@ class _FakeTokenStorage implements TokenStorage {
   Future<void> deleteCredentials() async {}
 }
 
+class _SpyTokenStorage implements TokenStorage {
+  _SpyTokenStorage({this.token = 'fake_token', this.username = 'testuser'});
+  final String? token;
+  final String? username;
+  int deleteCallCount = 0;
+
+  @override
+  Future<String?> loadToken() async => token;
+  @override
+  Future<String?> loadUsername() async => username;
+  @override
+  Future<void> saveCredentials({
+    required String token,
+    required String username,
+  }) async {}
+  @override
+  Future<void> deleteCredentials() async => deleteCallCount++;
+}
+
 // ---------------------------------------------------------------------------
 // Fake API client
 // ---------------------------------------------------------------------------
@@ -68,8 +87,7 @@ class _ThrowingApiClient extends DiscogsApiClient {
     String token, {
     int page = 1,
     int perPage = 50,
-  }) async =>
-      throw _error;
+  }) async => throw _error;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,8 +95,7 @@ class _ThrowingApiClient extends DiscogsApiClient {
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
-  _FakeCollectionRepository({Set<int>? existingIds})
-      : _ids = existingIds ?? {};
+  _FakeCollectionRepository({Set<int>? existingIds}) : _ids = existingIds ?? {};
 
   final Set<int> _ids;
 
@@ -110,35 +127,33 @@ DiscogsCollectionItemDto makeDto({
   int releaseId = 100,
   String title = 'Test Album',
   String artist = 'Test Artist',
-}) =>
-    DiscogsCollectionItemDto(
-      releaseId: releaseId,
-      instanceId: 1,
-      dateAdded: '2023-01-01T00:00:00-08:00',
-      rating: 0,
-      folderId: 1,
-      title: title,
-      artist: artist,
-      label: 'Test Label',
-      catno: 'TL001',
-      format: 'Vinyl, LP',
-      genres: const ['Rock'],
-      year: 2000,
-      thumbUrl: null,
-    );
+}) => DiscogsCollectionItemDto(
+  releaseId: releaseId,
+  instanceId: 1,
+  dateAdded: '2023-01-01T00:00:00-08:00',
+  rating: 0,
+  folderId: 1,
+  title: title,
+  artist: artist,
+  label: 'Test Label',
+  catno: 'TL001',
+  format: 'Vinyl, LP',
+  genres: const ['Rock'],
+  year: 2000,
+  thumbUrl: null,
+);
 
 DiscogsCollectionPageDto makePage({
   int page = 1,
   int totalPages = 1,
   int totalItems = 1,
   List<DiscogsCollectionItemDto>? items,
-}) =>
-    DiscogsCollectionPageDto(
-      page: page,
-      totalPages: totalPages,
-      totalItems: totalItems,
-      items: items ?? [makeDto()],
-    );
+}) => DiscogsCollectionPageDto(
+  page: page,
+  totalPages: totalPages,
+  totalItems: totalItems,
+  items: items ?? [makeDto()],
+);
 
 FetchCollectionImportPreviewUseCase makeUseCase({
   TokenStorage? storage,
@@ -148,8 +163,8 @@ FetchCollectionImportPreviewUseCase makeUseCase({
   final repo = _FakeCollectionRepository(existingIds: existingIds);
   return FetchCollectionImportPreviewUseCase(
     previewBuilder: BuildCollectionImportPreviewUseCase(repo),
-    storage: storage ??
-        _FakeTokenStorage(token: 'fake-token', username: 'fakeuser'),
+    storage:
+        storage ?? _FakeTokenStorage(token: 'fake-token', username: 'fakeuser'),
     apiClient: apiClient ?? _FakeApiClient([makePage()]),
   );
 }
@@ -194,10 +209,12 @@ void main() {
       });
 
       test('preview contains items from single page', () async {
-        final page = makePage(items: [
-          makeDto(releaseId: 1, title: 'Album A'),
-          makeDto(releaseId: 2, title: 'Album B'),
-        ]);
+        final page = makePage(
+          items: [
+            makeDto(releaseId: 1, title: 'Album A'),
+            makeDto(releaseId: 2, title: 'Album B'),
+          ],
+        );
         final useCase = makeUseCase(apiClient: _FakeApiClient([page]));
         final result = await useCase.execute() as FetchPreviewReady;
         expect(result.preview.totalCount, 2);
@@ -344,12 +361,36 @@ void main() {
     group('security', () {
       test('result does not expose token value', () async {
         const token = 'super-secret-token-12345';
-        final storage =
-            _FakeTokenStorage(token: token, username: 'testuser');
+        final storage = _FakeTokenStorage(token: token, username: 'testuser');
         final useCase = makeUseCase(storage: storage);
         final result = await useCase.execute();
         final resultStr = result.toString();
         expect(resultStr, isNot(contains(token)));
+      });
+    });
+
+    group('revoked token', () {
+      test('clears credentials when API returns 401', () async {
+        final spy = _SpyTokenStorage();
+        final useCase = makeUseCase(
+          storage: spy,
+          apiClient: _ThrowingApiClient(const InvalidTokenError()),
+        );
+        final result = await useCase.execute();
+        expect(result, isA<FetchPreviewError>());
+        expect((result as FetchPreviewError).error, isA<InvalidTokenError>());
+        expect(spy.deleteCallCount, 1);
+      });
+
+      test('does not clear credentials on non-401 error', () async {
+        final spy = _SpyTokenStorage();
+        final useCase = makeUseCase(
+          storage: spy,
+          apiClient: _ThrowingApiClient(const NetworkError()),
+        );
+        final result = await useCase.execute();
+        expect(result, isA<FetchPreviewNetworkError>());
+        expect(spy.deleteCallCount, 0);
       });
     });
   });

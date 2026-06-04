@@ -34,6 +34,25 @@ class _FakeTokenStorage implements TokenStorage {
   Future<void> deleteCredentials() async {}
 }
 
+class _SpyTokenStorage implements TokenStorage {
+  _SpyTokenStorage({this.token = 'fake_token', this.username = 'testuser'});
+  final String? token;
+  final String? username;
+  int deleteCallCount = 0;
+
+  @override
+  Future<String?> loadToken() async => token;
+  @override
+  Future<String?> loadUsername() async => username;
+  @override
+  Future<void> saveCredentials({
+    required String token,
+    required String username,
+  }) async {}
+  @override
+  Future<void> deleteCredentials() async => deleteCallCount++;
+}
+
 // ---------------------------------------------------------------------------
 // Fake API client
 // ---------------------------------------------------------------------------
@@ -68,8 +87,7 @@ class _ThrowingApiClient extends DiscogsApiClient {
     String token, {
     int page = 1,
     int perPage = 50,
-  }) async =>
-      throw _error;
+  }) async => throw _error;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,8 +95,7 @@ class _ThrowingApiClient extends DiscogsApiClient {
 // ---------------------------------------------------------------------------
 
 class _FakeWishlistRepository implements WishlistRepository {
-  _FakeWishlistRepository({Set<int>? existingIds})
-      : _ids = existingIds ?? {};
+  _FakeWishlistRepository({Set<int>? existingIds}) : _ids = existingIds ?? {};
 
   final Set<int> _ids;
 
@@ -110,33 +127,31 @@ DiscogsWantlistItemDto makeDto({
   int releaseId = 100,
   String title = 'Test Album',
   String artist = 'Test Artist',
-}) =>
-    DiscogsWantlistItemDto(
-      releaseId: releaseId,
-      dateAdded: '2023-01-01T00:00:00-08:00',
-      rating: 0,
-      title: title,
-      artist: artist,
-      label: 'Test Label',
-      catno: 'TL001',
-      format: 'Vinyl, LP',
-      genres: const ['Rock'],
-      year: 2000,
-      thumbUrl: null,
-    );
+}) => DiscogsWantlistItemDto(
+  releaseId: releaseId,
+  dateAdded: '2023-01-01T00:00:00-08:00',
+  rating: 0,
+  title: title,
+  artist: artist,
+  label: 'Test Label',
+  catno: 'TL001',
+  format: 'Vinyl, LP',
+  genres: const ['Rock'],
+  year: 2000,
+  thumbUrl: null,
+);
 
 DiscogsWantlistPageDto makePage({
   int page = 1,
   int totalPages = 1,
   int totalItems = 1,
   List<DiscogsWantlistItemDto>? items,
-}) =>
-    DiscogsWantlistPageDto(
-      page: page,
-      totalPages: totalPages,
-      totalItems: totalItems,
-      items: items ?? [makeDto()],
-    );
+}) => DiscogsWantlistPageDto(
+  page: page,
+  totalPages: totalPages,
+  totalItems: totalItems,
+  items: items ?? [makeDto()],
+);
 
 FetchWishlistImportPreviewUseCase makeUseCase({
   TokenStorage? storage,
@@ -146,8 +161,8 @@ FetchWishlistImportPreviewUseCase makeUseCase({
   final repo = _FakeWishlistRepository(existingIds: existingIds);
   return FetchWishlistImportPreviewUseCase(
     previewBuilder: BuildWishlistImportPreviewUseCase(repo),
-    storage: storage ??
-        _FakeTokenStorage(token: 'fake-token', username: 'fakeuser'),
+    storage:
+        storage ?? _FakeTokenStorage(token: 'fake-token', username: 'fakeuser'),
     apiClient: apiClient ?? _FakeApiClient([makePage()]),
   );
 }
@@ -167,14 +182,16 @@ void main() {
         expect(result, isA<FetchWishlistPreviewNoToken>());
       });
 
-      test('returns FetchWishlistPreviewNoToken when username is null',
-          () async {
-        final useCase = makeUseCase(
-          storage: _FakeTokenStorage(token: 'tok', username: null),
-        );
-        final result = await useCase.execute();
-        expect(result, isA<FetchWishlistPreviewNoToken>());
-      });
+      test(
+        'returns FetchWishlistPreviewNoToken when username is null',
+        () async {
+          final useCase = makeUseCase(
+            storage: _FakeTokenStorage(token: 'tok', username: null),
+          );
+          final result = await useCase.execute();
+          expect(result, isA<FetchWishlistPreviewNoToken>());
+        },
+      );
 
       test('returns FetchWishlistPreviewNoToken when both are null', () async {
         final useCase = makeUseCase(
@@ -193,10 +210,12 @@ void main() {
       });
 
       test('preview contains items from single page', () async {
-        final page = makePage(items: [
-          makeDto(releaseId: 1, title: 'Album A'),
-          makeDto(releaseId: 2, title: 'Album B'),
-        ]);
+        final page = makePage(
+          items: [
+            makeDto(releaseId: 1, title: 'Album A'),
+            makeDto(releaseId: 2, title: 'Album B'),
+          ],
+        );
         final useCase = makeUseCase(apiClient: _FakeApiClient([page]));
         final result = await useCase.execute() as FetchWishlistPreviewReady;
         expect(result.preview.totalCount, 2);
@@ -298,22 +317,27 @@ void main() {
     });
 
     group('error handling', () {
-      test('returns FetchWishlistPreviewRateLimited on RateLimitedError',
-          () async {
-        final useCase = makeUseCase(
-          apiClient: _ThrowingApiClient(const RateLimitedError()),
-        );
-        final result = await useCase.execute();
-        expect(result, isA<FetchWishlistPreviewRateLimited>());
-      });
+      test(
+        'returns FetchWishlistPreviewRateLimited on RateLimitedError',
+        () async {
+          final useCase = makeUseCase(
+            apiClient: _ThrowingApiClient(const RateLimitedError()),
+          );
+          final result = await useCase.execute();
+          expect(result, isA<FetchWishlistPreviewRateLimited>());
+        },
+      );
 
-      test('returns FetchWishlistPreviewNetworkError on NetworkError', () async {
-        final useCase = makeUseCase(
-          apiClient: _ThrowingApiClient(const NetworkError()),
-        );
-        final result = await useCase.execute();
-        expect(result, isA<FetchWishlistPreviewNetworkError>());
-      });
+      test(
+        'returns FetchWishlistPreviewNetworkError on NetworkError',
+        () async {
+          final useCase = makeUseCase(
+            apiClient: _ThrowingApiClient(const NetworkError()),
+          );
+          final result = await useCase.execute();
+          expect(result, isA<FetchWishlistPreviewNetworkError>());
+        },
+      );
 
       test('returns FetchWishlistPreviewError on InvalidTokenError', () async {
         final useCase = makeUseCase(
@@ -323,22 +347,23 @@ void main() {
         expect(result, isA<FetchWishlistPreviewError>());
       });
 
-      test('returns FetchWishlistPreviewError on DiscogsUnavailableError',
-          () async {
-        final useCase = makeUseCase(
-          apiClient: _ThrowingApiClient(const DiscogsUnavailableError()),
-        );
-        final result = await useCase.execute();
-        expect(result, isA<FetchWishlistPreviewError>());
-      });
+      test(
+        'returns FetchWishlistPreviewError on DiscogsUnavailableError',
+        () async {
+          final useCase = makeUseCase(
+            apiClient: _ThrowingApiClient(const DiscogsUnavailableError()),
+          );
+          final result = await useCase.execute();
+          expect(result, isA<FetchWishlistPreviewError>());
+        },
+      );
 
       test('FetchWishlistPreviewError carries the original AppError', () async {
         const expectedError = InvalidTokenError();
         final useCase = makeUseCase(
           apiClient: _ThrowingApiClient(expectedError),
         );
-        final result =
-            await useCase.execute() as FetchWishlistPreviewError;
+        final result = await useCase.execute() as FetchWishlistPreviewError;
         expect(result.error, isA<InvalidTokenError>());
       });
     });
@@ -346,12 +371,39 @@ void main() {
     group('security', () {
       test('result does not expose token value', () async {
         const token = 'super-secret-token-12345';
-        final storage =
-            _FakeTokenStorage(token: token, username: 'testuser');
+        final storage = _FakeTokenStorage(token: token, username: 'testuser');
         final useCase = makeUseCase(storage: storage);
         final result = await useCase.execute();
         final resultStr = result.toString();
         expect(resultStr, isNot(contains(token)));
+      });
+    });
+
+    group('revoked token', () {
+      test('clears credentials when API returns 401', () async {
+        final spy = _SpyTokenStorage();
+        final useCase = makeUseCase(
+          storage: spy,
+          apiClient: _ThrowingApiClient(const InvalidTokenError()),
+        );
+        final result = await useCase.execute();
+        expect(result, isA<FetchWishlistPreviewError>());
+        expect(
+          (result as FetchWishlistPreviewError).error,
+          isA<InvalidTokenError>(),
+        );
+        expect(spy.deleteCallCount, 1);
+      });
+
+      test('does not clear credentials on non-401 error', () async {
+        final spy = _SpyTokenStorage();
+        final useCase = makeUseCase(
+          storage: spy,
+          apiClient: _ThrowingApiClient(const NetworkError()),
+        );
+        final result = await useCase.execute();
+        expect(result, isA<FetchWishlistPreviewNetworkError>());
+        expect(spy.deleteCallCount, 0);
       });
     });
   });

@@ -31,6 +31,24 @@ class _FakeStorage implements TokenStorage {
   Future<void> deleteCredentials() async {}
 }
 
+class _SpyStorage implements TokenStorage {
+  _SpyStorage({this.token = 'fake_token'});
+  final String? token;
+  int deleteCallCount = 0;
+
+  @override
+  Future<String?> loadToken() async => token;
+  @override
+  Future<String?> loadUsername() async => 'testuser';
+  @override
+  Future<void> saveCredentials({
+    required String token,
+    required String username,
+  }) async {}
+  @override
+  Future<void> deleteCredentials() async => deleteCallCount++;
+}
+
 DiscogsSearchService _makeService(String? token, http.Client httpClient) {
   return DiscogsSearchService(
     storage: _FakeStorage(token: token),
@@ -181,6 +199,38 @@ void main() {
       } on InvalidTokenError catch (e) {
         expect(e.toString(), isNot(contains(sensitiveToken)));
       }
+    });
+  });
+
+  group('DiscogsSearchService revoked token', () {
+    test('clears credentials when API returns 401', () async {
+      final spy = _SpyStorage();
+      final service = DiscogsSearchService(
+        storage: spy,
+        apiClient: DiscogsApiClient(
+          httpClient: MockClient((_) async => http.Response('', 401)),
+        ),
+      );
+      await expectLater(
+        () => service.search('test'),
+        throwsA(isA<InvalidTokenError>()),
+      );
+      expect(spy.deleteCallCount, 1);
+    });
+
+    test('does not clear credentials on non-401 error', () async {
+      final spy = _SpyStorage();
+      final service = DiscogsSearchService(
+        storage: spy,
+        apiClient: DiscogsApiClient(
+          httpClient: MockClient((_) async => throw Exception('network error')),
+        ),
+      );
+      await expectLater(
+        () => service.search('test'),
+        throwsA(isA<NetworkError>()),
+      );
+      expect(spy.deleteCallCount, 0);
     });
   });
 }

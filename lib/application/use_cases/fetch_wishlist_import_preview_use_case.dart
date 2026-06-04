@@ -19,7 +19,8 @@ class FetchWishlistPreviewNoToken extends FetchWishlistImportPreviewResult {
   const FetchWishlistPreviewNoToken();
 }
 
-class FetchWishlistPreviewNetworkError extends FetchWishlistImportPreviewResult {
+class FetchWishlistPreviewNetworkError
+    extends FetchWishlistImportPreviewResult {
   const FetchWishlistPreviewNetworkError();
 }
 
@@ -37,8 +38,8 @@ class FetchWishlistImportPreviewUseCase {
     required this.previewBuilder,
     TokenStorage? storage,
     DiscogsApiClient? apiClient,
-  })  : _storage = storage ?? DiscogsTokenStorage(),
-        _apiClient = apiClient ?? DiscogsApiClient();
+  }) : _storage = storage ?? DiscogsTokenStorage(),
+       _apiClient = apiClient ?? DiscogsApiClient();
 
   final TokenStorage _storage;
   final DiscogsApiClient _apiClient;
@@ -74,6 +75,7 @@ class FetchWishlistImportPreviewUseCase {
     } on NetworkError {
       return const FetchWishlistPreviewNetworkError();
     } on AppError catch (e) {
+      await _storage.clearIfRevoked(e);
       return FetchWishlistPreviewError(e);
     }
   }

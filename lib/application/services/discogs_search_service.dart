@@ -22,13 +22,18 @@ class DiscogsSearchService {
   Future<SearchResultPage> search(String query, {int page = 1}) async {
     final token = await _storage.loadToken();
     if (token == null) throw const NoTokenError();
-    final dto = await _apiClient.searchReleases(query, token, page: page);
-    return SearchResultPage(
-      items: dto.results.map(_toResult).toList(),
-      currentPage: dto.currentPage,
-      totalPages: dto.totalPages,
-      totalResults: dto.totalResults,
-    );
+    try {
+      final dto = await _apiClient.searchReleases(query, token, page: page);
+      return SearchResultPage(
+        items: dto.results.map(_toResult).toList(),
+        currentPage: dto.currentPage,
+        totalPages: dto.totalPages,
+        totalResults: dto.totalResults,
+      );
+    } on InvalidTokenError catch (e) {
+      await _storage.clearIfRevoked(e);
+      rethrow;
+    }
   }
 
   ReleaseSearchResult _toResult(DiscogsSearchResultDto dto) {

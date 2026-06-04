@@ -11,6 +11,7 @@ import '../../domain/repositories/import_export_row_result_repository.dart';
 import '../../domain/repositories/token_storage.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/discogs/discogs_api_client.dart';
+import '../../shared/errors/app_error.dart';
 import 'check_wishlist_export_capability_use_case.dart';
 
 sealed class ExecuteWishlistExportResult {
@@ -137,10 +138,12 @@ class ExecuteWishlistExportUseCase {
                 ),
               );
               exported++;
-            } catch (_) {
+            } catch (e) {
+              if (e is AppError) await _tokenStorage.clearIfRevoked(e);
               try {
-                final failedItem =
-                    await _wishlistRepository.getById(row.itemId);
+                final failedItem = await _wishlistRepository.getById(
+                  row.itemId,
+                );
                 if (failedItem != null) {
                   await _wishlistRepository.update(
                     failedItem.copyWith(

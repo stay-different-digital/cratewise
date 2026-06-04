@@ -37,6 +37,24 @@ class _FakeStorage implements TokenStorage {
   Future<void> deleteCredentials() async {}
 }
 
+class _SpyStorage implements TokenStorage {
+  _SpyStorage({this.token = 'fake_token'});
+  final String? token;
+  int deleteCallCount = 0;
+
+  @override
+  Future<String?> loadToken() async => token;
+  @override
+  Future<String?> loadUsername() async => 'testuser';
+  @override
+  Future<void> saveCredentials({
+    required String token,
+    required String username,
+  }) async {}
+  @override
+  Future<void> deleteCredentials() async => deleteCallCount++;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -291,6 +309,36 @@ void main() {
       if (result is BarcodeLookupError) {
         expect(result.error.toString(), isNot(contains(sensitiveToken)));
       }
+    });
+  });
+
+  group('BarcodeLookupUseCase revoked token', () {
+    test('clears credentials when API returns 401', () async {
+      final spy = _SpyStorage();
+      final useCase = BarcodeLookupUseCase(
+        storage: spy,
+        apiClient: DiscogsApiClient(
+          httpClient: MockClient((_) async => http.Response('', 401)),
+        ),
+      );
+      final result = await useCase.execute('1234567890');
+      expect(result, isA<BarcodeLookupError>());
+      expect((result as BarcodeLookupError).error, isA<InvalidTokenError>());
+      expect(spy.deleteCallCount, 1);
+    });
+
+    test('does not clear credentials on non-401 error', () async {
+      final spy = _SpyStorage();
+      final useCase = BarcodeLookupUseCase(
+        storage: spy,
+        apiClient: DiscogsApiClient(
+          httpClient: MockClient((_) async => throw Exception('network error')),
+        ),
+      );
+      final result = await useCase.execute('1234567890');
+      expect(result, isA<BarcodeLookupError>());
+      expect((result as BarcodeLookupError).error, isA<NetworkError>());
+      expect(spy.deleteCallCount, 0);
     });
   });
 }

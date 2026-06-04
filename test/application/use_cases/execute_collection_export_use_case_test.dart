@@ -74,6 +74,25 @@ class _FakeTokenStorage implements TokenStorage {
   Future<void> deleteCredentials() async {}
 }
 
+class _SpyTokenStorage implements TokenStorage {
+  _SpyTokenStorage({this.token = 'tok', this.username = 'user123'});
+  final String? token;
+  final String? username;
+  int deleteCallCount = 0;
+
+  @override
+  Future<String?> loadToken() async => token;
+  @override
+  Future<String?> loadUsername() async => username;
+  @override
+  Future<void> saveCredentials({
+    required String token,
+    required String username,
+  }) async {}
+  @override
+  Future<void> deleteCredentials() async => deleteCallCount++;
+}
+
 class _ThrowingTokenStorage implements TokenStorage {
   @override
   Future<String?> loadToken() async => throw Exception('Storage error');
@@ -156,8 +175,7 @@ class _FakeJobRepository implements ImportExportJobRepository {
 
 class _ThrowingJobRepository implements ImportExportJobRepository {
   @override
-  Future<void> add(ImportExportJob job) async =>
-      throw Exception('DB error');
+  Future<void> add(ImportExportJob job) async => throw Exception('DB error');
 
   @override
   Future<void> update(ImportExportJob job) async {}
@@ -279,10 +297,9 @@ ExecuteCollectionExportUseCase makeUseCase({
   String Function()? idGenerator,
 }) {
   return ExecuteCollectionExportUseCase(
-    capabilityUseCase:
-        capabilityUseCase ?? const _SupportedCapabilityUseCase(),
-    tokenStorage: tokenStorage ??
-        _FakeTokenStorage(token: 'tok', username: 'user123'),
+    capabilityUseCase: capabilityUseCase ?? const _SupportedCapabilityUseCase(),
+    tokenStorage:
+        tokenStorage ?? _FakeTokenStorage(token: 'tok', username: 'user123'),
     apiClient: apiClient ?? _apiClientReturning(201),
     collectionRepository:
         collectionRepository ?? _FakeCollectionRepository(items),
@@ -377,9 +394,7 @@ void main() {
       });
 
       test('returns ExecuteExportNoToken when token storage throws', () async {
-        final uc = makeUseCase(
-          tokenStorage: _ThrowingTokenStorage(),
-        );
+        final uc = makeUseCase(tokenStorage: _ThrowingTokenStorage());
         final result = await uc.execute(makePreview(eligibleCount: 1));
         expect(result, isA<ExecuteExportNoToken>());
       });
@@ -411,9 +426,11 @@ void main() {
 
       test('skipped count matches already-synced and invalid rows', () async {
         final uc = makeUseCase();
-        final result = await uc.execute(
-          makePreview(alreadySyncedCount: 2, invalidCount: 1),
-        ) as ExecuteExportCompleted;
+        final result =
+            await uc.execute(
+                  makePreview(alreadySyncedCount: 2, invalidCount: 1),
+                )
+                as ExecuteExportCompleted;
         expect(result.exported, 0);
         expect(result.skipped, 3);
         expect(result.failed, 0);
@@ -422,10 +439,7 @@ void main() {
       test('updates sync status to synced for exported items', () async {
         final items = [makeItem(id: 'e-0', releaseId: 100)];
         final repo = _FakeCollectionRepository(items);
-        final uc = makeUseCase(
-          items: items,
-          collectionRepository: repo,
-        );
+        final uc = makeUseCase(items: items, collectionRepository: repo);
         await uc.execute(makePreview(eligibleCount: 1));
         expect(repo.updatedItems, hasLength(1));
         expect(repo.updatedItems.first.syncStatus, SyncStatus.synced);
@@ -434,9 +448,7 @@ void main() {
       test('does not update sync status for skipped items', () async {
         final repo = _FakeCollectionRepository([]);
         final uc = makeUseCase(collectionRepository: repo);
-        await uc.execute(
-          makePreview(alreadySyncedCount: 1, invalidCount: 1),
-        );
+        await uc.execute(makePreview(alreadySyncedCount: 1, invalidCount: 1));
         expect(repo.updatedItems, isEmpty);
       });
 
@@ -499,29 +511,32 @@ void main() {
     });
 
     group('partial failure', () {
-      test('failed items are counted and do not affect skipped count', () async {
-        final repo = _FakeCollectionRepository([
-          makeItem(id: 'e-0', releaseId: 100),
-          makeItem(id: 'e-1', releaseId: 101),
-        ]);
-        int callCount = 0;
-        final apiClient = DiscogsApiClient(
-          httpClient: MockClient((_) async {
-            callCount++;
-            return http.Response('', callCount == 1 ? 201 : 401);
-          }),
-        );
-        final uc = makeUseCase(
-          collectionRepository: repo,
-          apiClient: apiClient,
-        );
-        final result =
-            await uc.execute(makePreview(eligibleCount: 2))
-                as ExecuteExportCompleted;
-        expect(result.exported, 1);
-        expect(result.failed, 1);
-        expect(result.skipped, 0);
-      });
+      test(
+        'failed items are counted and do not affect skipped count',
+        () async {
+          final repo = _FakeCollectionRepository([
+            makeItem(id: 'e-0', releaseId: 100),
+            makeItem(id: 'e-1', releaseId: 101),
+          ]);
+          int callCount = 0;
+          final apiClient = DiscogsApiClient(
+            httpClient: MockClient((_) async {
+              callCount++;
+              return http.Response('', callCount == 1 ? 201 : 401);
+            }),
+          );
+          final uc = makeUseCase(
+            collectionRepository: repo,
+            apiClient: apiClient,
+          );
+          final result =
+              await uc.execute(makePreview(eligibleCount: 2))
+                  as ExecuteExportCompleted;
+          expect(result.exported, 1);
+          expect(result.failed, 1);
+          expect(result.skipped, 0);
+        },
+      );
 
       test('saves completedWithErrors status when any items fail', () async {
         final jobRepo = _FakeJobRepository();
@@ -530,7 +545,10 @@ void main() {
           apiClient: _apiClientReturning(401),
         );
         await uc.execute(makePreview(eligibleCount: 1));
-        expect(jobRepo.updated.last.status, ImportExportStatus.completedWithErrors);
+        expect(
+          jobRepo.updated.last.status,
+          ImportExportStatus.completedWithErrors,
+        );
       });
 
       test('saves FailedRow for each failed item', () async {
@@ -558,9 +576,7 @@ void main() {
       });
 
       test('network error on one item counts as failure', () async {
-        final uc = makeUseCase(
-          apiClient: _apiClientThrowing(),
-        );
+        final uc = makeUseCase(apiClient: _apiClientThrowing());
         final result =
             await uc.execute(makePreview(eligibleCount: 2))
                 as ExecuteExportCompleted;
@@ -569,21 +585,18 @@ void main() {
     });
 
     group('infrastructure failure', () {
-      test('returns ExecuteExportFailed when job repository throws on add',
-          () async {
-        final uc = makeUseCase(
-          jobRepository: _ThrowingJobRepository(),
-        );
-        final result = await uc.execute(makePreview(eligibleCount: 1));
-        expect(result, isA<ExecuteExportFailed>());
-      });
+      test(
+        'returns ExecuteExportFailed when job repository throws on add',
+        () async {
+          final uc = makeUseCase(jobRepository: _ThrowingJobRepository());
+          final result = await uc.execute(makePreview(eligibleCount: 1));
+          expect(result, isA<ExecuteExportFailed>());
+        },
+      );
 
       test('safe message does not contain token or secret', () async {
-        final uc = makeUseCase(
-          jobRepository: _ThrowingJobRepository(),
-        );
-        final result =
-            await uc.execute(makePreview()) as ExecuteExportFailed;
+        final uc = makeUseCase(jobRepository: _ThrowingJobRepository());
+        final result = await uc.execute(makePreview()) as ExecuteExportFailed;
         expect(result.safeMessage.toLowerCase(), isNot(contains('token')));
         expect(result.safeMessage.toLowerCase(), isNot(contains('secret')));
       });
@@ -610,6 +623,31 @@ void main() {
             expect(row.description.toLowerCase(), isNot(contains('token')));
           }
         }
+      });
+    });
+
+    group('revoked token', () {
+      test('clears credentials when per-row API call returns 401', () async {
+        final spy = _SpyTokenStorage();
+        final uc = makeUseCase(
+          tokenStorage: spy,
+          apiClient: _apiClientReturning(401),
+        );
+        final result = await uc.execute(makePreview(eligibleCount: 1));
+        expect(result, isA<ExecuteExportCompleted>());
+        expect((result as ExecuteExportCompleted).failed, 1);
+        expect(spy.deleteCallCount, 1);
+      });
+
+      test('does not clear credentials on non-401 per-row failure', () async {
+        final spy = _SpyTokenStorage();
+        final uc = makeUseCase(
+          tokenStorage: spy,
+          apiClient: _apiClientThrowing(),
+        );
+        final result = await uc.execute(makePreview(eligibleCount: 1));
+        expect(result, isA<ExecuteExportCompleted>());
+        expect(spy.deleteCallCount, 0);
       });
     });
   });

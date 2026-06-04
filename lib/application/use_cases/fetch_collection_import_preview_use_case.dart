@@ -37,8 +37,8 @@ class FetchCollectionImportPreviewUseCase {
     required this.previewBuilder,
     TokenStorage? storage,
     DiscogsApiClient? apiClient,
-  })  : _storage = storage ?? DiscogsTokenStorage(),
-        _apiClient = apiClient ?? DiscogsApiClient();
+  }) : _storage = storage ?? DiscogsTokenStorage(),
+       _apiClient = apiClient ?? DiscogsApiClient();
 
   final TokenStorage _storage;
   final DiscogsApiClient _apiClient;
@@ -74,6 +74,7 @@ class FetchCollectionImportPreviewUseCase {
     } on NetworkError {
       return const FetchPreviewNetworkError();
     } on AppError catch (e) {
+      await _storage.clearIfRevoked(e);
       return FetchPreviewError(e);
     }
   }

@@ -7,6 +7,26 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7N: Revoked Discogs token detected and cleared automatically (US-14)] — 2026-06-04
+
+### Added
+- `TokenRevocationGuard` extension on `TokenStorage` (in `lib/domain/repositories/token_storage.dart`) — adds `clearIfRevoked(AppError)` which silently calls `deleteCredentials()` when the error is `InvalidTokenError` and no-ops for all other errors
+
+### Changed
+- `DiscogsSearchService.search()` — wraps the API call in a try-catch; calls `clearIfRevoked` on `InvalidTokenError` before rethrowing so the stored token is deleted on 401
+- `DiscogsReleaseDetailService.fetchDetail()` — calls `clearIfRevoked` inside the existing `on AppError` catch block before rethrowing
+- `BarcodeLookupUseCase.execute()` — calls `clearIfRevoked` inside the existing `on AppError` catch before returning `BarcodeLookupError`
+- `FetchCollectionImportPreviewUseCase.execute()` — calls `clearIfRevoked` inside `on AppError` catch before returning `FetchPreviewError`
+- `FetchWishlistImportPreviewUseCase.execute()` — same pattern
+- `ExecuteCollectionExportUseCase` — per-row API `catch (_)` changed to `catch (e)`; calls `clearIfRevoked(e)` when `e is AppError` (covers 401 mid-export)
+- `ExecuteWishlistExportUseCase` — same per-row change
+
+### Tests
+- 14 new tests across 7 test files (2 per file) — each verifies that `deleteCredentials()` IS called on 401 and is NOT called on `NetworkError` or other non-401 errors: `DiscogsSearchService`, `DiscogsReleaseDetailService`, `BarcodeLookupUseCase`, `FetchCollectionImportPreviewUseCase`, `FetchWishlistImportPreviewUseCase`, `ExecuteCollectionExportUseCase`, `ExecuteWishlistExportUseCase`
+- `_SpyStorage` / `_SpyTokenStorage` classes added to each affected test file to track `deleteCredentials()` call counts
+
+---
+
 ## [Unreleased — Phase 7M: Wide-screen navigation keeps the nav rail visible (US-13)] — 2026-06-04
 
 ### Added

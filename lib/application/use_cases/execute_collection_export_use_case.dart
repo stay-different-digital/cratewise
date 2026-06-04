@@ -11,6 +11,7 @@ import '../../domain/repositories/import_export_job_repository.dart';
 import '../../domain/repositories/import_export_row_result_repository.dart';
 import '../../domain/repositories/token_storage.dart';
 import '../../infrastructure/discogs/discogs_api_client.dart';
+import '../../shared/errors/app_error.dart';
 import 'check_collection_export_capability_use_case.dart';
 
 sealed class ExecuteCollectionExportResult {
@@ -137,10 +138,12 @@ class ExecuteCollectionExportUseCase {
                 ),
               );
               exported++;
-            } catch (_) {
+            } catch (e) {
+              if (e is AppError) await _tokenStorage.clearIfRevoked(e);
               try {
-                final failedItem =
-                    await _collectionRepository.getById(row.itemId);
+                final failedItem = await _collectionRepository.getById(
+                  row.itemId,
+                );
                 if (failedItem != null) {
                   await _collectionRepository.update(
                     failedItem.copyWith(

@@ -67,6 +67,7 @@ class BarcodeLookupUseCase {
     } on RateLimitedError {
       return const BarcodeLookupRateLimited();
     } on AppError catch (e) {
+      await _storage.clearIfRevoked(e);
       return BarcodeLookupError(e);
     }
   }
