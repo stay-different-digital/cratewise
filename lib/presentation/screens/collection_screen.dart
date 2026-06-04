@@ -8,6 +8,7 @@ import '../../domain/repositories/thumbnail_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
+import '../../shared/route_observer.dart';
 import '../widgets/collection_item_card.dart';
 import 'collection_detail_screen.dart';
 
@@ -50,7 +51,7 @@ class CollectionScreen extends StatefulWidget {
   State<CollectionScreen> createState() => _CollectionScreenState();
 }
 
-class _CollectionScreenState extends State<CollectionScreen> {
+class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
   late final CollectionRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
   AppDatabase? _ownedDb;
@@ -73,6 +74,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
     }
     _load();
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) appRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() => _refresh();
 
   Future<void> _load() async {
     setState(() => _state = const _Loading());
@@ -109,6 +120,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
     _debounce?.cancel();
     _ownedDb?.close();
     _searchController.dispose();

@@ -4,6 +4,7 @@ import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
 import 'package:cratewise/presentation/screens/collection_screen.dart';
 import 'package:cratewise/presentation/widgets/collection_item_card.dart';
+import 'package:cratewise/shared/route_observer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -162,6 +163,11 @@ CollectionItem _makeItem({
 );
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+
+Widget _wrapObserved(Widget child) => MaterialApp(
+  navigatorObservers: [appRouteObserver],
+  home: Scaffold(body: child),
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -711,7 +717,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pump();
 
-      expect(find.textContaining('No results for "jazz fusion"'), findsOneWidget);
+      expect(
+        find.textContaining('No results for "jazz fusion"'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('clearing search restores the full list', (tester) async {
@@ -829,5 +838,84 @@ void main() {
         );
       },
     );
+  });
+
+  group('CollectionScreen — live refresh after navigation', () {
+    // Helper: capture the root NavigatorState from the test harness.
+    NavigatorState _nav(WidgetTester tester) =>
+        tester.state<NavigatorState>(find.byType(Navigator));
+
+    testWidgets('calls getAll again after a pushed route is popped', (
+      tester,
+    ) async {
+      final repo = _FakeCollectionRepository(items: [_makeItem()]);
+      await tester.pumpWidget(
+        _wrapObserved(CollectionScreen(repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      final countAfterInit = repo.loadCallCount;
+
+      _nav(
+        tester,
+      ).push(MaterialPageRoute<void>(builder: (_) => const Scaffold()));
+      await tester.pumpAndSettle();
+      _nav(tester).pop();
+      await tester.pumpAndSettle();
+
+      expect(repo.loadCallCount, greaterThan(countAfterInit));
+    });
+
+    testWidgets(
+      'does not show loading spinner during silent refresh triggered by pop',
+      (tester) async {
+        final repo = _FakeCollectionRepository(items: [_makeItem()]);
+        await tester.pumpWidget(
+          _wrapObserved(CollectionScreen(repository: repo)),
+        );
+        await tester.pumpAndSettle();
+
+        _nav(
+          tester,
+        ).push(MaterialPageRoute<void>(builder: (_) => const Scaffold()));
+        await tester.pumpAndSettle();
+        _nav(tester).pop();
+        await tester.pump(); // one frame — refresh in flight
+
+        // Old items remain visible; no full-screen spinner
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.byType(CollectionItemCard), findsOneWidget);
+      },
+    );
+
+    testWidgets('shows new item after navigating back from a pushed route', (
+      tester,
+    ) async {
+      final repo = _UpdatingCollectionRepository(
+        first: [_makeItem(id: '1', artist: 'Miles Davis')],
+        second: [
+          _makeItem(id: '1', artist: 'Miles Davis'),
+          _makeItem(id: '2', artist: 'John Coltrane', title: 'A Love Supreme'),
+        ],
+      );
+      await tester.pumpWidget(
+        _wrapObserved(CollectionScreen(repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsNothing);
+
+      _nav(tester).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const Scaffold(body: Text('release detail')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      _nav(tester).pop();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsOneWidget);
+    });
   });
 }

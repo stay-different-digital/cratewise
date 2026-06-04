@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7J: Collection list live-refreshes after adding items (US-10)] — 2026-06-04
+
+### Added
+- `lib/shared/route_observer.dart` — exports a single `appRouteObserver` (`RouteObserver<ModalRoute<dynamic>>`) instance registered with `MaterialApp.navigatorObservers`
+- `lib/app/app.dart` — `appRouteObserver` added to `MaterialApp.navigatorObservers`
+
+### Changed
+- `CollectionScreen` now subscribes to `appRouteObserver` via the `RouteAware` mixin; `didPopNext` triggers a silent `_refresh()` every time a pushed route (e.g. `ReleaseDetailScreen`) is popped above the collection list
+- Silent refresh keeps the existing items visible while the storage query runs — no full-screen spinner, no flicker; items update in place when the fetch completes
+- The subscription is set up in `didChangeDependencies` (guarded by a null check on `ModalRoute.of`) and cancelled in `dispose` via `appRouteObserver.unsubscribe(this)`
+
+### Tests
+- 3 new tests in `collection_screen_test.dart` (group: "live refresh after navigation"): `getAll` is called again after a pushed route is popped; no loading spinner appears during the silent refresh (old items stay visible); new item added during the pushed route appears in the list after pop
+
+---
+
 ## [Unreleased — Phase 7I: Collection list search and filter (US-09)] — 2026-06-04
 
 ### Changed
