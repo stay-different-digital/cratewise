@@ -334,9 +334,31 @@ void main() {
       expect(meta.year, 1959);
       expect(meta.genres, ['Jazz']);
       expect(meta.styles, ['Modal', 'Bop']);
-      expect(meta.barcodes, ['074643602222']);
+      expect(meta.identifiers, hasLength(1));
+      expect(meta.identifiers.first.type, 'Barcode');
+      expect(meta.identifiers.first.value, '074643602222');
       expect(meta.cacheSource, 'discogs_api');
     });
+
+    test(
+      'cached metadata saves full tracklist with position and duration',
+      () async {
+        final cache = _SpyCacheRepository();
+        final service = _makeService(
+          'fake_token',
+          MockClient(
+            (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+          ),
+          cacheRepo: cache,
+        );
+        await service.fetchDetail(249504);
+        final meta = cache.saved.first;
+        expect(meta.tracklist, hasLength(2));
+        expect(meta.tracklist.first.position, 'A1');
+        expect(meta.tracklist.first.title, 'So What');
+        expect(meta.tracklist.first.duration, '9:22');
+      },
+    );
 
     test(
       'cache save failure does not prevent returning ReleaseDetail',

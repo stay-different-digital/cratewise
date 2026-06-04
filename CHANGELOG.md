@@ -7,6 +7,33 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7R: Cached offline release detail shows complete data (US-18)] — 2026-06-04
+
+### Changed
+- `CachedReleaseMetadata` — `tracklist` field type changed from `List<String>` (titles only) to `List<ReleaseTrack>` (position + title + duration); `barcodes: List<String>` replaced by `identifiers: List<ReleaseIdentifier>` (type + value), preserving all identifier types (Barcode, Matrix / Runout, etc.), not just barcodes
+- `AppDatabase` — `CachedReleases` table: `tracklist` column now uses `TrackListConverter` (JSON objects with position/title/duration); `barcodes` column replaced by `identifiers` column using `IdentifierListConverter` (JSON objects with type/value); schema bumped to v7 with a drop-and-recreate migration (cache data can always be re-fetched)
+- `TrackListConverter` (new) — Drift `TypeConverter<List<ReleaseTrack>, String>` that serialises each track as `{"position":…,"title":…,"duration":…}`
+- `IdentifierListConverter` (new) — Drift `TypeConverter<List<ReleaseIdentifier>, String>` that serialises each identifier as `{"type":…,"value":…}`
+- `LocalCachedReleaseMetadataRepository` — updated `_rowToModel` and `_modelToCompanion` to use `tracklist` and `identifiers` columns with the new types
+- `DiscogsReleaseDetailService._toCachedMetadata` — now saves `detail.tracklist` directly (preserving `ReleaseTrack` objects) and `detail.identifiers` directly (all identifier types, not only barcodes)
+- `RetryMetadataRefreshUseCase._toMetadata` — same fix: maps DTO tracks to `ReleaseTrack` objects and DTO identifiers to `ReleaseIdentifier` objects
+- `_cachedMetadataToDetail` in `release_detail_screen.dart` — now passes `m.tracklist` and `m.identifiers` directly; no longer synthesises `ReleaseTrack` objects with empty position/duration or wraps barcodes as fake identifiers
+
+### Tests
+- 10 new / updated tests across 3 files (+8 new tests overall):
+  - `local_cached_release_metadata_repository_test.dart` — `_makeMeta` factory updated; `'round-trips tracklist'` replaced by `'round-trips full tracklist with position, title and duration'`; `'round-trips barcodes list'` replaced by `'round-trips full identifiers list with type and value'`; `'empty lists round-trip'` updated; `barcodes: []` → `identifiers: []` in `'empty lists'` test
+  - `discogs_release_detail_service_test.dart` — `'cached metadata maps fields'` test updated (`barcodes` → `identifiers` with type check); new test `'cached metadata saves full tracklist with position and duration'`
+  - `release_detail_screen_test.dart` — `_cachedKindOfBlue` fixture updated to use `List<ReleaseTrack>` and `List<ReleaseIdentifier>` (adds Matrix / Runout identifier); 8 new tests in `'offline cache fallback'` group:
+    - Shows full tracklist titles from cache
+    - Shows track positions from cache (A1, A2)
+    - Shows track durations from cache (9:22, 9:46)
+    - Shows all identifiers from cache (Barcode + Matrix / Runout type and value)
+    - Shows notes from cache
+    - Omits tracklist section when cache has no tracks
+    - Omits identifiers section when cache has no identifiers
+
+---
+
 ## [Unreleased — Phase 7Q: Collection item condition prompt after adding (US-17)] — 2026-06-04
 
 ### Changed

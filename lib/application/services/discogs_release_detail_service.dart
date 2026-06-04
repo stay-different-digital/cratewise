@@ -78,12 +78,9 @@ class DiscogsReleaseDetailService {
         year: detail.year,
         genres: detail.genres,
         styles: detail.styles,
-        tracklist: detail.tracklist.map((t) => t.title).toList(),
+        tracklist: detail.tracklist,
         notes: detail.notes,
-        barcodes: detail.identifiers
-            .where((i) => i.type.toLowerCase() == 'barcode')
-            .map((i) => i.value)
-            .toList(),
+        identifiers: detail.identifiers,
         coverUrl: detail.coverUrl,
         fetchedAt: DateTime.now(),
         cacheSource: 'discogs_api',

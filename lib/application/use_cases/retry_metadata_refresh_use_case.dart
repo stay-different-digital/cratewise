@@ -1,4 +1,5 @@
 import '../../domain/models/cached_release_metadata.dart';
+import '../../domain/models/release_detail.dart';
 import '../../domain/models/retry_action.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
@@ -51,8 +52,8 @@ class RetryMetadataRefreshUseCase {
     required this.cacheRepo,
     TokenStorage? storage,
     DiscogsApiClient? apiClient,
-  })  : _storage = storage ?? DiscogsTokenStorage(),
-        _apiClient = apiClient ?? DiscogsApiClient();
+  }) : _storage = storage ?? DiscogsTokenStorage(),
+       _apiClient = apiClient ?? DiscogsApiClient();
 
   final RetryActionRepository retryRepo;
   final CachedReleaseMetadataRepository cacheRepo;
@@ -120,11 +121,18 @@ class RetryMetadataRefreshUseCase {
       year: dto.year,
       genres: dto.genres,
       styles: dto.styles,
-      tracklist: dto.tracklist.map((t) => t.title).toList(),
+      tracklist: dto.tracklist
+          .map(
+            (t) => ReleaseTrack(
+              position: t.position,
+              title: t.title,
+              duration: t.duration,
+            ),
+          )
+          .toList(),
       notes: dto.notes,
-      barcodes: dto.identifiers
-          .where((i) => i.type.toLowerCase() == 'barcode')
-          .map((i) => i.value)
+      identifiers: dto.identifiers
+          .map((i) => ReleaseIdentifier(type: i.type, value: i.value))
           .toList(),
       coverUrl: dto.coverUrl,
       fetchedAt: DateTime.now(),

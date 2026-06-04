@@ -1,3 +1,4 @@
+import 'release_detail.dart';
 import 'sync_status.dart';
 
 class CachedReleaseMetadata {
@@ -8,7 +9,7 @@ class CachedReleaseMetadata {
     required this.genres,
     required this.styles,
     required this.tracklist,
-    required this.barcodes,
+    required this.identifiers,
     required this.fetchedAt,
     required this.cacheSource,
     required this.syncStatus,
@@ -31,9 +32,9 @@ class CachedReleaseMetadata {
   final int? year;
   final List<String> genres;
   final List<String> styles;
-  final List<String> tracklist;
+  final List<ReleaseTrack> tracklist;
   final String? notes;
-  final List<String> barcodes;
+  final List<ReleaseIdentifier> identifiers;
   final String? coverUrl;
   final DateTime fetchedAt;
   final String cacheSource;
@@ -50,9 +51,9 @@ class CachedReleaseMetadata {
     int? year,
     List<String>? genres,
     List<String>? styles,
-    List<String>? tracklist,
+    List<ReleaseTrack>? tracklist,
     String? notes,
-    List<String>? barcodes,
+    List<ReleaseIdentifier>? identifiers,
     String? coverUrl,
     DateTime? fetchedAt,
     String? cacheSource,
@@ -71,7 +72,7 @@ class CachedReleaseMetadata {
       styles: styles ?? this.styles,
       tracklist: tracklist ?? this.tracklist,
       notes: notes ?? this.notes,
-      barcodes: barcodes ?? this.barcodes,
+      identifiers: identifiers ?? this.identifiers,
       coverUrl: coverUrl ?? this.coverUrl,
       fetchedAt: fetchedAt ?? this.fetchedAt,
       cacheSource: cacheSource ?? this.cacheSource,

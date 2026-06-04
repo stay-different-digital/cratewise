@@ -857,14 +857,10 @@ ReleaseDetail _cachedMetadataToDetail(CachedReleaseMetadata m) => ReleaseDetail(
   year: m.year,
   genres: m.genres,
   styles: m.styles,
-  tracklist: m.tracklist
-      .map((t) => ReleaseTrack(position: '', title: t, duration: ''))
-      .toList(),
+  tracklist: m.tracklist,
   notes: m.notes,
   coverUrl: m.coverUrl,
-  identifiers: m.barcodes
-      .map((b) => ReleaseIdentifier(type: 'Barcode', value: b))
-      .toList(),
+  identifiers: m.identifiers,
 );
 
 // ---------------------------------------------------------------------------

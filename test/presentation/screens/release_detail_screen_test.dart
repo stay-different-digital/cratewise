@@ -240,8 +240,14 @@ final _cachedKindOfBlue = CachedReleaseMetadata(
   year: 1959,
   genres: const ['Jazz'],
   styles: const ['Modal', 'Bop'],
-  tracklist: const ['So What', 'Freddie Freeloader'],
-  barcodes: const ['074643602222'],
+  tracklist: const [
+    ReleaseTrack(position: 'A1', title: 'So What', duration: '9:22'),
+    ReleaseTrack(position: 'A2', title: 'Freddie Freeloader', duration: '9:46'),
+  ],
+  identifiers: const [
+    ReleaseIdentifier(type: 'Barcode', value: '074643602222'),
+    ReleaseIdentifier(type: 'Matrix / Runout', value: 'CL 1355-A'),
+  ],
   coverUrl: null,
   notes: 'A seminal jazz album.',
   fetchedAt: DateTime(2026, 1, 15),
@@ -1151,6 +1157,150 @@ void main() {
         expect(find.textContaining('token'), findsNothing);
         expect(find.textContaining('secret'), findsNothing);
       });
+
+      testWidgets('shows full tracklist titles from cache when API fails', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _ErrorService(error: const NetworkError()),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              cacheRepository: _FakeCacheRepository(
+                cachedMetadata: _cachedKindOfBlue,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('So What'), findsOneWidget);
+        expect(find.text('Freddie Freeloader'), findsOneWidget);
+      });
+
+      testWidgets('shows track positions from cache when API fails', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _ErrorService(error: const NetworkError()),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              cacheRepository: _FakeCacheRepository(
+                cachedMetadata: _cachedKindOfBlue,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('A1'), findsOneWidget);
+        expect(find.text('A2'), findsOneWidget);
+      });
+
+      testWidgets('shows track durations from cache when API fails', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _ErrorService(error: const NetworkError()),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              cacheRepository: _FakeCacheRepository(
+                cachedMetadata: _cachedKindOfBlue,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('9:22'), findsOneWidget);
+        expect(find.text('9:46'), findsOneWidget);
+      });
+
+      testWidgets('shows all identifiers from cache when API fails', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _ErrorService(error: const NetworkError()),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              cacheRepository: _FakeCacheRepository(
+                cachedMetadata: _cachedKindOfBlue,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Barcode'), findsOneWidget);
+        expect(find.text('074643602222'), findsOneWidget);
+        expect(find.text('Matrix / Runout'), findsOneWidget);
+        expect(find.text('CL 1355-A'), findsOneWidget);
+      });
+
+      testWidgets('shows notes from cache when API fails', (tester) async {
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _ErrorService(error: const NetworkError()),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              cacheRepository: _FakeCacheRepository(
+                cachedMetadata: _cachedKindOfBlue,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.textContaining('seminal jazz'), findsOneWidget);
+      });
+
+      testWidgets(
+        'cached view omits tracklist section when cache has no tracks',
+        (tester) async {
+          final noTracks = _cachedKindOfBlue.copyWith(tracklist: []);
+          await tester.pumpWidget(
+            _wrap(
+              ReleaseDetailScreen(
+                releaseId: 249504,
+                detailService: _ErrorService(error: const NetworkError()),
+                addToCollectionUseCase: _newUseCase(),
+                addToWishlistUseCase: _newWishlistUseCase(),
+                cacheRepository: _FakeCacheRepository(cachedMetadata: noTracks),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Tracklist'), findsNothing);
+        },
+      );
+
+      testWidgets(
+        'cached view omits identifiers section when cache has no identifiers',
+        (tester) async {
+          final noIds = _cachedKindOfBlue.copyWith(identifiers: []);
+          await tester.pumpWidget(
+            _wrap(
+              ReleaseDetailScreen(
+                releaseId: 249504,
+                detailService: _ErrorService(error: const NetworkError()),
+                addToCollectionUseCase: _newUseCase(),
+                addToWishlistUseCase: _newWishlistUseCase(),
+                cacheRepository: _FakeCacheRepository(cachedMetadata: noIds),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Identifiers'), findsNothing);
+        },
+      );
     });
   });
 

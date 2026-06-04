@@ -12,24 +12,25 @@ class LocalCachedReleaseMetadataRepository
 
   @override
   Future<CachedReleaseMetadata?> getByReleaseId(int discogsReleaseId) async {
-    final row = await (_db.select(_db.cachedReleases)
-          ..where((t) => t.discogsReleaseId.equals(discogsReleaseId)))
-        .getSingleOrNull();
+    final row =
+        await (_db.select(_db.cachedReleases)
+              ..where((t) => t.discogsReleaseId.equals(discogsReleaseId)))
+            .getSingleOrNull();
     return row == null ? null : _rowToModel(row);
   }
 
   @override
   Future<void> save(CachedReleaseMetadata metadata) async {
-    await _db.into(_db.cachedReleases).insertOnConflictUpdate(
-          _modelToCompanion(metadata),
-        );
+    await _db
+        .into(_db.cachedReleases)
+        .insertOnConflictUpdate(_modelToCompanion(metadata));
   }
 
   @override
   Future<void> remove(int discogsReleaseId) async {
-    await (_db.delete(_db.cachedReleases)
-          ..where((t) => t.discogsReleaseId.equals(discogsReleaseId)))
-        .go();
+    await (_db.delete(
+      _db.cachedReleases,
+    )..where((t) => t.discogsReleaseId.equals(discogsReleaseId))).go();
   }
 
   CachedReleaseMetadata _rowToModel(CachedReleaseRow row) {
@@ -46,7 +47,7 @@ class LocalCachedReleaseMetadataRepository
       styles: row.styles,
       tracklist: row.tracklist,
       notes: row.notes,
-      barcodes: row.barcodes,
+      identifiers: row.identifiers,
       coverUrl: row.coverUrl,
       fetchedAt: row.fetchedAt,
       cacheSource: row.cacheSource,
@@ -68,7 +69,7 @@ class LocalCachedReleaseMetadataRepository
       styles: Value(m.styles),
       tracklist: Value(m.tracklist),
       notes: Value(m.notes),
-      barcodes: Value(m.barcodes),
+      identifiers: Value(m.identifiers),
       coverUrl: Value(m.coverUrl),
       fetchedAt: Value(m.fetchedAt),
       cacheSource: Value(m.cacheSource),

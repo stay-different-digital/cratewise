@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../domain/models/collection_item.dart';
 import '../../domain/models/import_export_job_type.dart';
 import '../../domain/models/import_export_status.dart';
+import '../../domain/models/release_detail.dart';
 import '../../domain/models/retry_action.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
@@ -39,6 +40,57 @@ class StringListConverter extends TypeConverter<List<String>, String> {
 
   @override
   String toSql(List<String> value) => jsonEncode(value);
+}
+
+class TrackListConverter extends TypeConverter<List<ReleaseTrack>, String> {
+  const TrackListConverter();
+
+  @override
+  List<ReleaseTrack> fromSql(String fromDb) {
+    final list = jsonDecode(fromDb) as List<dynamic>;
+    return list.map((e) {
+      final m = e as Map<String, dynamic>;
+      return ReleaseTrack(
+        position: m['position'] as String? ?? '',
+        title: m['title'] as String? ?? '',
+        duration: m['duration'] as String? ?? '',
+      );
+    }).toList();
+  }
+
+  @override
+  String toSql(List<ReleaseTrack> value) => jsonEncode(
+    value
+        .map(
+          (t) => {
+            'position': t.position,
+            'title': t.title,
+            'duration': t.duration,
+          },
+        )
+        .toList(),
+  );
+}
+
+class IdentifierListConverter
+    extends TypeConverter<List<ReleaseIdentifier>, String> {
+  const IdentifierListConverter();
+
+  @override
+  List<ReleaseIdentifier> fromSql(String fromDb) {
+    final list = jsonDecode(fromDb) as List<dynamic>;
+    return list.map((e) {
+      final m = e as Map<String, dynamic>;
+      return ReleaseIdentifier(
+        type: m['type'] as String? ?? '',
+        value: m['value'] as String? ?? '',
+      );
+    }).toList();
+  }
+
+  @override
+  String toSql(List<ReleaseIdentifier> value) =>
+      jsonEncode(value.map((i) => {'type': i.type, 'value': i.value}).toList());
 }
 
 class WishlistPriorityConverter
@@ -167,8 +219,7 @@ class WishlistItems extends Table {
   IntColumn get year => integer().nullable()();
   TextColumn get coverUrl => text().nullable()();
   RealColumn get targetPrice => real().nullable()();
-  TextColumn get priority =>
-      text().map(const WishlistPriorityConverter())();
+  TextColumn get priority => text().map(const WishlistPriorityConverter())();
   TextColumn get notes => text().nullable()();
   TextColumn get syncStatus =>
       text().nullable().map(const SyncStatusConverter())();
@@ -191,9 +242,9 @@ class CachedReleases extends Table {
   IntColumn get year => integer().nullable()();
   TextColumn get genres => text().map(const StringListConverter())();
   TextColumn get styles => text().map(const StringListConverter())();
-  TextColumn get tracklist => text().map(const StringListConverter())();
+  TextColumn get tracklist => text().map(const TrackListConverter())();
   TextColumn get notes => text().nullable()();
-  TextColumn get barcodes => text().map(const StringListConverter())();
+  TextColumn get identifiers => text().map(const IdentifierListConverter())();
   TextColumn get coverUrl => text().nullable()();
   DateTimeColumn get fetchedAt => dateTime()();
   TextColumn get cacheSource => text()();
@@ -206,8 +257,7 @@ class CachedReleases extends Table {
 @DataClassName('RetryActionRow')
 class RetryActions extends Table {
   TextColumn get id => text()();
-  TextColumn get actionType =>
-      text().map(const RetryActionTypeConverter())();
+  TextColumn get actionType => text().map(const RetryActionTypeConverter())();
   TextColumn get entityType =>
       text().map(const RetryActionEntityTypeConverter())();
   TextColumn get entityId => text()();
@@ -215,8 +265,7 @@ class RetryActions extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get lastAttemptedAt => dateTime().nullable()();
   IntColumn get attemptCount => integer()();
-  TextColumn get status =>
-      text().map(const RetryActionStatusConverter())();
+  TextColumn get status => text().map(const RetryActionStatusConverter())();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -225,12 +274,10 @@ class RetryActions extends Table {
 @DataClassName('ImportExportJobRow')
 class ImportExportJobs extends Table {
   TextColumn get id => text()();
-  TextColumn get jobType =>
-      text().map(const ImportExportJobTypeConverter())();
+  TextColumn get jobType => text().map(const ImportExportJobTypeConverter())();
   TextColumn get source => text()();
   TextColumn get target => text()();
-  TextColumn get status =>
-      text().map(const ImportExportStatusConverter())();
+  TextColumn get status => text().map(const ImportExportStatusConverter())();
   IntColumn get totalItems => integer().nullable()();
   IntColumn get validItems => integer().nullable()();
   IntColumn get skippedItems => integer().nullable()();
@@ -261,43 +308,50 @@ class ImportExportRowResults extends Table {
 // Database
 // ---------------------------------------------------------------------------
 
-@DriftDatabase(tables: [
-  CollectionItems,
-  WishlistItems,
-  CachedReleases,
-  RetryActions,
-  ImportExportJobs,
-  ImportExportRowResults,
-])
+@DriftDatabase(
+  tables: [
+    CollectionItems,
+    WishlistItems,
+    CachedReleases,
+    RetryActions,
+    ImportExportJobs,
+    ImportExportRowResults,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) => m.createAll(),
-        onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.createTable(wishlistItems);
-          }
-          if (from < 3) {
-            await m.createTable(cachedReleases);
-          }
-          if (from < 4) {
-            await m.addColumn(collectionItems, collectionItems.syncStatus);
-            await m.addColumn(wishlistItems, wishlistItems.syncStatus);
-          }
-          if (from < 5) {
-            await m.createTable(retryActions);
-          }
-          if (from < 6) {
-            await m.createTable(importExportJobs);
-            await m.createTable(importExportRowResults);
-          }
-        },
-      );
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        await m.createTable(wishlistItems);
+      }
+      if (from < 3) {
+        await m.createTable(cachedReleases);
+      }
+      if (from < 4) {
+        await m.addColumn(collectionItems, collectionItems.syncStatus);
+        await m.addColumn(wishlistItems, wishlistItems.syncStatus);
+      }
+      if (from < 5) {
+        await m.createTable(retryActions);
+      }
+      if (from < 6) {
+        await m.createTable(importExportJobs);
+        await m.createTable(importExportRowResults);
+      }
+      if (from < 7) {
+        // Cache stores full tracklist + all identifiers; drop and recreate.
+        await customStatement('DROP TABLE IF EXISTS cached_releases');
+        await m.createTable(cachedReleases);
+      }
+    },
+  );
 }
 
 LazyDatabase openAppDatabase() {

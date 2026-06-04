@@ -24,7 +24,7 @@ class _SpyCacheRepo implements CachedReleaseMetadataRepository {
       genres: const [],
       styles: const [],
       tracklist: const [],
-      barcodes: const [],
+      identifiers: const [],
       fetchedAt: DateTime(2026),
       cacheSource: 'discogs_api',
       syncStatus: SyncStatus.localOnly,
@@ -383,22 +383,25 @@ void main() {
   });
 
   group('RetryThumbnailUseCase — security', () {
-    test('updated action safe message does not contain token or secret',
-        () async {
-      final cacheRepo = _SpyCacheRepo()..put(249504, coverUrl: 'http://img/1');
-      final retryRepo = _SpyRetryRepo([_makeAction()]);
-      final uc = _makeUseCase(
-        retryRepo: retryRepo,
-        cacheRepo: cacheRepo,
-        httpClient: _mockErrorClient(503),
-      );
+    test(
+      'updated action safe message does not contain token or secret',
+      () async {
+        final cacheRepo = _SpyCacheRepo()
+          ..put(249504, coverUrl: 'http://img/1');
+        final retryRepo = _SpyRetryRepo([_makeAction()]);
+        final uc = _makeUseCase(
+          retryRepo: retryRepo,
+          cacheRepo: cacheRepo,
+          httpClient: _mockErrorClient(503),
+        );
 
-      await uc.execute(_makeAction());
+        await uc.execute(_makeAction());
 
-      for (final a in retryRepo.updated) {
-        expect(a.safeErrorMessage.toLowerCase(), isNot(contains('token')));
-        expect(a.safeErrorMessage.toLowerCase(), isNot(contains('secret')));
-      }
-    });
+        for (final a in retryRepo.updated) {
+          expect(a.safeErrorMessage.toLowerCase(), isNot(contains('token')));
+          expect(a.safeErrorMessage.toLowerCase(), isNot(contains('secret')));
+        }
+      },
+    );
   });
 }

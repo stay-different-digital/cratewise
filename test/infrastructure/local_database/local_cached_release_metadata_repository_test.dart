@@ -1,4 +1,5 @@
 import 'package:cratewise/domain/models/cached_release_metadata.dart';
+import 'package:cratewise/domain/models/release_detail.dart';
 import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/infrastructure/local_database/app_database.dart';
 import 'package:cratewise/infrastructure/local_database/local_cached_release_metadata_repository.dart';
@@ -18,33 +19,43 @@ CachedReleaseMetadata _makeMeta({
   int? year = 1959,
   List<String>? genres,
   List<String>? styles,
-  List<String>? tracklist,
+  List<ReleaseTrack>? tracklist,
   String? notes,
-  List<String>? barcodes,
+  List<ReleaseIdentifier>? identifiers,
   String? coverUrl,
   DateTime? fetchedAt,
   String cacheSource = 'discogs_api',
   SyncStatus syncStatus = SyncStatus.localOnly,
-}) =>
-    CachedReleaseMetadata(
-      discogsReleaseId: discogsReleaseId,
-      artist: artist,
-      title: title,
-      label: label,
-      catno: catno,
-      format: format,
-      country: country,
-      year: year,
-      genres: genres ?? ['Jazz'],
-      styles: styles ?? ['Modal'],
-      tracklist: tracklist ?? ['So What', 'Freddie Freeloader'],
-      notes: notes,
-      barcodes: barcodes ?? ['074646440124'],
-      coverUrl: coverUrl,
-      fetchedAt: fetchedAt ?? DateTime(2026, 1, 1, 12),
-      cacheSource: cacheSource,
-      syncStatus: syncStatus,
-    );
+}) => CachedReleaseMetadata(
+  discogsReleaseId: discogsReleaseId,
+  artist: artist,
+  title: title,
+  label: label,
+  catno: catno,
+  format: format,
+  country: country,
+  year: year,
+  genres: genres ?? ['Jazz'],
+  styles: styles ?? ['Modal'],
+  tracklist:
+      tracklist ??
+      const [
+        ReleaseTrack(position: 'A1', title: 'So What', duration: '9:22'),
+        ReleaseTrack(
+          position: 'A2',
+          title: 'Freddie Freeloader',
+          duration: '9:46',
+        ),
+      ],
+  notes: notes,
+  identifiers:
+      identifiers ??
+      const [ReleaseIdentifier(type: 'Barcode', value: '074646440124')],
+  coverUrl: coverUrl,
+  fetchedAt: fetchedAt ?? DateTime(2026, 1, 1, 12),
+  cacheSource: cacheSource,
+  syncStatus: syncStatus,
+);
 
 void main() {
   group('LocalCachedReleaseMetadataRepository', () {
@@ -106,8 +117,7 @@ void main() {
       });
 
       test('round-trips genres list', () async {
-        await repo
-            .save(_makeMeta(genres: ['Jazz', 'Classical'], styles: []));
+        await repo.save(_makeMeta(genres: ['Jazz', 'Classical'], styles: []));
         final result = await repo.getByReleaseId(249504);
         expect(result!.genres, ['Jazz', 'Classical']);
       });
@@ -118,33 +128,67 @@ void main() {
         expect(result!.styles, ['Modal', 'Post-Bop']);
       });
 
-      test('round-trips tracklist', () async {
-        await repo.save(_makeMeta(
-          tracklist: ['So What', 'Freddie Freeloader', 'Blue in Green'],
-        ));
-        final result = await repo.getByReleaseId(249504);
-        expect(result!.tracklist,
-            ['So What', 'Freddie Freeloader', 'Blue in Green']);
-      });
+      test(
+        'round-trips full tracklist with position, title and duration',
+        () async {
+          await repo.save(
+            _makeMeta(
+              tracklist: const [
+                ReleaseTrack(
+                  position: 'A1',
+                  title: 'So What',
+                  duration: '9:22',
+                ),
+                ReleaseTrack(
+                  position: 'A2',
+                  title: 'Freddie Freeloader',
+                  duration: '9:46',
+                ),
+                ReleaseTrack(
+                  position: 'B1',
+                  title: 'Blue in Green',
+                  duration: '5:37',
+                ),
+              ],
+            ),
+          );
+          final result = await repo.getByReleaseId(249504);
+          expect(result!.tracklist, hasLength(3));
+          expect(result.tracklist[0].position, 'A1');
+          expect(result.tracklist[0].title, 'So What');
+          expect(result.tracklist[0].duration, '9:22');
+          expect(result.tracklist[2].position, 'B1');
+          expect(result.tracklist[2].title, 'Blue in Green');
+          expect(result.tracklist[2].duration, '5:37');
+        },
+      );
 
-      test('round-trips barcodes list', () async {
-        await repo.save(_makeMeta(barcodes: ['123456789', '987654321']));
+      test('round-trips full identifiers list with type and value', () async {
+        await repo.save(
+          _makeMeta(
+            identifiers: const [
+              ReleaseIdentifier(type: 'Barcode', value: '123456789'),
+              ReleaseIdentifier(type: 'Matrix / Runout', value: 'CL 1355-A'),
+            ],
+          ),
+        );
         final result = await repo.getByReleaseId(249504);
-        expect(result!.barcodes, ['123456789', '987654321']);
+        expect(result!.identifiers, hasLength(2));
+        expect(result.identifiers[0].type, 'Barcode');
+        expect(result.identifiers[0].value, '123456789');
+        expect(result.identifiers[1].type, 'Matrix / Runout');
+        expect(result.identifiers[1].value, 'CL 1355-A');
       });
 
       test('empty lists round-trip as empty lists', () async {
-        await repo.save(_makeMeta(
-          genres: [],
-          styles: [],
-          tracklist: [],
-          barcodes: [],
-        ));
+        await repo.save(
+          _makeMeta(genres: [], styles: [], tracklist: [], identifiers: []),
+        );
         final result = await repo.getByReleaseId(249504);
         expect(result!.genres, isEmpty);
         expect(result.styles, isEmpty);
         expect(result.tracklist, isEmpty);
-        expect(result.barcodes, isEmpty);
+        expect(result.identifiers, isEmpty);
       });
 
       test('preserves fetchedAt timestamp', () async {
@@ -155,15 +199,17 @@ void main() {
       });
 
       test('nullable fields preserved when null', () async {
-        await repo.save(_makeMeta(
-          label: null,
-          catno: null,
-          format: null,
-          country: null,
-          year: null,
-          notes: null,
-          coverUrl: null,
-        ));
+        await repo.save(
+          _makeMeta(
+            label: null,
+            catno: null,
+            format: null,
+            country: null,
+            year: null,
+            notes: null,
+            coverUrl: null,
+          ),
+        );
         final result = await repo.getByReleaseId(249504);
         expect(result!.label, isNull);
         expect(result.catno, isNull);

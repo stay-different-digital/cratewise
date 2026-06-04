@@ -2028,14 +2028,14 @@ class $CachedReleasesTable extends CachedReleases
         requiredDuringInsert: true,
       ).withConverter<List<String>>($CachedReleasesTable.$converterstyles);
   @override
-  late final GeneratedColumnWithTypeConverter<List<String>, String> tracklist =
-      GeneratedColumn<String>(
-        'tracklist',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      ).withConverter<List<String>>($CachedReleasesTable.$convertertracklist);
+  late final GeneratedColumnWithTypeConverter<List<ReleaseTrack>, String>
+  tracklist = GeneratedColumn<String>(
+    'tracklist',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<List<ReleaseTrack>>($CachedReleasesTable.$convertertracklist);
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -2046,14 +2046,17 @@ class $CachedReleasesTable extends CachedReleases
     requiredDuringInsert: false,
   );
   @override
-  late final GeneratedColumnWithTypeConverter<List<String>, String> barcodes =
+  late final GeneratedColumnWithTypeConverter<List<ReleaseIdentifier>, String>
+  identifiers =
       GeneratedColumn<String>(
-        'barcodes',
+        'identifiers',
         aliasedName,
         false,
         type: DriftSqlType.string,
         requiredDuringInsert: true,
-      ).withConverter<List<String>>($CachedReleasesTable.$converterbarcodes);
+      ).withConverter<List<ReleaseIdentifier>>(
+        $CachedReleasesTable.$converteridentifiers,
+      );
   static const VerificationMeta _coverUrlMeta = const VerificationMeta(
     'coverUrl',
   );
@@ -2110,7 +2113,7 @@ class $CachedReleasesTable extends CachedReleases
     styles,
     tracklist,
     notes,
-    barcodes,
+    identifiers,
     coverUrl,
     fetchedAt,
     cacheSource,
@@ -2277,10 +2280,10 @@ class $CachedReleasesTable extends CachedReleases
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
-      barcodes: $CachedReleasesTable.$converterbarcodes.fromSql(
+      identifiers: $CachedReleasesTable.$converteridentifiers.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
-          data['${effectivePrefix}barcodes'],
+          data['${effectivePrefix}identifiers'],
         )!,
       ),
       coverUrl: attachedDatabase.typeMapping.read(
@@ -2313,10 +2316,10 @@ class $CachedReleasesTable extends CachedReleases
       const StringListConverter();
   static TypeConverter<List<String>, String> $converterstyles =
       const StringListConverter();
-  static TypeConverter<List<String>, String> $convertertracklist =
-      const StringListConverter();
-  static TypeConverter<List<String>, String> $converterbarcodes =
-      const StringListConverter();
+  static TypeConverter<List<ReleaseTrack>, String> $convertertracklist =
+      const TrackListConverter();
+  static TypeConverter<List<ReleaseIdentifier>, String> $converteridentifiers =
+      const IdentifierListConverter();
   static TypeConverter<SyncStatus, String> $convertersyncStatus =
       const SyncStatusConverter();
 }
@@ -2333,9 +2336,9 @@ class CachedReleaseRow extends DataClass
   final int? year;
   final List<String> genres;
   final List<String> styles;
-  final List<String> tracklist;
+  final List<ReleaseTrack> tracklist;
   final String? notes;
-  final List<String> barcodes;
+  final List<ReleaseIdentifier> identifiers;
   final String? coverUrl;
   final DateTime fetchedAt;
   final String cacheSource;
@@ -2353,7 +2356,7 @@ class CachedReleaseRow extends DataClass
     required this.styles,
     required this.tracklist,
     this.notes,
-    required this.barcodes,
+    required this.identifiers,
     this.coverUrl,
     required this.fetchedAt,
     required this.cacheSource,
@@ -2399,8 +2402,8 @@ class CachedReleaseRow extends DataClass
       map['notes'] = Variable<String>(notes);
     }
     {
-      map['barcodes'] = Variable<String>(
-        $CachedReleasesTable.$converterbarcodes.toSql(barcodes),
+      map['identifiers'] = Variable<String>(
+        $CachedReleasesTable.$converteridentifiers.toSql(identifiers),
       );
     }
     if (!nullToAbsent || coverUrl != null) {
@@ -2440,7 +2443,7 @@ class CachedReleaseRow extends DataClass
       notes: notes == null && nullToAbsent
           ? const Value.absent()
           : Value(notes),
-      barcodes: Value(barcodes),
+      identifiers: Value(identifiers),
       coverUrl: coverUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(coverUrl),
@@ -2466,9 +2469,11 @@ class CachedReleaseRow extends DataClass
       year: serializer.fromJson<int?>(json['year']),
       genres: serializer.fromJson<List<String>>(json['genres']),
       styles: serializer.fromJson<List<String>>(json['styles']),
-      tracklist: serializer.fromJson<List<String>>(json['tracklist']),
+      tracklist: serializer.fromJson<List<ReleaseTrack>>(json['tracklist']),
       notes: serializer.fromJson<String?>(json['notes']),
-      barcodes: serializer.fromJson<List<String>>(json['barcodes']),
+      identifiers: serializer.fromJson<List<ReleaseIdentifier>>(
+        json['identifiers'],
+      ),
       coverUrl: serializer.fromJson<String?>(json['coverUrl']),
       fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
       cacheSource: serializer.fromJson<String>(json['cacheSource']),
@@ -2489,9 +2494,9 @@ class CachedReleaseRow extends DataClass
       'year': serializer.toJson<int?>(year),
       'genres': serializer.toJson<List<String>>(genres),
       'styles': serializer.toJson<List<String>>(styles),
-      'tracklist': serializer.toJson<List<String>>(tracklist),
+      'tracklist': serializer.toJson<List<ReleaseTrack>>(tracklist),
       'notes': serializer.toJson<String?>(notes),
-      'barcodes': serializer.toJson<List<String>>(barcodes),
+      'identifiers': serializer.toJson<List<ReleaseIdentifier>>(identifiers),
       'coverUrl': serializer.toJson<String?>(coverUrl),
       'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
       'cacheSource': serializer.toJson<String>(cacheSource),
@@ -2510,9 +2515,9 @@ class CachedReleaseRow extends DataClass
     Value<int?> year = const Value.absent(),
     List<String>? genres,
     List<String>? styles,
-    List<String>? tracklist,
+    List<ReleaseTrack>? tracklist,
     Value<String?> notes = const Value.absent(),
-    List<String>? barcodes,
+    List<ReleaseIdentifier>? identifiers,
     Value<String?> coverUrl = const Value.absent(),
     DateTime? fetchedAt,
     String? cacheSource,
@@ -2530,7 +2535,7 @@ class CachedReleaseRow extends DataClass
     styles: styles ?? this.styles,
     tracklist: tracklist ?? this.tracklist,
     notes: notes.present ? notes.value : this.notes,
-    barcodes: barcodes ?? this.barcodes,
+    identifiers: identifiers ?? this.identifiers,
     coverUrl: coverUrl.present ? coverUrl.value : this.coverUrl,
     fetchedAt: fetchedAt ?? this.fetchedAt,
     cacheSource: cacheSource ?? this.cacheSource,
@@ -2552,7 +2557,9 @@ class CachedReleaseRow extends DataClass
       styles: data.styles.present ? data.styles.value : this.styles,
       tracklist: data.tracklist.present ? data.tracklist.value : this.tracklist,
       notes: data.notes.present ? data.notes.value : this.notes,
-      barcodes: data.barcodes.present ? data.barcodes.value : this.barcodes,
+      identifiers: data.identifiers.present
+          ? data.identifiers.value
+          : this.identifiers,
       coverUrl: data.coverUrl.present ? data.coverUrl.value : this.coverUrl,
       fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
       cacheSource: data.cacheSource.present
@@ -2579,7 +2586,7 @@ class CachedReleaseRow extends DataClass
           ..write('styles: $styles, ')
           ..write('tracklist: $tracklist, ')
           ..write('notes: $notes, ')
-          ..write('barcodes: $barcodes, ')
+          ..write('identifiers: $identifiers, ')
           ..write('coverUrl: $coverUrl, ')
           ..write('fetchedAt: $fetchedAt, ')
           ..write('cacheSource: $cacheSource, ')
@@ -2602,7 +2609,7 @@ class CachedReleaseRow extends DataClass
     styles,
     tracklist,
     notes,
-    barcodes,
+    identifiers,
     coverUrl,
     fetchedAt,
     cacheSource,
@@ -2624,7 +2631,7 @@ class CachedReleaseRow extends DataClass
           other.styles == this.styles &&
           other.tracklist == this.tracklist &&
           other.notes == this.notes &&
-          other.barcodes == this.barcodes &&
+          other.identifiers == this.identifiers &&
           other.coverUrl == this.coverUrl &&
           other.fetchedAt == this.fetchedAt &&
           other.cacheSource == this.cacheSource &&
@@ -2642,9 +2649,9 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
   final Value<int?> year;
   final Value<List<String>> genres;
   final Value<List<String>> styles;
-  final Value<List<String>> tracklist;
+  final Value<List<ReleaseTrack>> tracklist;
   final Value<String?> notes;
-  final Value<List<String>> barcodes;
+  final Value<List<ReleaseIdentifier>> identifiers;
   final Value<String?> coverUrl;
   final Value<DateTime> fetchedAt;
   final Value<String> cacheSource;
@@ -2662,7 +2669,7 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
     this.styles = const Value.absent(),
     this.tracklist = const Value.absent(),
     this.notes = const Value.absent(),
-    this.barcodes = const Value.absent(),
+    this.identifiers = const Value.absent(),
     this.coverUrl = const Value.absent(),
     this.fetchedAt = const Value.absent(),
     this.cacheSource = const Value.absent(),
@@ -2679,9 +2686,9 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
     this.year = const Value.absent(),
     required List<String> genres,
     required List<String> styles,
-    required List<String> tracklist,
+    required List<ReleaseTrack> tracklist,
     this.notes = const Value.absent(),
-    required List<String> barcodes,
+    required List<ReleaseIdentifier> identifiers,
     this.coverUrl = const Value.absent(),
     required DateTime fetchedAt,
     required String cacheSource,
@@ -2691,7 +2698,7 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
        genres = Value(genres),
        styles = Value(styles),
        tracklist = Value(tracklist),
-       barcodes = Value(barcodes),
+       identifiers = Value(identifiers),
        fetchedAt = Value(fetchedAt),
        cacheSource = Value(cacheSource),
        syncStatus = Value(syncStatus);
@@ -2708,7 +2715,7 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
     Expression<String>? styles,
     Expression<String>? tracklist,
     Expression<String>? notes,
-    Expression<String>? barcodes,
+    Expression<String>? identifiers,
     Expression<String>? coverUrl,
     Expression<DateTime>? fetchedAt,
     Expression<String>? cacheSource,
@@ -2727,7 +2734,7 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
       if (styles != null) 'styles': styles,
       if (tracklist != null) 'tracklist': tracklist,
       if (notes != null) 'notes': notes,
-      if (barcodes != null) 'barcodes': barcodes,
+      if (identifiers != null) 'identifiers': identifiers,
       if (coverUrl != null) 'cover_url': coverUrl,
       if (fetchedAt != null) 'fetched_at': fetchedAt,
       if (cacheSource != null) 'cache_source': cacheSource,
@@ -2746,9 +2753,9 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
     Value<int?>? year,
     Value<List<String>>? genres,
     Value<List<String>>? styles,
-    Value<List<String>>? tracklist,
+    Value<List<ReleaseTrack>>? tracklist,
     Value<String?>? notes,
-    Value<List<String>>? barcodes,
+    Value<List<ReleaseIdentifier>>? identifiers,
     Value<String?>? coverUrl,
     Value<DateTime>? fetchedAt,
     Value<String>? cacheSource,
@@ -2767,7 +2774,7 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
       styles: styles ?? this.styles,
       tracklist: tracklist ?? this.tracklist,
       notes: notes ?? this.notes,
-      barcodes: barcodes ?? this.barcodes,
+      identifiers: identifiers ?? this.identifiers,
       coverUrl: coverUrl ?? this.coverUrl,
       fetchedAt: fetchedAt ?? this.fetchedAt,
       cacheSource: cacheSource ?? this.cacheSource,
@@ -2820,9 +2827,9 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
-    if (barcodes.present) {
-      map['barcodes'] = Variable<String>(
-        $CachedReleasesTable.$converterbarcodes.toSql(barcodes.value),
+    if (identifiers.present) {
+      map['identifiers'] = Variable<String>(
+        $CachedReleasesTable.$converteridentifiers.toSql(identifiers.value),
       );
     }
     if (coverUrl.present) {
@@ -2857,7 +2864,7 @@ class CachedReleasesCompanion extends UpdateCompanion<CachedReleaseRow> {
           ..write('styles: $styles, ')
           ..write('tracklist: $tracklist, ')
           ..write('notes: $notes, ')
-          ..write('barcodes: $barcodes, ')
+          ..write('identifiers: $identifiers, ')
           ..write('coverUrl: $coverUrl, ')
           ..write('fetchedAt: $fetchedAt, ')
           ..write('cacheSource: $cacheSource, ')
@@ -5585,9 +5592,9 @@ typedef $$CachedReleasesTableCreateCompanionBuilder =
       Value<int?> year,
       required List<String> genres,
       required List<String> styles,
-      required List<String> tracklist,
+      required List<ReleaseTrack> tracklist,
       Value<String?> notes,
-      required List<String> barcodes,
+      required List<ReleaseIdentifier> identifiers,
       Value<String?> coverUrl,
       required DateTime fetchedAt,
       required String cacheSource,
@@ -5605,9 +5612,9 @@ typedef $$CachedReleasesTableUpdateCompanionBuilder =
       Value<int?> year,
       Value<List<String>> genres,
       Value<List<String>> styles,
-      Value<List<String>> tracklist,
+      Value<List<ReleaseTrack>> tracklist,
       Value<String?> notes,
-      Value<List<String>> barcodes,
+      Value<List<ReleaseIdentifier>> identifiers,
       Value<String?> coverUrl,
       Value<DateTime> fetchedAt,
       Value<String> cacheSource,
@@ -5675,7 +5682,7 @@ class $$CachedReleasesTableFilterComposer
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  ColumnWithTypeConverterFilters<List<ReleaseTrack>, List<ReleaseTrack>, String>
   get tracklist => $composableBuilder(
     column: $table.tracklist,
     builder: (column) => ColumnWithTypeConverterFilters(column),
@@ -5686,9 +5693,13 @@ class $$CachedReleasesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
-  get barcodes => $composableBuilder(
-    column: $table.barcodes,
+  ColumnWithTypeConverterFilters<
+    List<ReleaseIdentifier>,
+    List<ReleaseIdentifier>,
+    String
+  >
+  get identifiers => $composableBuilder(
+    column: $table.identifiers,
     builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
@@ -5783,8 +5794,8 @@ class $$CachedReleasesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get barcodes => $composableBuilder(
-    column: $table.barcodes,
+  ColumnOrderings<String> get identifiers => $composableBuilder(
+    column: $table.identifiers,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -5850,14 +5861,17 @@ class $$CachedReleasesTableAnnotationComposer
   GeneratedColumnWithTypeConverter<List<String>, String> get styles =>
       $composableBuilder(column: $table.styles, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<List<String>, String> get tracklist =>
+  GeneratedColumnWithTypeConverter<List<ReleaseTrack>, String> get tracklist =>
       $composableBuilder(column: $table.tracklist, builder: (column) => column);
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<List<String>, String> get barcodes =>
-      $composableBuilder(column: $table.barcodes, builder: (column) => column);
+  GeneratedColumnWithTypeConverter<List<ReleaseIdentifier>, String>
+  get identifiers => $composableBuilder(
+    column: $table.identifiers,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get coverUrl =>
       $composableBuilder(column: $table.coverUrl, builder: (column) => column);
@@ -5924,9 +5938,10 @@ class $$CachedReleasesTableTableManager
                 Value<int?> year = const Value.absent(),
                 Value<List<String>> genres = const Value.absent(),
                 Value<List<String>> styles = const Value.absent(),
-                Value<List<String>> tracklist = const Value.absent(),
+                Value<List<ReleaseTrack>> tracklist = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
-                Value<List<String>> barcodes = const Value.absent(),
+                Value<List<ReleaseIdentifier>> identifiers =
+                    const Value.absent(),
                 Value<String?> coverUrl = const Value.absent(),
                 Value<DateTime> fetchedAt = const Value.absent(),
                 Value<String> cacheSource = const Value.absent(),
@@ -5944,7 +5959,7 @@ class $$CachedReleasesTableTableManager
                 styles: styles,
                 tracklist: tracklist,
                 notes: notes,
-                barcodes: barcodes,
+                identifiers: identifiers,
                 coverUrl: coverUrl,
                 fetchedAt: fetchedAt,
                 cacheSource: cacheSource,
@@ -5962,9 +5977,9 @@ class $$CachedReleasesTableTableManager
                 Value<int?> year = const Value.absent(),
                 required List<String> genres,
                 required List<String> styles,
-                required List<String> tracklist,
+                required List<ReleaseTrack> tracklist,
                 Value<String?> notes = const Value.absent(),
-                required List<String> barcodes,
+                required List<ReleaseIdentifier> identifiers,
                 Value<String?> coverUrl = const Value.absent(),
                 required DateTime fetchedAt,
                 required String cacheSource,
@@ -5982,7 +5997,7 @@ class $$CachedReleasesTableTableManager
                 styles: styles,
                 tracklist: tracklist,
                 notes: notes,
-                barcodes: barcodes,
+                identifiers: identifiers,
                 coverUrl: coverUrl,
                 fetchedAt: fetchedAt,
                 cacheSource: cacheSource,
