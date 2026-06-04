@@ -656,4 +656,13 @@ void main() {
       });
     });
   });
+
+  group('ImportExportScreen — safe area', () {
+    testWidgets('body has SafeArea with top: false', (tester) async {
+      await tester.pumpWidget(_buildSubject());
+      await tester.pump();
+      final safeAreas = tester.widgetList<SafeArea>(find.byType(SafeArea));
+      expect(safeAreas.any((sa) => !sa.top), isTrue);
+    });
+  });
 }

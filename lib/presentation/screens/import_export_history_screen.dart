@@ -104,11 +104,14 @@ class _HistoryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: jobs.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => _JobCard(job: jobs[index]),
+    return SafeArea(
+      top: false,
+      child: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: jobs.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (context, index) => _JobCard(job: jobs[index]),
+      ),
     );
   }
 }

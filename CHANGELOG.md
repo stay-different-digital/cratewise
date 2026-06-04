@@ -7,6 +7,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7Z: Safe area applied correctly for scrollable screen content (US-27)] — 2026-06-04
+
+### Changed
+- `HomeShellScreen` — wide layout (iPad / NavRail) content area is now wrapped in `SafeArea(top: false)` so tab-screen scroll content clears the home indicator on tablets
+- `CollectionDetailScreen` (`_CollectionDetailBody`) — narrow and wide scroll bodies are now wrapped in `SafeArea(top: false)` so content is not obscured by the home indicator on pushed routes
+- `WishlistDetailScreen` (`_WishlistDetailBody`) — same SafeArea treatment as CollectionDetailScreen
+- `ImportExportScreen` — body `LayoutBuilder` is now wrapped in `SafeArea(top: false)`
+- `ImportExportHistoryScreen` (`_HistoryList`) — `ListView.separated` is now wrapped in `SafeArea(top: false)`
+- `FailedActionsScreen` (`_ActionList`) — `ListView.separated` is now wrapped in `SafeArea(top: false)`
+
+### Tests
+- 5 new tests in `safe area` groups: `CollectionDetailScreen`, `WishlistDetailScreen`, `ImportExportHistoryScreen`, `FailedActionsScreen`, `ImportExportScreen` each verify a `SafeArea` with `top: false` is present in the loaded widget tree
+
+---
+
 ## [Unreleased — Phase 7Y: CSV export is compatible with Excel on Windows (US-25)] — 2026-06-04
 
 ### Changed

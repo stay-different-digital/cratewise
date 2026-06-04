@@ -58,64 +58,67 @@ class ImportExportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Import & Export')),
-      body: LayoutBuilder(
-        builder: (context, constraints) => _ActionBody(
-          isWide: constraints.maxWidth >= _kWideBreakpoint,
-          onImportCollection: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => CollectionImportPreviewScreen(
-                useCase: collectionImportUseCase,
+      body: SafeArea(
+        top: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) => _ActionBody(
+            isWide: constraints.maxWidth >= _kWideBreakpoint,
+            onImportCollection: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => CollectionImportPreviewScreen(
+                  useCase: collectionImportUseCase,
+                ),
               ),
             ),
-          ),
-          onImportWishlist: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) =>
-                  WishlistImportPreviewScreen(useCase: wishlistImportUseCase),
-            ),
-          ),
-          onExportCollection: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => CollectionExportPreviewScreen(
-                useCase: collectionExportPreviewUseCase,
+            onImportWishlist: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    WishlistImportPreviewScreen(useCase: wishlistImportUseCase),
               ),
             ),
-          ),
-          onExportWishlist: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => WishlistExportPreviewScreen(
-                useCase: wishlistExportPreviewUseCase,
+            onExportCollection: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => CollectionExportPreviewScreen(
+                  useCase: collectionExportPreviewUseCase,
+                ),
               ),
             ),
-          ),
-          onExportCollectionCsv: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => CollectionCsvExportPreviewScreen(
-                previewUseCase: collectionCsvExportPreviewUseCase,
+            onExportWishlist: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => WishlistExportPreviewScreen(
+                  useCase: wishlistExportPreviewUseCase,
+                ),
               ),
             ),
-          ),
-          onExportWishlistCsv: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => WishlistCsvExportPreviewScreen(
-                previewUseCase: wishlistCsvExportPreviewUseCase,
+            onExportCollectionCsv: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => CollectionCsvExportPreviewScreen(
+                  previewUseCase: collectionCsvExportPreviewUseCase,
+                ),
               ),
             ),
-          ),
-          onImportCollectionCsv: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const CollectionCsvImportPreviewScreen(),
+            onExportWishlistCsv: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => WishlistCsvExportPreviewScreen(
+                  previewUseCase: wishlistCsvExportPreviewUseCase,
+                ),
+              ),
             ),
-          ),
-          onImportWishlistCsv: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => const WishlistCsvImportPreviewScreen(),
+            onImportCollectionCsv: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const CollectionCsvImportPreviewScreen(),
+              ),
             ),
-          ),
-          onViewHistory: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) =>
-                  ImportExportHistoryScreen(repository: jobRepository),
+            onImportWishlistCsv: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const WishlistCsvImportPreviewScreen(),
+              ),
+            ),
+            onViewHistory: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    ImportExportHistoryScreen(repository: jobRepository),
+              ),
             ),
           ),
         ),

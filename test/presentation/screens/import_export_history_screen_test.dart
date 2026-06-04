@@ -350,4 +350,14 @@ void main() {
       });
     });
   });
+
+  group('ImportExportHistoryScreen — safe area', () {
+    testWidgets('loaded list has SafeArea with top: false', (tester) async {
+      final repo = _FakeJobRepository(jobs: [makeJob()]);
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+      final safeAreas = tester.widgetList<SafeArea>(find.byType(SafeArea));
+      expect(safeAreas.any((sa) => !sa.top), isTrue);
+    });
+  });
 }

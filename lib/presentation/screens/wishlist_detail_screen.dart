@@ -622,66 +622,72 @@ class _WishlistDetailBody extends StatelessWidget {
   }
 
   Widget _buildNarrow(BuildContext context) {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _CoverSection(item: item, thumbnailRepository: thumbnailRepository),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: _TitleArtist(item: item),
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: _InfoRows(item: item),
-          ),
-          if (item.notes != null && item.notes!.isNotEmpty)
-            _NotesSection(notes: item.notes!),
-          _HistorySection(item: item),
-          const SizedBox(height: 32),
-        ],
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _CoverSection(item: item, thumbnailRepository: thumbnailRepository),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: _TitleArtist(item: item),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: _InfoRows(item: item),
+            ),
+            if (item.notes != null && item.notes!.isNotEmpty)
+              _NotesSection(notes: item.notes!),
+            _HistorySection(item: item),
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildWide(BuildContext context) {
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 300,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _CachedCoverImage(
-                  releaseId: item.discogsReleaseId,
-                  borderRadius: BorderRadius.circular(8),
-                  thumbnailRepository: thumbnailRepository,
-                ),
-                const SizedBox(height: 20),
-                _TitleArtist(item: item),
-                const SizedBox(height: 16),
-                _InfoRows(item: item),
-              ],
+    return SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 300,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _CachedCoverImage(
+                    releaseId: item.discogsReleaseId,
+                    borderRadius: BorderRadius.circular(8),
+                    thumbnailRepository: thumbnailRepository,
+                  ),
+                  const SizedBox(height: 20),
+                  _TitleArtist(item: item),
+                  const SizedBox(height: 16),
+                  _InfoRows(item: item),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 32),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (item.notes != null && item.notes!.isNotEmpty)
-                  _NotesSection(notes: item.notes!),
-                _HistorySection(item: item),
-              ],
+            const SizedBox(width: 32),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (item.notes != null && item.notes!.isNotEmpty)
+                    _NotesSection(notes: item.notes!),
+                  _HistorySection(item: item),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

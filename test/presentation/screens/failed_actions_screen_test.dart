@@ -1014,6 +1014,16 @@ void main() {
       expect(find.text('View actions waiting to be retried'), findsOneWidget);
     });
   });
+
+  group('FailedActionsScreen — safe area', () {
+    testWidgets('loaded list has SafeArea with top: false', (tester) async {
+      final repo = _FakeRetryRepo(actions: [_makeAction()]);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pump();
+      final safeAreas = tester.widgetList<SafeArea>(find.byType(SafeArea));
+      expect(safeAreas.any((sa) => !sa.top), isTrue);
+    });
+  });
 }
 
 // A minimal test stand-in for SettingsScreen that doesn't need Navigator.

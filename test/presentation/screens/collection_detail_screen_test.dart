@@ -1959,4 +1959,16 @@ void main() {
       expect(find.byType(RefreshIndicator), findsNothing);
     });
   });
+
+  group('CollectionDetailScreen — safe area', () {
+    testWidgets('loaded body has SafeArea with top: false', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+      final safeAreas = tester.widgetList<SafeArea>(find.byType(SafeArea));
+      expect(safeAreas.any((sa) => !sa.top), isTrue);
+    });
+  });
 }

@@ -137,17 +137,20 @@ class _ActionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: actions.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => _ActionCard(
-        action: actions[index],
-        retryUseCase: retryUseCase,
-        thumbnailUseCase: thumbnailUseCase,
-        addCollectionUseCase: addCollectionUseCase,
-        addWishlistUseCase: addWishlistUseCase,
-        onRetried: onRetried,
+    return SafeArea(
+      top: false,
+      child: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: actions.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
+        itemBuilder: (context, index) => _ActionCard(
+          action: actions[index],
+          retryUseCase: retryUseCase,
+          thumbnailUseCase: thumbnailUseCase,
+          addCollectionUseCase: addCollectionUseCase,
+          addWishlistUseCase: addWishlistUseCase,
+          onRetried: onRetried,
+        ),
       ),
     );
   }
