@@ -7,6 +7,34 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7I: Collection list search and filter (US-09)] — 2026-06-04
+
+### Changed
+- `CollectionScreen` search field is now functional: items are filtered by artist and/or title as the user types
+- Filtering is local — no network call; operates on the items already loaded in `_state`
+- A 300 ms debounce is applied via `dart:async Timer`; `_debouncedQuery` drives the filter so rapid keystrokes do not re-filter on every character
+- The clear button cancels the pending debounce and immediately resets both the controller and `_debouncedQuery`, restoring the full list without a delay
+- A new `_NoSearchResults` widget is shown when the active filter matches no items, displaying the query text and a hint to try a different artist or title
+- The filter applies to both the list layout (phone) and the grid layout (iPad), since filtering happens before `_CollectionList` receives its items
+
+### Tests
+- 8 new tests in `collection_screen_test.dart` (group: "search filter"): filters by artist; filters by title; shows no-results message when nothing matches; no-results message includes the query; clearing search restores full list; case-insensitive matching; list is not filtered before debounce fires; filter works in iPad GridView layout
+
+---
+
+## [Unreleased — Phase 7H: "Already in collection" indicator on release detail (US-08)] — 2026-06-04
+
+### Changed
+- `ReleaseDetailScreen` now checks local collection storage on mount and pre-sets the "Add to Collection" button to "In Collection" (disabled) when the release ID already exists in the collection — no network call required
+- `ReleaseDetailScreen` gains an optional `collectionRepository` parameter for dependency injection; in production it shares the same `LocalCollectionRepository` instance already used by `AddToCollectionUseCase`
+- The check also applies when the screen shows cached offline data (`_CachedLoaded` state), so the indicator is correct even without a network connection
+- Navigating back to a release already added shows the correct "In Collection" state immediately, since each new screen instance re-runs the check against current local storage
+
+### Tests
+- 4 new tests in `release_detail_screen_test.dart` (group: "already in collection indicator"): shows "In Collection" on load when already in collection; "In Collection" button is disabled on initial load; shows "Add to Collection" when not in collection; shows "In Collection" in cached state when already in collection
+
+---
+
 ## [Unreleased — Phase 7G: Cover images use thumbnails (US-07)] — 2026-06-04
 
 ### Changed

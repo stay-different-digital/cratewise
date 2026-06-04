@@ -595,7 +595,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.loadCallCount, 1);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(repo.loadCallCount, 2);
@@ -610,7 +612,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Before'), findsOneWidget);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(find.text('After'), findsOneWidget);
@@ -625,7 +629,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Kept Artist'), findsOneWidget);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       // Items still visible after error
@@ -637,6 +643,153 @@ void main() {
       await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.byType(RefreshIndicator), findsNothing);
+    });
+  });
+
+  group('CollectionScreen — search filter', () {
+    testWidgets('filters by artist when query matches', (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [
+          _makeItem(id: 'a', artist: 'Miles Davis', title: 'Kind of Blue'),
+          _makeItem(id: 'b', artist: 'John Coltrane', title: 'A Love Supreme'),
+        ],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsNothing);
+    });
+
+    testWidgets('filters by title when query matches', (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [
+          _makeItem(id: 'a', artist: 'Miles Davis', title: 'Kind of Blue'),
+          _makeItem(id: 'b', artist: 'John Coltrane', title: 'A Love Supreme'),
+        ],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'supreme');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.text('John Coltrane'), findsOneWidget);
+      expect(find.text('Miles Davis'), findsNothing);
+    });
+
+    testWidgets('shows no-results message when filter matches nothing', (
+      tester,
+    ) async {
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(artist: 'Miles Davis', title: 'Kind of Blue')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'zzznomatch');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.textContaining('No results'), findsOneWidget);
+      expect(find.byType(CollectionItemCard), findsNothing);
+    });
+
+    testWidgets('no-results message includes the search query', (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(artist: 'Miles Davis', title: 'Kind of Blue')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'jazz fusion');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.textContaining('No results for "jazz fusion"'), findsOneWidget);
+    });
+
+    testWidgets('clearing search restores the full list', (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [
+          _makeItem(id: 'a', artist: 'Miles Davis'),
+          _makeItem(id: 'b', artist: 'John Coltrane'),
+        ],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsNothing);
+
+      await tester.tap(find.byTooltip('Clear search'));
+      await tester.pump();
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsOneWidget);
+    });
+
+    testWidgets('filter is case-insensitive', (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [_makeItem(artist: 'Miles Davis', title: 'Kind of Blue')],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'MILES');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+    });
+
+    testWidgets('list is not filtered before debounce fires', (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [
+          _makeItem(id: 'a', artist: 'Miles Davis'),
+          _makeItem(id: 'b', artist: 'John Coltrane'),
+        ],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(); // one frame — timer has not fired yet
+
+      // Both items still visible because _debouncedQuery is still ''
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsOneWidget);
+    });
+
+    testWidgets('filter works in iPad GridView layout', (tester) async {
+      tester.view.physicalSize = const Size(1024, 768);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeCollectionRepository(
+        items: [
+          _makeItem(id: 'a', artist: 'Miles Davis'),
+          _makeItem(id: 'b', artist: 'John Coltrane'),
+        ],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsNothing);
     });
   });
 

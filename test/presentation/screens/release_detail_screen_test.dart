@@ -1589,4 +1589,95 @@ void main() {
       expect(find.byType(RefreshIndicator), findsNothing);
     });
   });
+
+  group('ReleaseDetailScreen — already in collection indicator', () {
+    testWidgets(
+      'shows In Collection on load when release is already in collection',
+      (tester) async {
+        final repo = _FakeCollectionRepository(alreadyContains: true);
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _LoadedService(detail: _kindOfBlue),
+              addToCollectionUseCase: AddToCollectionUseCase(repo),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              collectionRepository: repo,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('In Collection'), findsOneWidget);
+        expect(find.text('Add to Collection'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'In Collection button is disabled on load when already in collection',
+      (tester) async {
+        final repo = _FakeCollectionRepository(alreadyContains: true);
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _LoadedService(detail: _kindOfBlue),
+              addToCollectionUseCase: AddToCollectionUseCase(repo),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              collectionRepository: repo,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final button = tester.widget<FilledButton>(
+          find.byKey(const Key('add-to-collection-button')),
+        );
+        expect(button.onPressed, isNull);
+      },
+    );
+
+    testWidgets(
+      'shows Add to Collection on load when release is not in collection',
+      (tester) async {
+        final repo = _FakeCollectionRepository(alreadyContains: false);
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _LoadedService(detail: _kindOfBlue),
+              addToCollectionUseCase: AddToCollectionUseCase(repo),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              collectionRepository: repo,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Add to Collection'), findsOneWidget);
+        expect(find.text('In Collection'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'shows In Collection on load in cached state when already in collection',
+      (tester) async {
+        final repo = _FakeCollectionRepository(alreadyContains: true);
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _ErrorService(error: const NetworkError()),
+              addToCollectionUseCase: AddToCollectionUseCase(repo),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              collectionRepository: repo,
+              cacheRepository: _FakeCacheRepository(
+                cachedMetadata: _cachedKindOfBlue,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('In Collection'), findsOneWidget);
+        expect(find.text('Add to Collection'), findsNothing);
+      },
+    );
+  });
 }
