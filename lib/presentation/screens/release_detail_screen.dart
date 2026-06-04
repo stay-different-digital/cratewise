@@ -6,6 +6,7 @@ import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/services/thumbnail_cache_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
+import '../../domain/models/collection_item.dart';
 import '../../domain/models/cached_release_metadata.dart';
 import '../../domain/models/release_detail.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
@@ -250,8 +251,10 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     final result = await _addUseCase.execute(detail);
     if (!mounted) return;
     switch (result) {
-      case AddToCollectionSuccess():
+      case AddToCollectionSuccess(:final item):
         setState(() => _addState = _AddState.added);
+        await _showConditionPrompt(item);
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Added to your collection')),
         );
@@ -260,6 +263,34 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Already in your collection')),
         );
+    }
+  }
+
+  Future<void> _showConditionPrompt(CollectionItem item) async {
+    if (!mounted) return;
+    final result =
+        await showModalBottomSheet<(RecordCondition, RecordCondition)>(
+          context: context,
+          isScrollControlled: true,
+          showDragHandle: true,
+          builder: (_) => _ConditionPromptSheet(
+            key: const Key('condition-prompt-sheet'),
+            initialMediaCondition: item.mediaCondition,
+            initialSleeveCondition: item.sleeveCondition,
+          ),
+        );
+    if (result == null) return;
+    final (media, sleeve) = result;
+    try {
+      await _collectionRepository?.update(
+        item.copyWith(
+          mediaCondition: media,
+          sleeveCondition: sleeve,
+          updatedAt: DateTime.now(),
+        ),
+      );
+    } catch (_) {
+      // Silently ignore update errors — item is already saved with defaults.
     }
   }
 
@@ -1101,6 +1132,144 @@ class _TrackRow extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Condition prompt sheet
+// ---------------------------------------------------------------------------
+
+class _ConditionPromptSheet extends StatefulWidget {
+  const _ConditionPromptSheet({
+    super.key,
+    required this.initialMediaCondition,
+    required this.initialSleeveCondition,
+  });
+
+  final RecordCondition initialMediaCondition;
+  final RecordCondition initialSleeveCondition;
+
+  @override
+  State<_ConditionPromptSheet> createState() => _ConditionPromptSheetState();
+}
+
+class _ConditionPromptSheetState extends State<_ConditionPromptSheet> {
+  late RecordCondition _media;
+  late RecordCondition _sleeve;
+
+  static const _kConditions = [
+    RecordCondition.mint,
+    RecordCondition.nearMint,
+    RecordCondition.veryGoodPlus,
+    RecordCondition.veryGood,
+    RecordCondition.goodPlus,
+    RecordCondition.good,
+    RecordCondition.fair,
+    RecordCondition.poor,
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _media = widget.initialMediaCondition;
+    _sleeve = widget.initialSleeveCondition;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Set condition', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              'You can update this any time from your collection.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _ConditionDropdown(
+              key: const Key('media-condition-dropdown'),
+              label: 'Media',
+              value: _media,
+              conditions: _kConditions,
+              onChanged: (v) => setState(() => _media = v),
+            ),
+            const SizedBox(height: 12),
+            _ConditionDropdown(
+              key: const Key('sleeve-condition-dropdown'),
+              label: 'Sleeve',
+              value: _sleeve,
+              conditions: _kConditions,
+              onChanged: (v) => setState(() => _sleeve = v),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    key: const Key('condition-skip-button'),
+                    onPressed: () => Navigator.of(context).pop(null),
+                    child: const Text('Skip'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    key: const Key('condition-save-button'),
+                    onPressed: () =>
+                        Navigator.of(context).pop((_media, _sleeve)),
+                    child: const Text('Save'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ConditionDropdown extends StatelessWidget {
+  const _ConditionDropdown({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.conditions,
+    required this.onChanged,
+  });
+
+  final String label;
+  final RecordCondition value;
+  final List<RecordCondition> conditions;
+  final ValueChanged<RecordCondition> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<RecordCondition>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
+      ),
+      items: conditions
+          .map((c) => DropdownMenuItem(value: c, child: Text(c.label)))
+          .toList(),
+      onChanged: (v) {
+        if (v != null) onChanged(v);
+      },
     );
   }
 }

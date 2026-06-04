@@ -7,6 +7,28 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7Q: Collection item condition prompt after adding (US-17)] — 2026-06-04
+
+### Changed
+- `ReleaseDetailScreen._handleAdd` — after a successful add, now awaits `_showConditionPrompt(item)` before showing the "Added to your collection" snackbar; the snackbar fires after the sheet is dismissed so the prompt is the first thing the user sees
+- `_showConditionPrompt` (new method) — shows `_ConditionPromptSheet` as a modal bottom sheet; if the user taps Save, calls `_collectionRepository.update` with the selected conditions; if the user taps Skip or swipes to dismiss, the item keeps its defaults silently
+- `_ConditionPromptSheet` (new widget) — modal bottom sheet with two `DropdownButtonFormField` pickers (Media, Sleeve), defaulted to the item's current conditions; Save pops the sheet with the chosen values, Skip pops with null; includes a drag handle and subtitle reminding users they can update conditions any time from their collection
+- `_ConditionDropdown` (new widget) — shared dropdown helper used by `_ConditionPromptSheet` for both the Media and Sleeve pickers; excludes `RecordCondition.notSet` from the picker list since the sheet is specifically for grading
+
+### Tests
+- 7 new / updated tests in `release_detail_screen_test.dart`:
+  - `ReleaseDetailScreen — condition prompt` group (7 tests):
+    - Condition prompt sheet appears after a successful add
+    - Condition prompt does not appear for duplicates
+    - Prompt shows the default `Very Good (VG)` label for both pickers
+    - Tapping Skip closes the sheet and then shows the "Added to your collection" snackbar
+    - Tapping Skip does not call `repository.update`
+    - Tapping Save closes the sheet and then shows the snackbar
+    - Tapping Save calls `repository.update` with the conditions selected in the dropdowns
+  - Existing `'tapping button shows added snackbar'` test updated to dismiss the condition prompt sheet (via Skip) before asserting the snackbar; now uses `_TrackingCollectionRepository` and passes `collectionRepository` to the screen
+
+---
+
 ## [Unreleased — Phase 7P: Rate-limit response headers used to back off proactively (US-16)] — 2026-06-04
 
 ### Changed
