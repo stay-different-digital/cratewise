@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7G: Cover images use thumbnails (US-07)] — 2026-06-04
+
+### Changed
+- Release Detail service now caches `uri150` (thumbnail) instead of the full-resolution `uri` when both are present in the Discogs images array — collection and wishlist list cards benefit immediately since they read from the local thumbnail cache
+- `DiscogsReleaseDto` gains a `thumbUrl` field extracted from `imageMap['uri150']`; `coverUrl` (`uri`) is unchanged and still used for the hero image on the Release Detail screen
+- `DiscogsReleaseDetailService._tryThumbnailCache` now accepts `(int releaseId, String? imageUrl)` and prefers `dto.thumbUrl` over `detail.coverUrl`; falls back to `uri` when `uri150` is absent
+- Search result cards already used the `thumb` field (`uri150`) from the Discogs search API — no change required there
+
+### Tests
+- 2 new tests in `discogs_api_client_test.dart` (group: "fetchRelease"): parses `thumbUrl` from `uri150`; `thumbUrl` is null when `uri150` absent
+- 2 new tests in `discogs_release_detail_service_test.dart` (group: "thumbnail URL selection"): uses `uri150` URL when available; falls back to `uri` when `uri150` absent
+
+---
+
 ## [Unreleased — Phase 7F: Release detail shows artist and title from search context (US-06)] — 2026-06-04
 
 ### Changed

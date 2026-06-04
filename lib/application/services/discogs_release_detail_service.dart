@@ -17,8 +17,8 @@ class DiscogsReleaseDetailService {
     this._cacheRepository,
     this._thumbnailCacheService,
     this._cacheRetryRecorder,
-  })  : _storage = storage ?? DiscogsTokenStorage(),
-        _apiClient = apiClient ?? DiscogsApiClient();
+  }) : _storage = storage ?? DiscogsTokenStorage(),
+       _apiClient = apiClient ?? DiscogsApiClient();
 
   final TokenStorage _storage;
   final DiscogsApiClient _apiClient;
@@ -36,7 +36,7 @@ class DiscogsReleaseDetailService {
       final dto = await _apiClient.fetchRelease(releaseId, token);
       final detail = _toDetail(dto);
       await _tryCache(detail);
-      await _tryThumbnailCache(detail);
+      await _tryThumbnailCache(detail.id, dto.thumbUrl ?? detail.coverUrl);
       return detail;
     } on AppError catch (e) {
       await _cacheRetryRecorder?.recordMetadataFailure(releaseId, e);
@@ -44,13 +44,12 @@ class DiscogsReleaseDetailService {
     }
   }
 
-  Future<void> _tryThumbnailCache(ReleaseDetail detail) async {
+  Future<void> _tryThumbnailCache(int releaseId, String? imageUrl) async {
     if (_thumbnailCacheService == null) return;
-    final url = detail.coverUrl;
     try {
-      final path = await _thumbnailCacheService.getOrFetch(detail.id, url);
-      if (path == null && url != null && url.isNotEmpty) {
-        await _cacheRetryRecorder?.recordThumbnailFailure(detail.id);
+      final path = await _thumbnailCacheService.getOrFetch(releaseId, imageUrl);
+      if (path == null && imageUrl != null && imageUrl.isNotEmpty) {
+        await _cacheRetryRecorder?.recordThumbnailFailure(releaseId);
       }
     } catch (_) {
       // thumbnail cache failure must not break the detail load
@@ -103,11 +102,13 @@ class DiscogsReleaseDetailService {
       genres: dto.genres,
       styles: dto.styles,
       tracklist: dto.tracklist
-          .map((t) => ReleaseTrack(
-                position: t.position,
-                title: t.title,
-                duration: t.duration,
-              ))
+          .map(
+            (t) => ReleaseTrack(
+              position: t.position,
+              title: t.title,
+              duration: t.duration,
+            ),
+          )
           .toList(),
       notes: dto.notes,
       coverUrl: dto.coverUrl,

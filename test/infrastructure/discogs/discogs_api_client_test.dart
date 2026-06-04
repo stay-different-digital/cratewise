@@ -919,6 +919,32 @@ void main() {
       expect(release.coverUrl, 'https://i.discogs.com/kind_of_blue.jpg');
     });
 
+    test('parses thumbUrl from primary image uri150', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.thumbUrl, 'https://i.discogs.com/kind_of_blue_150.jpg');
+    });
+
+    test('thumbUrl is null when uri150 is absent from images', () async {
+      final noUri150 = {
+        ...kindOfBlueRelease,
+        'images': [
+          {'type': 'primary', 'uri': 'https://i.discogs.com/kind_of_blue.jpg'},
+        ],
+      };
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(noUri150), 200),
+        ),
+      );
+      final release = await client.fetchRelease(1, _fakeToken);
+      expect(release.thumbUrl, isNull);
+    });
+
     test('parses tracklist and filters heading rows', () async {
       final client = DiscogsApiClient(
         httpClient: MockClient(

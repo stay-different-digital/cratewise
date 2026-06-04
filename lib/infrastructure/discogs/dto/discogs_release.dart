@@ -19,10 +19,7 @@ class DiscogsTrackDto {
 }
 
 class DiscogsIdentifierDto {
-  const DiscogsIdentifierDto({
-    required this.type,
-    required this.value,
-  });
+  const DiscogsIdentifierDto({required this.type, required this.value});
 
   final String type;
   final String value;
@@ -51,6 +48,7 @@ class DiscogsReleaseDto {
     this.year,
     this.notes,
     this.coverUrl,
+    this.thumbUrl,
   });
 
   final int id;
@@ -66,6 +64,7 @@ class DiscogsReleaseDto {
   final List<DiscogsTrackDto> tracklist;
   final String? notes;
   final String? coverUrl;
+  final String? thumbUrl;
   final List<DiscogsIdentifierDto> identifiers;
 
   factory DiscogsReleaseDto.fromJson(Map<String, dynamic> json) {
@@ -73,9 +72,9 @@ class DiscogsReleaseDto {
     final rawArtists = json['artists'] as List<dynamic>?;
     final artist = rawArtists != null && rawArtists.isNotEmpty
         ? rawArtists
-            .map((a) => (a as Map<String, dynamic>)['name'] as String? ?? '')
-            .where((n) => n.isNotEmpty)
-            .join(', ')
+              .map((a) => (a as Map<String, dynamic>)['name'] as String? ?? '')
+              .where((n) => n.isNotEmpty)
+              .join(', ')
         : '';
 
     // Label and catalog number — use first entry
@@ -83,8 +82,12 @@ class DiscogsReleaseDto {
     final firstLabel = rawLabels != null && rawLabels.isNotEmpty
         ? rawLabels.first as Map<String, dynamic>
         : null;
-    final label = firstLabel != null ? (firstLabel['name'] as String?) ?? '' : '';
-    final catno = firstLabel != null ? (firstLabel['catno'] as String?) ?? '' : '';
+    final label = firstLabel != null
+        ? (firstLabel['name'] as String?) ?? ''
+        : '';
+    final catno = firstLabel != null
+        ? (firstLabel['catno'] as String?) ?? ''
+        : '';
 
     // Format — name + descriptions from first entry
     final rawFormats = json['formats'] as List<dynamic>?;
@@ -94,7 +97,8 @@ class DiscogsReleaseDto {
     final String format;
     if (firstFormat != null) {
       final name = (firstFormat['name'] as String?) ?? '';
-      final descriptions = (firstFormat['descriptions'] as List<dynamic>?)
+      final descriptions =
+          (firstFormat['descriptions'] as List<dynamic>?)
               ?.map((d) => d as String)
               .toList() ??
           [];
@@ -108,12 +112,17 @@ class DiscogsReleaseDto {
     // Cover image — prefer primary; fall back to first image
     final rawImages = json['images'] as List<dynamic>?;
     String? coverUrl;
+    String? thumbUrl;
     if (rawImages != null && rawImages.isNotEmpty) {
       final images = rawImages.map((i) => i as Map<String, dynamic>);
       final primaryImages = images.where((i) => i['type'] == 'primary');
-      final imageMap = primaryImages.isNotEmpty ? primaryImages.first : images.first;
+      final imageMap = primaryImages.isNotEmpty
+          ? primaryImages.first
+          : images.first;
       final uri = imageMap['uri'] as String?;
+      final uri150 = imageMap['uri150'] as String?;
       coverUrl = (uri != null && uri.isNotEmpty) ? uri : null;
+      thumbUrl = (uri150 != null && uri150.isNotEmpty) ? uri150 : null;
     }
 
     // Tracklist — skip section heading rows
@@ -139,11 +148,20 @@ class DiscogsReleaseDto {
       format: format,
       country: (json['country'] as String?) ?? '',
       year: json['year'] as int?,
-      genres: (json['genres'] as List<dynamic>?)?.map((g) => g as String).toList() ?? [],
-      styles: (json['styles'] as List<dynamic>?)?.map((s) => s as String).toList() ?? [],
+      genres:
+          (json['genres'] as List<dynamic>?)
+              ?.map((g) => g as String)
+              .toList() ??
+          [],
+      styles:
+          (json['styles'] as List<dynamic>?)
+              ?.map((s) => s as String)
+              .toList() ??
+          [],
       tracklist: tracklist,
       notes: json['notes'] as String?,
       coverUrl: coverUrl,
+      thumbUrl: thumbUrl,
       identifiers: identifiers,
     );
   }

@@ -141,10 +141,7 @@ final _kindOfBlueJson = {
   'country': 'US',
   'notes': 'A seminal jazz album.',
   'images': [
-    {
-      'type': 'primary',
-      'uri': 'https://i.discogs.com/cover.jpg',
-    },
+    {'type': 'primary', 'uri': 'https://i.discogs.com/cover.jpg'},
   ],
   'tracklist': [
     {
@@ -174,28 +171,33 @@ void main() {
     test('throws NoTokenError when no token is saved', () async {
       final service = _makeService(
         null,
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
       );
-      expect(
-        () => service.fetchDetail(249504),
-        throwsA(isA<NoTokenError>()),
-      );
+      expect(() => service.fetchDetail(249504), throwsA(isA<NoTokenError>()));
     });
 
-    test('returns ReleaseDetail when token is present and API succeeds',
-        () async {
-      final service = _makeService(
-        'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
-      );
-      final detail = await service.fetchDetail(249504);
-      expect(detail, isA<ReleaseDetail>());
-    });
+    test(
+      'returns ReleaseDetail when token is present and API succeeds',
+      () async {
+        final service = _makeService(
+          'fake_token',
+          MockClient(
+            (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+          ),
+        );
+        final detail = await service.fetchDetail(249504);
+        expect(detail, isA<ReleaseDetail>());
+      },
+    );
 
     test('maps all DTO fields to ReleaseDetail correctly', () async {
       final service = _makeService(
         'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
       );
       final detail = await service.fetchDetail(249504);
       expect(detail.id, 249504);
@@ -215,7 +217,9 @@ void main() {
     test('maps tracklist correctly', () async {
       final service = _makeService(
         'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
       );
       final detail = await service.fetchDetail(249504);
       expect(detail.tracklist, hasLength(2));
@@ -228,7 +232,9 @@ void main() {
     test('maps identifiers correctly', () async {
       final service = _makeService(
         'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
       );
       final detail = await service.fetchDetail(249504);
       expect(detail.identifiers, hasLength(1));
@@ -242,10 +248,7 @@ void main() {
         'fake_token',
         MockClient((_) async => http.Response('', 429)),
       );
-      expect(
-        () => service.fetchDetail(1),
-        throwsA(isA<RateLimitedError>()),
-      );
+      expect(() => service.fetchDetail(1), throwsA(isA<RateLimitedError>()));
     });
 
     test('propagates InvalidTokenError from API client', () async {
@@ -253,10 +256,7 @@ void main() {
         'fake_token',
         MockClient((_) async => http.Response('', 401)),
       );
-      expect(
-        () => service.fetchDetail(1),
-        throwsA(isA<InvalidTokenError>()),
-      );
+      expect(() => service.fetchDetail(1), throwsA(isA<InvalidTokenError>()));
     });
 
     test('propagates NetworkError from API client', () async {
@@ -264,10 +264,7 @@ void main() {
         'fake_token',
         MockClient((_) async => throw Exception('no internet')),
       );
-      expect(
-        () => service.fetchDetail(1),
-        throwsA(isA<NetworkError>()),
-      );
+      expect(() => service.fetchDetail(1), throwsA(isA<NetworkError>()));
     });
 
     test('token is not present in thrown errors', () async {
@@ -290,7 +287,9 @@ void main() {
       final cache = _SpyCacheRepository();
       final service = _makeService(
         'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
         cacheRepo: cache,
       );
       await service.fetchDetail(249504);
@@ -304,7 +303,9 @@ void main() {
       final cache = _SpyCacheRepository();
       final service = _makeService(
         'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
         cacheRepo: cache,
       );
       await service.fetchDetail(249504);
@@ -319,16 +320,21 @@ void main() {
       expect(meta.cacheSource, 'discogs_api');
     });
 
-    test('cache save failure does not prevent returning ReleaseDetail', () async {
-      final cache = _SpyCacheRepository()..shouldThrow = true;
-      final service = _makeService(
-        'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
-        cacheRepo: cache,
-      );
-      final detail = await service.fetchDetail(249504);
-      expect(detail.title, 'Kind Of Blue');
-    });
+    test(
+      'cache save failure does not prevent returning ReleaseDetail',
+      () async {
+        final cache = _SpyCacheRepository()..shouldThrow = true;
+        final service = _makeService(
+          'fake_token',
+          MockClient(
+            (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+          ),
+          cacheRepo: cache,
+        );
+        final detail = await service.fetchDetail(249504);
+        expect(detail.title, 'Kind Of Blue');
+      },
+    );
 
     test('does not save to cache when API returns an error', () async {
       final cache = _SpyCacheRepository();
@@ -349,7 +355,9 @@ void main() {
       final cache = _SpyCacheRepository();
       final service = _makeService(
         sensitiveToken,
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
         cacheRepo: cache,
       );
       await service.fetchDetail(249504);
@@ -362,7 +370,9 @@ void main() {
     test('works correctly without a cache repository', () async {
       final service = _makeService(
         'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
       );
       final detail = await service.fetchDetail(249504);
       expect(detail.title, 'Kind Of Blue');
@@ -380,30 +390,36 @@ void main() {
       );
       final service = _makeService(
         'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
         thumbnailService: thumbService,
       );
       await service.fetchDetail(249504);
       expect(repo.saveCallCount, 1);
     });
 
-    test('thumbnail save failure does not prevent returning ReleaseDetail',
-        () async {
-      final repo = _SpyThumbnailRepository()..saveThrows = true;
-      final thumbService = ThumbnailCacheService(
-        repository: repo,
-        httpClient: MockClient(
-          (_) async => http.Response.bytes([0xff, 0xd8], 200),
-        ),
-      );
-      final service = _makeService(
-        'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
-        thumbnailService: thumbService,
-      );
-      final detail = await service.fetchDetail(249504);
-      expect(detail.title, 'Kind Of Blue');
-    });
+    test(
+      'thumbnail save failure does not prevent returning ReleaseDetail',
+      () async {
+        final repo = _SpyThumbnailRepository()..saveThrows = true;
+        final thumbService = ThumbnailCacheService(
+          repository: repo,
+          httpClient: MockClient(
+            (_) async => http.Response.bytes([0xff, 0xd8], 200),
+          ),
+        );
+        final service = _makeService(
+          'fake_token',
+          MockClient(
+            (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+          ),
+          thumbnailService: thumbService,
+        );
+        final detail = await service.fetchDetail(249504);
+        expect(detail.title, 'Kind Of Blue');
+      },
+    );
 
     test('thumbnail not fetched when API returns error', () async {
       final repo = _SpyThumbnailRepository();
@@ -444,62 +460,131 @@ void main() {
     test('works correctly without a thumbnail service', () async {
       final service = _makeService(
         'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
+        MockClient(
+          (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+        ),
       );
       final detail = await service.fetchDetail(249504);
       expect(detail.title, 'Kind Of Blue');
     });
   });
 
+  group('DiscogsReleaseDetailService — thumbnail URL selection', () {
+    test('uses uri150 URL for thumbnail cache when available', () async {
+      String? capturedUrl;
+      final repo = _SpyThumbnailRepository();
+      final thumbService = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient((request) async {
+          capturedUrl = request.url.toString();
+          return http.Response.bytes([0xff, 0xd8], 200);
+        }),
+      );
+      final withUri150 = {
+        ..._kindOfBlueJson,
+        'images': [
+          {
+            'type': 'primary',
+            'uri': 'https://i.discogs.com/cover.jpg',
+            'uri150': 'https://i.discogs.com/thumb150.jpg',
+          },
+        ],
+      };
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response(jsonEncode(withUri150), 200)),
+        thumbnailService: thumbService,
+      );
+      await service.fetchDetail(249504);
+      expect(capturedUrl, 'https://i.discogs.com/thumb150.jpg');
+    });
+
+    test('falls back to uri when uri150 is absent', () async {
+      String? capturedUrl;
+      final repo = _SpyThumbnailRepository();
+      final thumbService = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient((request) async {
+          capturedUrl = request.url.toString();
+          return http.Response.bytes([0xff, 0xd8], 200);
+        }),
+      );
+      final noUri150 = {
+        ..._kindOfBlueJson,
+        'images': [
+          {'type': 'primary', 'uri': 'https://i.discogs.com/cover.jpg'},
+        ],
+      };
+      final service = _makeService(
+        'fake_token',
+        MockClient((_) async => http.Response(jsonEncode(noUri150), 200)),
+        thumbnailService: thumbService,
+      );
+      await service.fetchDetail(249504);
+      expect(capturedUrl, 'https://i.discogs.com/cover.jpg');
+    });
+  });
+
   group('DiscogsReleaseDetailService — retry recording', () {
-    test('records metadata retry action when API throws NetworkError', () async {
-      final retryRepo = _SpyRetryRepo();
-      final service = _makeService(
-        'fake_token',
-        MockClient((_) async => throw Exception('no internet')),
-        retryRecorder: CacheRetryRecorder(retryRepo),
-      );
-      await expectLater(
-        () => service.fetchDetail(249504),
-        throwsA(isA<NetworkError>()),
-      );
-      expect(retryRepo._actions, hasLength(1));
-      expect(retryRepo._actions.first.actionType,
-          RetryActionType.refreshReleaseMetadata);
-      expect(retryRepo._actions.first.entityId, '249504');
-    });
+    test(
+      'records metadata retry action when API throws NetworkError',
+      () async {
+        final retryRepo = _SpyRetryRepo();
+        final service = _makeService(
+          'fake_token',
+          MockClient((_) async => throw Exception('no internet')),
+          retryRecorder: CacheRetryRecorder(retryRepo),
+        );
+        await expectLater(
+          () => service.fetchDetail(249504),
+          throwsA(isA<NetworkError>()),
+        );
+        expect(retryRepo._actions, hasLength(1));
+        expect(
+          retryRepo._actions.first.actionType,
+          RetryActionType.refreshReleaseMetadata,
+        );
+        expect(retryRepo._actions.first.entityId, '249504');
+      },
+    );
 
-    test('records metadata retry action when API throws RateLimitedError',
-        () async {
-      final retryRepo = _SpyRetryRepo();
-      final service = _makeService(
-        'fake_token',
-        MockClient((_) async => http.Response('', 429)),
-        retryRecorder: CacheRetryRecorder(retryRepo),
-      );
-      await expectLater(
-        () => service.fetchDetail(1),
-        throwsA(isA<RateLimitedError>()),
-      );
-      expect(retryRepo._actions, hasLength(1));
-      expect(retryRepo._actions.first.actionType,
-          RetryActionType.refreshReleaseMetadata);
-    });
+    test(
+      'records metadata retry action when API throws RateLimitedError',
+      () async {
+        final retryRepo = _SpyRetryRepo();
+        final service = _makeService(
+          'fake_token',
+          MockClient((_) async => http.Response('', 429)),
+          retryRecorder: CacheRetryRecorder(retryRepo),
+        );
+        await expectLater(
+          () => service.fetchDetail(1),
+          throwsA(isA<RateLimitedError>()),
+        );
+        expect(retryRepo._actions, hasLength(1));
+        expect(
+          retryRepo._actions.first.actionType,
+          RetryActionType.refreshReleaseMetadata,
+        );
+      },
+    );
 
-    test('does not record retry action when API throws InvalidTokenError',
-        () async {
-      final retryRepo = _SpyRetryRepo();
-      final service = _makeService(
-        'fake_token',
-        MockClient((_) async => http.Response('', 401)),
-        retryRecorder: CacheRetryRecorder(retryRepo),
-      );
-      await expectLater(
-        () => service.fetchDetail(1),
-        throwsA(isA<InvalidTokenError>()),
-      );
-      expect(retryRepo._actions, isEmpty);
-    });
+    test(
+      'does not record retry action when API throws InvalidTokenError',
+      () async {
+        final retryRepo = _SpyRetryRepo();
+        final service = _makeService(
+          'fake_token',
+          MockClient((_) async => http.Response('', 401)),
+          retryRecorder: CacheRetryRecorder(retryRepo),
+        );
+        await expectLater(
+          () => service.fetchDetail(1),
+          throwsA(isA<InvalidTokenError>()),
+        );
+        expect(retryRepo._actions, isEmpty);
+      },
+    );
 
     test('still throws original error after recording retry action', () async {
       final retryRepo = _SpyRetryRepo();
@@ -508,49 +593,50 @@ void main() {
         MockClient((_) async => http.Response('', 429)),
         retryRecorder: CacheRetryRecorder(retryRepo),
       );
-      expect(
-        () => service.fetchDetail(1),
-        throwsA(isA<RateLimitedError>()),
-      );
+      expect(() => service.fetchDetail(1), throwsA(isA<RateLimitedError>()));
     });
 
-    test('does not record retry action when no retry recorder is set', () async {
-      final service = _makeService(
-        'fake_token',
-        MockClient((_) async => throw Exception('no internet')),
-      );
-      await expectLater(
-        () => service.fetchDetail(1),
-        throwsA(isA<NetworkError>()),
-      );
-    });
+    test(
+      'does not record retry action when no retry recorder is set',
+      () async {
+        final service = _makeService(
+          'fake_token',
+          MockClient((_) async => throw Exception('no internet')),
+        );
+        await expectLater(
+          () => service.fetchDetail(1),
+          throwsA(isA<NetworkError>()),
+        );
+      },
+    );
 
-    test('records thumbnail retry action when thumbnail fetch returns null',
-        () async {
-      final retryRepo = _SpyRetryRepo();
-      final repo = _SpyThumbnailRepository();
-      final thumbService = ThumbnailCacheService(
-        repository: repo,
-        httpClient: MockClient((_) async => http.Response('Not Found', 404)),
-      );
-      final service = _makeService(
-        'fake_token',
-        MockClient((_) async => http.Response(jsonEncode(_kindOfBlueJson), 200)),
-        thumbnailService: thumbService,
-        retryRecorder: CacheRetryRecorder(retryRepo),
-      );
-      await service.fetchDetail(249504);
-      expect(
-        retryRepo._actions.where(
-          (a) => a.actionType == RetryActionType.cacheThumbnail,
-        ),
-        hasLength(1),
-      );
-      expect(
-        retryRepo._actions.first.entityId,
-        '249504',
-      );
-    });
+    test(
+      'records thumbnail retry action when thumbnail fetch returns null',
+      () async {
+        final retryRepo = _SpyRetryRepo();
+        final repo = _SpyThumbnailRepository();
+        final thumbService = ThumbnailCacheService(
+          repository: repo,
+          httpClient: MockClient((_) async => http.Response('Not Found', 404)),
+        );
+        final service = _makeService(
+          'fake_token',
+          MockClient(
+            (_) async => http.Response(jsonEncode(_kindOfBlueJson), 200),
+          ),
+          thumbnailService: thumbService,
+          retryRecorder: CacheRetryRecorder(retryRepo),
+        );
+        await service.fetchDetail(249504);
+        expect(
+          retryRepo._actions.where(
+            (a) => a.actionType == RetryActionType.cacheThumbnail,
+          ),
+          hasLength(1),
+        );
+        expect(retryRepo._actions.first.entityId, '249504');
+      },
+    );
 
     test('does not record thumbnail retry when cover URL is absent', () async {
       final noCoverJson = Map<String, dynamic>.from(_kindOfBlueJson)
