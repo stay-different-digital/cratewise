@@ -1243,6 +1243,98 @@ void main() {
     );
   });
 
+  group('ReleaseDetailScreen — search context', () {
+    testWidgets('app bar shows artist and title from context while loading', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _BlockingService(),
+            initialArtist: 'Miles Davis',
+            initialTitle: 'Kind Of Blue',
+          ),
+        ),
+      );
+      // Single pump keeps the screen in _Loading state.
+      await tester.pump();
+      expect(find.text('Miles Davis — Kind Of Blue'), findsOneWidget);
+    });
+
+    testWidgets(
+      'skeleton body shows title and artist from context while loading',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _BlockingService(),
+              initialArtist: 'Miles Davis',
+              initialTitle: 'Kind Of Blue',
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(find.byKey(const Key('release-detail-loading')), findsOneWidget);
+        expect(find.text('Kind Of Blue'), findsOneWidget);
+        expect(find.text('Miles Davis'), findsOneWidget);
+      },
+    );
+
+    testWidgets('app bar shows only title when initialArtist is absent', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _BlockingService(),
+            initialTitle: 'Kind Of Blue',
+          ),
+        ),
+      );
+      await tester.pump();
+      // Title appears in both app bar and skeleton body.
+      expect(find.text('Kind Of Blue'), findsWidgets);
+      expect(find.textContaining(' — '), findsNothing);
+    });
+
+    testWidgets('authoritative API data replaces search context after load', (
+      tester,
+    ) async {
+      const live = ReleaseDetail(
+        id: 249504,
+        title: 'Live Evil',
+        artist: 'Miles Davis',
+        label: 'Columbia',
+        catno: '',
+        format: 'Vinyl',
+        country: 'US',
+        genres: [],
+        styles: [],
+        tracklist: [],
+        identifiers: [],
+      );
+      await tester.pumpWidget(
+        _wrap(
+          ReleaseDetailScreen(
+            releaseId: 249504,
+            detailService: _LoadedService(detail: live),
+            initialArtist: 'Miles Davis',
+            initialTitle: 'Kind Of Blue',
+            addToCollectionUseCase: _newUseCase(),
+            addToWishlistUseCase: _newWishlistUseCase(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // Authoritative data from the API is shown.
+      expect(find.text('Miles Davis — Live Evil'), findsOneWidget);
+      expect(find.textContaining('Kind Of Blue'), findsNothing);
+    });
+  });
+
   group('ReleaseDetailScreen — app bar title', () {
     testWidgets('shows artist and title combined in app bar when loaded', (
       tester,

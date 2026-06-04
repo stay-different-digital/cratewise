@@ -58,6 +58,8 @@ class ReleaseDetailScreen extends StatefulWidget {
   const ReleaseDetailScreen({
     super.key,
     required this.releaseId,
+    this.initialArtist,
+    this.initialTitle,
     this.detailService,
     this.addToCollectionUseCase,
     this.addToWishlistUseCase,
@@ -67,6 +69,8 @@ class ReleaseDetailScreen extends StatefulWidget {
   });
 
   final int releaseId;
+  final String? initialArtist;
+  final String? initialTitle;
   final DiscogsReleaseDetailService? detailService;
   final AddToCollectionUseCase? addToCollectionUseCase;
   final AddToWishlistUseCase? addToWishlistUseCase;
@@ -240,6 +244,14 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
 
   String get _appBarTitle {
     final state = _state;
+    if (state is _Loading) {
+      final t = widget.initialTitle;
+      if (t != null && t.isNotEmpty) {
+        final a = widget.initialArtist;
+        return (a != null && a.isNotEmpty) ? '$a — $t' : t;
+      }
+      return 'Release Detail';
+    }
     if (state is _Loaded && state.detail.title.isNotEmpty) {
       final d = state.detail;
       return d.artist.isNotEmpty ? '${d.artist} — ${d.title}' : d.title;
@@ -259,7 +271,10 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
         title: Text(_appBarTitle, overflow: TextOverflow.ellipsis, maxLines: 1),
       ),
       body: switch (state) {
-        _Loading() => const _SkeletonBody(),
+        _Loading() => _SkeletonBody(
+          artist: widget.initialArtist,
+          title: widget.initialTitle,
+        ),
         _DetailError(:final error) => _ErrorBody(
           error: error,
           onRetry: _isRetriable(error) ? _retry : null,
@@ -384,11 +399,15 @@ class _AddActionsBar extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _SkeletonBody extends StatelessWidget {
-  const _SkeletonBody();
+  const _SkeletonBody({this.artist, this.title});
+
+  final String? artist;
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.surfaceContainerHighest;
 
     Widget block({double? width, required double height}) => Container(
       width: width,
@@ -398,6 +417,9 @@ class _SkeletonBody extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
     );
+
+    final hasTitle = title != null && title!.isNotEmpty;
+    final hasArtist = artist != null && artist!.isNotEmpty;
 
     return SingleChildScrollView(
       key: const Key('release-detail-loading'),
@@ -411,9 +433,19 @@ class _SkeletonBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                block(width: 200, height: 22),
+                hasTitle
+                    ? Text(title!, style: theme.textTheme.headlineSmall)
+                    : block(width: 200, height: 22),
                 const SizedBox(height: 8),
-                block(width: 130, height: 16),
+                if (hasArtist)
+                  Text(
+                    artist!,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  )
+                else
+                  block(width: 130, height: 16),
               ],
             ),
           ),

@@ -7,6 +7,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7F: Release detail shows artist and title from search context (US-06)] — 2026-06-04
+
+### Changed
+- **Release Detail loading skeleton** now shows the artist and title passed from the search result card immediately — no more blank placeholders while the API call is in flight
+- **Release Detail app bar** uses the same `initialArtist`/`initialTitle` context during the loading state, so "Artist — Title" (or just "Title") appears in the app bar before the Discogs response arrives
+- Once the full API response loads, the detail screen replaces the initial context with authoritative data (ANV, format details, etc.)
+- `ReleaseDetailScreen` gains two optional parameters: `initialArtist` and `initialTitle`
+- `_SkeletonBody` replaces its artist/title placeholder blocks with real `Text` widgets when context is provided
+- Navigation from the search results list passes `item.artist` and `item.title` to `ReleaseDetailScreen`
+
+### Tests
+- 4 new tests in `release_detail_screen_test.dart` (group: "search context"): app bar shows "Artist — Title" from context while loading; skeleton shows artist and title text during loading; app bar shows only title when artist context is absent; authoritative API data replaces search context after load
+
+---
+
 ## [Unreleased — Phase 7E: Release detail app bar shows album title (US-05)] — 2026-06-03
 
 ### Changed

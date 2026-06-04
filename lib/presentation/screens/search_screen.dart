@@ -526,6 +526,8 @@ class _ResultsListState extends State<_ResultsList> {
                   MaterialPageRoute<void>(
                     builder: (_) => ReleaseDetailScreen(
                       releaseId: item.id,
+                      initialArtist: item.artist,
+                      initialTitle: item.title,
                       addToCollectionUseCase: widget.addToCollectionUseCase,
                       addToWishlistUseCase: widget.addToWishlistUseCase,
                       cacheRepository: widget.cacheRepository,
