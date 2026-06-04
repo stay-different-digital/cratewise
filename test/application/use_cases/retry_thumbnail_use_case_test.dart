@@ -4,6 +4,7 @@ import 'package:cratewise/domain/models/retry_action.dart';
 import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
 import 'package:cratewise/domain/repositories/retry_action_repository.dart';
+import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -94,6 +95,12 @@ class _SpyThumbnailRepo implements ThumbnailRepository {
 
   @override
   Future<bool> exists(int id) async => false;
+  @override
+  Future<int> totalSizeBytes() async => 0;
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async => [];
+  @override
+  Future<void> removeAll() async {}
 }
 
 // ---------------------------------------------------------------------------

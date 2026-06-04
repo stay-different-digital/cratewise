@@ -42,33 +42,29 @@ ReleaseDetail kindOfBlue({
   String catno = 'CL 1355',
   String format = 'Vinyl, LP',
   String country = 'US',
-}) =>
-    ReleaseDetail(
-      id: 249504,
-      title: 'Kind Of Blue',
-      artist: 'Miles Davis',
-      label: label,
-      catno: catno,
-      format: format,
-      country: country,
-      year: 1959,
-      genres: const ['Jazz'],
-      styles: const ['Modal'],
-      tracklist: const [],
-      identifiers: const [],
-      notes: 'A seminal jazz album.',
-      coverUrl: 'https://i.discogs.com/cover.jpg',
-    );
+}) => ReleaseDetail(
+  id: 249504,
+  title: 'Kind Of Blue',
+  artist: 'Miles Davis',
+  label: label,
+  catno: catno,
+  format: format,
+  country: country,
+  year: 1959,
+  genres: const ['Jazz'],
+  styles: const ['Modal'],
+  tracklist: const [],
+  identifiers: const [],
+  notes: 'A seminal jazz album.',
+  coverUrl: 'https://i.discogs.com/cover.jpg',
+);
 
 AddToCollectionUseCase makeUseCase(
   FakeCollectionRepository repo, {
   int idCounter = 0,
 }) {
   var counter = idCounter;
-  return AddToCollectionUseCase(
-    repo,
-    idGenerator: () => 'id-${++counter}',
-  );
+  return AddToCollectionUseCase(repo, idGenerator: () => 'id-${++counter}');
 }
 
 // ---------------------------------------------------------------------------
@@ -92,7 +88,8 @@ void main() {
       });
 
       test('result contains saved CollectionItem', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item, isA<CollectionItem>());
       });
 
@@ -102,18 +99,21 @@ void main() {
       });
 
       test('item has correct Discogs release ID', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.discogsReleaseId, 249504);
       });
 
       test('item has correct artist and title', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.artist, 'Miles Davis');
         expect(result.item.title, 'Kind Of Blue');
       });
 
       test('item has correct optional release fields', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.label, 'Columbia');
         expect(result.item.catno, 'CL 1355');
         expect(result.item.format, 'Vinyl, LP');
@@ -123,43 +123,51 @@ void main() {
       });
 
       test('default mediaCondition is veryGood', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.mediaCondition, RecordCondition.veryGood);
       });
 
       test('default sleeveCondition is veryGood', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.sleeveCondition, RecordCondition.veryGood);
       });
 
       test('default tags is empty list', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.tags, isEmpty);
       });
 
       test('default notes is null', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.notes, isNull);
       });
 
       test('default storageLocation is null', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.storageLocation, isNull);
       });
 
       test('default syncStatus is localOnly', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.syncStatus, SyncStatus.localOnly);
       });
 
       test('generated id is non-empty', () async {
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         expect(result.item.id, isNotEmpty);
       });
 
       test('createdAt and updatedAt are set close to now', () async {
         final before = DateTime.now().subtract(const Duration(seconds: 1));
-        final result = await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue()) as AddToCollectionSuccess;
         final after = DateTime.now().add(const Duration(seconds: 1));
         expect(result.item.createdAt.isAfter(before), isTrue);
         expect(result.item.createdAt.isBefore(after), isTrue);
@@ -170,60 +178,77 @@ void main() {
 
     group('empty string fields from release', () {
       test('empty label becomes null', () async {
-        final result = await useCase.execute(kindOfBlue(label: '')) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue(label: ''))
+                as AddToCollectionSuccess;
         expect(result.item.label, isNull);
       });
 
       test('empty catno becomes null', () async {
-        final result = await useCase.execute(kindOfBlue(catno: '')) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue(catno: ''))
+                as AddToCollectionSuccess;
         expect(result.item.catno, isNull);
       });
 
       test('empty format becomes null', () async {
-        final result = await useCase.execute(kindOfBlue(format: '')) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue(format: ''))
+                as AddToCollectionSuccess;
         expect(result.item.format, isNull);
       });
 
       test('empty country becomes null', () async {
-        final result = await useCase.execute(kindOfBlue(country: '')) as AddToCollectionSuccess;
+        final result =
+            await useCase.execute(kindOfBlue(country: ''))
+                as AddToCollectionSuccess;
         expect(result.item.country, isNull);
       });
     });
 
     group('duplicate prevention', () {
-      test('returns AddToCollectionDuplicate when release already in collection', () async {
-        await useCase.execute(kindOfBlue());
-        final result = await useCase.execute(kindOfBlue());
-        expect(result, isA<AddToCollectionDuplicate>());
-      });
+      test(
+        'returns AddToCollectionDuplicate when release already in collection',
+        () async {
+          await useCase.execute(kindOfBlue());
+          final result = await useCase.execute(kindOfBlue());
+          expect(result, isA<AddToCollectionDuplicate>());
+        },
+      );
 
-      test('does not add a second item when release already in collection', () async {
-        await useCase.execute(kindOfBlue());
-        await useCase.execute(kindOfBlue());
-        expect(await repo.getAll(), hasLength(1));
-      });
+      test(
+        'does not add a second item when release already in collection',
+        () async {
+          await useCase.execute(kindOfBlue());
+          await useCase.execute(kindOfBlue());
+          expect(await repo.getAll(), hasLength(1));
+        },
+      );
 
-      test('allows adding a different release after a duplicate is rejected', () async {
-        final other = ReleaseDetail(
-          id: 111111,
-          title: 'A Love Supreme',
-          artist: 'John Coltrane',
-          label: 'Impulse!',
-          catno: 'A-77',
-          format: 'Vinyl, LP',
-          country: 'US',
-          year: 1965,
-          genres: const ['Jazz'],
-          styles: const [],
-          tracklist: const [],
-          identifiers: const [],
-        );
-        await useCase.execute(kindOfBlue());
-        await useCase.execute(kindOfBlue());
-        final result = await useCase.execute(other);
-        expect(result, isA<AddToCollectionSuccess>());
-        expect(await repo.getAll(), hasLength(2));
-      });
+      test(
+        'allows adding a different release after a duplicate is rejected',
+        () async {
+          final other = ReleaseDetail(
+            id: 111111,
+            title: 'A Love Supreme',
+            artist: 'John Coltrane',
+            label: 'Impulse!',
+            catno: 'A-77',
+            format: 'Vinyl, LP',
+            country: 'US',
+            year: 1965,
+            genres: const ['Jazz'],
+            styles: const [],
+            tracklist: const [],
+            identifiers: const [],
+          );
+          await useCase.execute(kindOfBlue());
+          await useCase.execute(kindOfBlue());
+          final result = await useCase.execute(other);
+          expect(result, isA<AddToCollectionSuccess>());
+          expect(await repo.getAll(), hasLength(2));
+        },
+      );
     });
   });
 }

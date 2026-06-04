@@ -16,36 +16,35 @@ class LocalRetryActionRepository implements RetryActionRepository {
 
   @override
   Future<List<RetryAction>> getAll() async {
-    final rows = await (_db.select(_db.retryActions)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .get();
+    final rows = await (_db.select(
+      _db.retryActions,
+    )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
     return rows.map(_rowToAction).toList();
   }
 
   @override
   Future<RetryAction?> getById(String id) async {
-    final row = await (_db.select(_db.retryActions)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.retryActions,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     return row == null ? null : _rowToAction(row);
   }
 
   @override
   Future<List<RetryAction>> getPending() async {
-    final rows = await (_db.select(_db.retryActions)
-          ..where(
-            (t) => t.status.equals(RetryActionStatus.pending.name),
-          )
-          ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
-        .get();
+    final rows =
+        await (_db.select(_db.retryActions)
+              ..where((t) => t.status.equals(RetryActionStatus.pending.name))
+              ..orderBy([(t) => OrderingTerm.asc(t.createdAt)]))
+            .get();
     return rows.map(_rowToAction).toList();
   }
 
   @override
   Future<void> update(RetryAction action) async {
-    await (_db.update(_db.retryActions)
-          ..where((t) => t.id.equals(action.id)))
-        .write(_actionToCompanion(action));
+    await (_db.update(
+      _db.retryActions,
+    )..where((t) => t.id.equals(action.id))).write(_actionToCompanion(action));
   }
 
   @override

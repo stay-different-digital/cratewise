@@ -6,24 +6,24 @@ void main() {
   final updatedAt = DateTime(2026, 1, 2);
 
   CollectionItem base() => CollectionItem(
-        id: 'local-1',
-        discogsReleaseId: 249504,
-        artist: 'Miles Davis',
-        title: 'Kind Of Blue',
-        mediaCondition: RecordCondition.veryGoodPlus,
-        sleeveCondition: RecordCondition.veryGood,
-        tags: const ['jazz', 'essential'],
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        label: 'Columbia',
-        catno: 'CL 1355',
-        format: 'Vinyl, LP, Album',
-        country: 'US',
-        year: 1959,
-        coverUrl: 'https://i.discogs.com/cover.jpg',
-        notes: 'Great pressing.',
-        storageLocation: 'Shelf A',
-      );
+    id: 'local-1',
+    discogsReleaseId: 249504,
+    artist: 'Miles Davis',
+    title: 'Kind Of Blue',
+    mediaCondition: RecordCondition.veryGoodPlus,
+    sleeveCondition: RecordCondition.veryGood,
+    tags: const ['jazz', 'essential'],
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    label: 'Columbia',
+    catno: 'CL 1355',
+    format: 'Vinyl, LP, Album',
+    country: 'US',
+    year: 1959,
+    coverUrl: 'https://i.discogs.com/cover.jpg',
+    notes: 'Great pressing.',
+    storageLocation: 'Shelf A',
+  );
 
   group('CollectionItem', () {
     test('stores all required fields', () {

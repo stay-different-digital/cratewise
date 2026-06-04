@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../application/services/thumbnail_eviction_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../application/use_cases/retry_metadata_refresh_use_case.dart';
@@ -8,6 +9,7 @@ import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../infrastructure/local_database/local_retry_action_repository.dart';
+import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_nav_rail.dart';
@@ -49,6 +51,8 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       retryRepo: retryRepo,
       cacheRepo: cacheRepo,
     );
+    final thumbnailRepo = LocalThumbnailRepository();
+    final evictionService = ThumbnailEvictionService(repository: thumbnailRepo);
     _screens = [
       SearchScreen(
         addToCollectionUseCase: addUseCase,
@@ -61,6 +65,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
       SettingsScreen(
         retryUseCase: retryUseCase,
         thumbnailUseCase: thumbnailRetryUseCase,
+        evictionService: evictionService,
       ),
     ];
   }
@@ -90,10 +95,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             ),
             const VerticalDivider(width: 1, thickness: 1),
             Expanded(
-              child: IndexedStack(
-                index: _selectedIndex,
-                children: _screens,
-              ),
+              child: IndexedStack(index: _selectedIndex, children: _screens),
             ),
           ],
         ),
@@ -102,10 +104,7 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Cratewise')),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: AppBottomNav(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onTabSelected,

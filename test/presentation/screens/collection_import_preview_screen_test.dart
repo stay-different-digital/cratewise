@@ -34,11 +34,11 @@ class _FakeCollectionRepository implements CollectionRepository {
 
 class _FakeUseCase extends FetchCollectionImportPreviewUseCase {
   _FakeUseCase(this._result)
-      : super(
-          previewBuilder: BuildCollectionImportPreviewUseCase(
-            _FakeCollectionRepository(),
-          ),
-        );
+    : super(
+        previewBuilder: BuildCollectionImportPreviewUseCase(
+          _FakeCollectionRepository(),
+        ),
+      );
 
   final FetchCollectionImportPreviewResult _result;
   bool executeCalled = false;
@@ -90,11 +90,11 @@ class _FakeRowResultRepository implements ImportExportRowResultRepository {
 
 class _FakeExecuteUseCase extends ExecuteCollectionImportUseCase {
   _FakeExecuteUseCase(this._result)
-      : super(
-          collectionRepository: _FakeCollectionRepository(),
-          jobRepository: _FakeJobRepository(),
-          rowResultRepository: _FakeRowResultRepository(),
-        );
+    : super(
+        collectionRepository: _FakeCollectionRepository(),
+        jobRepository: _FakeJobRepository(),
+        rowResultRepository: _FakeRowResultRepository(),
+      );
 
   final ExecuteCollectionImportResult _result;
   bool executeCalled = false;
@@ -144,13 +144,12 @@ CollectionImportPreview makePreview({
 Widget buildSubject(
   FetchCollectionImportPreviewUseCase useCase, {
   ExecuteCollectionImportUseCase? executeUseCase,
-}) =>
-    MaterialApp(
-      home: CollectionImportPreviewScreen(
-        useCase: useCase,
-        executeUseCase: executeUseCase,
-      ),
-    );
+}) => MaterialApp(
+  home: CollectionImportPreviewScreen(
+    useCase: useCase,
+    executeUseCase: executeUseCase,
+  ),
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -159,8 +158,9 @@ Widget buildSubject(
 void main() {
   group('CollectionImportPreviewScreen', () {
     group('loading state', () {
-      testWidgets('shows CircularProgressIndicator while loading',
-          (tester) async {
+      testWidgets('shows CircularProgressIndicator while loading', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(FetchPreviewReady(makePreview()));
         // Check initial state before the async execute() completes.
         await tester.pumpWidget(buildSubject(useCase));
@@ -181,9 +181,12 @@ void main() {
     });
 
     group('preview ready state', () {
-      testWidgets('shows Collection preview heading after load', (tester) async {
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 3)));
+      testWidgets('shows Collection preview heading after load', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 3)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Collection preview'), findsOneWidget);
@@ -234,16 +237,18 @@ void main() {
         expect(find.text('2'), findsOneWidget);
       });
 
-      testWidgets('shows zero for all counts on empty collection',
-          (tester) async {
+      testWidgets('shows zero for all counts on empty collection', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(FetchPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('0'), findsNWidgets(4));
       });
 
-      testWidgets('shows empty explanation when Discogs collection is empty',
-          (tester) async {
+      testWidgets('shows empty explanation when Discogs collection is empty', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(FetchPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
@@ -253,10 +258,12 @@ void main() {
         );
       });
 
-      testWidgets('does not show empty explanation when collection has items',
-          (tester) async {
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 3)));
+      testWidgets('does not show empty explanation when collection has items', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 3)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(
@@ -275,24 +282,27 @@ void main() {
       });
 
       testWidgets('shows Import N records for newCount > 1', (tester) async {
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 7)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 7)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Import 7 records'), findsOneWidget);
       });
 
       testWidgets('shows Import 1 record for newCount == 1', (tester) async {
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 1)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 1)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Import 1 record'), findsOneWidget);
       });
 
       testWidgets('confirm button is disabled (no import yet)', (tester) async {
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 3)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 3)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         final button = tester.widget<FilledButton>(
@@ -301,8 +311,9 @@ void main() {
         expect(button.onPressed, isNull);
       });
 
-      testWidgets('confirm button disabled when nothing to import',
-          (tester) async {
+      testWidgets('confirm button disabled when nothing to import', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(FetchPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
@@ -338,8 +349,9 @@ void main() {
       });
 
       testWidgets('no warning card when all items are new', (tester) async {
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 5)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 5)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Notes'), findsNothing);
@@ -382,7 +394,9 @@ void main() {
         );
       });
 
-      testWidgets('no token state does not show confirm button', (tester) async {
+      testWidgets('no token state does not show confirm button', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(const FetchPreviewNoToken());
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
@@ -494,27 +508,30 @@ void main() {
     });
 
     group('import flow', () {
-      testWidgets('confirm button is enabled when execute use case provided and newCount > 0',
-          (tester) async {
-        final executeUseCase = _FakeExecuteUseCase(
-          const ExecuteImportCompleted(
-            jobId: 'j1',
-            imported: 3,
-            skipped: 0,
-            failed: 0,
-          ),
-        );
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 3)));
-        await tester.pumpWidget(
-          buildSubject(useCase, executeUseCase: executeUseCase),
-        );
-        await tester.pump();
-        final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Import 3 records'),
-        );
-        expect(button.onPressed, isNotNull);
-      });
+      testWidgets(
+        'confirm button is enabled when execute use case provided and newCount > 0',
+        (tester) async {
+          final executeUseCase = _FakeExecuteUseCase(
+            const ExecuteImportCompleted(
+              jobId: 'j1',
+              imported: 3,
+              skipped: 0,
+              failed: 0,
+            ),
+          );
+          final useCase = _FakeUseCase(
+            FetchPreviewReady(makePreview(newCount: 3)),
+          );
+          await tester.pumpWidget(
+            buildSubject(useCase, executeUseCase: executeUseCase),
+          );
+          await tester.pump();
+          final button = tester.widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Import 3 records'),
+          );
+          expect(button.onPressed, isNotNull);
+        },
+      );
 
       testWidgets('shows spinner while importing', (tester) async {
         bool importing = false;
@@ -527,8 +544,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 1)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 1)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -544,7 +562,9 @@ void main() {
         await tester.pumpAndSettle(); // let import complete
       });
 
-      testWidgets('shows Import complete after import finishes', (tester) async {
+      testWidgets('shows Import complete after import finishes', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteImportCompleted(
             jobId: 'j1',
@@ -553,8 +573,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 2)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 2)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -564,8 +585,9 @@ void main() {
         expect(find.text('Import complete'), findsOneWidget);
       });
 
-      testWidgets('import summary shows Added to collection label',
-          (tester) async {
+      testWidgets('import summary shows Added to collection label', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteImportCompleted(
             jobId: 'j1',
@@ -574,8 +596,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 4)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 4)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -594,8 +617,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 7)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 7)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -605,8 +629,9 @@ void main() {
         expect(find.text('7'), findsOneWidget);
       });
 
-      testWidgets('import summary shows skipped count when non-zero',
-          (tester) async {
+      testWidgets('import summary shows skipped count when non-zero', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteImportCompleted(
             jobId: 'j1',
@@ -629,8 +654,9 @@ void main() {
         expect(find.text('5'), findsOneWidget);
       });
 
-      testWidgets('import summary does not show Skipped when skipped is zero',
-          (tester) async {
+      testWidgets('import summary does not show Skipped when skipped is zero', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteImportCompleted(
             jobId: 'j1',
@@ -639,8 +665,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 2)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 2)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -650,8 +677,9 @@ void main() {
         expect(find.text('Skipped'), findsNothing);
       });
 
-      testWidgets('import summary shows failed count when non-zero',
-          (tester) async {
+      testWidgets('import summary shows failed count when non-zero', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteImportCompleted(
             jobId: 'j1',
@@ -660,8 +688,9 @@ void main() {
             failed: 2,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 3)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 3)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -681,8 +710,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 1)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 1)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -692,14 +722,15 @@ void main() {
         expect(find.text('Done'), findsOneWidget);
       });
 
-      testWidgets(
-          'ExecuteImportFailed shows snackbar and returns to preview',
-          (tester) async {
+      testWidgets('ExecuteImportFailed shows snackbar and returns to preview', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteImportFailed('Import could not be completed'),
         );
-        final useCase =
-            _FakeUseCase(FetchPreviewReady(makePreview(newCount: 2)));
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 2)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -713,7 +744,9 @@ void main() {
     });
 
     group('security', () {
-      testWidgets('no token state does not show any token value', (tester) async {
+      testWidgets('no token state does not show any token value', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(const FetchPreviewNoToken());
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
@@ -754,10 +787,10 @@ class _CountingFakeUseCase extends FetchCollectionImportPreviewUseCase {
     required this.secondResult,
     required this.onCall,
   }) : super(
-          previewBuilder: BuildCollectionImportPreviewUseCase(
-            _FakeCollectionRepository(),
-          ),
-        );
+         previewBuilder: BuildCollectionImportPreviewUseCase(
+           _FakeCollectionRepository(),
+         ),
+       );
 
   final FetchCollectionImportPreviewResult firstResult;
   final FetchCollectionImportPreviewResult secondResult;
@@ -777,14 +810,12 @@ class _CountingFakeUseCase extends FetchCollectionImportPreviewUseCase {
 // ---------------------------------------------------------------------------
 
 class _SlowFakeExecuteUseCase extends ExecuteCollectionImportUseCase {
-  _SlowFakeExecuteUseCase({
-    required this.onExecute,
-    required this.result,
-  }) : super(
-          collectionRepository: _FakeCollectionRepository(),
-          jobRepository: _FakeJobRepository(),
-          rowResultRepository: _FakeRowResultRepository(),
-        );
+  _SlowFakeExecuteUseCase({required this.onExecute, required this.result})
+    : super(
+        collectionRepository: _FakeCollectionRepository(),
+        jobRepository: _FakeJobRepository(),
+        rowResultRepository: _FakeRowResultRepository(),
+      );
 
   final VoidCallback onExecute;
   final ExecuteCollectionImportResult result;

@@ -19,34 +19,32 @@ class LocalImportExportRowResultRepository
 
   @override
   Future<List<ImportExportRowResult>> getResults(String jobId) async {
-    final rows = await (_db.select(_db.importExportRowResults)
-          ..where((t) => t.jobId.equals(jobId))
-          ..orderBy([(t) => OrderingTerm.asc(t.rowIndex)]))
-        .get();
+    final rows =
+        await (_db.select(_db.importExportRowResults)
+              ..where((t) => t.jobId.equals(jobId))
+              ..orderBy([(t) => OrderingTerm.asc(t.rowIndex)]))
+            .get();
     return rows.map(_rowToResult).toList();
   }
 
   @override
   Future<void> removeAllForJob(String jobId) async {
-    await (_db.delete(_db.importExportRowResults)
-          ..where((t) => t.jobId.equals(jobId)))
-        .go();
+    await (_db.delete(
+      _db.importExportRowResults,
+    )..where((t) => t.jobId.equals(jobId))).go();
   }
 
   ImportExportRowResult _rowToResult(ImportExportRowResultRow row) {
     return switch (row.resultType) {
       'valid' => ValidRow(
-          rowIndex: row.rowIndex,
-          description: row.description!,
-        ),
-      'skipped' => SkippedRow(
-          rowIndex: row.rowIndex,
-          reason: row.reason!,
-        ),
+        rowIndex: row.rowIndex,
+        description: row.description!,
+      ),
+      'skipped' => SkippedRow(rowIndex: row.rowIndex, reason: row.reason!),
       'failed' => FailedRow(
-          rowIndex: row.rowIndex,
-          safeErrorMessage: row.safeErrorMessage!,
-        ),
+        rowIndex: row.rowIndex,
+        safeErrorMessage: row.safeErrorMessage!,
+      ),
       _ => throw StateError('Unknown result type: ${row.resultType}'),
     };
   }
@@ -57,29 +55,29 @@ class LocalImportExportRowResultRepository
   ) {
     return switch (result) {
       ValidRow() => ImportExportRowResultsCompanion(
-          jobId: Value(jobId),
-          resultType: const Value('valid'),
-          rowIndex: Value(result.rowIndex),
-          description: Value(result.description),
-          reason: const Value(null),
-          safeErrorMessage: const Value(null),
-        ),
+        jobId: Value(jobId),
+        resultType: const Value('valid'),
+        rowIndex: Value(result.rowIndex),
+        description: Value(result.description),
+        reason: const Value(null),
+        safeErrorMessage: const Value(null),
+      ),
       SkippedRow() => ImportExportRowResultsCompanion(
-          jobId: Value(jobId),
-          resultType: const Value('skipped'),
-          rowIndex: Value(result.rowIndex),
-          description: const Value(null),
-          reason: Value(result.reason),
-          safeErrorMessage: const Value(null),
-        ),
+        jobId: Value(jobId),
+        resultType: const Value('skipped'),
+        rowIndex: Value(result.rowIndex),
+        description: const Value(null),
+        reason: Value(result.reason),
+        safeErrorMessage: const Value(null),
+      ),
       FailedRow() => ImportExportRowResultsCompanion(
-          jobId: Value(jobId),
-          resultType: const Value('failed'),
-          rowIndex: Value(result.rowIndex),
-          description: const Value(null),
-          reason: const Value(null),
-          safeErrorMessage: Value(result.safeErrorMessage),
-        ),
+        jobId: Value(jobId),
+        resultType: const Value('failed'),
+        rowIndex: Value(result.rowIndex),
+        description: const Value(null),
+        reason: const Value(null),
+        safeErrorMessage: Value(result.safeErrorMessage),
+      ),
     };
   }
 }

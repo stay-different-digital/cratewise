@@ -1,5 +1,6 @@
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
 import 'package:cratewise/presentation/screens/collection_screen.dart';
@@ -55,6 +56,12 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
   Future<void> remove(int releaseId) async {}
   @override
   Future<bool> exists(int releaseId) async => pathToReturn != null;
+  @override
+  Future<int> totalSizeBytes() async => 0;
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async => [];
+  @override
+  Future<void> removeAll() async {}
 }
 
 class _FlippingCollectionRepository implements CollectionRepository {

@@ -43,8 +43,7 @@ class ImportExportHistoryScreen extends StatefulWidget {
       _ImportExportHistoryScreenState();
 }
 
-class _ImportExportHistoryScreenState
-    extends State<ImportExportHistoryScreen> {
+class _ImportExportHistoryScreenState extends State<ImportExportHistoryScreen> {
   late final ImportExportJobRepository _repository;
   AppDatabase? _ownedDb;
   _HistoryState _state = const _Loading();
@@ -124,55 +123,52 @@ class _JobCard extends StatelessWidget {
   final ImportExportJob job;
 
   static String _statusLabel(ImportExportStatus status) => switch (status) {
-        ImportExportStatus.completed => 'Completed',
-        ImportExportStatus.completedWithErrors => 'Completed with errors',
-        ImportExportStatus.failed => 'Failed',
-        ImportExportStatus.running => 'Running',
-        ImportExportStatus.idle => 'Idle',
-        ImportExportStatus.validating => 'Validating',
-        ImportExportStatus.previewing => 'Previewing',
-        ImportExportStatus.cancelled => 'Cancelled',
-      };
+    ImportExportStatus.completed => 'Completed',
+    ImportExportStatus.completedWithErrors => 'Completed with errors',
+    ImportExportStatus.failed => 'Failed',
+    ImportExportStatus.running => 'Running',
+    ImportExportStatus.idle => 'Idle',
+    ImportExportStatus.validating => 'Validating',
+    ImportExportStatus.previewing => 'Previewing',
+    ImportExportStatus.cancelled => 'Cancelled',
+  };
 
   static ({Color fg, Color bg}) _statusColors(
     ImportExportStatus status,
     ColorScheme cs,
-  ) =>
-      switch (status) {
-        ImportExportStatus.completed => (
-            fg: cs.tertiary,
-            bg: cs.tertiaryContainer,
-          ),
-        ImportExportStatus.completedWithErrors => (
-            fg: cs.secondary,
-            bg: cs.secondaryContainer,
-          ),
-        ImportExportStatus.failed => (
-            fg: cs.error,
-            bg: cs.errorContainer,
-          ),
-        ImportExportStatus.running => (
-            fg: cs.primary,
-            bg: cs.primaryContainer,
-          ),
-        _ => (
-            fg: cs.onSurfaceVariant,
-            bg: cs.surfaceContainerHighest,
-          ),
-      };
+  ) => switch (status) {
+    ImportExportStatus.completed => (fg: cs.tertiary, bg: cs.tertiaryContainer),
+    ImportExportStatus.completedWithErrors => (
+      fg: cs.secondary,
+      bg: cs.secondaryContainer,
+    ),
+    ImportExportStatus.failed => (fg: cs.error, bg: cs.errorContainer),
+    ImportExportStatus.running => (fg: cs.primary, bg: cs.primaryContainer),
+    _ => (fg: cs.onSurfaceVariant, bg: cs.surfaceContainerHighest),
+  };
 
   static String _validLabel(ImportExportJobType jobType) => switch (jobType) {
-        ImportExportJobType.importCollectionFromDiscogs => 'Added',
-        ImportExportJobType.importWishlistFromDiscogs => 'Added',
-        ImportExportJobType.csvCollectionImport => 'Added',
-        ImportExportJobType.csvWishlistImport => 'Added',
-        _ => 'Exported',
-      };
+    ImportExportJobType.importCollectionFromDiscogs => 'Added',
+    ImportExportJobType.importWishlistFromDiscogs => 'Added',
+    ImportExportJobType.csvCollectionImport => 'Added',
+    ImportExportJobType.csvWishlistImport => 'Added',
+    _ => 'Exported',
+  };
 
   static String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
@@ -183,7 +179,8 @@ class _JobCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = _statusColors(job.status, theme.colorScheme);
-    final hasCounts = job.validItems != null ||
+    final hasCounts =
+        job.validItems != null ||
         job.skippedItems != null ||
         job.failedItems != null;
 
@@ -204,43 +201,34 @@ class _JobCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: colors.bg,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     _statusLabel(job.status),
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: colors.fg),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colors.fg,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            _InfoRow(
-              label: 'Route',
-              value: '${job.source} → ${job.target}',
-            ),
+            _InfoRow(label: 'Route', value: '${job.source} → ${job.target}'),
             if (hasCounts) ...[
               _InfoRow(
                 label: _validLabel(job.jobType),
                 value: '${job.validItems ?? 0}',
               ),
-              _InfoRow(
-                label: 'Skipped',
-                value: '${job.skippedItems ?? 0}',
-              ),
-              _InfoRow(
-                label: 'Failed',
-                value: '${job.failedItems ?? 0}',
-              ),
+              _InfoRow(label: 'Skipped', value: '${job.skippedItems ?? 0}'),
+              _InfoRow(label: 'Failed', value: '${job.failedItems ?? 0}'),
             ],
-            _InfoRow(
-              label: 'Started',
-              value: _formatDate(job.createdAt),
-            ),
+            _InfoRow(label: 'Started', value: _formatDate(job.createdAt)),
             if (job.safeErrorMessage != null) ...[
               const SizedBox(height: 4),
               Text(
@@ -280,9 +268,7 @@ class _InfoRow extends StatelessWidget {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          Expanded(
-            child: Text(value, style: theme.textTheme.bodySmall),
-          ),
+          Expanded(child: Text(value, style: theme.textTheme.bodySmall)),
         ],
       ),
     );
@@ -313,10 +299,7 @@ class _EmptyState extends StatelessWidget {
                 color: theme.colorScheme.outlineVariant,
               ),
               const SizedBox(height: 16),
-              Text(
-                'No history yet',
-                style: theme.textTheme.titleMedium,
-              ),
+              Text('No history yet', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
               Text(
                 'Import and export jobs will appear here.',

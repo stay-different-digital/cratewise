@@ -114,8 +114,9 @@ class _WishlistExportPreviewScreenState
     setState(() {
       _state = switch (result) {
         WishlistExportPreviewReady(:final preview) => _Ready(preview),
-        WishlistExportPreviewNotSupported(:final reason) =>
-          _NotSupported(reason),
+        WishlistExportPreviewNotSupported(:final reason) => _NotSupported(
+          reason,
+        ),
         WishlistExportPreviewError() => const _Error(),
       };
     });
@@ -136,9 +137,9 @@ class _WishlistExportPreviewScreenState
         setState(() => _state = const _NoToken());
       case ExecuteWishlistExportFailed(:final safeMessage):
         setState(() => _state = _Ready(preview));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(safeMessage)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(safeMessage)));
     }
   }
 
@@ -155,23 +156,22 @@ class _WishlistExportPreviewScreenState
       body: switch (_state) {
         _Loading() => const Center(child: CircularProgressIndicator()),
         _Ready(:final preview) => _PreviewBody(
-            preview: preview,
-            onConfirm: _executeUseCase != null
-                ? () => _executeExport(preview)
-                : null,
-          ),
+          preview: preview,
+          onConfirm: _executeUseCase != null
+              ? () => _executeExport(preview)
+              : null,
+        ),
         _NotSupported(:final reason) => _NotSupportedState(reason: reason),
         _Error() => _RetriableErrorState(
-            message:
-                'Something went wrong. Check your connection and try again.',
-            onRetry: _load,
-          ),
+          message: 'Something went wrong. Check your connection and try again.',
+          onRetry: _load,
+        ),
         _NoToken() => const _NoTokenState(),
         _Exporting() => const _ExportingBody(),
         _ExportDone(:final result) => _ExportSummaryBody(
-            result: result,
-            onDone: () => Navigator.of(context).pop(),
-          ),
+          result: result,
+          onDone: () => Navigator.of(context).pop(),
+        ),
       },
     );
   }
@@ -262,8 +262,9 @@ class _SummaryCard extends StatelessWidget {
             _CountRow(
               label: 'Ready to export',
               value: '${preview.eligibleCount}',
-              color:
-                  preview.eligibleCount > 0 ? theme.colorScheme.primary : null,
+              color: preview.eligibleCount > 0
+                  ? theme.colorScheme.primary
+                  : null,
             ),
             const SizedBox(height: 10),
             _CountRow(
@@ -295,9 +296,7 @@ class _CountRow extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Expanded(
-          child: Text(label, style: theme.textTheme.bodyMedium),
-        ),
+        Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
         const SizedBox(width: 8),
         Text(
           value,
@@ -495,10 +494,7 @@ class _ExportSummaryBody extends StatelessWidget {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: FilledButton(
-              onPressed: onDone,
-              child: const Text('Done'),
-            ),
+            child: FilledButton(onPressed: onDone, child: const Text('Done')),
           ),
         ),
       ],
@@ -603,10 +599,7 @@ class _NoTokenState extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _RetriableErrorState extends StatelessWidget {
-  const _RetriableErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _RetriableErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;

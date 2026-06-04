@@ -19,10 +19,7 @@ final class SkippedRow extends ImportExportRowResult {
 }
 
 final class FailedRow extends ImportExportRowResult {
-  const FailedRow({
-    required super.rowIndex,
-    required this.safeErrorMessage,
-  });
+  const FailedRow({required super.rowIndex, required this.safeErrorMessage});
 
   /// Safe, user-facing error message.
   /// Must never contain tokens, secrets, or stack traces.

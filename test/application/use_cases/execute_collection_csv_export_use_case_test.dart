@@ -39,8 +39,7 @@ class _ThrowingCsvFileWriter implements CsvFileWriter {
     required String filename,
     required List<String> headers,
     required List<List<String>> rows,
-  }) =>
-      Future.error(Exception('write error'));
+  }) => Future.error(Exception('write error'));
 }
 
 class _FakeJobRepository implements ImportExportJobRepository {
@@ -68,17 +67,17 @@ class _FakeJobRepository implements ImportExportJobRepository {
 // ---------------------------------------------------------------------------
 
 CollectionItem _item(String id) => CollectionItem(
-      id: id,
-      discogsReleaseId: 1,
-      artist: 'Artist',
-      title: 'Title',
-      mediaCondition: RecordCondition.notSet,
-      sleeveCondition: RecordCondition.notSet,
-      tags: [],
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024),
-      updatedAt: DateTime.utc(2024),
-    );
+  id: id,
+  discogsReleaseId: 1,
+  artist: 'Artist',
+  title: 'Title',
+  mediaCondition: RecordCondition.notSet,
+  sleeveCondition: RecordCondition.notSet,
+  tags: [],
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024),
+  updatedAt: DateTime.utc(2024),
+);
 
 CsvCollectionExportPreview _preview({int itemCount = 2}) =>
     CsvCollectionExportPreview(
@@ -111,20 +110,25 @@ void main() {
           onShare: (_) async {},
         );
         final result =
-            await uc.execute(_preview(itemCount: 5)) as ExecuteCollectionCsvExportCompleted;
+            await uc.execute(_preview(itemCount: 5))
+                as ExecuteCollectionCsvExportCompleted;
         expect(result.rowCount, 5);
       });
 
-      test('completed result filename starts with collection_export_', () async {
-        final uc = ExecuteCollectionCsvExportUseCase(
-          jobRepository: _FakeJobRepository(),
-          fileWriter: _FakeCsvFileWriter(),
-          onShare: (_) async {},
-        );
-        final result =
-            await uc.execute(_preview()) as ExecuteCollectionCsvExportCompleted;
-        expect(result.filename, startsWith('collection_export_'));
-      });
+      test(
+        'completed result filename starts with collection_export_',
+        () async {
+          final uc = ExecuteCollectionCsvExportUseCase(
+            jobRepository: _FakeJobRepository(),
+            fileWriter: _FakeCsvFileWriter(),
+            onShare: (_) async {},
+          );
+          final result =
+              await uc.execute(_preview())
+                  as ExecuteCollectionCsvExportCompleted;
+          expect(result.filename, startsWith('collection_export_'));
+        },
+      );
 
       test('completed result filename ends with .csv', () async {
         final uc = ExecuteCollectionCsvExportUseCase(
@@ -194,17 +198,21 @@ void main() {
         expect(repo.updated.last.status, ImportExportStatus.completed);
       });
 
-      test('completed result does not contain token or secret strings', () async {
-        final uc = ExecuteCollectionCsvExportUseCase(
-          jobRepository: _FakeJobRepository(),
-          fileWriter: _FakeCsvFileWriter(),
-          onShare: (_) async {},
-        );
-        final result =
-            await uc.execute(_preview()) as ExecuteCollectionCsvExportCompleted;
-        expect(result.filename.toLowerCase(), isNot(contains('token')));
-        expect(result.filename.toLowerCase(), isNot(contains('secret')));
-      });
+      test(
+        'completed result does not contain token or secret strings',
+        () async {
+          final uc = ExecuteCollectionCsvExportUseCase(
+            jobRepository: _FakeJobRepository(),
+            fileWriter: _FakeCsvFileWriter(),
+            onShare: (_) async {},
+          );
+          final result =
+              await uc.execute(_preview())
+                  as ExecuteCollectionCsvExportCompleted;
+          expect(result.filename.toLowerCase(), isNot(contains('token')));
+          expect(result.filename.toLowerCase(), isNot(contains('secret')));
+        },
+      );
 
       test('idGenerator is used to set jobId', () async {
         final repo = _FakeJobRepository();
@@ -265,7 +273,8 @@ void main() {
           onShare: (_) async {},
         );
         final result =
-            await uc.execute(_preview(itemCount: 0)) as ExecuteCollectionCsvExportCompleted;
+            await uc.execute(_preview(itemCount: 0))
+                as ExecuteCollectionCsvExportCompleted;
         expect(result.rowCount, 0);
       });
     });

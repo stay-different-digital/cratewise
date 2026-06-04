@@ -19,14 +19,13 @@ class _FakeWishlistRepository implements WishlistRepository {
   final Set<int> existingReleaseIds;
 
   _FakeWishlistRepository({Set<int>? existingReleaseIds})
-      : existingReleaseIds = existingReleaseIds ?? {};
+    : existingReleaseIds = existingReleaseIds ?? {};
 
   @override
   Future<void> add(WishlistItem item) async => added.add(item);
 
   @override
-  Future<bool> containsRelease(int id) async =>
-      existingReleaseIds.contains(id);
+  Future<bool> containsRelease(int id) async => existingReleaseIds.contains(id);
 
   @override
   Future<List<WishlistItem>> getAll() async => [];
@@ -110,32 +109,31 @@ CsvWishlistImportRow _makeValidRow({
   String artist = 'Test Artist',
   String title = 'Test Album',
   WishlistPriority priority = WishlistPriority.medium,
-}) =>
-    CsvWishlistImportRow(
-      rowIndex: rowIndex,
-      artist: artist,
-      title: title,
-      discogsReleaseId: releaseId,
-      priority: priority,
-    );
+}) => CsvWishlistImportRow(
+  rowIndex: rowIndex,
+  artist: artist,
+  title: title,
+  discogsReleaseId: releaseId,
+  priority: priority,
+);
 
 CsvWishlistImportPreview _makePreview({
   List<CsvWishlistImportRow>? validRows,
   List<SkippedRow>? skippedRows,
   List<FailedRow>? failedRows,
-}) =>
-    CsvWishlistImportPreview(
-      validRows: validRows ?? [],
-      skippedRows: skippedRows ?? [],
-      failedRows: failedRows ?? [],
-    );
+}) => CsvWishlistImportPreview(
+  validRows: validRows ?? [],
+  skippedRows: skippedRows ?? [],
+  failedRows: failedRows ?? [],
+);
 
 ({
   ExecuteWishlistCsvImportUseCase useCase,
   _FakeWishlistRepository wishlistRepo,
   _FakeJobRepository jobRepo,
   _FakeRowResultRepository rowResultRepo,
-}) _makeUseCase({
+})
+_makeUseCase({
   WishlistRepository? wishlistRepository,
   ImportExportJobRepository? jobRepository,
   ImportExportRowResultRepository? rowResultRepository,
@@ -162,35 +160,40 @@ CsvWishlistImportPreview _makePreview({
 void main() {
   group('ExecuteWishlistCsvImportUseCase', () {
     group('empty preview', () {
-      test('returns ExecuteWishlistCsvImportCompleted for empty preview',
-          () async {
-        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            _makeUseCase();
-        final result = await useCase.execute(_makePreview());
-        expect(result, isA<ExecuteWishlistCsvImportCompleted>());
-      });
+      test(
+        'returns ExecuteWishlistCsvImportCompleted for empty preview',
+        () async {
+          final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
+              _makeUseCase();
+          final result = await useCase.execute(_makePreview());
+          expect(result, isA<ExecuteWishlistCsvImportCompleted>());
+        },
+      );
 
       test('imported is 0 for empty preview', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(_makePreview())
-            as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview())
+                as ExecuteWishlistCsvImportCompleted;
         expect(result.imported, 0);
       });
 
       test('skipped is 0 for empty preview', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(_makePreview())
-            as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview())
+                as ExecuteWishlistCsvImportCompleted;
         expect(result.skipped, 0);
       });
 
       test('failed is 0 for empty preview', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(_makePreview())
-            as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview())
+                as ExecuteWishlistCsvImportCompleted;
         expect(result.failed, 0);
       });
     });
@@ -207,9 +210,7 @@ void main() {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
         await useCase.execute(
-          _makePreview(
-            validRows: [_makeValidRow(artist: 'Boards of Canada')],
-          ),
+          _makePreview(validRows: [_makeValidRow(artist: 'Boards of Canada')]),
         );
         expect(wishlistRepo.added.first.artist, 'Boards of Canada');
       });
@@ -219,11 +220,15 @@ void main() {
             _makeUseCase();
         await useCase.execute(
           _makePreview(
-            validRows: [_makeValidRow(title: 'Music Has the Right to Children')],
+            validRows: [
+              _makeValidRow(title: 'Music Has the Right to Children'),
+            ],
           ),
         );
-        expect(wishlistRepo.added.first.title,
-            'Music Has the Right to Children');
+        expect(
+          wishlistRepo.added.first.title,
+          'Music Has the Right to Children',
+        );
       });
 
       test('saved item has correct discogsReleaseId', () async {
@@ -240,9 +245,7 @@ void main() {
             _makeUseCase();
         await useCase.execute(
           _makePreview(
-            validRows: [
-              _makeValidRow(priority: WishlistPriority.mustHave),
-            ],
+            validRows: [_makeValidRow(priority: WishlistPriority.mustHave)],
           ),
         );
         expect(wishlistRepo.added.first.priority, WishlistPriority.mustHave);
@@ -271,22 +274,23 @@ void main() {
       test('imported count matches number of new rows', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            validRows: [
-              _makeValidRow(rowIndex: 0, releaseId: 1),
-              _makeValidRow(rowIndex: 1, releaseId: 2),
-            ],
-          ),
-        ) as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    validRows: [
+                      _makeValidRow(rowIndex: 0, releaseId: 1),
+                      _makeValidRow(rowIndex: 1, releaseId: 2),
+                    ],
+                  ),
+                )
+                as ExecuteWishlistCsvImportCompleted;
         expect(result.imported, 2);
       });
     });
 
     group('valid rows — DB duplicates', () {
       test('skips row already in wishlist', () async {
-        final wishlistRepo =
-            _FakeWishlistRepository(existingReleaseIds: {55});
+        final wishlistRepo = _FakeWishlistRepository(existingReleaseIds: {55});
         final (:useCase, wishlistRepo: _, :jobRepo, :rowResultRepo) =
             _makeUseCase(wishlistRepository: wishlistRepo);
         await useCase.execute(
@@ -296,27 +300,32 @@ void main() {
       });
 
       test('DB-duplicate row is counted as skipped', () async {
-        final wishlistRepo =
-            _FakeWishlistRepository(existingReleaseIds: {55});
+        final wishlistRepo = _FakeWishlistRepository(existingReleaseIds: {55});
         final (:useCase, wishlistRepo: _, :jobRepo, :rowResultRepo) =
             _makeUseCase(wishlistRepository: wishlistRepo);
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow(releaseId: 55)]),
-        ) as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(validRows: [_makeValidRow(releaseId: 55)]),
+                )
+                as ExecuteWishlistCsvImportCompleted;
         expect(result.skipped, 1);
         expect(result.imported, 0);
       });
 
       test('SkippedRow reason is Already in wishlist', () async {
-        final wishlistRepo =
-            _FakeWishlistRepository(existingReleaseIds: {55});
+        final wishlistRepo = _FakeWishlistRepository(existingReleaseIds: {55});
         final (:useCase, wishlistRepo: _, :jobRepo, :rowResultRepo) =
             _makeUseCase(wishlistRepository: wishlistRepo);
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow(releaseId: 55)]),
-        ) as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(validRows: [_makeValidRow(releaseId: 55)]),
+                )
+                as ExecuteWishlistCsvImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
-        expect(rows.whereType<SkippedRow>().first.reason, 'Already in wishlist');
+        expect(
+          rows.whereType<SkippedRow>().first.reason,
+          'Already in wishlist',
+        );
       });
     });
 
@@ -324,14 +333,22 @@ void main() {
       test('preview skipped rows contribute to skipped count', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            skippedRows: [
-              const SkippedRow(rowIndex: 1, reason: 'Duplicate release ID in file'),
-              const SkippedRow(rowIndex: 2, reason: 'Duplicate release ID in file'),
-            ],
-          ),
-        ) as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    skippedRows: [
+                      const SkippedRow(
+                        rowIndex: 1,
+                        reason: 'Duplicate release ID in file',
+                      ),
+                      const SkippedRow(
+                        rowIndex: 2,
+                        reason: 'Duplicate release ID in file',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteWishlistCsvImportCompleted;
         expect(result.skipped, 2);
       });
     });
@@ -340,13 +357,18 @@ void main() {
       test('preview failed rows contribute to failed count', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            failedRows: [
-              const FailedRow(rowIndex: 0, safeErrorMessage: 'Missing artist'),
-            ],
-          ),
-        ) as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    failedRows: [
+                      const FailedRow(
+                        rowIndex: 0,
+                        safeErrorMessage: 'Missing artist',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteWishlistCsvImportCompleted;
         expect(result.failed, 1);
       });
     });
@@ -354,24 +376,20 @@ void main() {
     group('save failure', () {
       test('save failure produces FailedRow', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            _makeUseCase(
-          wishlistRepository: _ThrowingWishlistRepository(),
-        );
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteWishlistCsvImportCompleted;
+            _makeUseCase(wishlistRepository: _ThrowingWishlistRepository());
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteWishlistCsvImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<FailedRow>().length, 1);
       });
 
       test('save failure counts toward failed', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            _makeUseCase(
-          wishlistRepository: _ThrowingWishlistRepository(),
-        );
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteWishlistCsvImportCompleted;
+            _makeUseCase(wishlistRepository: _ThrowingWishlistRepository());
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteWishlistCsvImportCompleted;
         expect(result.failed, 1);
         expect(result.imported, 0);
       });
@@ -381,9 +399,9 @@ void main() {
       test('job type is csvWishlistImport', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteWishlistCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.jobType, ImportExportJobType.csvWishlistImport);
       });
@@ -391,8 +409,9 @@ void main() {
       test('job source is CSV file', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(_makePreview())
-            as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview())
+                as ExecuteWishlistCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.source, 'CSV file');
       });
@@ -400,8 +419,9 @@ void main() {
       test('job target is Local wishlist', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(_makePreview())
-            as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview())
+                as ExecuteWishlistCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.target, 'Local wishlist');
       });
@@ -409,21 +429,19 @@ void main() {
       test('updates job with completed status when all succeed', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteWishlistCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.status, ImportExportStatus.completed);
       });
 
       test('updates job with completedWithErrors when some fail', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            _makeUseCase(
-          wishlistRepository: _ThrowingWishlistRepository(),
-        );
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteWishlistCsvImportCompleted;
+            _makeUseCase(wishlistRepository: _ThrowingWishlistRepository());
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteWishlistCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.status, ImportExportStatus.completedWithErrors);
       });
@@ -431,9 +449,9 @@ void main() {
       test('result jobId is non-empty', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteWishlistCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteWishlistCsvImportCompleted;
         expect(result.jobId, isNotEmpty);
       });
     });

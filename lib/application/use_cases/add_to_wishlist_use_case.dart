@@ -19,10 +19,8 @@ class AddToWishlistDuplicate extends AddToWishlistResult {
 }
 
 class AddToWishlistUseCase {
-  AddToWishlistUseCase(
-    this._repository, {
-    String Function()? idGenerator,
-  }) : _idGenerator = idGenerator ?? _newUuid;
+  AddToWishlistUseCase(this._repository, {String Function()? idGenerator})
+    : _idGenerator = idGenerator ?? _newUuid;
 
   static String _newUuid() => const Uuid().v4();
 

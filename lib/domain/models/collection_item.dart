@@ -12,28 +12,28 @@ enum RecordCondition {
   notSet;
 
   String get label => switch (this) {
-        mint => 'Mint (M)',
-        nearMint => 'Near Mint (NM or M-)',
-        veryGoodPlus => 'Very Good Plus (VG+)',
-        veryGood => 'Very Good (VG)',
-        goodPlus => 'Good Plus (G+)',
-        good => 'Good (G)',
-        fair => 'Fair (F)',
-        poor => 'Poor (P)',
-        notSet => 'Not set',
-      };
+    mint => 'Mint (M)',
+    nearMint => 'Near Mint (NM or M-)',
+    veryGoodPlus => 'Very Good Plus (VG+)',
+    veryGood => 'Very Good (VG)',
+    goodPlus => 'Good Plus (G+)',
+    good => 'Good (G)',
+    fair => 'Fair (F)',
+    poor => 'Poor (P)',
+    notSet => 'Not set',
+  };
 
   String get abbreviation => switch (this) {
-        mint => 'M',
-        nearMint => 'NM',
-        veryGoodPlus => 'VG+',
-        veryGood => 'VG',
-        goodPlus => 'G+',
-        good => 'G',
-        fair => 'F',
-        poor => 'P',
-        notSet => '—',
-      };
+    mint => 'M',
+    nearMint => 'NM',
+    veryGoodPlus => 'VG+',
+    veryGood => 'VG',
+    goodPlus => 'G+',
+    good => 'G',
+    fair => 'F',
+    poor => 'P',
+    notSet => '—',
+  };
 }
 
 class CollectionItem {

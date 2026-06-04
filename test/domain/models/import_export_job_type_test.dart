@@ -50,10 +50,7 @@ void main() {
         ImportExportJobType.importCollectionFromDiscogs.label,
         contains('collection'),
       );
-      expect(
-        ImportExportJobType.csvWishlistExport.label,
-        contains('CSV'),
-      );
+      expect(ImportExportJobType.csvWishlistExport.label, contains('CSV'));
       expect(
         ImportExportJobType.exportCollectionToDiscogs.label,
         contains('Discogs'),

@@ -32,9 +32,7 @@ class WishlistCsvMapper {
       item.country ?? '',
       item.year?.toString() ?? '',
       item.discogsReleaseId.toString(),
-      item.targetPrice != null
-          ? item.targetPrice!.toStringAsFixed(2)
-          : '',
+      item.targetPrice != null ? item.targetPrice!.toStringAsFixed(2) : '',
       item.priority.label,
       item.notes ?? '',
       item.createdAt.toIso8601String(),

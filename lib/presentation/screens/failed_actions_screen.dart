@@ -70,8 +70,9 @@ class _FailedActionsScreenState extends State<FailedActionsScreen> {
     setState(() => _state = const _Loading());
     try {
       final all = await _repository.getAll();
-      final visible =
-          all.where((a) => a.status != RetryActionStatus.abandoned).toList();
+      final visible = all
+          .where((a) => a.status != RetryActionStatus.abandoned)
+          .toList();
       if (!mounted) return;
       setState(() => _state = _Loaded(visible));
     } catch (_) {
@@ -94,11 +95,11 @@ class _FailedActionsScreenState extends State<FailedActionsScreen> {
         _Loading() => const Center(child: CircularProgressIndicator()),
         _Loaded(:final actions) when actions.isEmpty => const _EmptyState(),
         _Loaded(:final actions) => _ActionList(
-            actions: actions,
-            retryUseCase: widget.retryUseCase,
-            thumbnailUseCase: widget.thumbnailUseCase,
-            onRetried: _load,
-          ),
+          actions: actions,
+          retryUseCase: widget.retryUseCase,
+          thumbnailUseCase: widget.thumbnailUseCase,
+          onRetried: _load,
+        ),
         _LoadError() => _ErrorState(onRetry: _load),
       },
     );
@@ -159,26 +160,36 @@ class _ActionCardState extends State<_ActionCard> {
   bool _retrying = false;
 
   static String _friendlyType(RetryActionType type) => switch (type) {
-        RetryActionType.refreshReleaseMetadata => 'Refresh release info',
-        RetryActionType.cacheThumbnail => 'Cache cover image',
-        RetryActionType.addCollectionItem => 'Add to collection',
-        RetryActionType.updateCollectionItem => 'Update collection item',
-        RetryActionType.removeCollectionItem => 'Remove from collection',
-        RetryActionType.addWishlistItem => 'Add to wishlist',
-        RetryActionType.updateWishlistItem => 'Update wishlist item',
-        RetryActionType.removeWishlistItem => 'Remove from wishlist',
-      };
+    RetryActionType.refreshReleaseMetadata => 'Refresh release info',
+    RetryActionType.cacheThumbnail => 'Cache cover image',
+    RetryActionType.addCollectionItem => 'Add to collection',
+    RetryActionType.updateCollectionItem => 'Update collection item',
+    RetryActionType.removeCollectionItem => 'Remove from collection',
+    RetryActionType.addWishlistItem => 'Add to wishlist',
+    RetryActionType.updateWishlistItem => 'Update wishlist item',
+    RetryActionType.removeWishlistItem => 'Remove from wishlist',
+  };
 
   static String _friendlyStatus(RetryActionStatus status) => switch (status) {
-        RetryActionStatus.pending => 'Queued',
-        RetryActionStatus.failed => 'Failed',
-        RetryActionStatus.abandoned => 'Abandoned',
-      };
+    RetryActionStatus.pending => 'Queued',
+    RetryActionStatus.failed => 'Failed',
+    RetryActionStatus.abandoned => 'Abandoned',
+  };
 
   static String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     final h = dt.hour.toString().padLeft(2, '0');
     final m = dt.minute.toString().padLeft(2, '0');
@@ -194,15 +205,14 @@ class _ActionCardState extends State<_ActionCard> {
         RetryMetadataFailed() => 'Refresh failed — try again later.',
       };
 
-  static String _thumbnailSnackbarMessage(RetryThumbnailResult result) =>
-      switch (result) {
-        RetryThumbnailSuccess() => 'Cover image cached.',
-        RetryThumbnailNoUrl() => 'No cover image available for this release.',
-        RetryThumbnailNetworkError() =>
-          'Network unavailable — try again later.',
-        RetryThumbnailFailed() =>
-          'Failed to cache cover image — try again later.',
-      };
+  static String _thumbnailSnackbarMessage(
+    RetryThumbnailResult result,
+  ) => switch (result) {
+    RetryThumbnailSuccess() => 'Cover image cached.',
+    RetryThumbnailNoUrl() => 'No cover image available for this release.',
+    RetryThumbnailNetworkError() => 'Network unavailable — try again later.',
+    RetryThumbnailFailed() => 'Failed to cache cover image — try again later.',
+  };
 
   Future<void> _doRetry() async {
     setState(() => _retrying = true);
@@ -219,16 +229,15 @@ class _ActionCardState extends State<_ActionCard> {
 
     if (!mounted) return;
     setState(() => _retrying = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
     widget.onRetried();
   }
 
   bool get _showRetryButton =>
       (widget.retryUseCase != null &&
-          widget.action.actionType ==
-              RetryActionType.refreshReleaseMetadata) ||
+          widget.action.actionType == RetryActionType.refreshReleaseMetadata) ||
       (widget.thumbnailUseCase != null &&
           widget.action.actionType == RetryActionType.cacheThumbnail);
 
@@ -236,8 +245,9 @@ class _ActionCardState extends State<_ActionCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isPending = widget.action.status == RetryActionStatus.pending;
-    final statusColor =
-        isPending ? theme.colorScheme.tertiary : theme.colorScheme.error;
+    final statusColor = isPending
+        ? theme.colorScheme.tertiary
+        : theme.colorScheme.error;
     final statusBgColor = isPending
         ? theme.colorScheme.tertiaryContainer
         : theme.colorScheme.errorContainer;
@@ -259,16 +269,19 @@ class _ActionCardState extends State<_ActionCard> {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: statusBgColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     _friendlyStatus(widget.action.status),
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: statusColor),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: statusColor,
+                    ),
                   ),
                 ),
               ],
@@ -281,15 +294,16 @@ class _ActionCardState extends State<_ActionCard> {
               ),
             ),
             const SizedBox(height: 8),
-            _InfoRow(
-                label: 'Attempts', value: '${widget.action.attemptCount}'),
+            _InfoRow(label: 'Attempts', value: '${widget.action.attemptCount}'),
             if (widget.action.lastAttemptedAt != null)
               _InfoRow(
                 label: 'Last tried',
                 value: _formatDate(widget.action.lastAttemptedAt!),
               ),
             _InfoRow(
-                label: 'Queued', value: _formatDate(widget.action.createdAt)),
+              label: 'Queued',
+              value: _formatDate(widget.action.createdAt),
+            ),
             if (_showRetryButton) ...[
               const SizedBox(height: 8),
               Align(
@@ -332,9 +346,7 @@ class _InfoRow extends StatelessWidget {
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          Expanded(
-            child: Text(value, style: theme.textTheme.bodySmall),
-          ),
+          Expanded(child: Text(value, style: theme.textTheme.bodySmall)),
         ],
       ),
     );
@@ -359,10 +371,7 @@ class _EmptyState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text(
-              'No failed actions',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('No failed actions', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
               'Everything is up to date.',
@@ -392,11 +401,7 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 56,
-              color: theme.colorScheme.error,
-            ),
+            Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
             const SizedBox(height: 16),
             Text(
               'Could not load failed actions from device storage.',
@@ -406,10 +411,7 @@ class _ErrorState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            FilledButton.tonal(
-              onPressed: onRetry,
-              child: const Text('Retry'),
-            ),
+            FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
           ],
         ),
       ),

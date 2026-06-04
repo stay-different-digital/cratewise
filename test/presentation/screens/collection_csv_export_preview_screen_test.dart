@@ -33,7 +33,7 @@ class _FakeCollectionRepository implements CollectionRepository {
 
 class _FakePreviewUseCase extends BuildCollectionCsvExportPreviewUseCase {
   _FakePreviewUseCase(this._override)
-      : super(repository: _FakeCollectionRepository());
+    : super(repository: _FakeCollectionRepository());
 
   final BuildCollectionCsvExportPreviewResult _override;
 
@@ -81,42 +81,39 @@ class _FakeCsvFileWriter implements CsvFileWriter {
     required String filename,
     required List<String> headers,
     required List<List<String>> rows,
-  }) async =>
-      '/tmp/$filename';
+  }) async => '/tmp/$filename';
 }
 
 class _FakeExecuteUseCase extends ExecuteCollectionCsvExportUseCase {
   _FakeExecuteUseCase(this._override)
-      : super(
-          jobRepository: _FakeJobRepository(),
-          fileWriter: _FakeCsvFileWriter(),
-          onShare: (_) async {},
-        );
+    : super(
+        jobRepository: _FakeJobRepository(),
+        fileWriter: _FakeCsvFileWriter(),
+        onShare: (_) async {},
+      );
 
   final ExecuteCollectionCsvExportResult _override;
 
   @override
   Future<ExecuteCollectionCsvExportResult> execute(
     CsvCollectionExportPreview preview,
-  ) async =>
-      _override;
+  ) async => _override;
 }
 
 class _PausingExecuteUseCase extends ExecuteCollectionCsvExportUseCase {
   _PausingExecuteUseCase(this._future)
-      : super(
-          jobRepository: _FakeJobRepository(),
-          fileWriter: _FakeCsvFileWriter(),
-          onShare: (_) async {},
-        );
+    : super(
+        jobRepository: _FakeJobRepository(),
+        fileWriter: _FakeCsvFileWriter(),
+        onShare: (_) async {},
+      );
 
   final Future<ExecuteCollectionCsvExportResult> _future;
 
   @override
   Future<ExecuteCollectionCsvExportResult> execute(
     CsvCollectionExportPreview preview,
-  ) =>
-      _future;
+  ) => _future;
 }
 
 // ---------------------------------------------------------------------------
@@ -124,37 +121,53 @@ class _PausingExecuteUseCase extends ExecuteCollectionCsvExportUseCase {
 // ---------------------------------------------------------------------------
 
 CollectionItem _item(String id) => CollectionItem(
-      id: id,
-      discogsReleaseId: 1,
-      artist: 'Miles Davis',
-      title: 'Kind of Blue',
-      mediaCondition: RecordCondition.notSet,
-      sleeveCondition: RecordCondition.notSet,
-      tags: [],
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024),
-      updatedAt: DateTime.utc(2024),
-    );
+  id: id,
+  discogsReleaseId: 1,
+  artist: 'Miles Davis',
+  title: 'Kind of Blue',
+  mediaCondition: RecordCondition.notSet,
+  sleeveCondition: RecordCondition.notSet,
+  tags: [],
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024),
+  updatedAt: DateTime.utc(2024),
+);
 
 CsvCollectionExportPreview _preview({int count = 2}) =>
     CsvCollectionExportPreview(
       items: List.generate(count, (i) => _item('item-$i')),
       headers: collectionCsvHeaders,
       sampleRows: [
-        if (count > 0) ['Miles Davis', 'Kind of Blue', '', '', '', '', '1959', '1', '', '', '', '', '', '', ''],
+        if (count > 0)
+          [
+            'Miles Davis',
+            'Kind of Blue',
+            '',
+            '',
+            '',
+            '',
+            '1959',
+            '1',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+            '',
+          ],
       ],
     );
 
 Widget _buildSubject({
   required BuildCollectionCsvExportPreviewUseCase previewUseCase,
   ExecuteCollectionCsvExportUseCase? executeUseCase,
-}) =>
-    MaterialApp(
-      home: CollectionCsvExportPreviewScreen(
-        previewUseCase: previewUseCase,
-        executeUseCase: executeUseCase,
-      ),
-    );
+}) => MaterialApp(
+  home: CollectionCsvExportPreviewScreen(
+    previewUseCase: previewUseCase,
+    executeUseCase: executeUseCase,
+  ),
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -163,8 +176,9 @@ Widget _buildSubject({
 void main() {
   group('CollectionCsvExportPreviewScreen', () {
     group('loading state', () {
-      testWidgets('shows CircularProgressIndicator while loading',
-          (tester) async {
+      testWidgets('shows CircularProgressIndicator while loading', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(const CollectionCsvExportPreviewError());
         await tester.pumpWidget(_buildSubject(previewUseCase: uc));
         expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -233,7 +247,9 @@ void main() {
         expect(find.text('No data to preview'), findsOneWidget);
       });
 
-      testWidgets('shows empty note when collection has no items', (tester) async {
+      testWidgets('shows empty note when collection has no items', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           CollectionCsvExportPreviewReady(_preview(count: 0)),
         );
@@ -245,8 +261,9 @@ void main() {
         );
       });
 
-      testWidgets('does not show empty note when collection has items',
-          (tester) async {
+      testWidgets('does not show empty note when collection has items', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           CollectionCsvExportPreviewReady(_preview(count: 2)),
         );
@@ -291,14 +308,18 @@ void main() {
         final uc = _FakePreviewUseCase(
           CollectionCsvExportPreviewReady(_preview(count: 0)),
         );
-        await tester.pumpWidget(_buildSubject(
-          previewUseCase: uc,
-          executeUseCase: _FakeExecuteUseCase(
-            const ExecuteCollectionCsvExportCompleted(
-              jobId: 'j', rowCount: 0, filename: 'f.csv',
+        await tester.pumpWidget(
+          _buildSubject(
+            previewUseCase: uc,
+            executeUseCase: _FakeExecuteUseCase(
+              const ExecuteCollectionCsvExportCompleted(
+                jobId: 'j',
+                rowCount: 0,
+                filename: 'f.csv',
+              ),
             ),
           ),
-        ));
+        );
         await tester.pump();
         final button = tester.widget<FilledButton>(
           find.widgetWithText(FilledButton, 'Nothing to export'),
@@ -306,28 +327,35 @@ void main() {
         expect(button.onPressed, isNull);
       });
 
-      testWidgets('button is enabled when rowCount > 0 and execute use case provided',
-          (tester) async {
-        final uc = _FakePreviewUseCase(
-          CollectionCsvExportPreviewReady(_preview(count: 2)),
-        );
-        await tester.pumpWidget(_buildSubject(
-          previewUseCase: uc,
-          executeUseCase: _FakeExecuteUseCase(
-            const ExecuteCollectionCsvExportCompleted(
-              jobId: 'j', rowCount: 2, filename: 'f.csv',
+      testWidgets(
+        'button is enabled when rowCount > 0 and execute use case provided',
+        (tester) async {
+          final uc = _FakePreviewUseCase(
+            CollectionCsvExportPreviewReady(_preview(count: 2)),
+          );
+          await tester.pumpWidget(
+            _buildSubject(
+              previewUseCase: uc,
+              executeUseCase: _FakeExecuteUseCase(
+                const ExecuteCollectionCsvExportCompleted(
+                  jobId: 'j',
+                  rowCount: 2,
+                  filename: 'f.csv',
+                ),
+              ),
             ),
-          ),
-        ));
-        await tester.pump();
-        final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Export 2 rows'),
-        );
-        expect(button.onPressed, isNotNull);
-      });
+          );
+          await tester.pump();
+          final button = tester.widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Export 2 rows'),
+          );
+          expect(button.onPressed, isNotNull);
+        },
+      );
 
-      testWidgets('button is disabled when no execute use case provided',
-          (tester) async {
+      testWidgets('button is disabled when no execute use case provided', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           CollectionCsvExportPreviewReady(_preview(count: 2)),
         );
@@ -341,8 +369,9 @@ void main() {
     });
 
     group('error state', () {
-      testWidgets('shows error message on CollectionCsvExportPreviewError',
-          (tester) async {
+      testWidgets('shows error message on CollectionCsvExportPreviewError', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(const CollectionCsvExportPreviewError());
         await tester.pumpWidget(_buildSubject(previewUseCase: uc));
         await tester.pump();
@@ -387,7 +416,9 @@ void main() {
         final pauseCompleter = Future<ExecuteCollectionCsvExportResult>.delayed(
           const Duration(seconds: 10),
           () => const ExecuteCollectionCsvExportCompleted(
-            jobId: 'j', rowCount: 2, filename: 'f.csv',
+            jobId: 'j',
+            rowCount: 2,
+            filename: 'f.csv',
           ),
         );
         final executeUseCase = _PausingExecuteUseCase(pauseCompleter);
@@ -410,7 +441,9 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteCollectionCsvExportCompleted(
-            jobId: 'j', rowCount: 2, filename: 'collection_export_1234.csv',
+            jobId: 'j',
+            rowCount: 2,
+            filename: 'collection_export_1234.csv',
           ),
         );
         await tester.pumpWidget(
@@ -428,7 +461,9 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteCollectionCsvExportCompleted(
-            jobId: 'j', rowCount: 3, filename: 'collection_export_1234.csv',
+            jobId: 'j',
+            rowCount: 3,
+            filename: 'collection_export_1234.csv',
           ),
         );
         await tester.pumpWidget(
@@ -446,7 +481,9 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteCollectionCsvExportCompleted(
-            jobId: 'j', rowCount: 1, filename: 'f.csv',
+            jobId: 'j',
+            rowCount: 1,
+            filename: 'f.csv',
           ),
         );
         await tester.pumpWidget(
@@ -464,7 +501,9 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteCollectionCsvExportCompleted(
-            jobId: 'j', rowCount: 1, filename: 'collection_export_123.csv',
+            jobId: 'j',
+            rowCount: 1,
+            filename: 'collection_export_123.csv',
           ),
         );
         await tester.pumpWidget(
@@ -482,7 +521,9 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteCollectionCsvExportCompleted(
-            jobId: 'j', rowCount: 2, filename: 'f.csv',
+            jobId: 'j',
+            rowCount: 2,
+            filename: 'f.csv',
           ),
         );
         await tester.pumpWidget(
@@ -494,14 +535,17 @@ void main() {
         expect(find.text('Done'), findsOneWidget);
       });
 
-      testWidgets('done state does not show token or secret text',
-          (tester) async {
+      testWidgets('done state does not show token or secret text', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           CollectionCsvExportPreviewReady(_preview(count: 1)),
         );
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteCollectionCsvExportCompleted(
-            jobId: 'j', rowCount: 1, filename: 'collection_export_123.csv',
+            jobId: 'j',
+            rowCount: 1,
+            filename: 'collection_export_123.csv',
           ),
         );
         await tester.pumpWidget(
@@ -522,13 +566,16 @@ void main() {
     });
 
     group('execute failure snackbar', () {
-      testWidgets('shows snackbar and stays on ready state on failure',
-          (tester) async {
+      testWidgets('shows snackbar and stays on ready state on failure', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           CollectionCsvExportPreviewReady(_preview(count: 2)),
         );
         final executeUseCase = _FakeExecuteUseCase(
-          const ExecuteCollectionCsvExportFailed('CSV export could not be completed'),
+          const ExecuteCollectionCsvExportFailed(
+            'CSV export could not be completed',
+          ),
         );
         await tester.pumpWidget(
           _buildSubject(previewUseCase: uc, executeUseCase: executeUseCase),
@@ -541,13 +588,16 @@ void main() {
         expect(find.text('Export preview'), findsOneWidget);
       });
 
-      testWidgets('failure snackbar does not contain token or secret',
-          (tester) async {
+      testWidgets('failure snackbar does not contain token or secret', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           CollectionCsvExportPreviewReady(_preview(count: 1)),
         );
         final executeUseCase = _FakeExecuteUseCase(
-          const ExecuteCollectionCsvExportFailed('CSV export could not be completed'),
+          const ExecuteCollectionCsvExportFailed(
+            'CSV export could not be completed',
+          ),
         );
         await tester.pumpWidget(
           _buildSubject(previewUseCase: uc, executeUseCase: executeUseCase),

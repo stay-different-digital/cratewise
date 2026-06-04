@@ -4,6 +4,7 @@ import 'package:cratewise/domain/models/cached_release_metadata.dart';
 import 'package:cratewise/domain/models/retry_action.dart';
 import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
 import 'package:cratewise/domain/repositories/retry_action_repository.dart';
+import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/failed_actions_screen.dart';
 import 'package:flutter/material.dart';
@@ -79,15 +80,18 @@ class _NullThumbnailRepo implements ThumbnailRepository {
   Future<void> remove(int id) async {}
   @override
   Future<bool> exists(int id) async => false;
+  @override
+  Future<int> totalSizeBytes() async => 0;
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async => [];
+  @override
+  Future<void> removeAll() async {}
 }
 
 /// Fake use case that returns a configurable result without touching repos.
 class _FakeRetryUseCase extends RetryMetadataRefreshUseCase {
   _FakeRetryUseCase(this._result)
-      : super(
-          retryRepo: _NullRetryRepoForUseCase(),
-          cacheRepo: _NullCacheRepo(),
-        );
+    : super(retryRepo: _NullRetryRepoForUseCase(), cacheRepo: _NullCacheRepo());
 
   final RetryMetadataResult _result;
   int callCount = 0;
@@ -102,11 +106,11 @@ class _FakeRetryUseCase extends RetryMetadataRefreshUseCase {
 /// Fake thumbnail use case that returns a configurable result.
 class _FakeThumbnailUseCase extends RetryThumbnailUseCase {
   _FakeThumbnailUseCase(this._result)
-      : super(
-          retryRepo: _NullRetryRepoForUseCase(),
-          cacheRepo: _NullCacheRepo(),
-          thumbnailRepo: _NullThumbnailRepo(),
-        );
+    : super(
+        retryRepo: _NullRetryRepoForUseCase(),
+        cacheRepo: _NullCacheRepo(),
+        thumbnailRepo: _NullThumbnailRepo(),
+      );
 
   final RetryThumbnailResult _result;
   int callCount = 0;
@@ -185,8 +189,9 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
-    testWidgets('shows empty state when no non-abandoned actions',
-        (tester) async {
+    testWidgets('shows empty state when no non-abandoned actions', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(actions: []);
       await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -195,11 +200,12 @@ void main() {
       expect(find.text('Everything is up to date.'), findsOneWidget);
     });
 
-    testWidgets('shows empty state when all actions are abandoned',
-        (tester) async {
-      final repo = _FakeRetryRepo(actions: [
-        _makeAction(status: RetryActionStatus.abandoned),
-      ]);
+    testWidgets('shows empty state when all actions are abandoned', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(
+        actions: [_makeAction(status: RetryActionStatus.abandoned)],
+      );
       await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
       await tester.pumpAndSettle();
 
@@ -224,8 +230,9 @@ void main() {
       expect(find.text('Cache cover image'), findsOneWidget);
     });
 
-    testWidgets('shows friendly label for refreshReleaseMetadata',
-        (tester) async {
+    testWidgets('shows friendly label for refreshReleaseMetadata', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(
         actions: [
           _makeAction(actionType: RetryActionType.refreshReleaseMetadata),
@@ -249,9 +256,7 @@ void main() {
     });
 
     testWidgets('shows attempt count on card', (tester) async {
-      final repo = _FakeRetryRepo(
-        actions: [_makeAction(attemptCount: 3)],
-      );
+      final repo = _FakeRetryRepo(actions: [_makeAction(attemptCount: 3)]);
       await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
       await tester.pumpAndSettle();
 
@@ -278,12 +283,11 @@ void main() {
       expect(find.text('Failed'), findsOneWidget);
     });
 
-    testWidgets('shows last tried row when lastAttemptedAt is set',
-        (tester) async {
+    testWidgets('shows last tried row when lastAttemptedAt is set', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(
-        actions: [
-          _makeAction(lastAttemptedAt: DateTime(2026, 6, 1, 15, 30)),
-        ],
+        actions: [_makeAction(lastAttemptedAt: DateTime(2026, 6, 1, 15, 30))],
       );
       await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -291,8 +295,9 @@ void main() {
       expect(find.textContaining('Last tried:'), findsOneWidget);
     });
 
-    testWidgets('does not show last tried row when lastAttemptedAt is null',
-        (tester) async {
+    testWidgets('does not show last tried row when lastAttemptedAt is null', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(actions: [_makeAction()]);
       await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -301,11 +306,13 @@ void main() {
     });
 
     testWidgets('shows multiple cards for multiple actions', (tester) async {
-      final repo = _FakeRetryRepo(actions: [
-        _makeAction(id: 'a1', entityId: '1'),
-        _makeAction(id: 'a2', entityId: '2'),
-        _makeAction(id: 'a3', entityId: '3'),
-      ]);
+      final repo = _FakeRetryRepo(
+        actions: [
+          _makeAction(id: 'a1', entityId: '1'),
+          _makeAction(id: 'a2', entityId: '2'),
+          _makeAction(id: 'a3', entityId: '3'),
+        ],
+      );
       await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
       await tester.pumpAndSettle();
 
@@ -324,8 +331,9 @@ void main() {
       expect(find.widgetWithText(FilledButton, 'Retry'), findsOneWidget);
     });
 
-    testWidgets('retry button reloads and shows empty state on success',
-        (tester) async {
+    testWidgets('retry button reloads and shows empty state on success', (
+      tester,
+    ) async {
       final repo = _FlippingRepo(successActions: []);
       await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -350,8 +358,7 @@ void main() {
     });
 
     group('FailedActionsScreen — security', () {
-      testWidgets('card text does not contain token or secret',
-          (tester) async {
+      testWidgets('card text does not contain token or secret', (tester) async {
         final repo = _FakeRetryRepo(
           actions: [
             _makeAction(
@@ -384,36 +391,42 @@ void main() {
 
   group('FailedActionsScreen — retry button', () {
     RetryAction metadataAction() => _makeAction(
-          actionType: RetryActionType.refreshReleaseMetadata,
-          safeErrorMessage: 'Release metadata could not be refreshed.',
+      actionType: RetryActionType.refreshReleaseMetadata,
+      safeErrorMessage: 'Release metadata could not be refreshed.',
+    );
+
+    testWidgets(
+      'shows Retry button for refreshReleaseMetadata when use case provided',
+      (tester) async {
+        final repo = _FakeRetryRepo(actions: [metadataAction()]);
+        final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
+        await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)),
         );
+        await tester.pumpAndSettle();
 
-    testWidgets('shows Retry button for refreshReleaseMetadata when use case provided',
-        (tester) async {
-      final repo = _FakeRetryRepo(actions: [metadataAction()]);
-      final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
-      await tester.pumpWidget(
-          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
-      await tester.pumpAndSettle();
+        expect(find.widgetWithText(TextButton, 'Retry'), findsOneWidget);
+      },
+    );
 
-      expect(find.widgetWithText(TextButton, 'Retry'), findsOneWidget);
-    });
-
-    testWidgets('does NOT show Retry button for cacheThumbnail action',
-        (tester) async {
+    testWidgets('does NOT show Retry button for cacheThumbnail action', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(
         actions: [_makeAction(actionType: RetryActionType.cacheThumbnail)],
       );
       final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
       await tester.pumpWidget(
-          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+        _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)),
+      );
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(TextButton, 'Retry'), findsNothing);
     });
 
-    testWidgets('does NOT show Retry button when no use case provided',
-        (tester) async {
+    testWidgets('does NOT show Retry button when no use case provided', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(actions: [metadataAction()]);
       await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
       await tester.pumpAndSettle();
@@ -425,7 +438,8 @@ void main() {
       final repo = _FakeRetryRepo(actions: [metadataAction()]);
       final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
       await tester.pumpWidget(
-          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+        _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(TextButton, 'Retry'));
@@ -438,7 +452,8 @@ void main() {
       final repo = _FakeRetryRepo(actions: [metadataAction()]);
       final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
       await tester.pumpWidget(
-          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+        _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(TextButton, 'Retry'));
@@ -447,12 +462,14 @@ void main() {
       expect(find.text('Release info updated.'), findsOneWidget);
     });
 
-    testWidgets('NoToken shows snackbar with connect-account message',
-        (tester) async {
+    testWidgets('NoToken shows snackbar with connect-account message', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(actions: [metadataAction()]);
       final uc = _FakeRetryUseCase(const RetryMetadataNoToken());
       await tester.pumpWidget(
-          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+        _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(TextButton, 'Retry'));
@@ -464,12 +481,14 @@ void main() {
       );
     });
 
-    testWidgets('RateLimited shows snackbar with rate-limit message',
-        (tester) async {
+    testWidgets('RateLimited shows snackbar with rate-limit message', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(actions: [metadataAction()]);
       final uc = _FakeRetryUseCase(const RetryMetadataRateLimited());
       await tester.pumpWidget(
-          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+        _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(TextButton, 'Retry'));
@@ -478,12 +497,14 @@ void main() {
       expect(find.text('Rate limited — try again shortly.'), findsOneWidget);
     });
 
-    testWidgets('NetworkError shows snackbar with network message',
-        (tester) async {
+    testWidgets('NetworkError shows snackbar with network message', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(actions: [metadataAction()]);
       final uc = _FakeRetryUseCase(const RetryMetadataNetworkError());
       await tester.pumpWidget(
-          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+        _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.widgetWithText(TextButton, 'Retry'));
@@ -495,8 +516,9 @@ void main() {
       );
     });
 
-    testWidgets('snackbar message does not contain token or secret',
-        (tester) async {
+    testWidgets('snackbar message does not contain token or secret', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(actions: [metadataAction()]);
       for (final result in <RetryMetadataResult>[
         const RetryMetadataSuccess(),
@@ -507,17 +529,20 @@ void main() {
       ]) {
         final uc = _FakeRetryUseCase(result);
         await tester.pumpWidget(
-            _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)),
+        );
         await tester.pumpAndSettle();
 
         await tester.tap(find.widgetWithText(TextButton, 'Retry'));
         await tester.pumpAndSettle();
 
         final snackbar = tester
-            .widgetList<Text>(find.descendant(
-              of: find.byType(SnackBar),
-              matching: find.byType(Text),
-            ))
+            .widgetList<Text>(
+              find.descendant(
+                of: find.byType(SnackBar),
+                matching: find.byType(Text),
+              ),
+            )
             .map((t) => t.data ?? '')
             .join(' ')
             .toLowerCase();
@@ -527,14 +552,17 @@ void main() {
       }
     });
 
-    testWidgets('after success, list reloads (shows empty state)', (tester) async {
+    testWidgets('after success, list reloads (shows empty state)', (
+      tester,
+    ) async {
       // Repo starts with one action; after retry (success) the action is
       // removed and the list reloads as empty.
       final actions = [metadataAction()];
       final repo = _FakeRetryRepo(actions: actions);
       final uc = _FakeRetryUseCase(const RetryMetadataSuccess());
       await tester.pumpWidget(
-          _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)));
+        _wrap(FailedActionsScreen(repository: repo, retryUseCase: uc)),
+      );
       await tester.pumpAndSettle();
 
       // Simulate the action being removed (success removes it from repo).
@@ -549,37 +577,38 @@ void main() {
 
   group('FailedActionsScreen — thumbnail retry button', () {
     RetryAction thumbnailAction() => _makeAction(
-          actionType: RetryActionType.cacheThumbnail,
-          safeErrorMessage: 'Cover image could not be cached.',
+      actionType: RetryActionType.cacheThumbnail,
+      safeErrorMessage: 'Cover image could not be cached.',
+    );
+
+    testWidgets(
+      'shows Retry button for cacheThumbnail when thumbnailUseCase provided',
+      (tester) async {
+        final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+        final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
+        await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
         );
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(TextButton, 'Retry'), findsOneWidget);
+      },
+    );
 
     testWidgets(
-        'shows Retry button for cacheThumbnail when thumbnailUseCase provided',
-        (tester) async {
-      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
-      final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
-      await tester.pumpWidget(
-        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
-      );
-      await tester.pumpAndSettle();
+      'does NOT show Retry button for cacheThumbnail without thumbnailUseCase',
+      (tester) async {
+        final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+        await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+        await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(TextButton, 'Retry'), findsOneWidget);
-    });
+        expect(find.widgetWithText(TextButton, 'Retry'), findsNothing);
+      },
+    );
 
-    testWidgets(
-        'does NOT show Retry button for cacheThumbnail without thumbnailUseCase',
-        (tester) async {
-      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
-      await tester.pumpWidget(
-        _wrap(FailedActionsScreen(repository: repo)),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.widgetWithText(TextButton, 'Retry'), findsNothing);
-    });
-
-    testWidgets('tapping Retry for thumbnail calls thumbnailUseCase.execute',
-        (tester) async {
+    testWidgets('tapping Retry for thumbnail calls thumbnailUseCase.execute', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
       final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
       await tester.pumpWidget(
@@ -641,8 +670,9 @@ void main() {
       );
     });
 
-    testWidgets('thumbnail snackbar does not contain token or secret',
-        (tester) async {
+    testWidgets('thumbnail snackbar does not contain token or secret', (
+      tester,
+    ) async {
       final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
       for (final result in <RetryThumbnailResult>[
         const RetryThumbnailSuccess(),
@@ -660,10 +690,12 @@ void main() {
         await tester.pumpAndSettle();
 
         final snackbar = tester
-            .widgetList<Text>(find.descendant(
-              of: find.byType(SnackBar),
-              matching: find.byType(Text),
-            ))
+            .widgetList<Text>(
+              find.descendant(
+                of: find.byType(SnackBar),
+                matching: find.byType(Text),
+              ),
+            )
             .map((t) => t.data ?? '')
             .join(' ')
             .toLowerCase();
@@ -694,11 +726,7 @@ void main() {
   group('SettingsScreen — Failed Actions tile', () {
     testWidgets('settings screen shows Failed Actions tile', (tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: Scaffold(
-            body: _SettingsScreenWithoutNav(),
-          ),
-        ),
+        const MaterialApp(home: Scaffold(body: _SettingsScreenWithoutNav())),
       );
 
       expect(find.text('Failed Actions'), findsOneWidget);

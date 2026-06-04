@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 // Helpers
 // ---------------------------------------------------------------------------
 
-const _kValidCsv = '''Artist,Title,Label,Catalog Number,Format,Country,Year,Discogs Release ID,Target Price,Priority,Notes,Created Date,Updated Date
+const _kValidCsv =
+    '''Artist,Title,Label,Catalog Number,Format,Country,Year,Discogs Release ID,Target Price,Priority,Notes,Created Date,Updated Date
 Herbie Hancock,Head Hunters,Columbia,KC 32731,LP,US,1973,99999,25.00,High,Original pressing,2024-01-15T10:00:00.000000Z,2024-06-01T12:30:00.000000Z''';
 
 const _kValidCsvTwoRows = '''Artist,Title,Discogs Release ID,Priority
@@ -101,10 +102,7 @@ void main() {
 
     group('empty CSV', () {
       test('empty content → ready with zero rows', () {
-        final result = useCase.execute(
-          filename: 'empty.csv',
-          content: '',
-        );
+        final result = useCase.execute(filename: 'empty.csv', content: '');
         final ready = result as WishlistCsvImportPreviewReady;
         expect(ready.preview.totalCount, 0);
       });

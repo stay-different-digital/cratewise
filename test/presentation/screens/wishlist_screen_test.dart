@@ -1,4 +1,5 @@
 import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/wishlist_detail_screen.dart';
@@ -54,6 +55,12 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
   Future<void> remove(int releaseId) async {}
   @override
   Future<bool> exists(int releaseId) async => pathToReturn != null;
+  @override
+  Future<int> totalSizeBytes() async => 0;
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async => [];
+  @override
+  Future<void> removeAll() async {}
 }
 
 class _FlippingWishlistRepository implements WishlistRepository {

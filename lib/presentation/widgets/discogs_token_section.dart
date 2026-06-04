@@ -23,8 +23,7 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
   String? _connectedUsername;
   String? _errorMessage;
 
-  late final _service =
-      widget.connectionService ?? DiscogsConnectionService();
+  late final _service = widget.connectionService ?? DiscogsConnectionService();
 
   @override
   void initState() {
@@ -89,8 +88,7 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
       if (!mounted) return;
       setState(() {
         _status = _ConnectionState.failure;
-        _errorMessage =
-            'Token validated but could not be saved. Try again.';
+        _errorMessage = 'Token validated but could not be saved. Try again.';
       });
     } on AppError {
       if (!mounted) return;
@@ -113,9 +111,7 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not remove token. Try again.'),
-        ),
+        const SnackBar(content: Text('Could not remove token. Try again.')),
       );
     }
   }
@@ -189,8 +185,7 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
                   _obscureToken ? Icons.visibility_off : Icons.visibility,
                 ),
                 tooltip: _obscureToken ? 'Show token' : 'Hide token',
-                onPressed: () =>
-                    setState(() => _obscureToken = !_obscureToken),
+                onPressed: () => setState(() => _obscureToken = !_obscureToken),
               ),
             ),
           ),
@@ -233,8 +228,7 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
               ],
             ),
           ],
-          if (_status == _ConnectionState.failure &&
-              _errorMessage != null) ...[
+          if (_status == _ConnectionState.failure && _errorMessage != null) ...[
             const SizedBox(height: 12),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,10 +288,7 @@ class _ConnectedTokenDisplay extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '••••••••••••••••',
-                  style: theme.textTheme.bodyMedium,
-                ),
+                Text('••••••••••••••••', style: theme.textTheme.bodyMedium),
               ],
             ),
           ),

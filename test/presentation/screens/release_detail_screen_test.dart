@@ -10,6 +10,7 @@ import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
@@ -272,6 +273,12 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
 
   @override
   Future<bool> exists(int releaseId) async => false;
+  @override
+  Future<int> totalSizeBytes() async => 0;
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async => [];
+  @override
+  Future<void> removeAll() async {}
 }
 
 Widget _wrap(Widget child) => MaterialApp(home: child);

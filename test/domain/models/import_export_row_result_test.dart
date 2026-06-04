@@ -5,7 +5,10 @@ void main() {
   group('ImportExportRowResult', () {
     group('ValidRow', () {
       test('stores rowIndex and description', () {
-        const row = ValidRow(rowIndex: 0, description: 'Miles Davis – Kind Of Blue');
+        const row = ValidRow(
+          rowIndex: 0,
+          description: 'Miles Davis – Kind Of Blue',
+        );
         expect(row.rowIndex, 0);
         expect(row.description, 'Miles Davis – Kind Of Blue');
       });

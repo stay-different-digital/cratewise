@@ -43,8 +43,8 @@ class RetryThumbnailUseCase {
     required this.cacheRepo,
     ThumbnailRepository? thumbnailRepo,
     http.Client? httpClient,
-  })  : _thumbnailRepo = thumbnailRepo ?? LocalThumbnailRepository(),
-        _httpClient = httpClient ?? http.Client();
+  }) : _thumbnailRepo = thumbnailRepo ?? LocalThumbnailRepository(),
+       _httpClient = httpClient ?? http.Client();
 
   final RetryActionRepository retryRepo;
   final CachedReleaseMetadataRepository cacheRepo;

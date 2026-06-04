@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../../domain/models/thumbnail_entry.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 
 class LocalThumbnailRepository implements ThumbnailRepository {
@@ -50,5 +51,54 @@ class LocalThumbnailRepository implements ThumbnailRepository {
   Future<bool> exists(int releaseId) async {
     final dir = await _dir();
     return _file(dir, releaseId).exists();
+  }
+
+  @override
+  Future<int> totalSizeBytes() async {
+    final dir = await _dir();
+    if (!await dir.exists()) return 0;
+    var total = 0;
+    await for (final entity in dir.list()) {
+      if (entity is File) {
+        final stat = await entity.stat();
+        total += stat.size;
+      }
+    }
+    return total;
+  }
+
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async {
+    final dir = await _dir();
+    if (!await dir.exists()) return [];
+    final entries = <ThumbnailEntry>[];
+    await for (final entity in dir.list()) {
+      if (entity is File) {
+        final name = p.basenameWithoutExtension(entity.path);
+        if (name.startsWith('thumb_')) {
+          final releaseId = int.tryParse(name.substring('thumb_'.length));
+          if (releaseId != null) {
+            final stat = await entity.stat();
+            entries.add(
+              ThumbnailEntry(
+                releaseId: releaseId,
+                lastModified: stat.modified,
+                sizeBytes: stat.size,
+              ),
+            );
+          }
+        }
+      }
+    }
+    return entries;
+  }
+
+  @override
+  Future<void> removeAll() async {
+    final dir = await _dir();
+    if (!await dir.exists()) return;
+    await for (final entity in dir.list()) {
+      if (entity is File) await entity.delete();
+    }
   }
 }

@@ -4,38 +4,38 @@ import 'package:cratewise/infrastructure/csv/collection_csv_mapper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 CollectionItem _fullItem() => CollectionItem(
-      id: 'item-1',
-      discogsReleaseId: 12345,
-      artist: 'Miles Davis',
-      title: 'Kind of Blue',
-      label: 'Columbia',
-      catno: 'CL 1355',
-      format: 'LP',
-      country: 'US',
-      year: 1959,
-      coverUrl: 'https://img.example.com/cover.jpg',
-      mediaCondition: RecordCondition.nearMint,
-      sleeveCondition: RecordCondition.veryGoodPlus,
-      notes: 'First pressing',
-      tags: ['jazz', 'classic'],
-      storageLocation: 'Shelf A',
-      syncStatus: SyncStatus.synced,
-      createdAt: DateTime.utc(2024, 1, 15, 10, 0, 0),
-      updatedAt: DateTime.utc(2024, 6, 1, 12, 30, 0),
-    );
+  id: 'item-1',
+  discogsReleaseId: 12345,
+  artist: 'Miles Davis',
+  title: 'Kind of Blue',
+  label: 'Columbia',
+  catno: 'CL 1355',
+  format: 'LP',
+  country: 'US',
+  year: 1959,
+  coverUrl: 'https://img.example.com/cover.jpg',
+  mediaCondition: RecordCondition.nearMint,
+  sleeveCondition: RecordCondition.veryGoodPlus,
+  notes: 'First pressing',
+  tags: ['jazz', 'classic'],
+  storageLocation: 'Shelf A',
+  syncStatus: SyncStatus.synced,
+  createdAt: DateTime.utc(2024, 1, 15, 10, 0, 0),
+  updatedAt: DateTime.utc(2024, 6, 1, 12, 30, 0),
+);
 
 CollectionItem _minimalItem() => CollectionItem(
-      id: 'item-2',
-      discogsReleaseId: 99,
-      artist: 'Unknown Artist',
-      title: 'Untitled',
-      mediaCondition: RecordCondition.notSet,
-      sleeveCondition: RecordCondition.notSet,
-      tags: [],
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024, 3, 10, 8, 0, 0),
-      updatedAt: DateTime.utc(2024, 3, 10, 8, 0, 0),
-    );
+  id: 'item-2',
+  discogsReleaseId: 99,
+  artist: 'Unknown Artist',
+  title: 'Untitled',
+  mediaCondition: RecordCondition.notSet,
+  sleeveCondition: RecordCondition.notSet,
+  tags: [],
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024, 3, 10, 8, 0, 0),
+  updatedAt: DateTime.utc(2024, 3, 10, 8, 0, 0),
+);
 
 void main() {
   const mapper = CollectionCsvMapper();

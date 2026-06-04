@@ -68,8 +68,9 @@ class ImportExportJob {
       status: status ?? this.status,
       totalItems: clearTotalItems ? null : (totalItems ?? this.totalItems),
       validItems: clearValidItems ? null : (validItems ?? this.validItems),
-      skippedItems:
-          clearSkippedItems ? null : (skippedItems ?? this.skippedItems),
+      skippedItems: clearSkippedItems
+          ? null
+          : (skippedItems ?? this.skippedItems),
       failedItems: clearFailedItems ? null : (failedItems ?? this.failedItems),
       safeErrorMessage: clearSafeErrorMessage
           ? null

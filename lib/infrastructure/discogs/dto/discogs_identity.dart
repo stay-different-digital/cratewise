@@ -1,8 +1,5 @@
 class DiscogsIdentity {
-  const DiscogsIdentity({
-    required this.username,
-    required this.resourceUrl,
-  });
+  const DiscogsIdentity({required this.username, required this.resourceUrl});
 
   final String username;
   final String resourceUrl;

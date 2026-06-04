@@ -7,6 +7,29 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7S: Thumbnail cache storage limit and eviction policy (US-19)] — 2026-06-04
+
+### Added
+- `ThumbnailEntry` domain model — value object with `releaseId`, `lastModified`, `sizeBytes`; used by `ThumbnailRepository` to expose file-system metadata for eviction decisions
+- `ThumbnailEvictionService` — stateless application service with `evictIfNeeded({int maxBytes})` (LRU eviction, default 200 MB limit), `currentSizeBytes()`, and `clearAll()`; constant `kDefaultThumbnailCacheLimitBytes = 200 MB` is the configurable default
+
+### Changed
+- `ThumbnailRepository` — three new methods: `totalSizeBytes()`, `listEntries()` (returns `List<ThumbnailEntry>`), `removeAll()`
+- `LocalThumbnailRepository` — implements all three new methods using filesystem `FileStat` (file size + last-modified time for LRU ordering)
+- `ThumbnailCacheService` — now accepts optional `ThumbnailEvictionService`; creates a default from its own repository if none supplied; calls `unawaited(evictionService.evictIfNeeded())` after every successful thumbnail save, so eviction runs silently in the background
+- `SettingsScreen` — new optional `evictionService` parameter; when supplied, renders a `_ThumbnailCacheSection` tile (`Icons.image_outlined`) showing formatted cache size ("X.X MB" / "< 1 MB") and an enabled `Clear` button (disabled when size is 0)
+- `HomeShellScreen` — creates `LocalThumbnailRepository` and `ThumbnailEvictionService` at shell level; passes `evictionService` to `SettingsScreen`
+- All 8 fake/spy `ThumbnailRepository` test implementations updated to add the three new interface methods
+
+### Tests
+- 33 new tests across 4 files:
+  - `local_thumbnail_repository_test.dart` — 11 new tests covering `totalSizeBytes` (empty, sum, after remove), `listEntries` (empty, count, releaseId, sizeBytes, lastModified, ignores non-thumb files), `removeAll` (no-op, removes all, size = 0 after)
+  - `thumbnail_eviction_service_test.dart` (new file) — 13 tests: `currentSizeBytes`, `clearAll`, `evictIfNeeded` (under limit, at limit, oldest first, multiple entries, stops at limit, default constant, empty cache)
+  - `thumbnail_cache_service_test.dart` — 3 new eviction-trigger tests: `evictIfNeeded` called after successful download; NOT called on cache hit; NOT called on failed fetch
+  - `settings_screen_test.dart` (new file) — 6 tests: tile shown/hidden with/without eviction service, formatted size, "< 1 MB", Clear button enabled/disabled, Clear tap calls `removeAll` and updates subtitle
+
+---
+
 ## [Unreleased — Phase 7R: Cached offline release detail shows complete data (US-18)] — 2026-06-04
 
 ### Changed

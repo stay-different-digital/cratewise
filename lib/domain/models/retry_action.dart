@@ -9,17 +9,9 @@ enum RetryActionType {
   cacheThumbnail,
 }
 
-enum RetryActionEntityType {
-  collectionItem,
-  wishlistItem,
-  cachedRelease,
-}
+enum RetryActionEntityType { collectionItem, wishlistItem, cachedRelease }
 
-enum RetryActionStatus {
-  pending,
-  failed,
-  abandoned,
-}
+enum RetryActionStatus { pending, failed, abandoned }
 
 class RetryAction {
   RetryAction({

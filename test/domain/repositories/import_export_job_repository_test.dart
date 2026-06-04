@@ -36,16 +36,15 @@ ImportExportJob makeJob({
   ImportExportStatus status = ImportExportStatus.idle,
   DateTime? createdAt,
   DateTime? updatedAt,
-}) =>
-    ImportExportJob(
-      id: id,
-      jobType: jobType,
-      source: source,
-      target: target,
-      status: status,
-      createdAt: createdAt ?? DateTime(2026, 6, 1),
-      updatedAt: updatedAt ?? DateTime(2026, 6, 1),
-    );
+}) => ImportExportJob(
+  id: id,
+  jobType: jobType,
+  source: source,
+  target: target,
+  status: status,
+  createdAt: createdAt ?? DateTime(2026, 6, 1),
+  updatedAt: updatedAt ?? DateTime(2026, 6, 1),
+);
 
 void main() {
   group('ImportExportJobRepository contract', () {
@@ -90,8 +89,7 @@ void main() {
     group('update', () {
       test('update replaces job with matching id', () async {
         await repo.add(makeJob(id: 'j-1', status: ImportExportStatus.idle));
-        final updated =
-            makeJob(id: 'j-1', status: ImportExportStatus.running);
+        final updated = makeJob(id: 'j-1', status: ImportExportStatus.running);
         await repo.update(updated);
         final stored = await repo.getById('j-1');
         expect(stored!.status, ImportExportStatus.running);
@@ -100,9 +98,7 @@ void main() {
       test('update job status to completed', () async {
         final job = makeJob(id: 'j-3', status: ImportExportStatus.running);
         await repo.add(job);
-        await repo.update(
-          job.copyWith(status: ImportExportStatus.completed),
-        );
+        await repo.update(job.copyWith(status: ImportExportStatus.completed));
         final stored = await repo.getById('j-3');
         expect(stored!.status, ImportExportStatus.completed);
       });
@@ -137,8 +133,7 @@ void main() {
 
       test('respects limit parameter', () async {
         for (var i = 1; i <= 5; i++) {
-          await repo.add(
-              makeJob(id: 'j-$i', createdAt: DateTime(2026, 6, i)));
+          await repo.add(makeJob(id: 'j-$i', createdAt: DateTime(2026, 6, i)));
         }
         final recent = await repo.getRecent(limit: 3);
         expect(recent, hasLength(3));
@@ -175,14 +170,23 @@ void main() {
     });
 
     group('security', () {
-      test('source and target fields do not contain tokens or secrets', () async {
-        await repo.add(makeJob(id: 'j-sec', source: 'Local collection', target: 'export.csv'));
-        final stored = await repo.getById('j-sec');
-        expect(stored!.source.toLowerCase(), isNot(contains('token')));
-        expect(stored.source.toLowerCase(), isNot(contains('secret')));
-        expect(stored.target.toLowerCase(), isNot(contains('token')));
-        expect(stored.target.toLowerCase(), isNot(contains('secret')));
-      });
+      test(
+        'source and target fields do not contain tokens or secrets',
+        () async {
+          await repo.add(
+            makeJob(
+              id: 'j-sec',
+              source: 'Local collection',
+              target: 'export.csv',
+            ),
+          );
+          final stored = await repo.getById('j-sec');
+          expect(stored!.source.toLowerCase(), isNot(contains('token')));
+          expect(stored.source.toLowerCase(), isNot(contains('secret')));
+          expect(stored.target.toLowerCase(), isNot(contains('token')));
+          expect(stored.target.toLowerCase(), isNot(contains('secret')));
+        },
+      );
 
       test('safe error message does not contain token or secret', () async {
         final job = makeJob(id: 'j-err').copyWith(
@@ -191,8 +195,14 @@ void main() {
         );
         await repo.add(job);
         final stored = await repo.getById('j-err');
-        expect(stored!.safeErrorMessage!.toLowerCase(), isNot(contains('token')));
-        expect(stored.safeErrorMessage!.toLowerCase(), isNot(contains('secret')));
+        expect(
+          stored!.safeErrorMessage!.toLowerCase(),
+          isNot(contains('token')),
+        );
+        expect(
+          stored.safeErrorMessage!.toLowerCase(),
+          isNot(contains('secret')),
+        );
       });
     });
   });

@@ -113,16 +113,16 @@ MockClient _mockSuccessClient({int releaseId = 249504}) {
       'id': releaseId,
       'title': 'Some Album',
       'artists': [
-        {'name': 'Some Artist'}
+        {'name': 'Some Artist'},
       ],
       'labels': [
-        {'name': 'Some Label', 'catno': 'SL001'}
+        {'name': 'Some Label', 'catno': 'SL001'},
       ],
       'formats': [
         {
           'name': 'Vinyl',
-          'descriptions': ['LP']
-        }
+          'descriptions': ['LP'],
+        },
       ],
       'country': 'UK',
       'year': 1990,
@@ -386,23 +386,25 @@ void main() {
       expect(result, isA<RetryMetadataNoToken>());
     });
 
-    test('updated action safe message does not contain token or secret',
-        () async {
-      final action = _makeAction();
-      final retryRepo = _SpyRetryRepo([action]);
-      final cacheRepo = _SpyCacheRepo();
-      final uc = _makeUseCase(
-        retryRepo: retryRepo,
-        cacheRepo: cacheRepo,
-        httpClient: _mockErrorClient(429),
-      );
+    test(
+      'updated action safe message does not contain token or secret',
+      () async {
+        final action = _makeAction();
+        final retryRepo = _SpyRetryRepo([action]);
+        final cacheRepo = _SpyCacheRepo();
+        final uc = _makeUseCase(
+          retryRepo: retryRepo,
+          cacheRepo: cacheRepo,
+          httpClient: _mockErrorClient(429),
+        );
 
-      await uc.execute(action);
+        await uc.execute(action);
 
-      for (final a in retryRepo.updated) {
-        expect(a.safeErrorMessage.toLowerCase(), isNot(contains('token')));
-        expect(a.safeErrorMessage.toLowerCase(), isNot(contains('secret')));
-      }
-    });
+        for (final a in retryRepo.updated) {
+          expect(a.safeErrorMessage.toLowerCase(), isNot(contains('token')));
+          expect(a.safeErrorMessage.toLowerCase(), isNot(contains('secret')));
+        }
+      },
+    );
   });
 }

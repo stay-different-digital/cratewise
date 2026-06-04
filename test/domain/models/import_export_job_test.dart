@@ -8,14 +8,14 @@ void main() {
   final updatedAt = DateTime(2026, 6, 2);
 
   ImportExportJob base() => ImportExportJob(
-        id: 'job-1',
-        jobType: ImportExportJobType.csvCollectionExport,
-        source: 'Local collection',
-        target: 'collection_export.csv',
-        status: ImportExportStatus.idle,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+    id: 'job-1',
+    jobType: ImportExportJobType.csvCollectionExport,
+    source: 'Local collection',
+    target: 'collection_export.csv',
+    status: ImportExportStatus.idle,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 
   group('ImportExportJob', () {
     test('stores all required fields', () {

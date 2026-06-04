@@ -1,5 +1,6 @@
 import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/wishlist_detail_screen.dart';
@@ -22,6 +23,12 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
   Future<void> remove(int releaseId) async {}
   @override
   Future<bool> exists(int releaseId) async => pathToReturn != null;
+  @override
+  Future<int> totalSizeBytes() async => 0;
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async => [];
+  @override
+  Future<void> removeAll() async {}
 }
 
 class _FakeWishlistRepository implements WishlistRepository {
@@ -1081,7 +1088,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.loadCallCount, 1);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(repo.loadCallCount, 2);
@@ -1098,7 +1107,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Old Title'), findsWidgets);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(find.text('New Title'), findsWidgets);
@@ -1114,7 +1125,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Kept Artist'), findsOneWidget);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(find.text('Kept Artist'), findsOneWidget);

@@ -30,7 +30,8 @@ class ExecuteCollectionCsvImportCompleted
   final int failed;
 }
 
-class ExecuteCollectionCsvImportFailed extends ExecuteCollectionCsvImportResult {
+class ExecuteCollectionCsvImportFailed
+    extends ExecuteCollectionCsvImportResult {
   const ExecuteCollectionCsvImportFailed(this.safeMessage);
 
   final String safeMessage;
@@ -93,10 +94,7 @@ class ExecuteCollectionCsvImportUseCase {
             await _collectionRepository.add(_buildItem(row));
             await _rowResultRepository.addResult(
               jobId,
-              ValidRow(
-                rowIndex: row.rowIndex,
-                description: row.displayName,
-              ),
+              ValidRow(rowIndex: row.rowIndex, description: row.displayName),
             );
             imported++;
           }

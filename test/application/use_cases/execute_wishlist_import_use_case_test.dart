@@ -134,7 +134,8 @@ WishlistImportPreview makePreview({
   _FakeWishlistRepository wishlistRepo,
   _FakeJobRepository jobRepo,
   _FakeRowResultRepository rowResultRepo,
-}) makeUseCase({
+})
+makeUseCase({
   WishlistRepository? wishlistRepository,
   ImportExportJobRepository? jobRepository,
   ImportExportRowResultRepository? rowResultRepository,
@@ -161,34 +162,40 @@ WishlistImportPreview makePreview({
 void main() {
   group('ExecuteWishlistImportUseCase', () {
     group('empty preview', () {
-      test('returns ExecuteWishlistImportCompleted for empty preview', () async {
-        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase();
-        final result = await useCase.execute(makePreview());
-        expect(result, isA<ExecuteWishlistImportCompleted>());
-      });
+      test(
+        'returns ExecuteWishlistImportCompleted for empty preview',
+        () async {
+          final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
+              makeUseCase();
+          final result = await useCase.execute(makePreview());
+          expect(result, isA<ExecuteWishlistImportCompleted>());
+        },
+      );
 
       test('imported is 0 for empty preview', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview())
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview())
+                as ExecuteWishlistImportCompleted;
         expect(result.imported, 0);
       });
 
       test('skipped is 0 for empty preview', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview())
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview())
+                as ExecuteWishlistImportCompleted;
         expect(result.skipped, 0);
       });
 
       test('failed is 0 for empty preview', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview())
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview())
+                as ExecuteWishlistImportCompleted;
         expect(result.failed, 0);
       });
     });
@@ -241,11 +248,7 @@ void main() {
         await useCase.execute(
           WishlistImportPreview(
             rows: [
-              const NewWishlistRow(
-                releaseId: 42,
-                title: 'T',
-                artist: 'A',
-              ),
+              const NewWishlistRow(releaseId: 42, title: 'T', artist: 'A'),
             ],
           ),
         );
@@ -258,18 +261,11 @@ void main() {
         await useCase.execute(
           WishlistImportPreview(
             rows: [
-              const NewWishlistRow(
-                releaseId: 42,
-                title: 'T',
-                artist: 'A',
-              ),
+              const NewWishlistRow(releaseId: 42, title: 'T', artist: 'A'),
             ],
           ),
         );
-        expect(
-          wishlistRepo.added.first.syncStatus,
-          SyncStatus.synced,
-        );
+        expect(wishlistRepo.added.first.syncStatus, SyncStatus.synced);
       });
 
       test('saved item has medium priority by default', () async {
@@ -282,16 +278,18 @@ void main() {
       test('imported count matches new rows', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(newCount: 3))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 3))
+                as ExecuteWishlistImportCompleted;
         expect(result.imported, 3);
       });
 
       test('records ValidRow per imported item', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(newCount: 2))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 2))
+                as ExecuteWishlistImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<ValidRow>().length, 2);
       });
@@ -299,17 +297,19 @@ void main() {
       test('ValidRow description contains artist and title', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(
-          WishlistImportPreview(
-            rows: [
-              const NewWishlistRow(
-                releaseId: 1,
-                title: 'Blue Lines',
-                artist: 'Massive Attack',
-              ),
-            ],
-          ),
-        ) as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(
+                  WishlistImportPreview(
+                    rows: [
+                      const NewWishlistRow(
+                        releaseId: 1,
+                        title: 'Blue Lines',
+                        artist: 'Massive Attack',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteWishlistImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         final valid = rows.whereType<ValidRow>().first;
         expect(valid.description, contains('Massive Attack'));
@@ -321,8 +321,9 @@ void main() {
       test('duplicate row produces SkippedRow', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(duplicateCount: 1))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(duplicateCount: 1))
+                as ExecuteWishlistImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<SkippedRow>().length, 1);
       });
@@ -330,8 +331,9 @@ void main() {
       test('duplicate row skip reason is already in wishlist', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(duplicateCount: 1))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(duplicateCount: 1))
+                as ExecuteWishlistImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         final skipped = rows.whereType<SkippedRow>().first;
         expect(skipped.reason, 'Already in wishlist');
@@ -340,8 +342,9 @@ void main() {
       test('invalid row produces SkippedRow', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(invalidCount: 1))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(invalidCount: 1))
+                as ExecuteWishlistImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<SkippedRow>().length, 1);
       });
@@ -349,9 +352,11 @@ void main() {
       test('skipped count = duplicates + invalids', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(
-          makePreview(duplicateCount: 2, invalidCount: 3),
-        ) as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(
+                  makePreview(duplicateCount: 2, invalidCount: 3),
+                )
+                as ExecuteWishlistImportCompleted;
         expect(result.skipped, 5);
       });
 
@@ -362,49 +367,57 @@ void main() {
         expect(wishlistRepo.added, isEmpty);
       });
 
-      test('mixed preview produces correct imported and skipped counts',
-          () async {
-        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase();
-        final result = await useCase.execute(
-          makePreview(newCount: 3, duplicateCount: 2, invalidCount: 1),
-        ) as ExecuteWishlistImportCompleted;
-        expect(result.imported, 3);
-        expect(result.skipped, 3);
-        expect(result.failed, 0);
-      });
+      test(
+        'mixed preview produces correct imported and skipped counts',
+        () async {
+          final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
+              makeUseCase();
+          final result =
+              await useCase.execute(
+                    makePreview(
+                      newCount: 3,
+                      duplicateCount: 2,
+                      invalidCount: 1,
+                    ),
+                  )
+                  as ExecuteWishlistImportCompleted;
+          expect(result.imported, 3);
+          expect(result.skipped, 3);
+          expect(result.failed, 0);
+        },
+      );
     });
 
     group('failed items', () {
       test('wishlist save failure produces FailedRow', () async {
-        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase(
+        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) = makeUseCase(
           wishlistRepository: _ThrowingWishlistRepository(),
         );
-        final result = await useCase.execute(makePreview(newCount: 1))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 1))
+                as ExecuteWishlistImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<FailedRow>().length, 1);
       });
 
       test('import continues after a failed row', () async {
-        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase(
+        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) = makeUseCase(
           wishlistRepository: _ThrowingWishlistRepository(),
         );
-        final result = await useCase.execute(makePreview(newCount: 3))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 3))
+                as ExecuteWishlistImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<FailedRow>().length, 3);
       });
 
       test('failed count is correct', () async {
-        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase(
+        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) = makeUseCase(
           wishlistRepository: _ThrowingWishlistRepository(),
         );
-        final result = await useCase.execute(makePreview(newCount: 2))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 2))
+                as ExecuteWishlistImportCompleted;
         expect(result.failed, 2);
       });
     });
@@ -415,8 +428,9 @@ void main() {
         final capturingJobRepo = _CapturingJobRepository(
           onAdd: (job) => statusAtAdd = job.status,
         );
-        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase(jobRepository: capturingJobRepo);
+        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) = makeUseCase(
+          jobRepository: capturingJobRepo,
+        );
         await useCase.execute(makePreview(newCount: 1));
         expect(statusAtAdd, ImportExportStatus.running);
       });
@@ -424,19 +438,20 @@ void main() {
       test('updates job with completed status when all succeed', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(newCount: 2))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 2))
+                as ExecuteWishlistImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.status, ImportExportStatus.completed);
       });
 
       test('updates job with completedWithErrors when some fail', () async {
-        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase(
+        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) = makeUseCase(
           wishlistRepository: _ThrowingWishlistRepository(),
         );
-        final result = await useCase.execute(makePreview(newCount: 1))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 1))
+                as ExecuteWishlistImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.status, ImportExportStatus.completedWithErrors);
       });
@@ -444,9 +459,9 @@ void main() {
       test('job has correct totalItems', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(
-          makePreview(newCount: 2, duplicateCount: 1),
-        ) as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 2, duplicateCount: 1))
+                as ExecuteWishlistImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.totalItems, 3);
       });
@@ -454,8 +469,9 @@ void main() {
       test('job has correct validItems', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(newCount: 4))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 4))
+                as ExecuteWishlistImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.validItems, 4);
       });
@@ -463,9 +479,11 @@ void main() {
       test('job has correct skippedItems', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(
-          makePreview(duplicateCount: 2, invalidCount: 1),
-        ) as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(
+                  makePreview(duplicateCount: 2, invalidCount: 1),
+                )
+                as ExecuteWishlistImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.skippedItems, 3);
       });
@@ -473,8 +491,9 @@ void main() {
       test('result jobId is non-empty', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(newCount: 1))
-            as ExecuteWishlistImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 1))
+                as ExecuteWishlistImportCompleted;
         expect(result.jobId, isNotEmpty);
       });
     });

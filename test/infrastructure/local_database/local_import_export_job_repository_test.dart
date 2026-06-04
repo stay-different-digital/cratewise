@@ -21,21 +21,20 @@ ImportExportJob makeJob({
   String? safeErrorMessage,
   DateTime? createdAt,
   DateTime? updatedAt,
-}) =>
-    ImportExportJob(
-      id: id,
-      jobType: jobType,
-      source: source,
-      target: target,
-      status: status,
-      totalItems: totalItems,
-      validItems: validItems,
-      skippedItems: skippedItems,
-      failedItems: failedItems,
-      safeErrorMessage: safeErrorMessage,
-      createdAt: createdAt ?? DateTime(2026, 6, 1),
-      updatedAt: updatedAt ?? DateTime(2026, 6, 1),
-    );
+}) => ImportExportJob(
+  id: id,
+  jobType: jobType,
+  source: source,
+  target: target,
+  status: status,
+  totalItems: totalItems,
+  validItems: validItems,
+  skippedItems: skippedItems,
+  failedItems: failedItems,
+  safeErrorMessage: safeErrorMessage,
+  createdAt: createdAt ?? DateTime(2026, 6, 1),
+  updatedAt: updatedAt ?? DateTime(2026, 6, 1),
+);
 
 void main() {
   group('LocalImportExportJobRepository', () {
@@ -71,15 +70,17 @@ void main() {
       test('persists all required fields', () async {
         final created = DateTime(2026, 5, 10, 12);
         final updated = DateTime(2026, 5, 11, 9);
-        await repo.add(makeJob(
-          id: 'j-2',
-          jobType: ImportExportJobType.csvCollectionImport,
-          source: 'import.csv',
-          target: 'Local collection',
-          status: ImportExportStatus.running,
-          createdAt: created,
-          updatedAt: updated,
-        ));
+        await repo.add(
+          makeJob(
+            id: 'j-2',
+            jobType: ImportExportJobType.csvCollectionImport,
+            source: 'import.csv',
+            target: 'Local collection',
+            status: ImportExportStatus.running,
+            createdAt: created,
+            updatedAt: updated,
+          ),
+        );
         final job = await repo.getById('j-2');
         expect(job, isNotNull);
         expect(job!.jobType, ImportExportJobType.csvCollectionImport);
@@ -91,13 +92,15 @@ void main() {
       });
 
       test('persists optional count fields when set', () async {
-        await repo.add(makeJob(
-          id: 'j-3',
-          totalItems: 100,
-          validItems: 90,
-          skippedItems: 5,
-          failedItems: 5,
-        ));
+        await repo.add(
+          makeJob(
+            id: 'j-3',
+            totalItems: 100,
+            validItems: 90,
+            skippedItems: 5,
+            failedItems: 5,
+          ),
+        );
         final job = await repo.getById('j-3');
         expect(job!.totalItems, 100);
         expect(job.validItems, 90);
@@ -115,11 +118,13 @@ void main() {
       });
 
       test('persists safeErrorMessage when set', () async {
-        await repo.add(makeJob(
-          id: 'j-5',
-          status: ImportExportStatus.failed,
-          safeErrorMessage: 'Could not read source file.',
-        ));
+        await repo.add(
+          makeJob(
+            id: 'j-5',
+            status: ImportExportStatus.failed,
+            safeErrorMessage: 'Could not read source file.',
+          ),
+        );
         final job = await repo.getById('j-5');
         expect(job!.safeErrorMessage, 'Could not read source file.');
       });
@@ -157,11 +162,13 @@ void main() {
       });
 
       test('clears safeErrorMessage', () async {
-        await repo.add(makeJob(
-          id: 'j-1',
-          status: ImportExportStatus.failed,
-          safeErrorMessage: 'Old error.',
-        ));
+        await repo.add(
+          makeJob(
+            id: 'j-1',
+            status: ImportExportStatus.failed,
+            safeErrorMessage: 'Old error.',
+          ),
+        );
         final original = (await repo.getById('j-1'))!;
         await repo.update(
           original.copyWith(
@@ -195,9 +202,7 @@ void main() {
         await repo.add(makeJob(id: 'j-1', source: 'A'));
         await repo.add(makeJob(id: 'j-2', source: 'B'));
         final first = (await repo.getById('j-1'))!;
-        await repo.update(
-          first.copyWith(status: ImportExportStatus.completed),
-        );
+        await repo.update(first.copyWith(status: ImportExportStatus.completed));
         final second = await repo.getById('j-2');
         expect(second!.status, ImportExportStatus.idle);
       });
@@ -218,9 +223,7 @@ void main() {
 
       test('respects limit parameter', () async {
         for (var i = 1; i <= 5; i++) {
-          await repo.add(
-            makeJob(id: 'j-$i', createdAt: DateTime(2026, 6, i)),
-          );
+          await repo.add(makeJob(id: 'j-$i', createdAt: DateTime(2026, 6, i)));
         }
         final recent = await repo.getRecent(limit: 3);
         expect(recent, hasLength(3));
@@ -276,30 +279,35 @@ void main() {
     });
 
     group('security', () {
-      test('source and target fields do not contain tokens or secrets',
-          () async {
-        await repo.add(makeJob(
-          id: 'j-sec',
-          source: 'Local collection',
-          target: 'export.csv',
-        ));
-        final job = await repo.getById('j-sec');
-        expect(job!.source.toLowerCase(), isNot(contains('token')));
-        expect(job.source.toLowerCase(), isNot(contains('secret')));
-        expect(job.target.toLowerCase(), isNot(contains('token')));
-        expect(job.target.toLowerCase(), isNot(contains('secret')));
-      });
+      test(
+        'source and target fields do not contain tokens or secrets',
+        () async {
+          await repo.add(
+            makeJob(
+              id: 'j-sec',
+              source: 'Local collection',
+              target: 'export.csv',
+            ),
+          );
+          final job = await repo.getById('j-sec');
+          expect(job!.source.toLowerCase(), isNot(contains('token')));
+          expect(job.source.toLowerCase(), isNot(contains('secret')));
+          expect(job.target.toLowerCase(), isNot(contains('token')));
+          expect(job.target.toLowerCase(), isNot(contains('secret')));
+        },
+      );
 
       test('safeErrorMessage does not contain token or secret', () async {
-        await repo.add(makeJob(
-          id: 'j-err',
-          status: ImportExportStatus.failed,
-          safeErrorMessage: 'Network error.',
-        ));
+        await repo.add(
+          makeJob(
+            id: 'j-err',
+            status: ImportExportStatus.failed,
+            safeErrorMessage: 'Network error.',
+          ),
+        );
         final job = await repo.getById('j-err');
         expect(job!.safeErrorMessage!.toLowerCase(), isNot(contains('token')));
-        expect(
-            job.safeErrorMessage!.toLowerCase(), isNot(contains('secret')));
+        expect(job.safeErrorMessage!.toLowerCase(), isNot(contains('secret')));
       });
     });
   });

@@ -65,11 +65,11 @@ class _FakeWishlistRepository implements WishlistRepository {
 
 class _FakeCollectionImportUseCase extends FetchCollectionImportPreviewUseCase {
   _FakeCollectionImportUseCase()
-      : super(
-          previewBuilder: BuildCollectionImportPreviewUseCase(
-            _FakeCollectionRepository(),
-          ),
-        );
+    : super(
+        previewBuilder: BuildCollectionImportPreviewUseCase(
+          _FakeCollectionRepository(),
+        ),
+      );
 
   @override
   Future<FetchCollectionImportPreviewResult> execute() async =>
@@ -78,11 +78,11 @@ class _FakeCollectionImportUseCase extends FetchCollectionImportPreviewUseCase {
 
 class _FakeWishlistImportUseCase extends FetchWishlistImportPreviewUseCase {
   _FakeWishlistImportUseCase()
-      : super(
-          previewBuilder: BuildWishlistImportPreviewUseCase(
-            _FakeWishlistRepository(),
-          ),
-        );
+    : super(
+        previewBuilder: BuildWishlistImportPreviewUseCase(
+          _FakeWishlistRepository(),
+        ),
+      );
 
   @override
   Future<FetchWishlistImportPreviewResult> execute() async =>
@@ -91,10 +91,10 @@ class _FakeWishlistImportUseCase extends FetchWishlistImportPreviewUseCase {
 
 class _FakeCollectionExportUseCase extends BuildCollectionExportPreviewUseCase {
   _FakeCollectionExportUseCase()
-      : super(
-          repository: _FakeCollectionRepository(),
-          capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
-        );
+    : super(
+        repository: _FakeCollectionRepository(),
+        capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
+      );
 
   @override
   Future<BuildCollectionExportPreviewResult> execute() async =>
@@ -103,10 +103,10 @@ class _FakeCollectionExportUseCase extends BuildCollectionExportPreviewUseCase {
 
 class _FakeWishlistExportUseCase extends BuildWishlistExportPreviewUseCase {
   _FakeWishlistExportUseCase()
-      : super(
-          repository: _FakeWishlistRepository(),
-          capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
-        );
+    : super(
+        repository: _FakeWishlistRepository(),
+        capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
+      );
 
   @override
   Future<BuildWishlistExportPreviewResult> execute() async =>
@@ -116,7 +116,7 @@ class _FakeWishlistExportUseCase extends BuildWishlistExportPreviewUseCase {
 class _FakeCollectionCsvExportUseCase
     extends BuildCollectionCsvExportPreviewUseCase {
   _FakeCollectionCsvExportUseCase()
-      : super(repository: _FakeCollectionRepository());
+    : super(repository: _FakeCollectionRepository());
 
   @override
   Future<BuildCollectionCsvExportPreviewResult> execute() async =>
@@ -126,7 +126,7 @@ class _FakeCollectionCsvExportUseCase
 class _FakeWishlistCsvExportUseCase
     extends BuildWishlistCsvExportPreviewUseCase {
   _FakeWishlistCsvExportUseCase()
-      : super(repository: _FakeWishlistRepository());
+    : super(repository: _FakeWishlistRepository());
 
   @override
   Future<BuildWishlistCsvExportPreviewResult> execute() async =>
@@ -162,18 +162,17 @@ Widget _buildSubject({
   BuildCollectionCsvExportPreviewUseCase? collectionCsvExportPreviewUseCase,
   BuildWishlistCsvExportPreviewUseCase? wishlistCsvExportPreviewUseCase,
   ImportExportJobRepository? jobRepository,
-}) =>
-    MaterialApp(
-      home: ImportExportScreen(
-        collectionImportUseCase: importUseCase,
-        wishlistImportUseCase: wishlistImportUseCase,
-        collectionExportPreviewUseCase: collectionExportPreviewUseCase,
-        wishlistExportPreviewUseCase: wishlistExportPreviewUseCase,
-        collectionCsvExportPreviewUseCase: collectionCsvExportPreviewUseCase,
-        wishlistCsvExportPreviewUseCase: wishlistCsvExportPreviewUseCase,
-        jobRepository: jobRepository,
-      ),
-    );
+}) => MaterialApp(
+  home: ImportExportScreen(
+    collectionImportUseCase: importUseCase,
+    wishlistImportUseCase: wishlistImportUseCase,
+    collectionExportPreviewUseCase: collectionExportPreviewUseCase,
+    wishlistExportPreviewUseCase: wishlistExportPreviewUseCase,
+    collectionCsvExportPreviewUseCase: collectionCsvExportPreviewUseCase,
+    wishlistCsvExportPreviewUseCase: wishlistCsvExportPreviewUseCase,
+    jobRepository: jobRepository,
+  ),
+);
 
 void _setNarrowTallScreen(WidgetTester tester) {
   tester.view.physicalSize = const Size(800, 1800);
@@ -237,69 +236,78 @@ void main() {
 
         expect(find.text('Coming soon'), findsNothing);
       });
-
     });
 
     group('action card interactions', () {
-      testWidgets('tapping Import Wishlist from Discogs does not show snackbar',
-          (tester) async {
-        final wishlistUseCase = _FakeWishlistImportUseCase();
-        await tester.pumpWidget(
-            _buildSubject(wishlistImportUseCase: wishlistUseCase));
-        await tester.tap(find.text('Import Wishlist from Discogs'));
-        await tester.pump();
-        expect(find.byType(SnackBar), findsNothing);
-      });
+      testWidgets(
+        'tapping Import Wishlist from Discogs does not show snackbar',
+        (tester) async {
+          final wishlistUseCase = _FakeWishlistImportUseCase();
+          await tester.pumpWidget(
+            _buildSubject(wishlistImportUseCase: wishlistUseCase),
+          );
+          await tester.tap(find.text('Import Wishlist from Discogs'));
+          await tester.pump();
+          expect(find.byType(SnackBar), findsNothing);
+        },
+      );
 
-      testWidgets('tapping Export Wishlist to Discogs does not show snackbar',
-          (tester) async {
+      testWidgets('tapping Export Wishlist to Discogs does not show snackbar', (
+        tester,
+      ) async {
         final wishlistExportUseCase = _FakeWishlistExportUseCase();
         await tester.pumpWidget(
-            _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase));
+          _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase),
+        );
         await tester.tap(find.text('Export Wishlist to Discogs'));
         await tester.pump();
         expect(find.byType(SnackBar), findsNothing);
       });
 
       testWidgets(
-          'tapping Import Collection from CSV navigates to preview screen',
-          (tester) async {
-        _setNarrowTallScreen(tester);
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+        'tapping Import Collection from CSV navigates to preview screen',
+        (tester) async {
+          _setNarrowTallScreen(tester);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Import Collection from CSV'));
-        await tester.pumpAndSettle();
-        expect(find.byType(CollectionCsvImportPreviewScreen), findsOneWidget);
-      });
+          await tester.pumpWidget(_buildSubject());
+          await tester.tap(find.text('Import Collection from CSV'));
+          await tester.pumpAndSettle();
+          expect(find.byType(CollectionCsvImportPreviewScreen), findsOneWidget);
+        },
+      );
 
       testWidgets(
-          'tapping Import Wishlist from CSV navigates to preview screen',
-          (tester) async {
-        _setNarrowTallScreen(tester);
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+        'tapping Import Wishlist from CSV navigates to preview screen',
+        (tester) async {
+          _setNarrowTallScreen(tester);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Import Wishlist from CSV'));
-        await tester.pumpAndSettle();
-        expect(find.byType(WishlistCsvImportPreviewScreen), findsOneWidget);
-      });
+          await tester.pumpWidget(_buildSubject());
+          await tester.tap(find.text('Import Wishlist from CSV'));
+          await tester.pumpAndSettle();
+          expect(find.byType(WishlistCsvImportPreviewScreen), findsOneWidget);
+        },
+      );
     });
 
     group('Import Collection from Discogs navigation', () {
-      testWidgets('tapping Import Collection from Discogs navigates to preview screen',
-          (tester) async {
-        final importUseCase = _FakeCollectionImportUseCase();
-        await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
-        await tester.tap(find.text('Import Collection from Discogs'));
-        await tester.pumpAndSettle();
-        expect(find.byType(CollectionImportPreviewScreen), findsOneWidget);
-      });
+      testWidgets(
+        'tapping Import Collection from Discogs navigates to preview screen',
+        (tester) async {
+          final importUseCase = _FakeCollectionImportUseCase();
+          await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
+          await tester.tap(find.text('Import Collection from Discogs'));
+          await tester.pumpAndSettle();
+          expect(find.byType(CollectionImportPreviewScreen), findsOneWidget);
+        },
+      );
 
-      testWidgets('preview screen shows Import from Discogs AppBar title',
-          (tester) async {
+      testWidgets('preview screen shows Import from Discogs AppBar title', (
+        tester,
+      ) async {
         final importUseCase = _FakeCollectionImportUseCase();
         await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
         await tester.tap(find.text('Import Collection from Discogs'));
@@ -307,137 +315,159 @@ void main() {
         expect(find.text('Import from Discogs'), findsOneWidget);
       });
 
-      testWidgets('tapping Import Collection does not show Coming soon snackbar',
-          (tester) async {
-        final importUseCase = _FakeCollectionImportUseCase();
-        await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
-        await tester.tap(find.text('Import Collection from Discogs'));
-        await tester.pump();
-        expect(find.byType(SnackBar), findsNothing);
-      });
+      testWidgets(
+        'tapping Import Collection does not show Coming soon snackbar',
+        (tester) async {
+          final importUseCase = _FakeCollectionImportUseCase();
+          await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
+          await tester.tap(find.text('Import Collection from Discogs'));
+          await tester.pump();
+          expect(find.byType(SnackBar), findsNothing);
+        },
+      );
     });
 
     group('Import Wishlist from Discogs navigation', () {
       testWidgets(
-          'tapping Import Wishlist from Discogs navigates to preview screen',
-          (tester) async {
-        final wishlistUseCase = _FakeWishlistImportUseCase();
-        await tester.pumpWidget(
-            _buildSubject(wishlistImportUseCase: wishlistUseCase));
-        await tester.tap(find.text('Import Wishlist from Discogs'));
-        await tester.pumpAndSettle();
-        expect(find.byType(WishlistImportPreviewScreen), findsOneWidget);
-      });
+        'tapping Import Wishlist from Discogs navigates to preview screen',
+        (tester) async {
+          final wishlistUseCase = _FakeWishlistImportUseCase();
+          await tester.pumpWidget(
+            _buildSubject(wishlistImportUseCase: wishlistUseCase),
+          );
+          await tester.tap(find.text('Import Wishlist from Discogs'));
+          await tester.pumpAndSettle();
+          expect(find.byType(WishlistImportPreviewScreen), findsOneWidget);
+        },
+      );
 
-      testWidgets('wishlist preview screen shows correct AppBar title',
-          (tester) async {
+      testWidgets('wishlist preview screen shows correct AppBar title', (
+        tester,
+      ) async {
         final wishlistUseCase = _FakeWishlistImportUseCase();
         await tester.pumpWidget(
-            _buildSubject(wishlistImportUseCase: wishlistUseCase));
+          _buildSubject(wishlistImportUseCase: wishlistUseCase),
+        );
         await tester.tap(find.text('Import Wishlist from Discogs'));
         await tester.pumpAndSettle();
         expect(find.text('Import Wishlist from Discogs'), findsOneWidget);
       });
 
-      testWidgets('tapping Import Wishlist does not show Coming soon snackbar',
-          (tester) async {
-        final wishlistUseCase = _FakeWishlistImportUseCase();
-        await tester.pumpWidget(
-            _buildSubject(wishlistImportUseCase: wishlistUseCase));
-        await tester.tap(find.text('Import Wishlist from Discogs'));
-        await tester.pump();
-        expect(find.byType(SnackBar), findsNothing);
-      });
+      testWidgets(
+        'tapping Import Wishlist does not show Coming soon snackbar',
+        (tester) async {
+          final wishlistUseCase = _FakeWishlistImportUseCase();
+          await tester.pumpWidget(
+            _buildSubject(wishlistImportUseCase: wishlistUseCase),
+          );
+          await tester.tap(find.text('Import Wishlist from Discogs'));
+          await tester.pump();
+          expect(find.byType(SnackBar), findsNothing);
+        },
+      );
     });
 
     group('Export Collection to Discogs navigation', () {
       testWidgets(
-          'tapping Export Collection to Discogs navigates to export preview screen',
-          (tester) async {
-        final exportUseCase = _FakeCollectionExportUseCase();
-        await tester.pumpWidget(
-            _buildSubject(collectionExportPreviewUseCase: exportUseCase));
-        await tester.tap(find.text('Export Collection to Discogs'));
-        await tester.pumpAndSettle();
-        expect(find.byType(CollectionExportPreviewScreen), findsOneWidget);
-      });
+        'tapping Export Collection to Discogs navigates to export preview screen',
+        (tester) async {
+          final exportUseCase = _FakeCollectionExportUseCase();
+          await tester.pumpWidget(
+            _buildSubject(collectionExportPreviewUseCase: exportUseCase),
+          );
+          await tester.tap(find.text('Export Collection to Discogs'));
+          await tester.pumpAndSettle();
+          expect(find.byType(CollectionExportPreviewScreen), findsOneWidget);
+        },
+      );
 
-      testWidgets('export preview screen shows correct AppBar title',
-          (tester) async {
+      testWidgets('export preview screen shows correct AppBar title', (
+        tester,
+      ) async {
         final exportUseCase = _FakeCollectionExportUseCase();
         await tester.pumpWidget(
-            _buildSubject(collectionExportPreviewUseCase: exportUseCase));
+          _buildSubject(collectionExportPreviewUseCase: exportUseCase),
+        );
         await tester.tap(find.text('Export Collection to Discogs'));
         await tester.pumpAndSettle();
         expect(find.text('Export Collection to Discogs'), findsOneWidget);
       });
 
       testWidgets(
-          'tapping Export Collection to Discogs does not show Coming soon snackbar',
-          (tester) async {
-        final exportUseCase = _FakeCollectionExportUseCase();
-        await tester.pumpWidget(
-            _buildSubject(collectionExportPreviewUseCase: exportUseCase));
-        await tester.tap(find.text('Export Collection to Discogs'));
-        await tester.pump();
-        expect(find.byType(SnackBar), findsNothing);
-      });
+        'tapping Export Collection to Discogs does not show Coming soon snackbar',
+        (tester) async {
+          final exportUseCase = _FakeCollectionExportUseCase();
+          await tester.pumpWidget(
+            _buildSubject(collectionExportPreviewUseCase: exportUseCase),
+          );
+          await tester.tap(find.text('Export Collection to Discogs'));
+          await tester.pump();
+          expect(find.byType(SnackBar), findsNothing);
+        },
+      );
     });
 
     group('Export Wishlist to Discogs navigation', () {
       testWidgets(
-          'tapping Export Wishlist to Discogs navigates to export preview screen',
-          (tester) async {
-        final wishlistExportUseCase = _FakeWishlistExportUseCase();
-        await tester.pumpWidget(
-            _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase));
-        await tester.tap(find.text('Export Wishlist to Discogs'));
-        await tester.pumpAndSettle();
-        expect(find.byType(WishlistExportPreviewScreen), findsOneWidget);
-      });
+        'tapping Export Wishlist to Discogs navigates to export preview screen',
+        (tester) async {
+          final wishlistExportUseCase = _FakeWishlistExportUseCase();
+          await tester.pumpWidget(
+            _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase),
+          );
+          await tester.tap(find.text('Export Wishlist to Discogs'));
+          await tester.pumpAndSettle();
+          expect(find.byType(WishlistExportPreviewScreen), findsOneWidget);
+        },
+      );
 
-      testWidgets('wishlist export preview screen shows correct AppBar title',
-          (tester) async {
+      testWidgets('wishlist export preview screen shows correct AppBar title', (
+        tester,
+      ) async {
         final wishlistExportUseCase = _FakeWishlistExportUseCase();
         await tester.pumpWidget(
-            _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase));
+          _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase),
+        );
         await tester.tap(find.text('Export Wishlist to Discogs'));
         await tester.pumpAndSettle();
         expect(find.text('Export Wishlist to Discogs'), findsOneWidget);
       });
 
       testWidgets(
-          'tapping Export Wishlist to Discogs does not show Coming soon snackbar',
-          (tester) async {
-        final wishlistExportUseCase = _FakeWishlistExportUseCase();
-        await tester.pumpWidget(
-            _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase));
-        await tester.tap(find.text('Export Wishlist to Discogs'));
-        await tester.pump();
-        expect(find.byType(SnackBar), findsNothing);
-      });
+        'tapping Export Wishlist to Discogs does not show Coming soon snackbar',
+        (tester) async {
+          final wishlistExportUseCase = _FakeWishlistExportUseCase();
+          await tester.pumpWidget(
+            _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase),
+          );
+          await tester.tap(find.text('Export Wishlist to Discogs'));
+          await tester.pump();
+          expect(find.byType(SnackBar), findsNothing);
+        },
+      );
     });
 
     group('Export Collection to CSV navigation', () {
       testWidgets(
-          'tapping Export Collection to CSV navigates to CSV export preview screen',
-          (tester) async {
-        _setNarrowTallScreen(tester);
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+        'tapping Export Collection to CSV navigates to CSV export preview screen',
+        (tester) async {
+          _setNarrowTallScreen(tester);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
 
-        final csvUseCase = _FakeCollectionCsvExportUseCase();
-        await tester.pumpWidget(
-          _buildSubject(collectionCsvExportPreviewUseCase: csvUseCase),
-        );
-        await tester.tap(find.text('Export Collection to CSV'));
-        await tester.pumpAndSettle();
-        expect(find.byType(CollectionCsvExportPreviewScreen), findsOneWidget);
-      });
+          final csvUseCase = _FakeCollectionCsvExportUseCase();
+          await tester.pumpWidget(
+            _buildSubject(collectionCsvExportPreviewUseCase: csvUseCase),
+          );
+          await tester.tap(find.text('Export Collection to CSV'));
+          await tester.pumpAndSettle();
+          expect(find.byType(CollectionCsvExportPreviewScreen), findsOneWidget);
+        },
+      );
 
-      testWidgets(
-          'CSV collection export screen shows correct AppBar title',
-          (tester) async {
+      testWidgets('CSV collection export screen shows correct AppBar title', (
+        tester,
+      ) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -451,8 +481,9 @@ void main() {
         expect(find.text('Export Collection to CSV'), findsOneWidget);
       });
 
-      testWidgets('tapping Export Collection to CSV does not show snackbar',
-          (tester) async {
+      testWidgets('tapping Export Collection to CSV does not show snackbar', (
+        tester,
+      ) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -469,23 +500,25 @@ void main() {
 
     group('Export Wishlist to CSV navigation', () {
       testWidgets(
-          'tapping Export Wishlist to CSV navigates to CSV export preview screen',
-          (tester) async {
-        _setNarrowTallScreen(tester);
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+        'tapping Export Wishlist to CSV navigates to CSV export preview screen',
+        (tester) async {
+          _setNarrowTallScreen(tester);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
 
-        final csvUseCase = _FakeWishlistCsvExportUseCase();
-        await tester.pumpWidget(
-          _buildSubject(wishlistCsvExportPreviewUseCase: csvUseCase),
-        );
-        await tester.tap(find.text('Export Wishlist to CSV'));
-        await tester.pumpAndSettle();
-        expect(find.byType(WishlistCsvExportPreviewScreen), findsOneWidget);
-      });
+          final csvUseCase = _FakeWishlistCsvExportUseCase();
+          await tester.pumpWidget(
+            _buildSubject(wishlistCsvExportPreviewUseCase: csvUseCase),
+          );
+          await tester.tap(find.text('Export Wishlist to CSV'));
+          await tester.pumpAndSettle();
+          expect(find.byType(WishlistCsvExportPreviewScreen), findsOneWidget);
+        },
+      );
 
-      testWidgets('CSV wishlist export screen shows correct AppBar title',
-          (tester) async {
+      testWidgets('CSV wishlist export screen shows correct AppBar title', (
+        tester,
+      ) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -499,8 +532,9 @@ void main() {
         expect(find.text('Export Wishlist to CSV'), findsOneWidget);
       });
 
-      testWidgets('tapping Export Wishlist to CSV does not show snackbar',
-          (tester) async {
+      testWidgets('tapping Export Wishlist to CSV does not show snackbar', (
+        tester,
+      ) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -528,7 +562,9 @@ void main() {
         expect(find.text('CSV files'), findsOneWidget);
       });
 
-      testWidgets('shows all 8 action cards on wide tall screen', (tester) async {
+      testWidgets('shows all 8 action cards on wide tall screen', (
+        tester,
+      ) async {
         _setWideTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -546,19 +582,22 @@ void main() {
       });
 
       testWidgets(
-          'tapping Import Collection from CSV on wide screen navigates',
-          (tester) async {
-        _setWideTallScreen(tester);
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+        'tapping Import Collection from CSV on wide screen navigates',
+        (tester) async {
+          _setWideTallScreen(tester);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
-        await tester.tap(find.text('Import Collection from CSV'));
-        await tester.pumpAndSettle();
-        expect(find.byType(CollectionCsvImportPreviewScreen), findsOneWidget);
-      });
+          await tester.pumpWidget(_buildSubject());
+          await tester.tap(find.text('Import Collection from CSV'));
+          await tester.pumpAndSettle();
+          expect(find.byType(CollectionCsvImportPreviewScreen), findsOneWidget);
+        },
+      );
 
-      testWidgets('no cards show Coming soon badge on wide screen', (tester) async {
+      testWidgets('no cards show Coming soon badge on wide screen', (
+        tester,
+      ) async {
         _setWideTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -587,21 +626,24 @@ void main() {
         expect(find.text('View import & export history'), findsOneWidget);
       });
 
-      testWidgets('tapping history card navigates to ImportExportHistoryScreen',
-          (tester) async {
-        _setNarrowTallScreen(tester);
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+      testWidgets(
+        'tapping history card navigates to ImportExportHistoryScreen',
+        (tester) async {
+          _setNarrowTallScreen(tester);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
 
-        final jobRepo = _FakeJobRepository();
-        await tester.pumpWidget(_buildSubject(jobRepository: jobRepo));
-        await tester.tap(find.text('View import & export history'));
-        await tester.pumpAndSettle();
-        expect(find.byType(ImportExportHistoryScreen), findsOneWidget);
-      });
+          final jobRepo = _FakeJobRepository();
+          await tester.pumpWidget(_buildSubject(jobRepository: jobRepo));
+          await tester.tap(find.text('View import & export history'));
+          await tester.pumpAndSettle();
+          expect(find.byType(ImportExportHistoryScreen), findsOneWidget);
+        },
+      );
 
-      testWidgets('history screen shows Import & Export History AppBar title',
-          (tester) async {
+      testWidgets('history screen shows Import & Export History AppBar title', (
+        tester,
+      ) async {
         _setNarrowTallScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -615,4 +657,3 @@ void main() {
     });
   });
 }
-

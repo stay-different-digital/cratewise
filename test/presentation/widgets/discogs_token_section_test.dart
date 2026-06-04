@@ -13,9 +13,9 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 Widget _buildApp(Widget child) => MaterialApp(
-      theme: ThemeData(useMaterial3: true),
-      home: Scaffold(body: SingleChildScrollView(child: child)),
-    );
+  theme: ThemeData(useMaterial3: true),
+  home: Scaffold(body: SingleChildScrollView(child: child)),
+);
 
 // ---------------------------------------------------------------------------
 // Fake helpers
@@ -23,8 +23,8 @@ Widget _buildApp(Widget child) => MaterialApp(
 
 class _FakeTokenStorage implements TokenStorage {
   _FakeTokenStorage({String? savedUsername, String? savedToken})
-      : _username = savedUsername,
-        _token = savedToken;
+    : _username = savedUsername,
+      _token = savedToken;
 
   String? _token;
   String? _username;
@@ -81,8 +81,9 @@ void main() {
       await tester.pumpWidget(_buildApp(const DiscogsTokenSection()));
       await tester.pump();
 
-      final editableText =
-          tester.widget<EditableText>(find.byType(EditableText));
+      final editableText = tester.widget<EditableText>(
+        find.byType(EditableText),
+      );
       expect(editableText.obscureText, isTrue);
     });
 
@@ -110,8 +111,9 @@ void main() {
       );
     });
 
-    testWidgets('help text mentions the Discogs developer settings URL',
-        (tester) async {
+    testWidgets('help text mentions the Discogs developer settings URL', (
+      tester,
+    ) async {
       await tester.pumpWidget(_buildApp(const DiscogsTokenSection()));
       await tester.pump();
 
@@ -121,24 +123,27 @@ void main() {
       );
     });
 
-    testWidgets('Validate and Remove buttons are disabled when field is empty',
-        (tester) async {
-      await tester.pumpWidget(_buildApp(const DiscogsTokenSection()));
-      await tester.pump();
+    testWidgets(
+      'Validate and Remove buttons are disabled when field is empty',
+      (tester) async {
+        await tester.pumpWidget(_buildApp(const DiscogsTokenSection()));
+        await tester.pump();
 
-      final validateButton = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'Validate token'),
-      );
-      final removeButton = tester.widget<OutlinedButton>(
-        find.widgetWithText(OutlinedButton, 'Remove token'),
-      );
+        final validateButton = tester.widget<FilledButton>(
+          find.widgetWithText(FilledButton, 'Validate token'),
+        );
+        final removeButton = tester.widget<OutlinedButton>(
+          find.widgetWithText(OutlinedButton, 'Remove token'),
+        );
 
-      expect(validateButton.onPressed, isNull);
-      expect(removeButton.onPressed, isNull);
-    });
+        expect(validateButton.onPressed, isNull);
+        expect(removeButton.onPressed, isNull);
+      },
+    );
 
-    testWidgets('Validate and Remove buttons are enabled when field has text',
-        (tester) async {
+    testWidgets('Validate and Remove buttons are enabled when field has text', (
+      tester,
+    ) async {
       await tester.pumpWidget(_buildApp(const DiscogsTokenSection()));
       await tester.pump();
 
@@ -166,8 +171,9 @@ void main() {
       await tester.tap(find.widgetWithText(OutlinedButton, 'Remove token'));
       await tester.pump();
 
-      final editableText =
-          tester.widget<EditableText>(find.byType(EditableText));
+      final editableText = tester.widget<EditableText>(
+        find.byType(EditableText),
+      );
       expect(editableText.controller.text, isEmpty);
     });
 
@@ -190,13 +196,15 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('DiscogsTokenSection connection flow', () {
-    testWidgets('shows loading indicator while awaiting response',
-        (tester) async {
+    testWidgets('shows loading indicator while awaiting response', (
+      tester,
+    ) async {
       final completer = Completer<http.Response>();
       final service = _makeService(MockClient((_) => completer.future));
 
       await tester.pumpWidget(
-          _buildApp(DiscogsTokenSection(connectionService: service)));
+        _buildApp(DiscogsTokenSection(connectionService: service)),
+      );
       await tester.pump();
 
       await tester.enterText(find.byType(TextField), 'some_token');
@@ -212,15 +220,16 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('shows connected state and masked token after valid token',
-        (tester) async {
+    testWidgets('shows connected state and masked token after valid token', (
+      tester,
+    ) async {
       final service = _makeService(
-        MockClient(
-            (_) async => http.Response(jsonEncode(_identityBody), 200)),
+        MockClient((_) async => http.Response(jsonEncode(_identityBody), 200)),
       );
 
       await tester.pumpWidget(
-          _buildApp(DiscogsTokenSection(connectionService: service)));
+        _buildApp(DiscogsTokenSection(connectionService: service)),
+      );
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'valid_token');
       await tester.pump();
@@ -236,11 +245,13 @@ void main() {
     });
 
     testWidgets('shows error message when token is rejected', (tester) async {
-      final service =
-          _makeService(MockClient((_) async => http.Response('', 401)));
+      final service = _makeService(
+        MockClient((_) async => http.Response('', 401)),
+      );
 
       await tester.pumpWidget(
-          _buildApp(DiscogsTokenSection(connectionService: service)));
+        _buildApp(DiscogsTokenSection(connectionService: service)),
+      );
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'bad_token');
       await tester.pump();
@@ -252,11 +263,13 @@ void main() {
     });
 
     testWidgets('shows rate limit message on 429', (tester) async {
-      final service =
-          _makeService(MockClient((_) async => http.Response('', 429)));
+      final service = _makeService(
+        MockClient((_) async => http.Response('', 429)),
+      );
 
       await tester.pumpWidget(
-          _buildApp(DiscogsTokenSection(connectionService: service)));
+        _buildApp(DiscogsTokenSection(connectionService: service)),
+      );
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'some_token');
       await tester.pump();
@@ -267,14 +280,16 @@ void main() {
       expect(find.textContaining('Too many requests'), findsOneWidget);
     });
 
-    testWidgets('shows network error message when request fails',
-        (tester) async {
+    testWidgets('shows network error message when request fails', (
+      tester,
+    ) async {
       final service = _makeService(
         MockClient((_) async => throw Exception('no internet')),
       );
 
       await tester.pumpWidget(
-          _buildApp(DiscogsTokenSection(connectionService: service)));
+        _buildApp(DiscogsTokenSection(connectionService: service)),
+      );
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'some_token');
       await tester.pump();
@@ -285,33 +300,38 @@ void main() {
       expect(find.textContaining('No internet'), findsOneWidget);
     });
 
-    testWidgets('shows storage error message when save fails after validation',
-        (tester) async {
-      final storage = _FakeTokenStorage()..throwOnSave = true;
-      final service = _makeService(
-        MockClient(
-            (_) async => http.Response(jsonEncode(_identityBody), 200)),
-        storage: storage,
-      );
+    testWidgets(
+      'shows storage error message when save fails after validation',
+      (tester) async {
+        final storage = _FakeTokenStorage()..throwOnSave = true;
+        final service = _makeService(
+          MockClient(
+            (_) async => http.Response(jsonEncode(_identityBody), 200),
+          ),
+          storage: storage,
+        );
 
-      await tester.pumpWidget(
-          _buildApp(DiscogsTokenSection(connectionService: service)));
-      await tester.pump();
-      await tester.enterText(find.byType(TextField), 'some_token');
-      await tester.pump();
+        await tester.pumpWidget(
+          _buildApp(DiscogsTokenSection(connectionService: service)),
+        );
+        await tester.pump();
+        await tester.enterText(find.byType(TextField), 'some_token');
+        await tester.pump();
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Validate token'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(FilledButton, 'Validate token'));
+        await tester.pumpAndSettle();
 
-      expect(find.textContaining('could not be saved'), findsOneWidget);
-    });
+        expect(find.textContaining('could not be saved'), findsOneWidget);
+      },
+    );
 
     testWidgets('Validate button is disabled while loading', (tester) async {
       final completer = Completer<http.Response>();
       final service = _makeService(MockClient((_) => completer.future));
 
       await tester.pumpWidget(
-          _buildApp(DiscogsTokenSection(connectionService: service)));
+        _buildApp(DiscogsTokenSection(connectionService: service)),
+      );
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'some_token');
       await tester.pump();
@@ -328,15 +348,16 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('Disconnect button returns to disconnected state',
-        (tester) async {
+    testWidgets('Disconnect button returns to disconnected state', (
+      tester,
+    ) async {
       final service = _makeService(
-        MockClient(
-            (_) async => http.Response(jsonEncode(_identityBody), 200)),
+        MockClient((_) async => http.Response(jsonEncode(_identityBody), 200)),
       );
 
       await tester.pumpWidget(
-          _buildApp(DiscogsTokenSection(connectionService: service)));
+        _buildApp(DiscogsTokenSection(connectionService: service)),
+      );
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'valid_token');
       await tester.pump();
@@ -353,14 +374,18 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
     });
 
-    testWidgets('shows connected state on load when credentials are saved',
-        (tester) async {
-      final storage =
-          _FakeTokenStorage(savedUsername: 'returning_user', savedToken: 'tok');
+    testWidgets('shows connected state on load when credentials are saved', (
+      tester,
+    ) async {
+      final storage = _FakeTokenStorage(
+        savedUsername: 'returning_user',
+        savedToken: 'tok',
+      );
       final service = DiscogsConnectionService(storage: storage);
 
       await tester.pumpWidget(
-          _buildApp(DiscogsTokenSection(connectionService: service)));
+        _buildApp(DiscogsTokenSection(connectionService: service)),
+      );
       await tester.pumpAndSettle();
 
       expect(find.text('Connected as @returning_user'), findsOneWidget);
@@ -368,14 +393,17 @@ void main() {
       expect(find.byType(TextField), findsNothing);
     });
 
-    testWidgets('error message does not contain the token value',
-        (tester) async {
+    testWidgets('error message does not contain the token value', (
+      tester,
+    ) async {
       const sensitiveToken = 'super_secret_token_xyz_123';
-      final service =
-          _makeService(MockClient((_) async => http.Response('', 401)));
+      final service = _makeService(
+        MockClient((_) async => http.Response('', 401)),
+      );
 
       await tester.pumpWidget(
-          _buildApp(DiscogsTokenSection(connectionService: service)));
+        _buildApp(DiscogsTokenSection(connectionService: service)),
+      );
       await tester.pump();
       await tester.enterText(find.byType(TextField), sensitiveToken);
       await tester.pump();

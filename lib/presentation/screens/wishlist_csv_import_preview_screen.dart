@@ -116,14 +116,17 @@ class _WishlistCsvImportPreviewScreenState
     if (!mounted) return;
     if (file == null) return;
 
-    final result =
-        _previewUseCase.execute(filename: file.filename, content: file.content);
+    final result = _previewUseCase.execute(
+      filename: file.filename,
+      content: file.content,
+    );
     setState(() {
       _state = switch (result) {
         WishlistCsvImportPreviewReady(:final filename, :final preview) =>
           _Preview(filename: filename, preview: preview),
-        WishlistCsvImportPreviewParseFailed(:final reason) =>
-          _ParseFailed(reason),
+        WishlistCsvImportPreviewParseFailed(:final reason) => _ParseFailed(
+          reason,
+        ),
         WishlistCsvImportPreviewError() => const _Error(),
       };
     });
@@ -139,13 +142,10 @@ class _WishlistCsvImportPreviewScreenState
       case ExecuteWishlistCsvImportCompleted():
         setState(() => _state = _Done(result));
       case ExecuteWishlistCsvImportFailed():
-        setState(() => _state = _Preview(
-              filename: '',
-              preview: preview,
-            ));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result.safeMessage)),
-        );
+        setState(() => _state = _Preview(filename: '', preview: preview));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result.safeMessage)));
     }
   }
 
@@ -158,23 +158,23 @@ class _WishlistCsvImportPreviewScreenState
       body: switch (_state) {
         _Idle() => _IdleBody(onPickFile: _pickAndPreview),
         _Preview(:final filename, :final preview) => _PreviewBody(
-            filename: filename,
-            preview: preview,
-            onPickDifferentFile: _reset,
-            onConfirm: _executeUseCase != null && preview.validCount > 0
-                ? () => _executeImport(preview)
-                : null,
-          ),
+          filename: filename,
+          preview: preview,
+          onPickDifferentFile: _reset,
+          onConfirm: _executeUseCase != null && preview.validCount > 0
+              ? () => _executeImport(preview)
+              : null,
+        ),
         _ParseFailed(:final reason) => _ParseFailedBody(
-            reason: reason,
-            onTryAgain: _reset,
-          ),
+          reason: reason,
+          onTryAgain: _reset,
+        ),
         _Error() => _ErrorBody(onTryAgain: _reset),
         _Importing() => const _ImportingBody(),
         _Done(:final result) => _DoneBody(
-            result: result,
-            onDone: () => Navigator.of(context).pop(),
-          ),
+          result: result,
+          onDone: () => Navigator.of(context).pop(),
+        ),
       },
     );
   }
@@ -330,10 +330,7 @@ class _SummaryCard extends StatelessWidget {
             const SizedBox(height: 16),
             _CountRow(label: 'File', value: filename),
             const SizedBox(height: 10),
-            _CountRow(
-              label: 'Total rows',
-              value: '${preview.totalCount}',
-            ),
+            _CountRow(label: 'Total rows', value: '${preview.totalCount}'),
             const SizedBox(height: 10),
             _CountRow(
               label: 'Ready to import',
@@ -398,10 +395,7 @@ class _CountRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ErrorsCard extends StatelessWidget {
-  const _ErrorsCard({
-    required this.failedRows,
-    required this.totalFailed,
-  });
+  const _ErrorsCard({required this.failedRows, required this.totalFailed});
 
   final List<FailedRow> failedRows;
   final int totalFailed;
@@ -612,10 +606,7 @@ class _DoneBody extends StatelessWidget {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-            child: FilledButton(
-              onPressed: onDone,
-              child: const Text('Done'),
-            ),
+            child: FilledButton(onPressed: onDone, child: const Text('Done')),
           ),
         ),
       ],

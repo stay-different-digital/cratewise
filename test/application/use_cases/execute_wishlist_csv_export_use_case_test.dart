@@ -33,8 +33,7 @@ class _ThrowingCsvFileWriter implements CsvFileWriter {
     required String filename,
     required List<String> headers,
     required List<List<String>> rows,
-  }) =>
-      Future.error(Exception('write error'));
+  }) => Future.error(Exception('write error'));
 }
 
 class _FakeJobRepository implements ImportExportJobRepository {
@@ -62,15 +61,15 @@ class _FakeJobRepository implements ImportExportJobRepository {
 // ---------------------------------------------------------------------------
 
 WishlistItem _item(String id) => WishlistItem(
-      id: id,
-      discogsReleaseId: 1,
-      artist: 'Artist',
-      title: 'Title',
-      priority: WishlistPriority.low,
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024),
-      updatedAt: DateTime.utc(2024),
-    );
+  id: id,
+  discogsReleaseId: 1,
+  artist: 'Artist',
+  title: 'Title',
+  priority: WishlistPriority.low,
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024),
+  updatedAt: DateTime.utc(2024),
+);
 
 CsvWishlistExportPreview _preview({int itemCount = 2}) =>
     CsvWishlistExportPreview(
@@ -103,7 +102,8 @@ void main() {
           onShare: (_) async {},
         );
         final result =
-            await uc.execute(_preview(itemCount: 3)) as ExecuteWishlistCsvExportCompleted;
+            await uc.execute(_preview(itemCount: 3))
+                as ExecuteWishlistCsvExportCompleted;
         expect(result.rowCount, 3);
       });
 

@@ -134,7 +134,8 @@ CollectionImportPreview makePreview({
   _FakeCollectionRepository collectionRepo,
   _FakeJobRepository jobRepo,
   _FakeRowResultRepository rowResultRepo,
-}) makeUseCase({
+})
+makeUseCase({
   CollectionRepository? collectionRepository,
   ImportExportJobRepository? jobRepository,
   ImportExportRowResultRepository? rowResultRepository,
@@ -241,11 +242,7 @@ void main() {
         await useCase.execute(
           CollectionImportPreview(
             rows: [
-              const NewCollectionRow(
-                releaseId: 42,
-                title: 'T',
-                artist: 'A',
-              ),
+              const NewCollectionRow(releaseId: 42, title: 'T', artist: 'A'),
             ],
           ),
         );
@@ -258,33 +255,28 @@ void main() {
         await useCase.execute(
           CollectionImportPreview(
             rows: [
-              const NewCollectionRow(
-                releaseId: 42,
-                title: 'T',
-                artist: 'A',
-              ),
+              const NewCollectionRow(releaseId: 42, title: 'T', artist: 'A'),
             ],
           ),
         );
-        expect(
-          collectionRepo.added.first.syncStatus,
-          SyncStatus.synced,
-        );
+        expect(collectionRepo.added.first.syncStatus, SyncStatus.synced);
       });
 
       test('imported count matches new rows', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(newCount: 3))
-            as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 3))
+                as ExecuteImportCompleted;
         expect(result.imported, 3);
       });
 
       test('records ValidRow per imported item', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(newCount: 2))
-            as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 2))
+                as ExecuteImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<ValidRow>().length, 2);
       });
@@ -292,17 +284,19 @@ void main() {
       test('ValidRow description contains artist and title', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(
-          CollectionImportPreview(
-            rows: [
-              const NewCollectionRow(
-                releaseId: 1,
-                title: 'Blue Lines',
-                artist: 'Massive Attack',
-              ),
-            ],
-          ),
-        ) as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(
+                  CollectionImportPreview(
+                    rows: [
+                      const NewCollectionRow(
+                        releaseId: 1,
+                        title: 'Blue Lines',
+                        artist: 'Massive Attack',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         final valid = rows.whereType<ValidRow>().first;
         expect(valid.description, contains('Massive Attack'));
@@ -314,8 +308,9 @@ void main() {
       test('duplicate row produces SkippedRow', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(duplicateCount: 1))
-            as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(makePreview(duplicateCount: 1))
+                as ExecuteImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<SkippedRow>().length, 1);
       });
@@ -323,8 +318,9 @@ void main() {
       test('duplicate row skip reason is already in collection', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(duplicateCount: 1))
-            as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(makePreview(duplicateCount: 1))
+                as ExecuteImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         final skipped = rows.whereType<SkippedRow>().first;
         expect(skipped.reason, 'Already in collection');
@@ -333,8 +329,9 @@ void main() {
       test('invalid row produces SkippedRow', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(invalidCount: 1))
-            as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(makePreview(invalidCount: 1))
+                as ExecuteImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<SkippedRow>().length, 1);
       });
@@ -342,9 +339,11 @@ void main() {
       test('skipped count = duplicates + invalids', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(
-          makePreview(duplicateCount: 2, invalidCount: 3),
-        ) as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(
+                  makePreview(duplicateCount: 2, invalidCount: 3),
+                )
+                as ExecuteImportCompleted;
         expect(result.skipped, 5);
       });
 
@@ -355,49 +354,54 @@ void main() {
         expect(collectionRepo.added, isEmpty);
       });
 
-      test('mixed preview produces correct imported and skipped counts',
-          () async {
-        final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase();
-        final result = await useCase.execute(
-          makePreview(newCount: 3, duplicateCount: 2, invalidCount: 1),
-        ) as ExecuteImportCompleted;
-        expect(result.imported, 3);
-        expect(result.skipped, 3);
-        expect(result.failed, 0);
-      });
+      test(
+        'mixed preview produces correct imported and skipped counts',
+        () async {
+          final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+              makeUseCase();
+          final result =
+              await useCase.execute(
+                    makePreview(
+                      newCount: 3,
+                      duplicateCount: 2,
+                      invalidCount: 1,
+                    ),
+                  )
+                  as ExecuteImportCompleted;
+          expect(result.imported, 3);
+          expect(result.skipped, 3);
+          expect(result.failed, 0);
+        },
+      );
     });
 
     group('failed items', () {
       test('collection save failure produces FailedRow', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase(
-          collectionRepository: _ThrowingCollectionRepository(),
-        );
-        final result = await useCase.execute(makePreview(newCount: 1))
-            as ExecuteImportCompleted;
+            makeUseCase(collectionRepository: _ThrowingCollectionRepository());
+        final result =
+            await useCase.execute(makePreview(newCount: 1))
+                as ExecuteImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<FailedRow>().length, 1);
       });
 
       test('import continues after a failed row', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase(
-          collectionRepository: _ThrowingCollectionRepository(),
-        );
-        final result = await useCase.execute(makePreview(newCount: 3))
-            as ExecuteImportCompleted;
+            makeUseCase(collectionRepository: _ThrowingCollectionRepository());
+        final result =
+            await useCase.execute(makePreview(newCount: 3))
+                as ExecuteImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<FailedRow>().length, 3);
       });
 
       test('failed count is correct', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase(
-          collectionRepository: _ThrowingCollectionRepository(),
-        );
-        final result = await useCase.execute(makePreview(newCount: 2))
-            as ExecuteImportCompleted;
+            makeUseCase(collectionRepository: _ThrowingCollectionRepository());
+        final result =
+            await useCase.execute(makePreview(newCount: 2))
+                as ExecuteImportCompleted;
         expect(result.failed, 2);
       });
     });
@@ -417,19 +421,19 @@ void main() {
       test('updates job with completed status when all succeed', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(newCount: 2))
-            as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 2))
+                as ExecuteImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.status, ImportExportStatus.completed);
       });
 
       test('updates job with completedWithErrors when some fail', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase(
-          collectionRepository: _ThrowingCollectionRepository(),
-        );
-        final result = await useCase.execute(makePreview(newCount: 1))
-            as ExecuteImportCompleted;
+            makeUseCase(collectionRepository: _ThrowingCollectionRepository());
+        final result =
+            await useCase.execute(makePreview(newCount: 1))
+                as ExecuteImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.status, ImportExportStatus.completedWithErrors);
       });
@@ -437,9 +441,9 @@ void main() {
       test('job has correct totalItems', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(
-          makePreview(newCount: 2, duplicateCount: 1),
-        ) as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 2, duplicateCount: 1))
+                as ExecuteImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.totalItems, 3);
       });
@@ -447,8 +451,9 @@ void main() {
       test('job has correct validItems', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(newCount: 4))
-            as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 4))
+                as ExecuteImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.validItems, 4);
       });
@@ -456,9 +461,11 @@ void main() {
       test('job has correct skippedItems', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(
-          makePreview(duplicateCount: 2, invalidCount: 1),
-        ) as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(
+                  makePreview(duplicateCount: 2, invalidCount: 1),
+                )
+                as ExecuteImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.skippedItems, 3);
       });
@@ -466,8 +473,9 @@ void main() {
       test('result jobId is non-empty', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             makeUseCase();
-        final result = await useCase.execute(makePreview(newCount: 1))
-            as ExecuteImportCompleted;
+        final result =
+            await useCase.execute(makePreview(newCount: 1))
+                as ExecuteImportCompleted;
         expect(result.jobId, isNotEmpty);
       });
     });

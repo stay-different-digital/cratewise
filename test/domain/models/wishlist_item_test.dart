@@ -6,22 +6,22 @@ void main() {
   final updatedAt = DateTime(2026, 1, 2);
 
   WishlistItem base() => WishlistItem(
-        id: 'wish-1',
-        discogsReleaseId: 249504,
-        artist: 'Miles Davis',
-        title: 'Kind Of Blue',
-        priority: WishlistPriority.high,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        label: 'Columbia',
-        catno: 'CL 1355',
-        format: 'Vinyl, LP, Album',
-        country: 'US',
-        year: 1959,
-        coverUrl: 'https://i.discogs.com/cover.jpg',
-        targetPrice: 35.00,
-        notes: 'Original pressing preferred.',
-      );
+    id: 'wish-1',
+    discogsReleaseId: 249504,
+    artist: 'Miles Davis',
+    title: 'Kind Of Blue',
+    priority: WishlistPriority.high,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    label: 'Columbia',
+    catno: 'CL 1355',
+    format: 'Vinyl, LP, Album',
+    country: 'US',
+    year: 1959,
+    coverUrl: 'https://i.discogs.com/cover.jpg',
+    targetPrice: 35.00,
+    notes: 'Original pressing preferred.',
+  );
 
   group('WishlistItem', () {
     test('stores all required fields', () {

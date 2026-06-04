@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 class FakeCollectionRepository implements CollectionRepository {
   FakeCollectionRepository({Set<int>? existingReleaseIds})
-      : _ids = existingReleaseIds ?? {};
+    : _ids = existingReleaseIds ?? {};
 
   final Set<int> _ids;
   int containsReleaseCallCount = 0;
@@ -45,26 +45,25 @@ DiscogsCollectionItemDto makeItem({
   String artist = 'Miles Davis',
   int? year = 1959,
   String? thumbUrl = 'https://i.discogs.com/cover_150.jpg',
-}) =>
-    DiscogsCollectionItemDto(
-      releaseId: releaseId,
-      instanceId: instanceId,
-      dateAdded: '2023-01-15T10:30:00-08:00',
-      rating: 4,
-      folderId: 1,
-      title: title,
-      artist: artist,
-      label: 'Columbia',
-      catno: 'CL 1355',
-      format: 'Vinyl, LP',
-      genres: const ['Jazz'],
-      year: year,
-      thumbUrl: thumbUrl,
-    );
+}) => DiscogsCollectionItemDto(
+  releaseId: releaseId,
+  instanceId: instanceId,
+  dateAdded: '2023-01-15T10:30:00-08:00',
+  rating: 4,
+  folderId: 1,
+  title: title,
+  artist: artist,
+  label: 'Columbia',
+  catno: 'CL 1355',
+  format: 'Vinyl, LP',
+  genres: const ['Jazz'],
+  year: year,
+  thumbUrl: thumbUrl,
+);
 
 BuildCollectionImportPreviewUseCase makeUseCase(
-        FakeCollectionRepository repo) =>
-    BuildCollectionImportPreviewUseCase(repo);
+  FakeCollectionRepository repo,
+) => BuildCollectionImportPreviewUseCase(repo);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -96,12 +95,14 @@ void main() {
     });
 
     group('new items', () {
-      test('classifies item not in local collection as NewCollectionRow',
-          () async {
-        final repo = FakeCollectionRepository();
-        final preview = await makeUseCase(repo).execute([makeItem()]);
-        expect(preview.rows.first, isA<NewCollectionRow>());
-      });
+      test(
+        'classifies item not in local collection as NewCollectionRow',
+        () async {
+          final repo = FakeCollectionRepository();
+          final preview = await makeUseCase(repo).execute([makeItem()]);
+          expect(preview.rows.first, isA<NewCollectionRow>());
+        },
+      );
 
       test('newCount is 1 for single new item', () async {
         final repo = FakeCollectionRepository();
@@ -123,12 +124,14 @@ void main() {
     });
 
     group('duplicate items', () {
-      test('classifies item already in collection as DuplicateCollectionRow',
-          () async {
-        final repo = FakeCollectionRepository(existingReleaseIds: {249504});
-        final preview = await makeUseCase(repo).execute([makeItem()]);
-        expect(preview.rows.first, isA<DuplicateCollectionRow>());
-      });
+      test(
+        'classifies item already in collection as DuplicateCollectionRow',
+        () async {
+          final repo = FakeCollectionRepository(existingReleaseIds: {249504});
+          final preview = await makeUseCase(repo).execute([makeItem()]);
+          expect(preview.rows.first, isA<DuplicateCollectionRow>());
+        },
+      );
 
       test('duplicateCount is 1 for single duplicate', () async {
         final repo = FakeCollectionRepository(existingReleaseIds: {249504});
@@ -138,89 +141,101 @@ void main() {
 
       test('duplicate detection is by release ID not by title', () async {
         final repo = FakeCollectionRepository(existingReleaseIds: {249504});
-        final sameIdDifferentTitle =
-            makeItem(releaseId: 249504, title: 'Different Title');
+        final sameIdDifferentTitle = makeItem(
+          releaseId: 249504,
+          title: 'Different Title',
+        );
         final preview = await makeUseCase(repo).execute([sameIdDifferentTitle]);
         expect(preview.rows.first, isA<DuplicateCollectionRow>());
       });
 
-      test('different release ID with same title is classified as new',
-          () async {
-        final repo = FakeCollectionRepository(existingReleaseIds: {249504});
-        final differentId =
-            makeItem(releaseId: 111111, title: 'Kind Of Blue');
-        final preview = await makeUseCase(repo).execute([differentId]);
-        expect(preview.rows.first, isA<NewCollectionRow>());
-      });
+      test(
+        'different release ID with same title is classified as new',
+        () async {
+          final repo = FakeCollectionRepository(existingReleaseIds: {249504});
+          final differentId = makeItem(
+            releaseId: 111111,
+            title: 'Kind Of Blue',
+          );
+          final preview = await makeUseCase(repo).execute([differentId]);
+          expect(preview.rows.first, isA<NewCollectionRow>());
+        },
+      );
     });
 
     group('invalid items', () {
-      test('classifies item with releaseId 0 as InvalidCollectionRow',
-          () async {
-        final repo = FakeCollectionRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(releaseId: 0)]);
-        expect(preview.rows.first, isA<InvalidCollectionRow>());
-      });
+      test(
+        'classifies item with releaseId 0 as InvalidCollectionRow',
+        () async {
+          final repo = FakeCollectionRepository();
+          final preview = await makeUseCase(
+            repo,
+          ).execute([makeItem(releaseId: 0)]);
+          expect(preview.rows.first, isA<InvalidCollectionRow>());
+        },
+      );
 
       test('reason for zero releaseId mentions release ID', () async {
         final repo = FakeCollectionRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(releaseId: 0)]);
+        final preview = await makeUseCase(
+          repo,
+        ).execute([makeItem(releaseId: 0)]);
         final row = preview.rows.first as InvalidCollectionRow;
         expect(row.reason.toLowerCase(), contains('release id'));
       });
 
-      test('classifies item with empty title as InvalidCollectionRow',
-          () async {
-        final repo = FakeCollectionRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(title: '')]);
-        expect(preview.rows.first, isA<InvalidCollectionRow>());
-      });
+      test(
+        'classifies item with empty title as InvalidCollectionRow',
+        () async {
+          final repo = FakeCollectionRepository();
+          final preview = await makeUseCase(
+            repo,
+          ).execute([makeItem(title: '')]);
+          expect(preview.rows.first, isA<InvalidCollectionRow>());
+        },
+      );
 
       test('classifies item with whitespace-only title as invalid', () async {
         final repo = FakeCollectionRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(title: '   ')]);
+        final preview = await makeUseCase(
+          repo,
+        ).execute([makeItem(title: '   ')]);
         expect(preview.rows.first, isA<InvalidCollectionRow>());
       });
 
       test('reason for empty title mentions title', () async {
         final repo = FakeCollectionRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(title: '')]);
+        final preview = await makeUseCase(repo).execute([makeItem(title: '')]);
         final row = preview.rows.first as InvalidCollectionRow;
         expect(row.reason.toLowerCase(), contains('title'));
       });
 
       test('invalidCount counts correctly', () async {
         final repo = FakeCollectionRepository();
-        final items = [
-          makeItem(releaseId: 0),
-          makeItem(title: ''),
-        ];
+        final items = [makeItem(releaseId: 0), makeItem(title: '')];
         final preview = await makeUseCase(repo).execute(items);
         expect(preview.invalidCount, 2);
       });
 
-      test('item with missing artist but valid title is classified as new',
-          () async {
-        final repo = FakeCollectionRepository();
-        final noArtist = makeItem(artist: '');
-        final preview = await makeUseCase(repo).execute([noArtist]);
-        expect(preview.rows.first, isA<NewCollectionRow>());
-      });
+      test(
+        'item with missing artist but valid title is classified as new',
+        () async {
+          final repo = FakeCollectionRepository();
+          final noArtist = makeItem(artist: '');
+          final preview = await makeUseCase(repo).execute([noArtist]);
+          expect(preview.rows.first, isA<NewCollectionRow>());
+        },
+      );
     });
 
     group('mixed input', () {
       test('correctly classifies mix of new, duplicate, and invalid', () async {
         final repo = FakeCollectionRepository(existingReleaseIds: {249504});
         final items = [
-          makeItem(releaseId: 249504, title: 'Kind Of Blue'),  // duplicate
+          makeItem(releaseId: 249504, title: 'Kind Of Blue'), // duplicate
           makeItem(releaseId: 111111, title: 'A Love Supreme'), // new
-          makeItem(releaseId: 0),                              // invalid
-          makeItem(title: ''),                                  // invalid
+          makeItem(releaseId: 0), // invalid
+          makeItem(title: ''), // invalid
         ];
         final preview = await makeUseCase(repo).execute(items);
         expect(preview.totalCount, 4);
@@ -271,14 +286,17 @@ void main() {
         expect(row.artist, 'Miles Davis');
       });
 
-      test('invalid row carries releaseId 0 when releaseId is missing',
-          () async {
-        final repo = FakeCollectionRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(releaseId: 0)]);
-        final row = preview.rows.first as InvalidCollectionRow;
-        expect(row.releaseId, 0);
-      });
+      test(
+        'invalid row carries releaseId 0 when releaseId is missing',
+        () async {
+          final repo = FakeCollectionRepository();
+          final preview = await makeUseCase(
+            repo,
+          ).execute([makeItem(releaseId: 0)]);
+          final row = preview.rows.first as InvalidCollectionRow;
+          expect(row.releaseId, 0);
+        },
+      );
 
       test('rows carry null thumbUrl when DTO has no thumb', () async {
         final repo = FakeCollectionRepository();
@@ -306,12 +324,14 @@ void main() {
         expect(await repo.getAll(), isEmpty);
       });
 
-      test('does not call containsRelease for item with zero releaseId',
-          () async {
-        final repo = FakeCollectionRepository();
-        await makeUseCase(repo).execute([makeItem(releaseId: 0)]);
-        expect(repo.containsReleaseCallCount, 0);
-      });
+      test(
+        'does not call containsRelease for item with zero releaseId',
+        () async {
+          final repo = FakeCollectionRepository();
+          await makeUseCase(repo).execute([makeItem(releaseId: 0)]);
+          expect(repo.containsReleaseCallCount, 0);
+        },
+      );
 
       test('does not call containsRelease for item with empty title', () async {
         final repo = FakeCollectionRepository();
@@ -323,10 +343,7 @@ void main() {
     group('security', () {
       test('invalid row reason does not contain token or secret', () async {
         final repo = FakeCollectionRepository();
-        final items = [
-          makeItem(releaseId: 0),
-          makeItem(title: ''),
-        ];
+        final items = [makeItem(releaseId: 0), makeItem(title: '')];
         final preview = await makeUseCase(repo).execute(items);
         for (final row in preview.rows) {
           if (row is InvalidCollectionRow) {

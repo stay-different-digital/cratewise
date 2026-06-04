@@ -18,7 +18,8 @@ import 'package:flutter_test/flutter_test.dart';
 // Helpers
 // ---------------------------------------------------------------------------
 
-const _kValidCsv = '''Artist,Title,Label,Catalog Number,Format,Country,Year,Discogs Release ID,Media Condition,Sleeve Condition,Notes,Tags,Storage Location,Created Date,Updated Date
+const _kValidCsv =
+    '''Artist,Title,Label,Catalog Number,Format,Country,Year,Discogs Release ID,Media Condition,Sleeve Condition,Notes,Tags,Storage Location,Created Date,Updated Date
 Miles Davis,Kind of Blue,Columbia,CL 1355,LP,US,1959,12345,Near Mint (NM or M-),Very Good Plus (VG+),,,,,''';
 
 const _kMissingColCsv = '''Artist,Title
@@ -33,14 +34,13 @@ Widget _buildSubject({
   Future<CsvPickedFile?> Function()? picker,
   BuildCollectionCsvImportPreviewUseCase? useCase,
   ExecuteCollectionCsvImportUseCase? executeUseCase,
-}) =>
-    MaterialApp(
-      home: CollectionCsvImportPreviewScreen(
-        onPickFile: picker,
-        previewUseCase: useCase,
-        executeUseCase: executeUseCase,
-      ),
-    );
+}) => MaterialApp(
+  home: CollectionCsvImportPreviewScreen(
+    onPickFile: picker,
+    previewUseCase: useCase,
+    executeUseCase: executeUseCase,
+  ),
+);
 
 void _setNarrowScreen(WidgetTester tester) {
   tester.view.physicalSize = const Size(800, 1600);
@@ -81,11 +81,10 @@ void main() {
     });
 
     group('cancelled picker', () {
-      testWidgets('returns to idle state when picker is cancelled',
-          (tester) async {
-        await tester.pumpWidget(
-          _buildSubject(picker: _cancelledPicker),
-        );
+      testWidgets('returns to idle state when picker is cancelled', (
+        tester,
+      ) async {
+        await tester.pumpWidget(_buildSubject(picker: _cancelledPicker));
         await tester.tap(find.text('Choose file'));
         await tester.pumpAndSettle();
         expect(find.text('Select a CSV file'), findsOneWidget);
@@ -93,8 +92,9 @@ void main() {
     });
 
     group('preview state — valid file', () {
-      testWidgets('shows Import preview heading after picking valid file',
-          (tester) async {
+      testWidgets('shows Import preview heading after picking valid file', (
+        tester,
+      ) async {
         _setNarrowScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -155,8 +155,9 @@ void main() {
         expect(find.text('Import 1 record'), findsOneWidget);
       });
 
-      testWidgets('confirm button is disabled without execute use case',
-          (tester) async {
+      testWidgets('confirm button is disabled without execute use case', (
+        tester,
+      ) async {
         _setNarrowScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -189,7 +190,9 @@ void main() {
         expect(find.text('Choose different file'), findsOneWidget);
       });
 
-      testWidgets('tapping Choose different file returns to idle', (tester) async {
+      testWidgets('tapping Choose different file returns to idle', (
+        tester,
+      ) async {
         _setNarrowScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -208,15 +211,15 @@ void main() {
     });
 
     group('preview state — failed rows', () {
-      testWidgets('shows Validation errors card when rows fail', (tester) async {
+      testWidgets('shows Validation errors card when rows fail', (
+        tester,
+      ) async {
         _setNarrowScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(
-          _buildSubject(
-            picker: () => _pickerWith('bad.csv', _kMissingColCsv),
-          ),
+          _buildSubject(picker: () => _pickerWith('bad.csv', _kMissingColCsv)),
         );
         await tester.tap(find.text('Choose file'));
         await tester.pumpAndSettle();
@@ -229,25 +232,22 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(
-          _buildSubject(
-            picker: () => _pickerWith('bad.csv', _kMissingColCsv),
-          ),
+          _buildSubject(picker: () => _pickerWith('bad.csv', _kMissingColCsv)),
         );
         await tester.tap(find.text('Choose file'));
         await tester.pumpAndSettle();
         expect(find.text('Errors'), findsOneWidget);
       });
 
-      testWidgets('Nothing to import button when validCount is 0',
-          (tester) async {
+      testWidgets('Nothing to import button when validCount is 0', (
+        tester,
+      ) async {
         _setNarrowScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(
-          _buildSubject(
-            picker: () => _pickerWith('bad.csv', _kMissingColCsv),
-          ),
+          _buildSubject(picker: () => _pickerWith('bad.csv', _kMissingColCsv)),
         );
         await tester.tap(find.text('Choose file'));
         await tester.pumpAndSettle();
@@ -284,8 +284,9 @@ void main() {
         expect(find.textContaining('Missing artist'), findsOneWidget);
       });
 
-      testWidgets('caps displayed errors at 5, shows overflow message',
-          (tester) async {
+      testWidgets('caps displayed errors at 5, shows overflow message', (
+        tester,
+      ) async {
         _setNarrowScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -365,9 +366,13 @@ void main() {
     });
 
     group('parse failed state', () {
-      testWidgets('shows Could not read this file on parse error', (tester) async {
+      testWidgets('shows Could not read this file on parse error', (
+        tester,
+      ) async {
         final fakeUseCase = _FakeUseCase(
-          const CollectionCsvImportPreviewParseFailed('The file could not be read as a CSV'),
+          const CollectionCsvImportPreviewParseFailed(
+            'The file could not be read as a CSV',
+          ),
         );
         await tester.pumpWidget(
           _buildSubject(
@@ -398,28 +403,32 @@ void main() {
         expect(find.text(reason), findsOneWidget);
       });
 
-      testWidgets('tapping Choose different file returns to idle from parse error',
-          (tester) async {
-        final fakeUseCase = _FakeUseCase(
-          const CollectionCsvImportPreviewParseFailed('Bad CSV'),
-        );
-        await tester.pumpWidget(
-          _buildSubject(
-            picker: () async =>
-                const CsvPickedFile(filename: 'bad.csv', content: ''),
-            useCase: fakeUseCase,
-          ),
-        );
-        await tester.tap(find.text('Choose file'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Choose different file'));
-        await tester.pumpAndSettle();
-        expect(find.text('Select a CSV file'), findsOneWidget);
-      });
+      testWidgets(
+        'tapping Choose different file returns to idle from parse error',
+        (tester) async {
+          final fakeUseCase = _FakeUseCase(
+            const CollectionCsvImportPreviewParseFailed('Bad CSV'),
+          );
+          await tester.pumpWidget(
+            _buildSubject(
+              picker: () async =>
+                  const CsvPickedFile(filename: 'bad.csv', content: ''),
+              useCase: fakeUseCase,
+            ),
+          );
+          await tester.tap(find.text('Choose file'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Choose different file'));
+          await tester.pumpAndSettle();
+          expect(find.text('Select a CSV file'), findsOneWidget);
+        },
+      );
     });
 
     group('error state', () {
-      testWidgets('shows Something went wrong on unexpected error', (tester) async {
+      testWidgets('shows Something went wrong on unexpected error', (
+        tester,
+      ) async {
         final fakeUseCase = _FakeUseCase(
           const CollectionCsvImportPreviewError(),
         );
@@ -455,16 +464,15 @@ void main() {
     });
 
     group('wide layout', () {
-      testWidgets('shows summary and errors cards side by side when wide',
-          (tester) async {
+      testWidgets('shows summary and errors cards side by side when wide', (
+        tester,
+      ) async {
         _setWideScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         await tester.pumpWidget(
-          _buildSubject(
-            picker: () => _pickerWith('bad.csv', _kMissingColCsv),
-          ),
+          _buildSubject(picker: () => _pickerWith('bad.csv', _kMissingColCsv)),
         );
         await tester.tap(find.text('Choose file'));
         await tester.pumpAndSettle();
@@ -474,7 +482,9 @@ void main() {
     });
 
     group('plural labels', () {
-      testWidgets('Import N records label for multiple valid rows', (tester) async {
+      testWidgets('Import N records label for multiple valid rows', (
+        tester,
+      ) async {
         _setNarrowScreen(tester);
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
@@ -522,74 +532,78 @@ void main() {
       });
     });
     group('confirm and import', () {
-      testWidgets('confirm button is enabled with execute use case and valid rows',
-          (tester) async {
-        _setNarrowScreen(tester);
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+      testWidgets(
+        'confirm button is enabled with execute use case and valid rows',
+        (tester) async {
+          _setNarrowScreen(tester);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(
-          _buildSubject(
-            picker: () => _pickerWith('collection.csv', _kValidCsv),
-            executeUseCase: _FakeExecuteUseCase(
-              ExecuteCollectionCsvImportCompleted(
-                jobId: 'j1',
-                imported: 1,
-                skipped: 0,
-                failed: 0,
+          await tester.pumpWidget(
+            _buildSubject(
+              picker: () => _pickerWith('collection.csv', _kValidCsv),
+              executeUseCase: _FakeExecuteUseCase(
+                ExecuteCollectionCsvImportCompleted(
+                  jobId: 'j1',
+                  imported: 1,
+                  skipped: 0,
+                  failed: 0,
+                ),
               ),
             ),
-          ),
-        );
-        await tester.tap(find.text('Choose file'));
-        await tester.pumpAndSettle();
-        final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Import 1 record'),
-        );
-        expect(button.onPressed, isNotNull);
-      });
+          );
+          await tester.tap(find.text('Choose file'));
+          await tester.pumpAndSettle();
+          final button = tester.widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Import 1 record'),
+          );
+          expect(button.onPressed, isNotNull);
+        },
+      );
 
-      testWidgets('confirm button is disabled when validCount is 0 even with execute use case',
-          (tester) async {
-        _setNarrowScreen(tester);
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+      testWidgets(
+        'confirm button is disabled when validCount is 0 even with execute use case',
+        (tester) async {
+          _setNarrowScreen(tester);
+          addTearDown(tester.view.resetPhysicalSize);
+          addTearDown(tester.view.resetDevicePixelRatio);
 
-        final preview = CsvCollectionImportPreview(
-          validRows: const [],
-          skippedRows: const [],
-          failedRows: [
-            const FailedRow(rowIndex: 0, safeErrorMessage: 'Missing artist'),
-          ],
-        );
-        final fakePreviewUseCase = _FakeUseCase(
-          CollectionCsvImportPreviewReady(
-            filename: 'bad.csv',
-            preview: preview,
-          ),
-        );
-        await tester.pumpWidget(
-          _buildSubject(
-            picker: () async =>
-                const CsvPickedFile(filename: 'bad.csv', content: ''),
-            useCase: fakePreviewUseCase,
-            executeUseCase: _FakeExecuteUseCase(
-              const ExecuteCollectionCsvImportCompleted(
-                jobId: 'j1',
-                imported: 0,
-                skipped: 0,
-                failed: 0,
+          final preview = CsvCollectionImportPreview(
+            validRows: const [],
+            skippedRows: const [],
+            failedRows: [
+              const FailedRow(rowIndex: 0, safeErrorMessage: 'Missing artist'),
+            ],
+          );
+          final fakePreviewUseCase = _FakeUseCase(
+            CollectionCsvImportPreviewReady(
+              filename: 'bad.csv',
+              preview: preview,
+            ),
+          );
+          await tester.pumpWidget(
+            _buildSubject(
+              picker: () async =>
+                  const CsvPickedFile(filename: 'bad.csv', content: ''),
+              useCase: fakePreviewUseCase,
+              executeUseCase: _FakeExecuteUseCase(
+                const ExecuteCollectionCsvImportCompleted(
+                  jobId: 'j1',
+                  imported: 0,
+                  skipped: 0,
+                  failed: 0,
+                ),
               ),
             ),
-          ),
-        );
-        await tester.tap(find.text('Choose file'));
-        await tester.pumpAndSettle();
-        final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Nothing to import'),
-        );
-        expect(button.onPressed, isNull);
-      });
+          );
+          await tester.tap(find.text('Choose file'));
+          await tester.pumpAndSettle();
+          final button = tester.widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Nothing to import'),
+          );
+          expect(button.onPressed, isNull);
+        },
+      );
 
       testWidgets('tapping confirm enters importing state', (tester) async {
         _setNarrowScreen(tester);
@@ -700,8 +714,7 @@ class _FakeUseCase extends BuildCollectionCsvImportPreviewUseCase {
   BuildCollectionCsvImportPreviewResult execute({
     required String filename,
     required String content,
-  }) =>
-      _result;
+  }) => _result;
 }
 
 class _NoOpCollectionRepo implements CollectionRepository {
@@ -743,32 +756,30 @@ class _NoOpRowResultRepo implements ImportExportRowResultRepository {
 
 class _FakeExecuteUseCase extends ExecuteCollectionCsvImportUseCase {
   _FakeExecuteUseCase(this._result)
-      : super(
-          collectionRepository: _NoOpCollectionRepo(),
-          jobRepository: _NoOpJobRepo(),
-          rowResultRepository: _NoOpRowResultRepo(),
-        );
+    : super(
+        collectionRepository: _NoOpCollectionRepo(),
+        jobRepository: _NoOpJobRepo(),
+        rowResultRepository: _NoOpRowResultRepo(),
+      );
 
   final ExecuteCollectionCsvImportResult _result;
 
   @override
   Future<ExecuteCollectionCsvImportResult> execute(
     CsvCollectionImportPreview preview,
-  ) async =>
-      _result;
+  ) async => _result;
 }
 
 class _HangingFakeExecuteUseCase extends ExecuteCollectionCsvImportUseCase {
   _HangingFakeExecuteUseCase()
-      : super(
-          collectionRepository: _NoOpCollectionRepo(),
-          jobRepository: _NoOpJobRepo(),
-          rowResultRepository: _NoOpRowResultRepo(),
-        );
+    : super(
+        collectionRepository: _NoOpCollectionRepo(),
+        jobRepository: _NoOpJobRepo(),
+        rowResultRepository: _NoOpRowResultRepo(),
+      );
 
   @override
   Future<ExecuteCollectionCsvImportResult> execute(
     CsvCollectionImportPreview preview,
-  ) =>
-      Completer<ExecuteCollectionCsvImportResult>().future;
+  ) => Completer<ExecuteCollectionCsvImportResult>().future;
 }

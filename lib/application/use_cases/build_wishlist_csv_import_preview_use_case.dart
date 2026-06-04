@@ -44,11 +44,12 @@ class BuildWishlistCsvImportPreviewUseCase {
       final parsed = parser.parse(content);
       return switch (parsed) {
         CsvParseSuccess() => WishlistCsvImportPreviewReady(
-            filename: filename,
-            preview: validator.validate(parsed),
-          ),
-        CsvParseFailure(:final reason) =>
-            WishlistCsvImportPreviewParseFailed(reason),
+          filename: filename,
+          preview: validator.validate(parsed),
+        ),
+        CsvParseFailure(:final reason) => WishlistCsvImportPreviewParseFailed(
+          reason,
+        ),
       };
     } catch (_) {
       return const WishlistCsvImportPreviewError();

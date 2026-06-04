@@ -6,14 +6,17 @@ import 'package:flutter_test/flutter_test.dart';
 // Helpers
 // ---------------------------------------------------------------------------
 
-const _kValidCsv = '''Artist,Title,Label,Catalog Number,Format,Country,Year,Discogs Release ID,Media Condition,Sleeve Condition,Notes,Tags,Storage Location,Created Date,Updated Date
+const _kValidCsv =
+    '''Artist,Title,Label,Catalog Number,Format,Country,Year,Discogs Release ID,Media Condition,Sleeve Condition,Notes,Tags,Storage Location,Created Date,Updated Date
 Miles Davis,Kind of Blue,Columbia,CL 1355,LP,US,1959,12345,Near Mint (NM or M-),Very Good Plus (VG+),First pressing,jazz|classic,Shelf A,2024-01-15T10:00:00.000000Z,2024-06-01T12:30:00.000000Z''';
 
-const _kValidCsvTwoRows = '''Artist,Title,Label,Catalog Number,Format,Country,Year,Discogs Release ID,Media Condition,Sleeve Condition,Notes,Tags,Storage Location,Created Date,Updated Date
+const _kValidCsvTwoRows =
+    '''Artist,Title,Label,Catalog Number,Format,Country,Year,Discogs Release ID,Media Condition,Sleeve Condition,Notes,Tags,Storage Location,Created Date,Updated Date
 Miles Davis,Kind of Blue,Columbia,CL 1355,LP,US,1959,12345,Near Mint (NM or M-),Very Good Plus (VG+),,,,
 John Coltrane,A Love Supreme,Impulse!,A-77,LP,US,1965,99999,Very Good Plus (VG+),Very Good Plus (VG+),,,,''';
 
-const _kDuplicateCsv = '''Artist,Title,Discogs Release ID,Media Condition,Sleeve Condition
+const _kDuplicateCsv =
+    '''Artist,Title,Discogs Release ID,Media Condition,Sleeve Condition
 Miles Davis,Kind of Blue,12345,Near Mint (NM or M-),Very Good Plus (VG+)
 Miles Davis,Kind of Blue,12345,Near Mint (NM or M-),Very Good Plus (VG+)''';
 
@@ -101,10 +104,7 @@ void main() {
 
     group('empty CSV', () {
       test('empty content → ready with zero rows', () {
-        final result = useCase.execute(
-          filename: 'empty.csv',
-          content: '',
-        );
+        final result = useCase.execute(filename: 'empty.csv', content: '');
         final ready = result as CollectionCsvImportPreviewReady;
         expect(ready.preview.totalCount, 0);
       });

@@ -10,8 +10,9 @@ void main() {
     expect(find.text('Cratewise'), findsOneWidget);
   });
 
-  testWidgets('wide layout shows NavigationRail and no NavigationBar',
-      (tester) async {
+  testWidgets('wide layout shows NavigationRail and no NavigationBar', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1024, 768);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -23,8 +24,9 @@ void main() {
     expect(find.byType(AppBottomNav), findsNothing);
   });
 
-  testWidgets('narrow layout shows NavigationBar and no NavigationRail',
-      (tester) async {
+  testWidgets('narrow layout shows NavigationBar and no NavigationRail', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -36,8 +38,9 @@ void main() {
     expect(find.byType(AppNavRail), findsNothing);
   });
 
-  testWidgets('all five nav sections are reachable on narrow layout',
-      (tester) async {
+  testWidgets('all five nav sections are reachable on narrow layout', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -45,7 +48,13 @@ void main() {
 
     await tester.pumpWidget(const CratewiseApp());
 
-    for (final label in ['Search', 'Collection', 'Wishlist', 'Scan', 'Settings']) {
+    for (final label in [
+      'Search',
+      'Collection',
+      'Wishlist',
+      'Scan',
+      'Settings',
+    ]) {
       await tester.tap(find.text(label).first);
       // pump() rather than pumpAndSettle(): the collection tab opens a
       // NativeDatabase in a background isolate that never resolves in the
@@ -57,8 +66,9 @@ void main() {
     expect(find.text('Discogs'), findsOneWidget);
   });
 
-  testWidgets('tapping Collection shows collection screen on narrow layout',
-      (tester) async {
+  testWidgets('tapping Collection shows collection screen on narrow layout', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(375, 812);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);

@@ -19,10 +19,8 @@ class AddToCollectionDuplicate extends AddToCollectionResult {
 }
 
 class AddToCollectionUseCase {
-  AddToCollectionUseCase(
-    this._repository, {
-    String Function()? idGenerator,
-  }) : _idGenerator = idGenerator ?? _newUuid;
+  AddToCollectionUseCase(this._repository, {String Function()? idGenerator})
+    : _idGenerator = idGenerator ?? _newUuid;
 
   static String _newUuid() => const Uuid().v4();
 

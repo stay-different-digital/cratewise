@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 class FakeWishlistRepository implements WishlistRepository {
   FakeWishlistRepository({Set<int>? existingReleaseIds})
-      : _ids = existingReleaseIds ?? {};
+    : _ids = existingReleaseIds ?? {};
 
   final Set<int> _ids;
   int containsReleaseCallCount = 0;
@@ -45,21 +45,20 @@ DiscogsWantlistItemDto makeItem({
   int? year = 1978,
   String? thumbUrl = 'https://i.discogs.com/bride_150.jpg',
   String? notes,
-}) =>
-    DiscogsWantlistItemDto(
-      releaseId: releaseId,
-      dateAdded: '2023-04-10T09:15:00-07:00',
-      rating: 3,
-      title: title,
-      artist: artist,
-      label: 'Polydor',
-      catno: '2302 069',
-      format: 'Vinyl, LP, Album',
-      genres: const ['Rock'],
-      year: year,
-      thumbUrl: thumbUrl,
-      notes: notes,
-    );
+}) => DiscogsWantlistItemDto(
+  releaseId: releaseId,
+  dateAdded: '2023-04-10T09:15:00-07:00',
+  rating: 3,
+  title: title,
+  artist: artist,
+  label: 'Polydor',
+  catno: '2302 069',
+  format: 'Vinyl, LP, Album',
+  genres: const ['Rock'],
+  year: year,
+  thumbUrl: thumbUrl,
+  notes: notes,
+);
 
 BuildWishlistImportPreviewUseCase makeUseCase(FakeWishlistRepository repo) =>
     BuildWishlistImportPreviewUseCase(repo);
@@ -119,12 +118,14 @@ void main() {
     });
 
     group('duplicate items', () {
-      test('classifies item already in wishlist as DuplicateWishlistRow',
-          () async {
-        final repo = FakeWishlistRepository(existingReleaseIds: {3003339});
-        final preview = await makeUseCase(repo).execute([makeItem()]);
-        expect(preview.rows.first, isA<DuplicateWishlistRow>());
-      });
+      test(
+        'classifies item already in wishlist as DuplicateWishlistRow',
+        () async {
+          final repo = FakeWishlistRepository(existingReleaseIds: {3003339});
+          final preview = await makeUseCase(repo).execute([makeItem()]);
+          expect(preview.rows.first, isA<DuplicateWishlistRow>());
+        },
+      );
 
       test('duplicateCount is 1 for single duplicate', () async {
         final repo = FakeWishlistRepository(existingReleaseIds: {3003339});
@@ -134,87 +135,96 @@ void main() {
 
       test('duplicate detection is by release ID not by title', () async {
         final repo = FakeWishlistRepository(existingReleaseIds: {3003339});
-        final sameIdDifferentTitle =
-            makeItem(releaseId: 3003339, title: 'Different Title');
+        final sameIdDifferentTitle = makeItem(
+          releaseId: 3003339,
+          title: 'Different Title',
+        );
         final preview = await makeUseCase(repo).execute([sameIdDifferentTitle]);
         expect(preview.rows.first, isA<DuplicateWishlistRow>());
       });
 
-      test('different release ID with same title is classified as new',
-          () async {
-        final repo = FakeWishlistRepository(existingReleaseIds: {3003339});
-        final differentId =
-            makeItem(releaseId: 999999, title: 'The Bride Stripped Bare');
-        final preview = await makeUseCase(repo).execute([differentId]);
-        expect(preview.rows.first, isA<NewWishlistRow>());
-      });
+      test(
+        'different release ID with same title is classified as new',
+        () async {
+          final repo = FakeWishlistRepository(existingReleaseIds: {3003339});
+          final differentId = makeItem(
+            releaseId: 999999,
+            title: 'The Bride Stripped Bare',
+          );
+          final preview = await makeUseCase(repo).execute([differentId]);
+          expect(preview.rows.first, isA<NewWishlistRow>());
+        },
+      );
     });
 
     group('invalid items', () {
       test('classifies item with releaseId 0 as InvalidWishlistRow', () async {
         final repo = FakeWishlistRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(releaseId: 0)]);
+        final preview = await makeUseCase(
+          repo,
+        ).execute([makeItem(releaseId: 0)]);
         expect(preview.rows.first, isA<InvalidWishlistRow>());
       });
 
       test('reason for zero releaseId mentions release ID', () async {
         final repo = FakeWishlistRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(releaseId: 0)]);
+        final preview = await makeUseCase(
+          repo,
+        ).execute([makeItem(releaseId: 0)]);
         final row = preview.rows.first as InvalidWishlistRow;
         expect(row.reason.toLowerCase(), contains('release id'));
       });
 
       test('classifies item with empty title as InvalidWishlistRow', () async {
         final repo = FakeWishlistRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(title: '')]);
+        final preview = await makeUseCase(repo).execute([makeItem(title: '')]);
         expect(preview.rows.first, isA<InvalidWishlistRow>());
       });
 
       test('classifies item with whitespace-only title as invalid', () async {
         final repo = FakeWishlistRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(title: '   ')]);
+        final preview = await makeUseCase(
+          repo,
+        ).execute([makeItem(title: '   ')]);
         expect(preview.rows.first, isA<InvalidWishlistRow>());
       });
 
       test('reason for empty title mentions title', () async {
         final repo = FakeWishlistRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(title: '')]);
+        final preview = await makeUseCase(repo).execute([makeItem(title: '')]);
         final row = preview.rows.first as InvalidWishlistRow;
         expect(row.reason.toLowerCase(), contains('title'));
       });
 
       test('invalidCount counts correctly', () async {
         final repo = FakeWishlistRepository();
-        final items = [
-          makeItem(releaseId: 0),
-          makeItem(title: ''),
-        ];
+        final items = [makeItem(releaseId: 0), makeItem(title: '')];
         final preview = await makeUseCase(repo).execute(items);
         expect(preview.invalidCount, 2);
       });
 
-      test('item with missing artist but valid title is classified as new',
-          () async {
-        final repo = FakeWishlistRepository();
-        final noArtist = makeItem(artist: '');
-        final preview = await makeUseCase(repo).execute([noArtist]);
-        expect(preview.rows.first, isA<NewWishlistRow>());
-      });
+      test(
+        'item with missing artist but valid title is classified as new',
+        () async {
+          final repo = FakeWishlistRepository();
+          final noArtist = makeItem(artist: '');
+          final preview = await makeUseCase(repo).execute([noArtist]);
+          expect(preview.rows.first, isA<NewWishlistRow>());
+        },
+      );
     });
 
     group('mixed input', () {
       test('correctly classifies mix of new, duplicate, and invalid', () async {
         final repo = FakeWishlistRepository(existingReleaseIds: {3003339});
         final items = [
-          makeItem(releaseId: 3003339, title: 'The Bride Stripped Bare'), // duplicate
-          makeItem(releaseId: 111111, title: 'Avalon'),                   // new
-          makeItem(releaseId: 0),                                          // invalid
-          makeItem(title: ''),                                             // invalid
+          makeItem(
+            releaseId: 3003339,
+            title: 'The Bride Stripped Bare',
+          ), // duplicate
+          makeItem(releaseId: 111111, title: 'Avalon'), // new
+          makeItem(releaseId: 0), // invalid
+          makeItem(title: ''), // invalid
         ];
         final preview = await makeUseCase(repo).execute(items);
         expect(preview.totalCount, 4);
@@ -265,14 +275,17 @@ void main() {
         expect(row.artist, 'Bryan Ferry');
       });
 
-      test('invalid row carries releaseId 0 when releaseId is missing',
-          () async {
-        final repo = FakeWishlistRepository();
-        final preview =
-            await makeUseCase(repo).execute([makeItem(releaseId: 0)]);
-        final row = preview.rows.first as InvalidWishlistRow;
-        expect(row.releaseId, 0);
-      });
+      test(
+        'invalid row carries releaseId 0 when releaseId is missing',
+        () async {
+          final repo = FakeWishlistRepository();
+          final preview = await makeUseCase(
+            repo,
+          ).execute([makeItem(releaseId: 0)]);
+          final row = preview.rows.first as InvalidWishlistRow;
+          expect(row.releaseId, 0);
+        },
+      );
 
       test('rows carry null thumbUrl when DTO has no thumb', () async {
         final repo = FakeWishlistRepository();
@@ -300,12 +313,14 @@ void main() {
         expect(await repo.getAll(), isEmpty);
       });
 
-      test('does not call containsRelease for item with zero releaseId',
-          () async {
-        final repo = FakeWishlistRepository();
-        await makeUseCase(repo).execute([makeItem(releaseId: 0)]);
-        expect(repo.containsReleaseCallCount, 0);
-      });
+      test(
+        'does not call containsRelease for item with zero releaseId',
+        () async {
+          final repo = FakeWishlistRepository();
+          await makeUseCase(repo).execute([makeItem(releaseId: 0)]);
+          expect(repo.containsReleaseCallCount, 0);
+        },
+      );
 
       test('does not call containsRelease for item with empty title', () async {
         final repo = FakeWishlistRepository();
@@ -317,10 +332,7 @@ void main() {
     group('security', () {
       test('invalid row reason does not contain token or secret', () async {
         final repo = FakeWishlistRepository();
-        final items = [
-          makeItem(releaseId: 0),
-          makeItem(title: ''),
-        ];
+        final items = [makeItem(releaseId: 0), makeItem(title: '')];
         final preview = await makeUseCase(repo).execute(items);
         for (final row in preview.rows) {
           if (row is InvalidWishlistRow) {

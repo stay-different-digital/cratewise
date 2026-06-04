@@ -144,26 +144,27 @@ class _LocalCoverThumbnailState extends State<_LocalCoverThumbnail> {
   @override
   void initState() {
     super.initState();
-    _pathFuture = widget.repository?.getLocalPath(widget.releaseId) ??
+    _pathFuture =
+        widget.repository?.getLocalPath(widget.releaseId) ??
         Future<String?>.value();
   }
 
   Widget _placeholder() => Semantics(
-        label: 'No cover image',
-        child: Container(
-          width: 72,
-          height: 72,
-          decoration: BoxDecoration(
-            color: widget.theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(
-            Icons.album,
-            size: 32,
-            color: widget.theme.colorScheme.outlineVariant,
-          ),
-        ),
-      );
+    label: 'No cover image',
+    child: Container(
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+        color: widget.theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Icon(
+        Icons.album,
+        size: 32,
+        color: widget.theme.colorScheme.outlineVariant,
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {

@@ -40,8 +40,8 @@ class ExecuteCollectionCsvExportUseCase {
     this._mapper = const CollectionCsvMapper(),
     Future<void> Function(String filePath)? onShare,
     String Function()? idGenerator,
-  })  : _onShare = onShare ?? _defaultShare,
-        _idGenerator = idGenerator ?? _newUuid;
+  }) : _onShare = onShare ?? _defaultShare,
+       _idGenerator = idGenerator ?? _newUuid;
 
   static String _newUuid() => const Uuid().v4();
 
@@ -60,8 +60,7 @@ class ExecuteCollectionCsvExportUseCase {
   ) async {
     final jobId = _idGenerator();
     final now = DateTime.now();
-    final filename =
-        'collection_export_${now.millisecondsSinceEpoch}.csv';
+    final filename = 'collection_export_${now.millisecondsSinceEpoch}.csv';
 
     final job = ImportExportJob(
       id: jobId,

@@ -70,9 +70,8 @@ ImportExportJob makeJob({
   );
 }
 
-Widget _buildSubject({ImportExportJobRepository? repository}) => MaterialApp(
-      home: ImportExportHistoryScreen(repository: repository),
-    );
+Widget _buildSubject({ImportExportJobRepository? repository}) =>
+    MaterialApp(home: ImportExportHistoryScreen(repository: repository));
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -105,7 +104,9 @@ void main() {
         expect(find.text('No history yet'), findsOneWidget);
       });
 
-      testWidgets('empty state describes what the screen shows', (tester) async {
+      testWidgets('empty state describes what the screen shows', (
+        tester,
+      ) async {
         final repo = _FakeJobRepository();
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
@@ -125,62 +126,68 @@ void main() {
 
     group('loaded state', () {
       testWidgets('shows job type label', (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(jobType: ImportExportJobType.importCollectionFromDiscogs),
-        ]);
+        final repo = _FakeJobRepository(
+          jobs: [
+            makeJob(jobType: ImportExportJobType.importCollectionFromDiscogs),
+          ],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Import collection from Discogs'), findsOneWidget);
       });
 
       testWidgets('shows status chip', (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(status: ImportExportStatus.completed),
-        ]);
+        final repo = _FakeJobRepository(
+          jobs: [makeJob(status: ImportExportStatus.completed)],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Completed'), findsOneWidget);
       });
 
       testWidgets('shows completedWithErrors status', (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(status: ImportExportStatus.completedWithErrors),
-        ]);
+        final repo = _FakeJobRepository(
+          jobs: [makeJob(status: ImportExportStatus.completedWithErrors)],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Completed with errors'), findsOneWidget);
       });
 
       testWidgets('shows failed status', (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(
-            status: ImportExportStatus.failed,
-            validItems: null,
-            skippedItems: null,
-            failedItems: null,
-          ),
-        ]);
+        final repo = _FakeJobRepository(
+          jobs: [
+            makeJob(
+              status: ImportExportStatus.failed,
+              validItems: null,
+              skippedItems: null,
+              failedItems: null,
+            ),
+          ],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Failed'), findsOneWidget);
       });
 
       testWidgets('shows source and target', (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(source: 'Discogs', target: 'Local collection'),
-        ]);
+        final repo = _FakeJobRepository(
+          jobs: [makeJob(source: 'Discogs', target: 'Local collection')],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Discogs → Local collection'), findsOneWidget);
       });
 
       testWidgets('shows Added count for import job', (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(
-            jobType: ImportExportJobType.importCollectionFromDiscogs,
-            validItems: 7,
-          ),
-        ]);
+        final repo = _FakeJobRepository(
+          jobs: [
+            makeJob(
+              jobType: ImportExportJobType.importCollectionFromDiscogs,
+              validItems: 7,
+            ),
+          ],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Added: '), findsOneWidget);
@@ -188,12 +195,14 @@ void main() {
       });
 
       testWidgets('shows Exported count for export job', (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(
-            jobType: ImportExportJobType.exportCollectionToDiscogs,
-            validItems: 5,
-          ),
-        ]);
+        final repo = _FakeJobRepository(
+          jobs: [
+            makeJob(
+              jobType: ImportExportJobType.exportCollectionToDiscogs,
+              validItems: 5,
+            ),
+          ],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Exported: '), findsOneWidget);
@@ -217,41 +226,48 @@ void main() {
       });
 
       testWidgets('shows formatted start date', (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(createdAt: DateTime(2026, 6, 1, 14, 30)),
-        ]);
+        final repo = _FakeJobRepository(
+          jobs: [makeJob(createdAt: DateTime(2026, 6, 1, 14, 30))],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('1 Jun 2026, 14:30'), findsOneWidget);
       });
 
       testWidgets('shows safe error message when present', (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(
-            status: ImportExportStatus.failed,
-            safeErrorMessage: 'Export could not be completed',
-            validItems: null,
-            skippedItems: null,
-            failedItems: null,
-          ),
-        ]);
+        final repo = _FakeJobRepository(
+          jobs: [
+            makeJob(
+              status: ImportExportStatus.failed,
+              safeErrorMessage: 'Export could not be completed',
+              validItems: null,
+              skippedItems: null,
+              failedItems: null,
+            ),
+          ],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Export could not be completed'), findsOneWidget);
       });
 
-      testWidgets('does not show safe error message when absent', (tester) async {
-        final repo = _FakeJobRepository(jobs: [makeJob(safeErrorMessage: null)]);
+      testWidgets('does not show safe error message when absent', (
+        tester,
+      ) async {
+        final repo = _FakeJobRepository(
+          jobs: [makeJob(safeErrorMessage: null)],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Export could not be completed'), findsNothing);
       });
 
-      testWidgets('safe error message does not contain token or secret',
-          (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(safeErrorMessage: 'Export could not be completed'),
-        ]);
+      testWidgets('safe error message does not contain token or secret', (
+        tester,
+      ) async {
+        final repo = _FakeJobRepository(
+          jobs: [makeJob(safeErrorMessage: 'Export could not be completed')],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         final widgets = tester.widgetList<Text>(find.byType(Text));
@@ -263,31 +279,32 @@ void main() {
       });
 
       testWidgets('shows multiple jobs', (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(
-            id: 'j1',
-            jobType: ImportExportJobType.importCollectionFromDiscogs,
-          ),
-          makeJob(
-            id: 'j2',
-            jobType: ImportExportJobType.exportWishlistToDiscogs,
-          ),
-        ]);
+        final repo = _FakeJobRepository(
+          jobs: [
+            makeJob(
+              id: 'j1',
+              jobType: ImportExportJobType.importCollectionFromDiscogs,
+            ),
+            makeJob(
+              id: 'j2',
+              jobType: ImportExportJobType.exportWishlistToDiscogs,
+            ),
+          ],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Import collection from Discogs'), findsOneWidget);
         expect(find.text('Export wishlist to Discogs'), findsOneWidget);
       });
 
-      testWidgets('does not show counts section when all counts are null',
-          (tester) async {
-        final repo = _FakeJobRepository(jobs: [
-          makeJob(
-            validItems: null,
-            skippedItems: null,
-            failedItems: null,
-          ),
-        ]);
+      testWidgets('does not show counts section when all counts are null', (
+        tester,
+      ) async {
+        final repo = _FakeJobRepository(
+          jobs: [
+            makeJob(validItems: null, skippedItems: null, failedItems: null),
+          ],
+        );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
         expect(find.text('Added: '), findsNothing);

@@ -19,14 +19,13 @@ class _FakeCollectionRepository implements CollectionRepository {
   final Set<int> existingReleaseIds;
 
   _FakeCollectionRepository({Set<int>? existingReleaseIds})
-      : existingReleaseIds = existingReleaseIds ?? {};
+    : existingReleaseIds = existingReleaseIds ?? {};
 
   @override
   Future<void> add(CollectionItem item) async => added.add(item);
 
   @override
-  Future<bool> containsRelease(int id) async =>
-      existingReleaseIds.contains(id);
+  Future<bool> containsRelease(int id) async => existingReleaseIds.contains(id);
 
   @override
   Future<List<CollectionItem>> getAll() async => [];
@@ -109,34 +108,33 @@ CsvCollectionImportRow _makeValidRow({
   int releaseId = 100,
   String artist = 'Test Artist',
   String title = 'Test Album',
-}) =>
-    CsvCollectionImportRow(
-      rowIndex: rowIndex,
-      artist: artist,
-      title: title,
-      discogsReleaseId: releaseId,
-      mediaCondition: RecordCondition.nearMint,
-      sleeveCondition: RecordCondition.veryGoodPlus,
-      tags: const [],
-    );
+}) => CsvCollectionImportRow(
+  rowIndex: rowIndex,
+  artist: artist,
+  title: title,
+  discogsReleaseId: releaseId,
+  mediaCondition: RecordCondition.nearMint,
+  sleeveCondition: RecordCondition.veryGoodPlus,
+  tags: const [],
+);
 
 CsvCollectionImportPreview _makePreview({
   List<CsvCollectionImportRow>? validRows,
   List<SkippedRow>? skippedRows,
   List<FailedRow>? failedRows,
-}) =>
-    CsvCollectionImportPreview(
-      validRows: validRows ?? [],
-      skippedRows: skippedRows ?? [],
-      failedRows: failedRows ?? [],
-    );
+}) => CsvCollectionImportPreview(
+  validRows: validRows ?? [],
+  skippedRows: skippedRows ?? [],
+  failedRows: failedRows ?? [],
+);
 
 ({
   ExecuteCollectionCsvImportUseCase useCase,
   _FakeCollectionRepository collectionRepo,
   _FakeJobRepository jobRepo,
   _FakeRowResultRepository rowResultRepo,
-}) _makeUseCase({
+})
+_makeUseCase({
   CollectionRepository? collectionRepository,
   ImportExportJobRepository? jobRepository,
   ImportExportRowResultRepository? rowResultRepository,
@@ -165,35 +163,40 @@ CsvCollectionImportPreview _makePreview({
 void main() {
   group('ExecuteCollectionCsvImportUseCase', () {
     group('empty preview', () {
-      test('returns ExecuteCollectionCsvImportCompleted for empty preview',
-          () async {
-        final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            _makeUseCase();
-        final result = await useCase.execute(_makePreview());
-        expect(result, isA<ExecuteCollectionCsvImportCompleted>());
-      });
+      test(
+        'returns ExecuteCollectionCsvImportCompleted for empty preview',
+        () async {
+          final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+              _makeUseCase();
+          final result = await useCase.execute(_makePreview());
+          expect(result, isA<ExecuteCollectionCsvImportCompleted>());
+        },
+      );
 
       test('imported is 0 for empty preview', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(_makePreview())
-            as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview())
+                as ExecuteCollectionCsvImportCompleted;
         expect(result.imported, 0);
       });
 
       test('skipped is 0 for empty preview', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(_makePreview())
-            as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview())
+                as ExecuteCollectionCsvImportCompleted;
         expect(result.skipped, 0);
       });
 
       test('failed is 0 for empty preview', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(_makePreview())
-            as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview())
+                as ExecuteCollectionCsvImportCompleted;
         expect(result.failed, 0);
       });
     });
@@ -210,11 +213,7 @@ void main() {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
         await useCase.execute(
-          _makePreview(
-            validRows: [
-              _makeValidRow(artist: 'Miles Davis'),
-            ],
-          ),
+          _makePreview(validRows: [_makeValidRow(artist: 'Miles Davis')]),
         );
         expect(collectionRepo.added.first.artist, 'Miles Davis');
       });
@@ -223,11 +222,7 @@ void main() {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
         await useCase.execute(
-          _makePreview(
-            validRows: [
-              _makeValidRow(title: 'Kind of Blue'),
-            ],
-          ),
+          _makePreview(validRows: [_makeValidRow(title: 'Kind of Blue')]),
         );
         expect(collectionRepo.added.first.title, 'Kind of Blue');
       });
@@ -290,29 +285,33 @@ void main() {
       test('imported count matches number of new rows', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            validRows: [
-              _makeValidRow(rowIndex: 0, releaseId: 1),
-              _makeValidRow(rowIndex: 1, releaseId: 2),
-              _makeValidRow(rowIndex: 2, releaseId: 3),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    validRows: [
+                      _makeValidRow(rowIndex: 0, releaseId: 1),
+                      _makeValidRow(rowIndex: 1, releaseId: 2),
+                      _makeValidRow(rowIndex: 2, releaseId: 3),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         expect(result.imported, 3);
       });
 
       test('records ValidRow for each imported item', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            validRows: [
-              _makeValidRow(rowIndex: 0, releaseId: 1),
-              _makeValidRow(rowIndex: 1, releaseId: 2),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    validRows: [
+                      _makeValidRow(rowIndex: 0, releaseId: 1),
+                      _makeValidRow(rowIndex: 1, releaseId: 2),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<ValidRow>().length, 2);
       });
@@ -320,13 +319,18 @@ void main() {
       test('ValidRow description contains artist and title', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            validRows: [
-              _makeValidRow(artist: 'Massive Attack', title: 'Blue Lines'),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    validRows: [
+                      _makeValidRow(
+                        artist: 'Massive Attack',
+                        title: 'Blue Lines',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         final valid = rows.whereType<ValidRow>().first;
         expect(valid.description, contains('Massive Attack'));
@@ -336,8 +340,9 @@ void main() {
 
     group('valid rows — DB duplicates', () {
       test('skips row already in collection', () async {
-        final collectionRepo =
-            _FakeCollectionRepository(existingReleaseIds: {42});
+        final collectionRepo = _FakeCollectionRepository(
+          existingReleaseIds: {42},
+        );
         final (:useCase, collectionRepo: _, :jobRepo, :rowResultRepo) =
             _makeUseCase(collectionRepository: collectionRepo);
         await useCase.execute(
@@ -347,39 +352,51 @@ void main() {
       });
 
       test('DB-duplicate row is counted as skipped', () async {
-        final collectionRepo =
-            _FakeCollectionRepository(existingReleaseIds: {42});
+        final collectionRepo = _FakeCollectionRepository(
+          existingReleaseIds: {42},
+        );
         final (:useCase, collectionRepo: _, :jobRepo, :rowResultRepo) =
             _makeUseCase(collectionRepository: collectionRepo);
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow(releaseId: 42)]),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(validRows: [_makeValidRow(releaseId: 42)]),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         expect(result.skipped, 1);
         expect(result.imported, 0);
       });
 
       test('records SkippedRow for DB-duplicate', () async {
-        final collectionRepo =
-            _FakeCollectionRepository(existingReleaseIds: {42});
+        final collectionRepo = _FakeCollectionRepository(
+          existingReleaseIds: {42},
+        );
         final (:useCase, collectionRepo: _, :jobRepo, :rowResultRepo) =
             _makeUseCase(collectionRepository: collectionRepo);
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow(releaseId: 42)]),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(validRows: [_makeValidRow(releaseId: 42)]),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<SkippedRow>().length, 1);
       });
 
       test('SkippedRow reason is Already in collection', () async {
-        final collectionRepo =
-            _FakeCollectionRepository(existingReleaseIds: {42});
+        final collectionRepo = _FakeCollectionRepository(
+          existingReleaseIds: {42},
+        );
         final (:useCase, collectionRepo: _, :jobRepo, :rowResultRepo) =
             _makeUseCase(collectionRepository: collectionRepo);
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow(releaseId: 42)]),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(validRows: [_makeValidRow(releaseId: 42)]),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
-        expect(rows.whereType<SkippedRow>().first.reason, 'Already in collection');
+        expect(
+          rows.whereType<SkippedRow>().first.reason,
+          'Already in collection',
+        );
       });
     });
 
@@ -387,27 +404,40 @@ void main() {
       test('preview skipped rows contribute to skipped count', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            skippedRows: [
-              const SkippedRow(rowIndex: 2, reason: 'Duplicate release ID in file'),
-              const SkippedRow(rowIndex: 3, reason: 'Duplicate release ID in file'),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    skippedRows: [
+                      const SkippedRow(
+                        rowIndex: 2,
+                        reason: 'Duplicate release ID in file',
+                      ),
+                      const SkippedRow(
+                        rowIndex: 3,
+                        reason: 'Duplicate release ID in file',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         expect(result.skipped, 2);
       });
 
       test('preview skipped rows are recorded in row results', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            skippedRows: [
-              const SkippedRow(rowIndex: 2, reason: 'Duplicate release ID in file'),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    skippedRows: [
+                      const SkippedRow(
+                        rowIndex: 2,
+                        reason: 'Duplicate release ID in file',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<SkippedRow>().length, 1);
       });
@@ -417,27 +447,40 @@ void main() {
       test('preview failed rows contribute to failed count', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            failedRows: [
-              const FailedRow(rowIndex: 0, safeErrorMessage: 'Missing artist'),
-              const FailedRow(rowIndex: 1, safeErrorMessage: 'Missing title'),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    failedRows: [
+                      const FailedRow(
+                        rowIndex: 0,
+                        safeErrorMessage: 'Missing artist',
+                      ),
+                      const FailedRow(
+                        rowIndex: 1,
+                        safeErrorMessage: 'Missing title',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         expect(result.failed, 2);
       });
 
       test('preview failed rows are recorded in row results', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            failedRows: [
-              const FailedRow(rowIndex: 0, safeErrorMessage: 'Missing artist'),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    failedRows: [
+                      const FailedRow(
+                        rowIndex: 0,
+                        safeErrorMessage: 'Missing artist',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<FailedRow>().length, 1);
       });
@@ -447,20 +490,28 @@ void main() {
       test('correct counts for mixed valid/skipped/failed preview', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            validRows: [
-              _makeValidRow(rowIndex: 0, releaseId: 1),
-              _makeValidRow(rowIndex: 1, releaseId: 2),
-            ],
-            skippedRows: [
-              const SkippedRow(rowIndex: 2, reason: 'Duplicate release ID in file'),
-            ],
-            failedRows: [
-              const FailedRow(rowIndex: 3, safeErrorMessage: 'Missing artist'),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    validRows: [
+                      _makeValidRow(rowIndex: 0, releaseId: 1),
+                      _makeValidRow(rowIndex: 1, releaseId: 2),
+                    ],
+                    skippedRows: [
+                      const SkippedRow(
+                        rowIndex: 2,
+                        reason: 'Duplicate release ID in file',
+                      ),
+                    ],
+                    failedRows: [
+                      const FailedRow(
+                        rowIndex: 3,
+                        safeErrorMessage: 'Missing artist',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         expect(result.imported, 2);
         expect(result.skipped, 1);
         expect(result.failed, 1);
@@ -470,41 +521,37 @@ void main() {
     group('save failure', () {
       test('save failure produces FailedRow', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            _makeUseCase(
-          collectionRepository: _ThrowingCollectionRepository(),
-        );
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteCollectionCsvImportCompleted;
+            _makeUseCase(collectionRepository: _ThrowingCollectionRepository());
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteCollectionCsvImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<FailedRow>().length, 1);
       });
 
       test('save failure counts toward failed', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            _makeUseCase(
-          collectionRepository: _ThrowingCollectionRepository(),
-        );
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteCollectionCsvImportCompleted;
+            _makeUseCase(collectionRepository: _ThrowingCollectionRepository());
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteCollectionCsvImportCompleted;
         expect(result.failed, 1);
         expect(result.imported, 0);
       });
 
       test('import continues after a row save failure', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            _makeUseCase(
-          collectionRepository: _ThrowingCollectionRepository(),
-        );
-        final result = await useCase.execute(
-          _makePreview(
-            validRows: [
-              _makeValidRow(rowIndex: 0, releaseId: 1),
-              _makeValidRow(rowIndex: 1, releaseId: 2),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+            _makeUseCase(collectionRepository: _ThrowingCollectionRepository());
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    validRows: [
+                      _makeValidRow(rowIndex: 0, releaseId: 1),
+                      _makeValidRow(rowIndex: 1, releaseId: 2),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<FailedRow>().length, 2);
       });
@@ -514,9 +561,9 @@ void main() {
       test('job type is csvCollectionImport', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteCollectionCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.jobType, ImportExportJobType.csvCollectionImport);
       });
@@ -524,8 +571,9 @@ void main() {
       test('job source is CSV file', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(_makePreview())
-            as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview())
+                as ExecuteCollectionCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.source, 'CSV file');
       });
@@ -533,8 +581,9 @@ void main() {
       test('job target is Local collection', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(_makePreview())
-            as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview())
+                as ExecuteCollectionCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.target, 'Local collection');
       });
@@ -542,21 +591,19 @@ void main() {
       test('updates job with completed status when all succeed', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteCollectionCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.status, ImportExportStatus.completed);
       });
 
       test('updates job with completedWithErrors when some fail', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            _makeUseCase(
-          collectionRepository: _ThrowingCollectionRepository(),
-        );
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteCollectionCsvImportCompleted;
+            _makeUseCase(collectionRepository: _ThrowingCollectionRepository());
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteCollectionCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.status, ImportExportStatus.completedWithErrors);
       });
@@ -564,14 +611,19 @@ void main() {
       test('job has correct totalItems', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            validRows: [_makeValidRow(rowIndex: 0, releaseId: 1)],
-            skippedRows: [
-              const SkippedRow(rowIndex: 1, reason: 'Duplicate release ID in file'),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    validRows: [_makeValidRow(rowIndex: 0, releaseId: 1)],
+                    skippedRows: [
+                      const SkippedRow(
+                        rowIndex: 1,
+                        reason: 'Duplicate release ID in file',
+                      ),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.totalItems, 2);
       });
@@ -579,14 +631,16 @@ void main() {
       test('job has correct validItems', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(
-            validRows: [
-              _makeValidRow(rowIndex: 0, releaseId: 1),
-              _makeValidRow(rowIndex: 1, releaseId: 2),
-            ],
-          ),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(
+                  _makePreview(
+                    validRows: [
+                      _makeValidRow(rowIndex: 0, releaseId: 1),
+                      _makeValidRow(rowIndex: 1, releaseId: 2),
+                    ],
+                  ),
+                )
+                as ExecuteCollectionCsvImportCompleted;
         final job = await jobRepo.getById(result.jobId);
         expect(job?.validItems, 2);
       });
@@ -594,9 +648,9 @@ void main() {
       test('result jobId is non-empty', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
             _makeUseCase();
-        final result = await useCase.execute(
-          _makePreview(validRows: [_makeValidRow()]),
-        ) as ExecuteCollectionCsvImportCompleted;
+        final result =
+            await useCase.execute(_makePreview(validRows: [_makeValidRow()]))
+                as ExecuteCollectionCsvImportCompleted;
         expect(result.jobId, isNotEmpty);
       });
     });

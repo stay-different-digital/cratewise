@@ -1,6 +1,7 @@
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +67,12 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
   Future<void> remove(int releaseId) async {}
   @override
   Future<bool> exists(int releaseId) async => pathToReturn != null;
+  @override
+  Future<int> totalSizeBytes() async => 0;
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async => [];
+  @override
+  Future<void> removeAll() async {}
 }
 
 class _FlippingCollectionRepository implements CollectionRepository {
@@ -1898,7 +1905,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.loadCallCount, 1);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(repo.loadCallCount, 2);
@@ -1915,7 +1924,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Old Title'), findsWidgets);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(find.text('New Title'), findsWidgets);
@@ -1931,7 +1942,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Kept Artist'), findsOneWidget);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(find.text('Kept Artist'), findsOneWidget);

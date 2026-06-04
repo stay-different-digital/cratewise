@@ -7,11 +7,11 @@ enum WishlistPriority {
   mustHave;
 
   String get label => switch (this) {
-        low => 'Low',
-        medium => 'Medium',
-        high => 'High',
-        mustHave => 'Must have',
-      };
+    low => 'Low',
+    medium => 'Medium',
+    high => 'High',
+    mustHave => 'Must have',
+  };
 }
 
 class WishlistItem {

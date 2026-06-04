@@ -36,8 +36,7 @@ class _FakeCollectionRepository implements CollectionRepository {
 
 class _ThrowingCollectionRepository implements CollectionRepository {
   @override
-  Future<List<CollectionItem>> getAll() async =>
-      throw Exception('DB error');
+  Future<List<CollectionItem>> getAll() async => throw Exception('DB error');
 
   @override
   Future<CollectionItem?> getById(String id) async => null;
@@ -110,8 +109,7 @@ BuildCollectionExportPreviewUseCase makeUseCase({
 }) {
   return BuildCollectionExportPreviewUseCase(
     repository: repository ?? _FakeCollectionRepository(items),
-    capabilityUseCase:
-        capabilityUseCase ?? const _SupportedCapabilityUseCase(),
+    capabilityUseCase: capabilityUseCase ?? const _SupportedCapabilityUseCase(),
   );
 }
 
@@ -177,95 +175,137 @@ void main() {
     });
 
     group('eligible rows', () {
-      test('item with valid releaseId and localOnly status is eligible',
-          () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, syncStatus: SyncStatus.localOnly)],
-        ).execute() as CollectionExportPreviewReady;
-        expect(result.preview.rows.first, isA<EligibleExportRow>());
-      });
+      test(
+        'item with valid releaseId and localOnly status is eligible',
+        () async {
+          final result =
+              await makeUseCase(
+                    items: [
+                      makeItem(releaseId: 1, syncStatus: SyncStatus.localOnly),
+                    ],
+                  ).execute()
+                  as CollectionExportPreviewReady;
+          expect(result.preview.rows.first, isA<EligibleExportRow>());
+        },
+      );
 
-      test('item with valid releaseId and pending status is eligible',
-          () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, syncStatus: SyncStatus.pending)],
-        ).execute() as CollectionExportPreviewReady;
-        expect(result.preview.rows.first, isA<EligibleExportRow>());
-      });
+      test(
+        'item with valid releaseId and pending status is eligible',
+        () async {
+          final result =
+              await makeUseCase(
+                    items: [
+                      makeItem(releaseId: 1, syncStatus: SyncStatus.pending),
+                    ],
+                  ).execute()
+                  as CollectionExportPreviewReady;
+          expect(result.preview.rows.first, isA<EligibleExportRow>());
+        },
+      );
 
       test('item with valid releaseId and failed status is eligible', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, syncStatus: SyncStatus.failed)],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(releaseId: 1, syncStatus: SyncStatus.failed),
+                  ],
+                ).execute()
+                as CollectionExportPreviewReady;
         expect(result.preview.rows.first, isA<EligibleExportRow>());
       });
 
       test('eligible row carries correct artist', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, artist: 'Talk Talk')],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [makeItem(releaseId: 1, artist: 'Talk Talk')],
+                ).execute()
+                as CollectionExportPreviewReady;
         final row = result.preview.rows.first as EligibleExportRow;
         expect(row.artist, 'Talk Talk');
       });
 
       test('eligible row carries correct title', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, title: 'Spirit of Eden')],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [makeItem(releaseId: 1, title: 'Spirit of Eden')],
+                ).execute()
+                as CollectionExportPreviewReady;
         final row = result.preview.rows.first as EligibleExportRow;
         expect(row.title, 'Spirit of Eden');
       });
 
       test('eligible row carries correct releaseId', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 42)],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(items: [makeItem(releaseId: 42)]).execute()
+                as CollectionExportPreviewReady;
         final row = result.preview.rows.first as EligibleExportRow;
         expect(row.releaseId, 42);
       });
 
       test('eligible row carries correct itemId', () async {
-        final result = await makeUseCase(
-          items: [makeItem(id: 'abc-123', releaseId: 1)],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [makeItem(id: 'abc-123', releaseId: 1)],
+                ).execute()
+                as CollectionExportPreviewReady;
         final row = result.preview.rows.first as EligibleExportRow;
         expect(row.itemId, 'abc-123');
       });
 
       test('eligibleCount matches number of eligible items', () async {
-        final result = await makeUseCase(
-          items: [
-            makeItem(id: 'a', releaseId: 1),
-            makeItem(id: 'b', releaseId: 2),
-            makeItem(id: 'c', releaseId: 3),
-          ],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(id: 'a', releaseId: 1),
+                    makeItem(id: 'b', releaseId: 2),
+                    makeItem(id: 'c', releaseId: 3),
+                  ],
+                ).execute()
+                as CollectionExportPreviewReady;
         expect(result.preview.eligibleCount, 3);
       });
     });
 
     group('already synced rows', () {
       test('item with synced status produces AlreadySyncedExportRow', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, syncStatus: SyncStatus.synced)],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(releaseId: 1, syncStatus: SyncStatus.synced),
+                  ],
+                ).execute()
+                as CollectionExportPreviewReady;
         expect(result.preview.rows.first, isA<AlreadySyncedExportRow>());
       });
 
       test('alreadySyncedCount is correct', () async {
-        final result = await makeUseCase(
-          items: [
-            makeItem(id: 'a', releaseId: 1, syncStatus: SyncStatus.synced),
-            makeItem(id: 'b', releaseId: 2, syncStatus: SyncStatus.synced),
-          ],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(
+                      id: 'a',
+                      releaseId: 1,
+                      syncStatus: SyncStatus.synced,
+                    ),
+                    makeItem(
+                      id: 'b',
+                      releaseId: 2,
+                      syncStatus: SyncStatus.synced,
+                    ),
+                  ],
+                ).execute()
+                as CollectionExportPreviewReady;
         expect(result.preview.alreadySyncedCount, 2);
       });
 
       test('already synced row carries correct releaseId', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 99, syncStatus: SyncStatus.synced)],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(releaseId: 99, syncStatus: SyncStatus.synced),
+                  ],
+                ).execute()
+                as CollectionExportPreviewReady;
         final row = result.preview.rows.first as AlreadySyncedExportRow;
         expect(row.releaseId, 99);
       });
@@ -273,57 +313,73 @@ void main() {
 
     group('invalid rows', () {
       test('item with releaseId 0 produces InvalidExportRow', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 0)],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(items: [makeItem(releaseId: 0)]).execute()
+                as CollectionExportPreviewReady;
         expect(result.preview.rows.first, isA<InvalidExportRow>());
       });
 
       test('item with negative releaseId produces InvalidExportRow', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: -1)],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(items: [makeItem(releaseId: -1)]).execute()
+                as CollectionExportPreviewReady;
         expect(result.preview.rows.first, isA<InvalidExportRow>());
       });
 
       test('invalid row has non-empty reason', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 0)],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(items: [makeItem(releaseId: 0)]).execute()
+                as CollectionExportPreviewReady;
         final row = result.preview.rows.first as InvalidExportRow;
         expect(row.reason, isNotEmpty);
       });
 
       test('invalid row reason does not contain token or secret', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 0)],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(items: [makeItem(releaseId: 0)]).execute()
+                as CollectionExportPreviewReady;
         final row = result.preview.rows.first as InvalidExportRow;
         expect(row.reason.toLowerCase(), isNot(contains('token')));
         expect(row.reason.toLowerCase(), isNot(contains('secret')));
       });
 
       test('invalidCount is correct', () async {
-        final result = await makeUseCase(
-          items: [
-            makeItem(id: 'a', releaseId: 0),
-            makeItem(id: 'b', releaseId: 0),
-          ],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(id: 'a', releaseId: 0),
+                    makeItem(id: 'b', releaseId: 0),
+                  ],
+                ).execute()
+                as CollectionExportPreviewReady;
         expect(result.preview.invalidCount, 2);
       });
     });
 
     group('mixed collection', () {
       test('mixed items produce correct counts', () async {
-        final result = await makeUseCase(
-          items: [
-            makeItem(id: 'a', releaseId: 1, syncStatus: SyncStatus.localOnly),
-            makeItem(id: 'b', releaseId: 2, syncStatus: SyncStatus.localOnly),
-            makeItem(id: 'c', releaseId: 3, syncStatus: SyncStatus.synced),
-            makeItem(id: 'd', releaseId: 0),
-          ],
-        ).execute() as CollectionExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(
+                      id: 'a',
+                      releaseId: 1,
+                      syncStatus: SyncStatus.localOnly,
+                    ),
+                    makeItem(
+                      id: 'b',
+                      releaseId: 2,
+                      syncStatus: SyncStatus.localOnly,
+                    ),
+                    makeItem(
+                      id: 'c',
+                      releaseId: 3,
+                      syncStatus: SyncStatus.synced,
+                    ),
+                    makeItem(id: 'd', releaseId: 0),
+                  ],
+                ).execute()
+                as CollectionExportPreviewReady;
         final p = result.preview;
         expect(p.totalCount, 4);
         expect(p.eligibleCount, 2);
@@ -333,15 +389,17 @@ void main() {
     });
 
     group('repository error', () {
-      test('returns CollectionExportPreviewError on repository exception',
-          () async {
-        final uc = BuildCollectionExportPreviewUseCase(
-          repository: _ThrowingCollectionRepository(),
-          capabilityUseCase: const _SupportedCapabilityUseCase(),
-        );
-        final result = await uc.execute();
-        expect(result, isA<CollectionExportPreviewError>());
-      });
+      test(
+        'returns CollectionExportPreviewError on repository exception',
+        () async {
+          final uc = BuildCollectionExportPreviewUseCase(
+            repository: _ThrowingCollectionRepository(),
+            capabilityUseCase: const _SupportedCapabilityUseCase(),
+          );
+          final result = await uc.execute();
+          expect(result, isA<CollectionExportPreviewError>());
+        },
+      );
     });
   });
 }

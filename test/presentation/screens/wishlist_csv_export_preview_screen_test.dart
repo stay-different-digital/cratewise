@@ -33,7 +33,7 @@ class _FakeWishlistRepository implements WishlistRepository {
 
 class _FakePreviewUseCase extends BuildWishlistCsvExportPreviewUseCase {
   _FakePreviewUseCase(this._override)
-      : super(repository: _FakeWishlistRepository());
+    : super(repository: _FakeWishlistRepository());
 
   final BuildWishlistCsvExportPreviewResult _override;
 
@@ -77,42 +77,39 @@ class _FakeCsvFileWriter implements CsvFileWriter {
     required String filename,
     required List<String> headers,
     required List<List<String>> rows,
-  }) async =>
-      '/tmp/$filename';
+  }) async => '/tmp/$filename';
 }
 
 class _FakeExecuteUseCase extends ExecuteWishlistCsvExportUseCase {
   _FakeExecuteUseCase(this._override)
-      : super(
-          jobRepository: _FakeJobRepository(),
-          fileWriter: _FakeCsvFileWriter(),
-          onShare: (_) async {},
-        );
+    : super(
+        jobRepository: _FakeJobRepository(),
+        fileWriter: _FakeCsvFileWriter(),
+        onShare: (_) async {},
+      );
 
   final ExecuteWishlistCsvExportResult _override;
 
   @override
   Future<ExecuteWishlistCsvExportResult> execute(
     CsvWishlistExportPreview preview,
-  ) async =>
-      _override;
+  ) async => _override;
 }
 
 class _PausingExecuteUseCase extends ExecuteWishlistCsvExportUseCase {
   _PausingExecuteUseCase(this._future)
-      : super(
-          jobRepository: _FakeJobRepository(),
-          fileWriter: _FakeCsvFileWriter(),
-          onShare: (_) async {},
-        );
+    : super(
+        jobRepository: _FakeJobRepository(),
+        fileWriter: _FakeCsvFileWriter(),
+        onShare: (_) async {},
+      );
 
   final Future<ExecuteWishlistCsvExportResult> _future;
 
   @override
   Future<ExecuteWishlistCsvExportResult> execute(
     CsvWishlistExportPreview preview,
-  ) =>
-      _future;
+  ) => _future;
 }
 
 // ---------------------------------------------------------------------------
@@ -120,34 +117,48 @@ class _PausingExecuteUseCase extends ExecuteWishlistCsvExportUseCase {
 // ---------------------------------------------------------------------------
 
 WishlistItem _item(String id) => WishlistItem(
-      id: id,
-      discogsReleaseId: 1,
-      artist: 'John Coltrane',
-      title: 'A Love Supreme',
-      priority: WishlistPriority.high,
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024),
-      updatedAt: DateTime.utc(2024),
-    );
+  id: id,
+  discogsReleaseId: 1,
+  artist: 'John Coltrane',
+  title: 'A Love Supreme',
+  priority: WishlistPriority.high,
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024),
+  updatedAt: DateTime.utc(2024),
+);
 
 CsvWishlistExportPreview _preview({int count = 2}) => CsvWishlistExportPreview(
-      items: List.generate(count, (i) => _item('item-$i')),
-      headers: wishlistCsvHeaders,
-      sampleRows: [
-        if (count > 0) ['John Coltrane', 'A Love Supreme', '', '', '', '', '1965', '1', '', 'High', '', '', ''],
+  items: List.generate(count, (i) => _item('item-$i')),
+  headers: wishlistCsvHeaders,
+  sampleRows: [
+    if (count > 0)
+      [
+        'John Coltrane',
+        'A Love Supreme',
+        '',
+        '',
+        '',
+        '',
+        '1965',
+        '1',
+        '',
+        'High',
+        '',
+        '',
+        '',
       ],
-    );
+  ],
+);
 
 Widget _buildSubject({
   required BuildWishlistCsvExportPreviewUseCase previewUseCase,
   ExecuteWishlistCsvExportUseCase? executeUseCase,
-}) =>
-    MaterialApp(
-      home: WishlistCsvExportPreviewScreen(
-        previewUseCase: previewUseCase,
-        executeUseCase: executeUseCase,
-      ),
-    );
+}) => MaterialApp(
+  home: WishlistCsvExportPreviewScreen(
+    previewUseCase: previewUseCase,
+    executeUseCase: executeUseCase,
+  ),
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -156,8 +167,9 @@ Widget _buildSubject({
 void main() {
   group('WishlistCsvExportPreviewScreen', () {
     group('loading state', () {
-      testWidgets('shows CircularProgressIndicator while loading',
-          (tester) async {
+      testWidgets('shows CircularProgressIndicator while loading', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(const WishlistCsvExportPreviewError());
         await tester.pumpWidget(_buildSubject(previewUseCase: uc));
         expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -208,7 +220,9 @@ void main() {
         expect(find.text('No data to preview'), findsOneWidget);
       });
 
-      testWidgets('shows empty note when wishlist has no items', (tester) async {
+      testWidgets('shows empty note when wishlist has no items', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           WishlistCsvExportPreviewReady(_preview(count: 0)),
         );
@@ -220,8 +234,9 @@ void main() {
         );
       });
 
-      testWidgets('does not show empty note when wishlist has items',
-          (tester) async {
+      testWidgets('does not show empty note when wishlist has items', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           WishlistCsvExportPreviewReady(_preview(count: 2)),
         );
@@ -262,19 +277,24 @@ void main() {
         expect(find.text('Export 1 row'), findsOneWidget);
       });
 
-      testWidgets('button is enabled when rowCount > 0 and execute provided',
-          (tester) async {
+      testWidgets('button is enabled when rowCount > 0 and execute provided', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           WishlistCsvExportPreviewReady(_preview(count: 2)),
         );
-        await tester.pumpWidget(_buildSubject(
-          previewUseCase: uc,
-          executeUseCase: _FakeExecuteUseCase(
-            const ExecuteWishlistCsvExportCompleted(
-              jobId: 'j', rowCount: 2, filename: 'f.csv',
+        await tester.pumpWidget(
+          _buildSubject(
+            previewUseCase: uc,
+            executeUseCase: _FakeExecuteUseCase(
+              const ExecuteWishlistCsvExportCompleted(
+                jobId: 'j',
+                rowCount: 2,
+                filename: 'f.csv',
+              ),
             ),
           ),
-        ));
+        );
         await tester.pump();
         final button = tester.widget<FilledButton>(
           find.widgetWithText(FilledButton, 'Export 2 rows'),
@@ -322,7 +342,9 @@ void main() {
         final pauseCompleter = Future<ExecuteWishlistCsvExportResult>.delayed(
           const Duration(seconds: 10),
           () => const ExecuteWishlistCsvExportCompleted(
-            jobId: 'j', rowCount: 2, filename: 'f.csv',
+            jobId: 'j',
+            rowCount: 2,
+            filename: 'f.csv',
           ),
         );
         final executeUseCase = _PausingExecuteUseCase(pauseCompleter);
@@ -345,7 +367,9 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteWishlistCsvExportCompleted(
-            jobId: 'j', rowCount: 2, filename: 'wishlist_export_123.csv',
+            jobId: 'j',
+            rowCount: 2,
+            filename: 'wishlist_export_123.csv',
           ),
         );
         await tester.pumpWidget(
@@ -363,7 +387,9 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteWishlistCsvExportCompleted(
-            jobId: 'j', rowCount: 5, filename: 'f.csv',
+            jobId: 'j',
+            rowCount: 5,
+            filename: 'f.csv',
           ),
         );
         await tester.pumpWidget(
@@ -381,7 +407,9 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteWishlistCsvExportCompleted(
-            jobId: 'j', rowCount: 2, filename: 'f.csv',
+            jobId: 'j',
+            rowCount: 2,
+            filename: 'f.csv',
           ),
         );
         await tester.pumpWidget(
@@ -393,13 +421,17 @@ void main() {
         expect(find.text('Done'), findsOneWidget);
       });
 
-      testWidgets('done state contains no token or secret text', (tester) async {
+      testWidgets('done state contains no token or secret text', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           WishlistCsvExportPreviewReady(_preview(count: 1)),
         );
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteWishlistCsvExportCompleted(
-            jobId: 'j', rowCount: 1, filename: 'wishlist_export_123.csv',
+            jobId: 'j',
+            rowCount: 1,
+            filename: 'wishlist_export_123.csv',
           ),
         );
         await tester.pumpWidget(
@@ -420,13 +452,16 @@ void main() {
     });
 
     group('execute failure snackbar', () {
-      testWidgets('shows snackbar and stays on ready state on failure',
-          (tester) async {
+      testWidgets('shows snackbar and stays on ready state on failure', (
+        tester,
+      ) async {
         final uc = _FakePreviewUseCase(
           WishlistCsvExportPreviewReady(_preview(count: 2)),
         );
         final executeUseCase = _FakeExecuteUseCase(
-          const ExecuteWishlistCsvExportFailed('CSV export could not be completed'),
+          const ExecuteWishlistCsvExportFailed(
+            'CSV export could not be completed',
+          ),
         );
         await tester.pumpWidget(
           _buildSubject(previewUseCase: uc, executeUseCase: executeUseCase),

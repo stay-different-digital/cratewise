@@ -44,11 +44,12 @@ class BuildCollectionCsvImportPreviewUseCase {
       final parsed = parser.parse(content);
       return switch (parsed) {
         CsvParseSuccess() => CollectionCsvImportPreviewReady(
-            filename: filename,
-            preview: validator.validate(parsed),
-          ),
-        CsvParseFailure(:final reason) =>
-            CollectionCsvImportPreviewParseFailed(reason),
+          filename: filename,
+          preview: validator.validate(parsed),
+        ),
+        CsvParseFailure(:final reason) => CollectionCsvImportPreviewParseFailed(
+          reason,
+        ),
       };
     } catch (_) {
       return const CollectionCsvImportPreviewError();

@@ -42,33 +42,29 @@ ReleaseDetail kindOfBlue({
   String catno = 'CL 1355',
   String format = 'Vinyl, LP',
   String country = 'US',
-}) =>
-    ReleaseDetail(
-      id: 249504,
-      title: 'Kind Of Blue',
-      artist: 'Miles Davis',
-      label: label,
-      catno: catno,
-      format: format,
-      country: country,
-      year: 1959,
-      genres: const ['Jazz'],
-      styles: const ['Modal'],
-      tracklist: const [],
-      identifiers: const [],
-      notes: 'A seminal jazz album.',
-      coverUrl: 'https://i.discogs.com/cover.jpg',
-    );
+}) => ReleaseDetail(
+  id: 249504,
+  title: 'Kind Of Blue',
+  artist: 'Miles Davis',
+  label: label,
+  catno: catno,
+  format: format,
+  country: country,
+  year: 1959,
+  genres: const ['Jazz'],
+  styles: const ['Modal'],
+  tracklist: const [],
+  identifiers: const [],
+  notes: 'A seminal jazz album.',
+  coverUrl: 'https://i.discogs.com/cover.jpg',
+);
 
 AddToWishlistUseCase makeUseCase(
   FakeWishlistRepository repo, {
   int idCounter = 0,
 }) {
   var counter = idCounter;
-  return AddToWishlistUseCase(
-    repo,
-    idGenerator: () => 'id-${++counter}',
-  );
+  return AddToWishlistUseCase(repo, idGenerator: () => 'id-${++counter}');
 }
 
 // ---------------------------------------------------------------------------
@@ -171,66 +167,76 @@ void main() {
     group('empty string fields from release', () {
       test('empty label becomes null', () async {
         final result =
-            await useCase.execute(kindOfBlue(label: '')) as AddToWishlistSuccess;
+            await useCase.execute(kindOfBlue(label: ''))
+                as AddToWishlistSuccess;
         expect(result.item.label, isNull);
       });
 
       test('empty catno becomes null', () async {
         final result =
-            await useCase.execute(kindOfBlue(catno: '')) as AddToWishlistSuccess;
+            await useCase.execute(kindOfBlue(catno: ''))
+                as AddToWishlistSuccess;
         expect(result.item.catno, isNull);
       });
 
       test('empty format becomes null', () async {
         final result =
-            await useCase.execute(kindOfBlue(format: '')) as AddToWishlistSuccess;
+            await useCase.execute(kindOfBlue(format: ''))
+                as AddToWishlistSuccess;
         expect(result.item.format, isNull);
       });
 
       test('empty country becomes null', () async {
         final result =
-            await useCase.execute(kindOfBlue(country: '')) as AddToWishlistSuccess;
+            await useCase.execute(kindOfBlue(country: ''))
+                as AddToWishlistSuccess;
         expect(result.item.country, isNull);
       });
     });
 
     group('duplicate prevention', () {
-      test('returns AddToWishlistDuplicate when release already in wishlist',
-          () async {
-        await useCase.execute(kindOfBlue());
-        final result = await useCase.execute(kindOfBlue());
-        expect(result, isA<AddToWishlistDuplicate>());
-      });
+      test(
+        'returns AddToWishlistDuplicate when release already in wishlist',
+        () async {
+          await useCase.execute(kindOfBlue());
+          final result = await useCase.execute(kindOfBlue());
+          expect(result, isA<AddToWishlistDuplicate>());
+        },
+      );
 
-      test('does not add a second item when release already in wishlist',
-          () async {
-        await useCase.execute(kindOfBlue());
-        await useCase.execute(kindOfBlue());
-        expect(await repo.getAll(), hasLength(1));
-      });
+      test(
+        'does not add a second item when release already in wishlist',
+        () async {
+          await useCase.execute(kindOfBlue());
+          await useCase.execute(kindOfBlue());
+          expect(await repo.getAll(), hasLength(1));
+        },
+      );
 
-      test('allows adding a different release after a duplicate is rejected',
-          () async {
-        final other = ReleaseDetail(
-          id: 111111,
-          title: 'A Love Supreme',
-          artist: 'John Coltrane',
-          label: 'Impulse!',
-          catno: 'A-77',
-          format: 'Vinyl, LP',
-          country: 'US',
-          year: 1965,
-          genres: const ['Jazz'],
-          styles: const [],
-          tracklist: const [],
-          identifiers: const [],
-        );
-        await useCase.execute(kindOfBlue());
-        await useCase.execute(kindOfBlue());
-        final result = await useCase.execute(other);
-        expect(result, isA<AddToWishlistSuccess>());
-        expect(await repo.getAll(), hasLength(2));
-      });
+      test(
+        'allows adding a different release after a duplicate is rejected',
+        () async {
+          final other = ReleaseDetail(
+            id: 111111,
+            title: 'A Love Supreme',
+            artist: 'John Coltrane',
+            label: 'Impulse!',
+            catno: 'A-77',
+            format: 'Vinyl, LP',
+            country: 'US',
+            year: 1965,
+            genres: const ['Jazz'],
+            styles: const [],
+            tracklist: const [],
+            identifiers: const [],
+          );
+          await useCase.execute(kindOfBlue());
+          await useCase.execute(kindOfBlue());
+          final result = await useCase.execute(other);
+          expect(result, isA<AddToWishlistSuccess>());
+          expect(await repo.getAll(), hasLength(2));
+        },
+      );
     });
   });
 }

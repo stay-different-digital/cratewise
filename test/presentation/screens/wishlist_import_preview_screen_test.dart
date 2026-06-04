@@ -34,11 +34,11 @@ class _FakeWishlistRepository implements WishlistRepository {
 
 class _FakeUseCase extends FetchWishlistImportPreviewUseCase {
   _FakeUseCase(this._result)
-      : super(
-          previewBuilder: BuildWishlistImportPreviewUseCase(
-            _FakeWishlistRepository(),
-          ),
-        );
+    : super(
+        previewBuilder: BuildWishlistImportPreviewUseCase(
+          _FakeWishlistRepository(),
+        ),
+      );
 
   final FetchWishlistImportPreviewResult _result;
   bool executeCalled = false;
@@ -90,11 +90,11 @@ class _FakeRowResultRepository implements ImportExportRowResultRepository {
 
 class _FakeExecuteUseCase extends ExecuteWishlistImportUseCase {
   _FakeExecuteUseCase(this._result)
-      : super(
-          wishlistRepository: _FakeWishlistRepository(),
-          jobRepository: _FakeJobRepository(),
-          rowResultRepository: _FakeRowResultRepository(),
-        );
+    : super(
+        wishlistRepository: _FakeWishlistRepository(),
+        jobRepository: _FakeJobRepository(),
+        rowResultRepository: _FakeRowResultRepository(),
+      );
 
   final ExecuteWishlistImportResult _result;
   bool executeCalled = false;
@@ -144,13 +144,12 @@ WishlistImportPreview makePreview({
 Widget buildSubject(
   FetchWishlistImportPreviewUseCase useCase, {
   ExecuteWishlistImportUseCase? executeUseCase,
-}) =>
-    MaterialApp(
-      home: WishlistImportPreviewScreen(
-        useCase: useCase,
-        executeUseCase: executeUseCase,
-      ),
-    );
+}) => MaterialApp(
+  home: WishlistImportPreviewScreen(
+    useCase: useCase,
+    executeUseCase: executeUseCase,
+  ),
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -159,14 +158,17 @@ Widget buildSubject(
 void main() {
   group('WishlistImportPreviewScreen', () {
     group('loading state', () {
-      testWidgets('shows CircularProgressIndicator while loading',
-          (tester) async {
+      testWidgets('shows CircularProgressIndicator while loading', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase));
         expect(find.byType(CircularProgressIndicator), findsOneWidget);
       });
 
-      testWidgets('shows Import Wishlist from Discogs in AppBar', (tester) async {
+      testWidgets('shows Import Wishlist from Discogs in AppBar', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase));
         expect(find.text('Import Wishlist from Discogs'), findsOneWidget);
@@ -181,8 +183,9 @@ void main() {
 
     group('preview ready state', () {
       testWidgets('shows Wishlist preview heading after load', (tester) async {
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 3)));
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 3)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Wishlist preview'), findsOneWidget);
@@ -226,9 +229,7 @@ void main() {
 
       testWidgets('shows invalid count', (tester) async {
         final useCase = _FakeUseCase(
-          FetchWishlistPreviewReady(
-            makePreview(invalidCount: 2, newCount: 1),
-          ),
+          FetchWishlistPreviewReady(makePreview(invalidCount: 2, newCount: 1)),
         );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
@@ -236,18 +237,19 @@ void main() {
         expect(find.text('2'), findsOneWidget);
       });
 
-      testWidgets('shows zero for all counts on empty wantlist', (tester) async {
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
+      testWidgets('shows zero for all counts on empty wantlist', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('0'), findsNWidgets(4));
       });
 
-      testWidgets('shows empty explanation when Discogs wantlist is empty',
-          (tester) async {
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
+      testWidgets('shows empty explanation when Discogs wantlist is empty', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(
@@ -256,10 +258,12 @@ void main() {
         );
       });
 
-      testWidgets('does not show empty explanation when wantlist has items',
-          (tester) async {
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 2)));
+      testWidgets('does not show empty explanation when wantlist has items', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 2)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(
@@ -271,45 +275,49 @@ void main() {
 
     group('confirm button', () {
       testWidgets('shows Nothing to import when newCount is 0', (tester) async {
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
+        final useCase = _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Nothing to import'), findsOneWidget);
       });
 
       testWidgets('shows Import N records for newCount > 1', (tester) async {
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 7)));
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 7)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Import 7 records'), findsOneWidget);
       });
 
       testWidgets('shows Import 1 record for newCount == 1', (tester) async {
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 1)));
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 1)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Import 1 record'), findsOneWidget);
       });
 
-      testWidgets('confirm button is disabled when no execute use case injected',
-          (tester) async {
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 3)));
-        await tester.pumpWidget(buildSubject(useCase));
-        await tester.pump();
-        final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Import 3 records'),
-        );
-        expect(button.onPressed, isNull);
-      });
+      testWidgets(
+        'confirm button is disabled when no execute use case injected',
+        (tester) async {
+          final useCase = _FakeUseCase(
+            FetchWishlistPreviewReady(makePreview(newCount: 3)),
+          );
+          await tester.pumpWidget(buildSubject(useCase));
+          await tester.pump();
+          final button = tester.widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Import 3 records'),
+          );
+          expect(button.onPressed, isNull);
+        },
+      );
 
-      testWidgets('confirm button is disabled when nothing to import',
-          (tester) async {
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
+      testWidgets('confirm button is disabled when nothing to import', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(FetchWishlistPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         final button = tester.widget<FilledButton>(
@@ -327,10 +335,7 @@ void main() {
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Notes'), findsOneWidget);
-        expect(
-          find.textContaining('already in your wishlist'),
-          findsOneWidget,
-        );
+        expect(find.textContaining('already in your wishlist'), findsOneWidget);
       });
 
       testWidgets('shows warning when invalid items exist', (tester) async {
@@ -345,7 +350,8 @@ void main() {
 
       testWidgets('no warning card when all items are new', (tester) async {
         final useCase = _FakeUseCase(
-            FetchWishlistPreviewReady(makePreview(newCount: 5)));
+          FetchWishlistPreviewReady(makePreview(newCount: 5)),
+        );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Notes'), findsNothing);
@@ -388,7 +394,9 @@ void main() {
         );
       });
 
-      testWidgets('no token state does not show confirm button', (tester) async {
+      testWidgets('no token state does not show confirm button', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(const FetchWishlistPreviewNoToken());
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
@@ -414,16 +422,14 @@ void main() {
 
     group('network error state', () {
       testWidgets('shows network error message', (tester) async {
-        final useCase =
-            _FakeUseCase(const FetchWishlistPreviewNetworkError());
+        final useCase = _FakeUseCase(const FetchWishlistPreviewNetworkError());
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.textContaining('No internet connection'), findsOneWidget);
       });
 
       testWidgets('shows Try again button for network error', (tester) async {
-        final useCase =
-            _FakeUseCase(const FetchWishlistPreviewNetworkError());
+        final useCase = _FakeUseCase(const FetchWishlistPreviewNetworkError());
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Try again'), findsOneWidget);
@@ -455,8 +461,7 @@ void main() {
         int callCount = 0;
         final countingUseCase = _CountingFakeUseCase(
           firstResult: const FetchWishlistPreviewNetworkError(),
-          secondResult:
-              FetchWishlistPreviewReady(makePreview(newCount: 1)),
+          secondResult: FetchWishlistPreviewReady(makePreview(newCount: 1)),
           onCall: () => callCount++,
         );
         await tester.pumpWidget(buildSubject(countingUseCase));
@@ -471,27 +476,29 @@ void main() {
 
     group('import flow', () {
       testWidgets(
-          'confirm button is enabled when execute use case provided and newCount > 0',
-          (tester) async {
-        final executeUseCase = _FakeExecuteUseCase(
-          const ExecuteWishlistImportCompleted(
-            jobId: 'j1',
-            imported: 3,
-            skipped: 0,
-            failed: 0,
-          ),
-        );
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 3)));
-        await tester.pumpWidget(
-          buildSubject(useCase, executeUseCase: executeUseCase),
-        );
-        await tester.pump();
-        final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Import 3 records'),
-        );
-        expect(button.onPressed, isNotNull);
-      });
+        'confirm button is enabled when execute use case provided and newCount > 0',
+        (tester) async {
+          final executeUseCase = _FakeExecuteUseCase(
+            const ExecuteWishlistImportCompleted(
+              jobId: 'j1',
+              imported: 3,
+              skipped: 0,
+              failed: 0,
+            ),
+          );
+          final useCase = _FakeUseCase(
+            FetchWishlistPreviewReady(makePreview(newCount: 3)),
+          );
+          await tester.pumpWidget(
+            buildSubject(useCase, executeUseCase: executeUseCase),
+          );
+          await tester.pump();
+          final button = tester.widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Import 3 records'),
+          );
+          expect(button.onPressed, isNotNull);
+        },
+      );
 
       testWidgets('shows spinner while importing', (tester) async {
         bool importing = false;
@@ -504,8 +511,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 1)));
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 1)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -521,7 +529,9 @@ void main() {
         await tester.pumpAndSettle(); // let import complete
       });
 
-      testWidgets('shows Import complete after import finishes', (tester) async {
+      testWidgets('shows Import complete after import finishes', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteWishlistImportCompleted(
             jobId: 'j1',
@@ -530,8 +540,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 2)));
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 2)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -541,8 +552,9 @@ void main() {
         expect(find.text('Import complete'), findsOneWidget);
       });
 
-      testWidgets('import summary shows Added to wishlist label',
-          (tester) async {
+      testWidgets('import summary shows Added to wishlist label', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteWishlistImportCompleted(
             jobId: 'j1',
@@ -551,8 +563,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 4)));
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 4)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -571,8 +584,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 7)));
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 7)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -582,8 +596,9 @@ void main() {
         expect(find.text('7'), findsOneWidget);
       });
 
-      testWidgets('import summary shows skipped count when non-zero',
-          (tester) async {
+      testWidgets('import summary shows skipped count when non-zero', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteWishlistImportCompleted(
             jobId: 'j1',
@@ -594,7 +609,8 @@ void main() {
         );
         final useCase = _FakeUseCase(
           FetchWishlistPreviewReady(
-              makePreview(newCount: 3, duplicateCount: 5)),
+            makePreview(newCount: 3, duplicateCount: 5),
+          ),
         );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
@@ -606,8 +622,9 @@ void main() {
         expect(find.text('5'), findsOneWidget);
       });
 
-      testWidgets('import summary does not show Skipped when skipped is zero',
-          (tester) async {
+      testWidgets('import summary does not show Skipped when skipped is zero', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteWishlistImportCompleted(
             jobId: 'j1',
@@ -616,8 +633,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 2)));
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 2)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -627,8 +645,9 @@ void main() {
         expect(find.text('Skipped'), findsNothing);
       });
 
-      testWidgets('import summary shows failed count when non-zero',
-          (tester) async {
+      testWidgets('import summary shows failed count when non-zero', (
+        tester,
+      ) async {
         final executeUseCase = _FakeExecuteUseCase(
           const ExecuteWishlistImportCompleted(
             jobId: 'j1',
@@ -637,8 +656,9 @@ void main() {
             failed: 2,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 3)));
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 3)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -658,8 +678,9 @@ void main() {
             failed: 0,
           ),
         );
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 1)));
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 1)),
+        );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
         );
@@ -669,22 +690,25 @@ void main() {
         expect(find.text('Done'), findsOneWidget);
       });
 
-      testWidgets('ExecuteWishlistImportFailed shows snackbar and returns to preview',
-          (tester) async {
-        final executeUseCase = _FakeExecuteUseCase(
-          const ExecuteWishlistImportFailed('Import could not be completed'),
-        );
-        final useCase =
-            _FakeUseCase(FetchWishlistPreviewReady(makePreview(newCount: 2)));
-        await tester.pumpWidget(
-          buildSubject(useCase, executeUseCase: executeUseCase),
-        );
-        await tester.pump();
-        await tester.tap(find.text('Import 2 records'));
-        await tester.pump();
-        expect(find.text('Wishlist preview'), findsOneWidget);
-        expect(find.byType(SnackBar), findsOneWidget);
-      });
+      testWidgets(
+        'ExecuteWishlistImportFailed shows snackbar and returns to preview',
+        (tester) async {
+          final executeUseCase = _FakeExecuteUseCase(
+            const ExecuteWishlistImportFailed('Import could not be completed'),
+          );
+          final useCase = _FakeUseCase(
+            FetchWishlistPreviewReady(makePreview(newCount: 2)),
+          );
+          await tester.pumpWidget(
+            buildSubject(useCase, executeUseCase: executeUseCase),
+          );
+          await tester.pump();
+          await tester.tap(find.text('Import 2 records'));
+          await tester.pump();
+          expect(find.text('Wishlist preview'), findsOneWidget);
+          expect(find.byType(SnackBar), findsOneWidget);
+        },
+      );
     });
 
     group('wide layout', () {
@@ -696,7 +720,8 @@ void main() {
 
         final useCase = _FakeUseCase(
           FetchWishlistPreviewReady(
-              makePreview(newCount: 2, duplicateCount: 1)),
+            makePreview(newCount: 2, duplicateCount: 1),
+          ),
         );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
@@ -713,7 +738,8 @@ void main() {
         // duplicateCount=1 keeps totalCount(6) != newCount(5) so '5' appears once.
         final useCase = _FakeUseCase(
           FetchWishlistPreviewReady(
-              makePreview(newCount: 5, duplicateCount: 1)),
+            makePreview(newCount: 5, duplicateCount: 1),
+          ),
         );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
@@ -723,7 +749,9 @@ void main() {
     });
 
     group('security', () {
-      testWidgets('no token state does not show any token value', (tester) async {
+      testWidgets('no token state does not show any token value', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(const FetchWishlistPreviewNoToken());
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
@@ -764,10 +792,10 @@ class _CountingFakeUseCase extends FetchWishlistImportPreviewUseCase {
     required this.secondResult,
     required this.onCall,
   }) : super(
-          previewBuilder: BuildWishlistImportPreviewUseCase(
-            _FakeWishlistRepository(),
-          ),
-        );
+         previewBuilder: BuildWishlistImportPreviewUseCase(
+           _FakeWishlistRepository(),
+         ),
+       );
 
   final FetchWishlistImportPreviewResult firstResult;
   final FetchWishlistImportPreviewResult secondResult;
@@ -787,14 +815,12 @@ class _CountingFakeUseCase extends FetchWishlistImportPreviewUseCase {
 // ---------------------------------------------------------------------------
 
 class _SlowFakeExecuteUseCase extends ExecuteWishlistImportUseCase {
-  _SlowFakeExecuteUseCase({
-    required this.onExecute,
-    required this.result,
-  }) : super(
-          wishlistRepository: _FakeWishlistRepository(),
-          jobRepository: _FakeJobRepository(),
-          rowResultRepository: _FakeRowResultRepository(),
-        );
+  _SlowFakeExecuteUseCase({required this.onExecute, required this.result})
+    : super(
+        wishlistRepository: _FakeWishlistRepository(),
+        jobRepository: _FakeJobRepository(),
+        rowResultRepository: _FakeRowResultRepository(),
+      );
 
   final VoidCallback onExecute;
   final ExecuteWishlistImportResult result;

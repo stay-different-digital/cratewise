@@ -12,21 +12,18 @@ void main() {
     });
 
     test('not supported result has a non-empty reason', () {
-      final result =
-          makeUseCase().execute() as CollectionExportNotSupported;
+      final result = makeUseCase().execute() as CollectionExportNotSupported;
       expect(result.reason, isNotEmpty);
     });
 
     test('reason does not contain raw token or secret wording', () {
-      final result =
-          makeUseCase().execute() as CollectionExportNotSupported;
+      final result = makeUseCase().execute() as CollectionExportNotSupported;
       expect(result.reason.toLowerCase(), isNot(contains('token')));
       expect(result.reason.toLowerCase(), isNot(contains('secret')));
     });
 
     test('reason mentions an alternative (CSV)', () {
-      final result =
-          makeUseCase().execute() as CollectionExportNotSupported;
+      final result = makeUseCase().execute() as CollectionExportNotSupported;
       expect(result.reason.toLowerCase(), contains('csv'));
     });
 

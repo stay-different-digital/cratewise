@@ -37,10 +37,10 @@ class _FakeWishlistRepository implements WishlistRepository {
 
 class _FakeUseCase extends BuildWishlistExportPreviewUseCase {
   _FakeUseCase(this._override)
-      : super(
-          repository: _FakeWishlistRepository(),
-          capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
-        );
+    : super(
+        repository: _FakeWishlistRepository(),
+        capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
+      );
 
   final BuildWishlistExportPreviewResult _override;
   bool executeCalled = false;
@@ -58,9 +58,9 @@ class _CountingFakeUseCase extends BuildWishlistExportPreviewUseCase {
     required this.secondResult,
     required this.onCall,
   }) : super(
-          repository: _FakeWishlistRepository(),
-          capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
-        );
+         repository: _FakeWishlistRepository(),
+         capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
+       );
 
   final BuildWishlistExportPreviewResult firstResult;
   final BuildWishlistExportPreviewResult secondResult;
@@ -117,42 +117,37 @@ class _FakeRowResultRepository implements ImportExportRowResultRepository {
 
 class _FakeExecuteUseCase extends ExecuteWishlistExportUseCase {
   _FakeExecuteUseCase(this._override)
-      : super(
-          capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
-          tokenStorage: _FakeTokenStorage(),
-          apiClient: DiscogsApiClient(
-            httpClient:
-                MockClient((_) async => http.Response('', 201)),
-          ),
-          wishlistRepository: _FakeWishlistRepository(),
-          jobRepository: _FakeImportExportJobRepository(),
-          rowResultRepository: _FakeRowResultRepository(),
-        );
+    : super(
+        capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
+        tokenStorage: _FakeTokenStorage(),
+        apiClient: DiscogsApiClient(
+          httpClient: MockClient((_) async => http.Response('', 201)),
+        ),
+        wishlistRepository: _FakeWishlistRepository(),
+        jobRepository: _FakeImportExportJobRepository(),
+        rowResultRepository: _FakeRowResultRepository(),
+      );
 
   final ExecuteWishlistExportResult _override;
 
   @override
   Future<ExecuteWishlistExportResult> execute(
     WishlistExportPreview preview,
-  ) async =>
-      _override;
+  ) async => _override;
 }
 
 class _PausingExecuteUseCase extends ExecuteWishlistExportUseCase {
-  _PausingExecuteUseCase(
-    this._future, {
-    required this.onExecute,
-  }) : super(
-          capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
-          tokenStorage: _FakeTokenStorage(),
-          apiClient: DiscogsApiClient(
-            httpClient:
-                MockClient((_) async => http.Response('', 201)),
-          ),
-          wishlistRepository: _FakeWishlistRepository(),
-          jobRepository: _FakeImportExportJobRepository(),
-          rowResultRepository: _FakeRowResultRepository(),
-        );
+  _PausingExecuteUseCase(this._future, {required this.onExecute})
+    : super(
+        capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
+        tokenStorage: _FakeTokenStorage(),
+        apiClient: DiscogsApiClient(
+          httpClient: MockClient((_) async => http.Response('', 201)),
+        ),
+        wishlistRepository: _FakeWishlistRepository(),
+        jobRepository: _FakeImportExportJobRepository(),
+        rowResultRepository: _FakeRowResultRepository(),
+      );
 
   final Future<ExecuteWishlistExportResult> _future;
   final void Function(WishlistExportPreview) onExecute;
@@ -203,13 +198,12 @@ WishlistExportPreview makePreview({
 Widget buildSubject({
   required BuildWishlistExportPreviewUseCase useCase,
   ExecuteWishlistExportUseCase? executeUseCase,
-}) =>
-    MaterialApp(
-      home: WishlistExportPreviewScreen(
-        useCase: useCase,
-        executeUseCase: executeUseCase,
-      ),
-    );
+}) => MaterialApp(
+  home: WishlistExportPreviewScreen(
+    useCase: useCase,
+    executeUseCase: executeUseCase,
+  ),
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -218,25 +212,28 @@ Widget buildSubject({
 void main() {
   group('WishlistExportPreviewScreen', () {
     group('loading state', () {
-      testWidgets('shows CircularProgressIndicator while loading',
-          (tester) async {
-        final useCase =
-            _FakeUseCase(const WishlistExportPreviewNotSupported('N/A'));
+      testWidgets('shows CircularProgressIndicator while loading', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(
+          const WishlistExportPreviewNotSupported('N/A'),
+        );
         await tester.pumpWidget(buildSubject(useCase: useCase));
         expect(find.byType(CircularProgressIndicator), findsOneWidget);
       });
 
-      testWidgets('shows Export Wishlist to Discogs in AppBar',
-          (tester) async {
-        final useCase =
-            _FakeUseCase(const WishlistExportPreviewNotSupported('N/A'));
+      testWidgets('shows Export Wishlist to Discogs in AppBar', (tester) async {
+        final useCase = _FakeUseCase(
+          const WishlistExportPreviewNotSupported('N/A'),
+        );
         await tester.pumpWidget(buildSubject(useCase: useCase));
         expect(find.text('Export Wishlist to Discogs'), findsOneWidget);
       });
 
       testWidgets('calls execute on initState', (tester) async {
-        final useCase =
-            _FakeUseCase(const WishlistExportPreviewNotSupported('N/A'));
+        final useCase = _FakeUseCase(
+          const WishlistExportPreviewNotSupported('N/A'),
+        );
         await tester.pumpWidget(buildSubject(useCase: useCase));
         expect(useCase.executeCalled, isTrue);
       });
@@ -262,8 +259,9 @@ void main() {
         expect(find.text(reason), findsOneWidget);
       });
 
-      testWidgets('does not show a confirm button in not-supported state',
-          (tester) async {
+      testWidgets('does not show a confirm button in not-supported state', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(
           const WishlistExportPreviewNotSupported('N/A'),
         );
@@ -272,8 +270,9 @@ void main() {
         expect(find.byType(FilledButton), findsNothing);
       });
 
-      testWidgets('not-supported reason does not contain token or secret',
-          (tester) async {
+      testWidgets('not-supported reason does not contain token or secret', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(
           const WishlistExportPreviewNotSupported(
             'Export to Discogs is not available yet. '
@@ -295,8 +294,7 @@ void main() {
 
     group('ready state', () {
       testWidgets('shows Export preview heading after load', (tester) async {
-        final useCase =
-            _FakeUseCase(WishlistExportPreviewReady(makePreview()));
+        final useCase = _FakeUseCase(WishlistExportPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Export preview'), findsOneWidget);
@@ -350,9 +348,10 @@ void main() {
         expect(find.text('2'), findsOneWidget);
       });
 
-      testWidgets('shows zero for all counts on empty wishlist', (tester) async {
-        final useCase =
-            _FakeUseCase(WishlistExportPreviewReady(makePreview()));
+      testWidgets('shows zero for all counts on empty wishlist', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(WishlistExportPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('0'), findsNWidgets(4));
@@ -360,17 +359,18 @@ void main() {
     });
 
     group('confirm button', () {
-      testWidgets('shows Nothing to export when eligible count is 0',
-          (tester) async {
-        final useCase =
-            _FakeUseCase(WishlistExportPreviewReady(makePreview()));
+      testWidgets('shows Nothing to export when eligible count is 0', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(WishlistExportPreviewReady(makePreview()));
         await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
         expect(find.text('Nothing to export'), findsOneWidget);
       });
 
-      testWidgets('shows Export N records for eligibleCount > 1',
-          (tester) async {
+      testWidgets('shows Export N records for eligibleCount > 1', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(
           WishlistExportPreviewReady(makePreview(eligibleCount: 5)),
         );
@@ -379,8 +379,9 @@ void main() {
         expect(find.text('Export 5 records'), findsOneWidget);
       });
 
-      testWidgets('shows Export 1 record for eligibleCount == 1',
-          (tester) async {
+      testWidgets('shows Export 1 record for eligibleCount == 1', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(
           WishlistExportPreviewReady(makePreview(eligibleCount: 1)),
         );
@@ -389,13 +390,16 @@ void main() {
         expect(find.text('Export 1 record'), findsOneWidget);
       });
 
-      testWidgets('confirm button is disabled when nothing to export',
-          (tester) async {
-        final useCase =
-            _FakeUseCase(WishlistExportPreviewReady(makePreview()));
+      testWidgets('confirm button is disabled when nothing to export', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(WishlistExportPreviewReady(makePreview()));
         final executeUseCase = _FakeExecuteUseCase(
           ExecuteWishlistExportCompleted(
-            jobId: 'j', exported: 0, skipped: 0, failed: 0,
+            jobId: 'j',
+            exported: 0,
+            skipped: 0,
+            failed: 0,
           ),
         );
         await tester.pumpWidget(
@@ -409,43 +413,50 @@ void main() {
       });
 
       testWidgets(
-          'confirm button is enabled when eligible items exist and execute use case provided',
-          (tester) async {
-        final useCase = _FakeUseCase(
-          WishlistExportPreviewReady(makePreview(eligibleCount: 3)),
-        );
-        final executeUseCase = _FakeExecuteUseCase(
-          ExecuteWishlistExportCompleted(
-            jobId: 'j', exported: 3, skipped: 0, failed: 0,
-          ),
-        );
-        await tester.pumpWidget(
-          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
-        );
-        await tester.pump();
-        final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Export 3 records'),
-        );
-        expect(button.onPressed, isNotNull);
-      });
+        'confirm button is enabled when eligible items exist and execute use case provided',
+        (tester) async {
+          final useCase = _FakeUseCase(
+            WishlistExportPreviewReady(makePreview(eligibleCount: 3)),
+          );
+          final executeUseCase = _FakeExecuteUseCase(
+            ExecuteWishlistExportCompleted(
+              jobId: 'j',
+              exported: 3,
+              skipped: 0,
+              failed: 0,
+            ),
+          );
+          await tester.pumpWidget(
+            buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+          );
+          await tester.pump();
+          final button = tester.widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Export 3 records'),
+          );
+          expect(button.onPressed, isNotNull);
+        },
+      );
 
       testWidgets(
-          'confirm button is disabled when eligible items exist but no execute use case',
-          (tester) async {
-        final useCase = _FakeUseCase(
-          WishlistExportPreviewReady(makePreview(eligibleCount: 3)),
-        );
-        await tester.pumpWidget(buildSubject(useCase: useCase));
-        await tester.pump();
-        final button = tester.widget<FilledButton>(
-          find.widgetWithText(FilledButton, 'Export 3 records'),
-        );
-        expect(button.onPressed, isNull);
-      });
+        'confirm button is disabled when eligible items exist but no execute use case',
+        (tester) async {
+          final useCase = _FakeUseCase(
+            WishlistExportPreviewReady(makePreview(eligibleCount: 3)),
+          );
+          await tester.pumpWidget(buildSubject(useCase: useCase));
+          await tester.pump();
+          final button = tester.widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Export 3 records'),
+          );
+          expect(button.onPressed, isNull);
+        },
+      );
     });
 
     group('notes card', () {
-      testWidgets('shows notes when already-synced items exist', (tester) async {
+      testWidgets('shows notes when already-synced items exist', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(
           WishlistExportPreviewReady(makePreview(alreadySyncedCount: 2)),
         );
@@ -477,8 +488,9 @@ void main() {
         expect(find.text('Notes'), findsNothing);
       });
 
-      testWidgets('plural wording for multiple already-synced items',
-          (tester) async {
+      testWidgets('plural wording for multiple already-synced items', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(
           WishlistExportPreviewReady(makePreview(alreadySyncedCount: 3)),
         );
@@ -487,8 +499,9 @@ void main() {
         expect(find.textContaining('3 items are'), findsOneWidget);
       });
 
-      testWidgets('singular wording for one already-synced item',
-          (tester) async {
+      testWidgets('singular wording for one already-synced item', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(
           WishlistExportPreviewReady(makePreview(alreadySyncedCount: 1)),
         );
@@ -523,8 +536,9 @@ void main() {
     });
 
     group('error state', () {
-      testWidgets('shows error message on WishlistExportPreviewError',
-          (tester) async {
+      testWidgets('shows error message on WishlistExportPreviewError', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(const WishlistExportPreviewError());
         await tester.pumpWidget(buildSubject(useCase: useCase));
         await tester.pump();
@@ -567,15 +581,19 @@ void main() {
     });
 
     group('exporting state', () {
-      testWidgets('shows spinner and progress label while exporting',
-          (tester) async {
+      testWidgets('shows spinner and progress label while exporting', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(
           WishlistExportPreviewReady(makePreview(eligibleCount: 2)),
         );
         final pauseCompleter = Future<ExecuteWishlistExportResult>.delayed(
           const Duration(seconds: 10),
           () => ExecuteWishlistExportCompleted(
-            jobId: 'j', exported: 2, skipped: 0, failed: 0,
+            jobId: 'j',
+            exported: 2,
+            skipped: 0,
+            failed: 0,
           ),
         );
         late WishlistExportPreview capturedPreview;
@@ -603,7 +621,10 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           ExecuteWishlistExportCompleted(
-            jobId: 'j', exported: 2, skipped: 0, failed: 0,
+            jobId: 'j',
+            exported: 2,
+            skipped: 0,
+            failed: 0,
           ),
         );
         await tester.pumpWidget(
@@ -621,7 +642,10 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           ExecuteWishlistExportCompleted(
-            jobId: 'j', exported: 3, skipped: 0, failed: 0,
+            jobId: 'j',
+            exported: 3,
+            skipped: 0,
+            failed: 0,
           ),
         );
         await tester.pumpWidget(
@@ -640,7 +664,10 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           ExecuteWishlistExportCompleted(
-            jobId: 'j', exported: 1, skipped: 0, failed: 0,
+            jobId: 'j',
+            exported: 1,
+            skipped: 0,
+            failed: 0,
           ),
         );
         await tester.pumpWidget(
@@ -658,7 +685,10 @@ void main() {
         );
         final executeUseCase = _FakeExecuteUseCase(
           ExecuteWishlistExportCompleted(
-            jobId: 'j', exported: 2, skipped: 0, failed: 1,
+            jobId: 'j',
+            exported: 2,
+            skipped: 0,
+            failed: 1,
           ),
         );
         await tester.pumpWidget(
@@ -671,14 +701,18 @@ void main() {
         expect(find.text('1'), findsOneWidget);
       });
 
-      testWidgets('does not show Failed row when failed count is zero',
-          (tester) async {
+      testWidgets('does not show Failed row when failed count is zero', (
+        tester,
+      ) async {
         final useCase = _FakeUseCase(
           WishlistExportPreviewReady(makePreview(eligibleCount: 2)),
         );
         final executeUseCase = _FakeExecuteUseCase(
           ExecuteWishlistExportCompleted(
-            jobId: 'j', exported: 2, skipped: 0, failed: 0,
+            jobId: 'j',
+            exported: 2,
+            skipped: 0,
+            failed: 0,
           ),
         );
         await tester.pumpWidget(
@@ -693,63 +727,67 @@ void main() {
 
     group('execute — not supported transition', () {
       testWidgets(
-          'transitions to not-supported state when execute returns NotSupported',
-          (tester) async {
-        final useCase = _FakeUseCase(
-          WishlistExportPreviewReady(makePreview(eligibleCount: 1)),
-        );
-        final executeUseCase = _FakeExecuteUseCase(
-          const ExecuteWishlistExportNotSupported('No write access.'),
-        );
-        await tester.pumpWidget(
-          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
-        );
-        await tester.pump();
-        await tester.tap(find.text('Export 1 record'));
-        await tester.pumpAndSettle();
-        expect(find.text('Export not available'), findsOneWidget);
-      });
+        'transitions to not-supported state when execute returns NotSupported',
+        (tester) async {
+          final useCase = _FakeUseCase(
+            WishlistExportPreviewReady(makePreview(eligibleCount: 1)),
+          );
+          final executeUseCase = _FakeExecuteUseCase(
+            const ExecuteWishlistExportNotSupported('No write access.'),
+          );
+          await tester.pumpWidget(
+            buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+          );
+          await tester.pump();
+          await tester.tap(find.text('Export 1 record'));
+          await tester.pumpAndSettle();
+          expect(find.text('Export not available'), findsOneWidget);
+        },
+      );
     });
 
     group('execute — no token transition', () {
       testWidgets(
-          'transitions to no-token state when execute returns NoToken',
-          (tester) async {
-        final useCase = _FakeUseCase(
-          WishlistExportPreviewReady(makePreview(eligibleCount: 1)),
-        );
-        final executeUseCase = _FakeExecuteUseCase(
-          const ExecuteWishlistExportNoToken(),
-        );
-        await tester.pumpWidget(
-          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
-        );
-        await tester.pump();
-        await tester.tap(find.text('Export 1 record'));
-        await tester.pumpAndSettle();
-        expect(find.text('No Discogs account connected'), findsOneWidget);
-      });
+        'transitions to no-token state when execute returns NoToken',
+        (tester) async {
+          final useCase = _FakeUseCase(
+            WishlistExportPreviewReady(makePreview(eligibleCount: 1)),
+          );
+          final executeUseCase = _FakeExecuteUseCase(
+            const ExecuteWishlistExportNoToken(),
+          );
+          await tester.pumpWidget(
+            buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+          );
+          await tester.pump();
+          await tester.tap(find.text('Export 1 record'));
+          await tester.pumpAndSettle();
+          expect(find.text('No Discogs account connected'), findsOneWidget);
+        },
+      );
     });
 
     group('execute — failure snackbar', () {
-      testWidgets('shows snackbar and stays on ready state on execute failure',
-          (tester) async {
-        final useCase = _FakeUseCase(
-          WishlistExportPreviewReady(makePreview(eligibleCount: 1)),
-        );
-        final executeUseCase = _FakeExecuteUseCase(
-          const ExecuteWishlistExportFailed('Export could not be completed'),
-        );
-        await tester.pumpWidget(
-          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
-        );
-        await tester.pump();
-        await tester.tap(find.text('Export 1 record'));
-        await tester.pump();
-        await tester.pump();
-        expect(find.byType(SnackBar), findsOneWidget);
-        expect(find.text('Export preview'), findsOneWidget);
-      });
+      testWidgets(
+        'shows snackbar and stays on ready state on execute failure',
+        (tester) async {
+          final useCase = _FakeUseCase(
+            WishlistExportPreviewReady(makePreview(eligibleCount: 1)),
+          );
+          final executeUseCase = _FakeExecuteUseCase(
+            const ExecuteWishlistExportFailed('Export could not be completed'),
+          );
+          await tester.pumpWidget(
+            buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+          );
+          await tester.pump();
+          await tester.tap(find.text('Export 1 record'));
+          await tester.pump();
+          await tester.pump();
+          expect(find.byType(SnackBar), findsOneWidget);
+          expect(find.text('Export preview'), findsOneWidget);
+        },
+      );
     });
 
     group('wide layout', () {

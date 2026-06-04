@@ -4,15 +4,15 @@ import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 WishlistItem _item(String id) => WishlistItem(
-      id: id,
-      discogsReleaseId: 1,
-      artist: 'Artist',
-      title: 'Title',
-      priority: WishlistPriority.low,
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024),
-      updatedAt: DateTime.utc(2024),
-    );
+  id: id,
+  discogsReleaseId: 1,
+  artist: 'Artist',
+  title: 'Title',
+  priority: WishlistPriority.low,
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024),
+  updatedAt: DateTime.utc(2024),
+);
 
 void main() {
   group('CsvWishlistExportPreview', () {

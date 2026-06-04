@@ -4,34 +4,34 @@ import 'package:cratewise/infrastructure/csv/wishlist_csv_mapper.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 WishlistItem _fullItem() => WishlistItem(
-      id: 'wish-1',
-      discogsReleaseId: 54321,
-      artist: 'John Coltrane',
-      title: 'A Love Supreme',
-      label: 'Impulse!',
-      catno: 'A-77',
-      format: 'LP',
-      country: 'US',
-      year: 1965,
-      coverUrl: 'https://img.example.com/coltrane.jpg',
-      targetPrice: 49.99,
-      priority: WishlistPriority.high,
-      notes: 'Original mono pressing',
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024, 2, 20, 9, 0, 0),
-      updatedAt: DateTime.utc(2024, 7, 5, 14, 0, 0),
-    );
+  id: 'wish-1',
+  discogsReleaseId: 54321,
+  artist: 'John Coltrane',
+  title: 'A Love Supreme',
+  label: 'Impulse!',
+  catno: 'A-77',
+  format: 'LP',
+  country: 'US',
+  year: 1965,
+  coverUrl: 'https://img.example.com/coltrane.jpg',
+  targetPrice: 49.99,
+  priority: WishlistPriority.high,
+  notes: 'Original mono pressing',
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024, 2, 20, 9, 0, 0),
+  updatedAt: DateTime.utc(2024, 7, 5, 14, 0, 0),
+);
 
 WishlistItem _minimalItem() => WishlistItem(
-      id: 'wish-2',
-      discogsReleaseId: 77,
-      artist: 'Various',
-      title: 'Compilation',
-      priority: WishlistPriority.low,
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024, 4, 1, 0, 0, 0),
-      updatedAt: DateTime.utc(2024, 4, 1, 0, 0, 0),
-    );
+  id: 'wish-2',
+  discogsReleaseId: 77,
+  artist: 'Various',
+  title: 'Compilation',
+  priority: WishlistPriority.low,
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024, 4, 1, 0, 0, 0),
+  updatedAt: DateTime.utc(2024, 4, 1, 0, 0, 0),
+);
 
 void main() {
   const mapper = WishlistCsvMapper();

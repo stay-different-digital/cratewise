@@ -16,18 +16,17 @@ RetryAction makeAction({
   int attemptCount = 0,
   DateTime? createdAt,
   DateTime? lastAttemptedAt,
-}) =>
-    RetryAction(
-      id: id,
-      actionType: actionType,
-      entityType: entityType,
-      entityId: entityId,
-      safeErrorMessage: safeErrorMessage,
-      createdAt: createdAt ?? DateTime(2026, 6, 1),
-      lastAttemptedAt: lastAttemptedAt,
-      attemptCount: attemptCount,
-      status: status,
-    );
+}) => RetryAction(
+  id: id,
+  actionType: actionType,
+  entityType: entityType,
+  entityId: entityId,
+  safeErrorMessage: safeErrorMessage,
+  createdAt: createdAt ?? DateTime(2026, 6, 1),
+  lastAttemptedAt: lastAttemptedAt,
+  attemptCount: attemptCount,
+  status: status,
+);
 
 void main() {
   group('LocalRetryActionRepository', () {
@@ -55,22 +54,25 @@ void main() {
         expect(all.first.id, 'r-1');
       });
 
-      test('returns multiple actions ordered by createdAt descending',
-          () async {
-        await repo.add(makeAction(
-          id: 'r-1',
-          createdAt: DateTime(2026, 6, 1),
-        ));
-        await repo.add(makeAction(
-          id: 'r-2',
-          entityId: 'item-2',
-          createdAt: DateTime(2026, 6, 2),
-        ));
-        final all = await repo.getAll();
-        expect(all, hasLength(2));
-        expect(all.first.id, 'r-2');
-        expect(all.last.id, 'r-1');
-      });
+      test(
+        'returns multiple actions ordered by createdAt descending',
+        () async {
+          await repo.add(
+            makeAction(id: 'r-1', createdAt: DateTime(2026, 6, 1)),
+          );
+          await repo.add(
+            makeAction(
+              id: 'r-2',
+              entityId: 'item-2',
+              createdAt: DateTime(2026, 6, 2),
+            ),
+          );
+          final all = await repo.getAll();
+          expect(all, hasLength(2));
+          expect(all.first.id, 'r-2');
+          expect(all.last.id, 'r-1');
+        },
+      );
     });
 
     group('getById', () {
@@ -89,16 +91,18 @@ void main() {
     group('round-trip fields', () {
       test('persists all required fields', () async {
         final created = DateTime(2026, 5, 10, 12);
-        await repo.add(makeAction(
-          id: 'r-1',
-          actionType: RetryActionType.updateWishlistItem,
-          entityType: RetryActionEntityType.wishlistItem,
-          entityId: 'w-99',
-          safeErrorMessage: 'Something went wrong.',
-          status: RetryActionStatus.failed,
-          attemptCount: 3,
-          createdAt: created,
-        ));
+        await repo.add(
+          makeAction(
+            id: 'r-1',
+            actionType: RetryActionType.updateWishlistItem,
+            entityType: RetryActionEntityType.wishlistItem,
+            entityId: 'w-99',
+            safeErrorMessage: 'Something went wrong.',
+            status: RetryActionStatus.failed,
+            attemptCount: 3,
+            createdAt: created,
+          ),
+        );
         final action = await repo.getById('r-1');
         expect(action, isNotNull);
         expect(action!.actionType, RetryActionType.updateWishlistItem);
@@ -127,21 +131,27 @@ void main() {
 
     group('getPending', () {
       test('returns only pending actions', () async {
-        await repo.add(makeAction(
-          id: 'r-1',
-          status: RetryActionStatus.pending,
-          entityId: 'item-1',
-        ));
-        await repo.add(makeAction(
-          id: 'r-2',
-          status: RetryActionStatus.failed,
-          entityId: 'item-2',
-        ));
-        await repo.add(makeAction(
-          id: 'r-3',
-          status: RetryActionStatus.abandoned,
-          entityId: 'item-3',
-        ));
+        await repo.add(
+          makeAction(
+            id: 'r-1',
+            status: RetryActionStatus.pending,
+            entityId: 'item-1',
+          ),
+        );
+        await repo.add(
+          makeAction(
+            id: 'r-2',
+            status: RetryActionStatus.failed,
+            entityId: 'item-2',
+          ),
+        );
+        await repo.add(
+          makeAction(
+            id: 'r-3',
+            status: RetryActionStatus.abandoned,
+            entityId: 'item-3',
+          ),
+        );
         final pending = await repo.getPending();
         expect(pending, hasLength(1));
         expect(pending.first.id, 'r-1');
@@ -153,16 +163,20 @@ void main() {
       });
 
       test('orders pending by createdAt ascending', () async {
-        await repo.add(makeAction(
-          id: 'r-late',
-          entityId: 'item-2',
-          createdAt: DateTime(2026, 6, 3),
-        ));
-        await repo.add(makeAction(
-          id: 'r-early',
-          entityId: 'item-1',
-          createdAt: DateTime(2026, 6, 1),
-        ));
+        await repo.add(
+          makeAction(
+            id: 'r-late',
+            entityId: 'item-2',
+            createdAt: DateTime(2026, 6, 3),
+          ),
+        );
+        await repo.add(
+          makeAction(
+            id: 'r-early',
+            entityId: 'item-1',
+            createdAt: DateTime(2026, 6, 1),
+          ),
+        );
         final pending = await repo.getPending();
         expect(pending.first.id, 'r-early');
         expect(pending.last.id, 'r-late');
@@ -197,9 +211,7 @@ void main() {
         await repo.add(makeAction(id: 'r-1', entityId: 'item-1'));
         await repo.add(makeAction(id: 'r-2', entityId: 'item-2'));
         final first = (await repo.getById('r-1'))!;
-        await repo.update(
-          first.copyWith(status: RetryActionStatus.abandoned),
-        );
+        await repo.update(first.copyWith(status: RetryActionStatus.abandoned));
         final second = await repo.getById('r-2');
         expect(second!.status, RetryActionStatus.pending);
       });
@@ -230,11 +242,13 @@ void main() {
     group('all action types round-trip', () {
       for (final type in RetryActionType.values) {
         test('$type round-trips', () async {
-          await repo.add(makeAction(
-            id: type.name,
-            actionType: type,
-            entityId: 'e-${type.name}',
-          ));
+          await repo.add(
+            makeAction(
+              id: type.name,
+              actionType: type,
+              entityId: 'e-${type.name}',
+            ),
+          );
           final reloaded = await repo.getById(type.name);
           expect(reloaded!.actionType, type);
         });
@@ -244,11 +258,13 @@ void main() {
     group('all entity types round-trip', () {
       for (final type in RetryActionEntityType.values) {
         test('$type round-trips', () async {
-          await repo.add(makeAction(
-            id: type.name,
-            entityType: type,
-            entityId: 'e-${type.name}',
-          ));
+          await repo.add(
+            makeAction(
+              id: type.name,
+              entityType: type,
+              entityId: 'e-${type.name}',
+            ),
+          );
           final reloaded = await repo.getById(type.name);
           expect(reloaded!.entityType, type);
         });
@@ -258,11 +274,13 @@ void main() {
     group('all status values round-trip', () {
       for (final status in RetryActionStatus.values) {
         test('$status round-trips', () async {
-          await repo.add(makeAction(
-            id: status.name,
-            entityId: 'e-${status.name}',
-            status: status,
-          ));
+          await repo.add(
+            makeAction(
+              id: status.name,
+              entityId: 'e-${status.name}',
+              status: status,
+            ),
+          );
           final reloaded = await repo.getById(status.name);
           expect(reloaded!.status, status);
         });
@@ -278,14 +296,16 @@ void main() {
         expect(fields.contains('header'), isFalse);
       });
 
-      test('safeErrorMessage is stored as plain safe text (no raw API content)',
-          () async {
-        await repo.add(makeAction(
-          safeErrorMessage: 'Could not save. Please try again.',
-        ));
-        final action = await repo.getById('r-1');
-        expect(action!.safeErrorMessage, 'Could not save. Please try again.');
-      });
+      test(
+        'safeErrorMessage is stored as plain safe text (no raw API content)',
+        () async {
+          await repo.add(
+            makeAction(safeErrorMessage: 'Could not save. Please try again.'),
+          );
+          final action = await repo.getById('r-1');
+          expect(action!.safeErrorMessage, 'Could not save. Please try again.');
+        },
+      );
     });
   });
 }

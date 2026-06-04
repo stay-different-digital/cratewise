@@ -82,20 +82,14 @@ class ExecuteWishlistCsvImportUseCase {
           if (exists) {
             await _rowResultRepository.addResult(
               jobId,
-              SkippedRow(
-                rowIndex: row.rowIndex,
-                reason: 'Already in wishlist',
-              ),
+              SkippedRow(rowIndex: row.rowIndex, reason: 'Already in wishlist'),
             );
             skipped++;
           } else {
             await _wishlistRepository.add(_buildItem(row));
             await _rowResultRepository.addResult(
               jobId,
-              ValidRow(
-                rowIndex: row.rowIndex,
-                description: row.displayName,
-              ),
+              ValidRow(rowIndex: row.rowIndex, description: row.displayName),
             );
             imported++;
           }

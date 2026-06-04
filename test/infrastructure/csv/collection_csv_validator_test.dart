@@ -141,10 +141,7 @@ void main() {
             ['', '', '', ''],
           ]);
           final preview = validator.validate(success);
-          expect(
-            preview.failedRows.first.safeErrorMessage,
-            contains('Artist'),
-          );
+          expect(preview.failedRows.first.safeErrorMessage, contains('Artist'));
         },
       );
 

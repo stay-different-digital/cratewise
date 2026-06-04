@@ -4,17 +4,17 @@ import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 CollectionItem _item(String id) => CollectionItem(
-      id: id,
-      discogsReleaseId: 1,
-      artist: 'Artist',
-      title: 'Title',
-      mediaCondition: RecordCondition.notSet,
-      sleeveCondition: RecordCondition.notSet,
-      tags: [],
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024),
-      updatedAt: DateTime.utc(2024),
-    );
+  id: id,
+  discogsReleaseId: 1,
+  artist: 'Artist',
+  title: 'Title',
+  mediaCondition: RecordCondition.notSet,
+  sleeveCondition: RecordCondition.notSet,
+  tags: [],
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024),
+  updatedAt: DateTime.utc(2024),
+);
 
 void main() {
   group('CsvCollectionExportPreview', () {

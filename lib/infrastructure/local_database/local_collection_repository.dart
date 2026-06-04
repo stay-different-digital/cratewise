@@ -12,26 +12,27 @@ class LocalCollectionRepository implements CollectionRepository {
 
   @override
   Future<List<CollectionItem>> getAll() async {
-    final rows = await (_db.select(_db.collectionItems)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .get();
+    final rows = await (_db.select(
+      _db.collectionItems,
+    )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
     return rows.map(_rowToItem).toList();
   }
 
   @override
   Future<CollectionItem?> getById(String id) async {
-    final row = await (_db.select(_db.collectionItems)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.collectionItems,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     return row == null ? null : _rowToItem(row);
   }
 
   @override
   Future<bool> containsRelease(int discogsReleaseId) async {
-    final row = await (_db.select(_db.collectionItems)
-          ..where((t) => t.discogsReleaseId.equals(discogsReleaseId))
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (_db.select(_db.collectionItems)
+              ..where((t) => t.discogsReleaseId.equals(discogsReleaseId))
+              ..limit(1))
+            .getSingleOrNull();
     return row != null;
   }
 
@@ -42,16 +43,14 @@ class LocalCollectionRepository implements CollectionRepository {
 
   @override
   Future<void> update(CollectionItem item) async {
-    await (_db.update(_db.collectionItems)
-          ..where((t) => t.id.equals(item.id)))
-        .write(_itemToCompanion(item));
+    await (_db.update(
+      _db.collectionItems,
+    )..where((t) => t.id.equals(item.id))).write(_itemToCompanion(item));
   }
 
   @override
   Future<void> remove(String id) async {
-    await (_db.delete(_db.collectionItems)
-          ..where((t) => t.id.equals(id)))
-        .go();
+    await (_db.delete(_db.collectionItems)..where((t) => t.id.equals(id))).go();
   }
 
   CollectionItem _rowToItem(CollectionRow row) {

@@ -8,6 +8,7 @@ import 'package:cratewise/domain/models/release_detail.dart';
 import 'package:cratewise/domain/models/retry_action.dart';
 import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
 import 'package:cratewise/domain/repositories/retry_action_repository.dart';
+import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
@@ -42,6 +43,12 @@ class _SpyThumbnailRepository implements ThumbnailRepository {
 
   @override
   Future<bool> exists(int releaseId) async => _paths.containsKey(releaseId);
+  @override
+  Future<int> totalSizeBytes() async => 0;
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async => [];
+  @override
+  Future<void> removeAll() async {}
 }
 
 class _SpyCacheRepository implements CachedReleaseMetadataRepository {

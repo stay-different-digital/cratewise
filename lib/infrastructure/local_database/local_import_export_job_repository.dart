@@ -16,33 +16,34 @@ class LocalImportExportJobRepository implements ImportExportJobRepository {
 
   @override
   Future<void> update(ImportExportJob job) async {
-    await (_db.update(_db.importExportJobs)
-          ..where((t) => t.id.equals(job.id)))
-        .write(_jobToCompanion(job));
+    await (_db.update(
+      _db.importExportJobs,
+    )..where((t) => t.id.equals(job.id))).write(_jobToCompanion(job));
   }
 
   @override
   Future<ImportExportJob?> getById(String id) async {
-    final row = await (_db.select(_db.importExportJobs)
-          ..where((t) => t.id.equals(id)))
-        .getSingleOrNull();
+    final row = await (_db.select(
+      _db.importExportJobs,
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
     return row == null ? null : _rowToJob(row);
   }
 
   @override
   Future<List<ImportExportJob>> getRecent({int limit = 20}) async {
-    final rows = await (_db.select(_db.importExportJobs)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
-          ..limit(limit))
-        .get();
+    final rows =
+        await (_db.select(_db.importExportJobs)
+              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
+              ..limit(limit))
+            .get();
     return rows.map(_rowToJob).toList();
   }
 
   @override
   Future<void> remove(String id) async {
-    await (_db.delete(_db.importExportJobs)
-          ..where((t) => t.id.equals(id)))
-        .go();
+    await (_db.delete(
+      _db.importExportJobs,
+    )..where((t) => t.id.equals(id))).go();
   }
 
   ImportExportJob _rowToJob(ImportExportJobRow row) {

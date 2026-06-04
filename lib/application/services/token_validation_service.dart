@@ -3,7 +3,7 @@ import '../../infrastructure/discogs/dto/discogs_identity.dart';
 
 class TokenValidationService {
   TokenValidationService({DiscogsApiClient? apiClient})
-      : _client = apiClient ?? DiscogsApiClient();
+    : _client = apiClient ?? DiscogsApiClient();
 
   final DiscogsApiClient _client;
 

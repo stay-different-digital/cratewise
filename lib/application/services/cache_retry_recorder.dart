@@ -53,16 +53,18 @@ class CacheRetryRecorder {
         (a) => a.entityId == entityId && a.actionType == actionType,
       );
       if (hasDuplicate) return;
-      await _repo.add(RetryAction(
-        id: const Uuid().v4(),
-        actionType: actionType,
-        entityType: RetryActionEntityType.cachedRelease,
-        entityId: entityId,
-        safeErrorMessage: safeErrorMessage,
-        createdAt: DateTime.now(),
-        attemptCount: 0,
-        status: RetryActionStatus.pending,
-      ));
+      await _repo.add(
+        RetryAction(
+          id: const Uuid().v4(),
+          actionType: actionType,
+          entityType: RetryActionEntityType.cachedRelease,
+          entityId: entityId,
+          safeErrorMessage: safeErrorMessage,
+          createdAt: DateTime.now(),
+          attemptCount: 0,
+          status: RetryActionStatus.pending,
+        ),
+      );
     } catch (_) {
       // failure to record must never crash the main flow
     }

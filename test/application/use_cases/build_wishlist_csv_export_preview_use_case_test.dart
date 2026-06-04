@@ -58,15 +58,15 @@ class _ThrowingWishlistRepository implements WishlistRepository {
 // ---------------------------------------------------------------------------
 
 WishlistItem _item(String id, {String artist = 'Artist'}) => WishlistItem(
-      id: id,
-      discogsReleaseId: 1,
-      artist: artist,
-      title: 'Title',
-      priority: WishlistPriority.low,
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024),
-      updatedAt: DateTime.utc(2024),
-    );
+  id: id,
+  discogsReleaseId: 1,
+  artist: artist,
+  title: 'Title',
+  priority: WishlistPriority.low,
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024),
+  updatedAt: DateTime.utc(2024),
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -94,7 +94,11 @@ void main() {
 
       test('preview rowCount equals item count', () async {
         final uc = BuildWishlistCsvExportPreviewUseCase(
-          repository: _FakeWishlistRepository([_item('a'), _item('b'), _item('c')]),
+          repository: _FakeWishlistRepository([
+            _item('a'),
+            _item('b'),
+            _item('c'),
+          ]),
         );
         final result = await uc.execute() as WishlistCsvExportPreviewReady;
         expect(result.preview.rowCount, 3);
@@ -127,9 +131,9 @@ void main() {
 
       test('first sample row artist column matches first item', () async {
         final uc = BuildWishlistCsvExportPreviewUseCase(
-          repository: _FakeWishlistRepository(
-            [_item('a', artist: 'John Coltrane')],
-          ),
+          repository: _FakeWishlistRepository([
+            _item('a', artist: 'John Coltrane'),
+          ]),
         );
         final result = await uc.execute() as WishlistCsvExportPreviewReady;
         expect(result.preview.sampleRows.first[0], 'John Coltrane');

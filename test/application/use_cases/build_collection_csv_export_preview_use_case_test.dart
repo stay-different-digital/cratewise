@@ -57,19 +57,22 @@ class _ThrowingCollectionRepository implements CollectionRepository {
 // Helpers
 // ---------------------------------------------------------------------------
 
-CollectionItem _item(String id, {String artist = 'Artist', String title = 'Title'}) =>
-    CollectionItem(
-      id: id,
-      discogsReleaseId: 1,
-      artist: artist,
-      title: title,
-      mediaCondition: RecordCondition.notSet,
-      sleeveCondition: RecordCondition.notSet,
-      tags: [],
-      syncStatus: SyncStatus.localOnly,
-      createdAt: DateTime.utc(2024),
-      updatedAt: DateTime.utc(2024),
-    );
+CollectionItem _item(
+  String id, {
+  String artist = 'Artist',
+  String title = 'Title',
+}) => CollectionItem(
+  id: id,
+  discogsReleaseId: 1,
+  artist: artist,
+  title: title,
+  mediaCondition: RecordCondition.notSet,
+  sleeveCondition: RecordCondition.notSet,
+  tags: [],
+  syncStatus: SyncStatus.localOnly,
+  createdAt: DateTime.utc(2024),
+  updatedAt: DateTime.utc(2024),
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -146,9 +149,9 @@ void main() {
 
       test('first sample row artist column matches first item', () async {
         final uc = BuildCollectionCsvExportPreviewUseCase(
-          repository: _FakeCollectionRepository(
-            [_item('a', artist: 'Miles Davis')],
-          ),
+          repository: _FakeCollectionRepository([
+            _item('a', artist: 'Miles Davis'),
+          ]),
         );
         final result = await uc.execute() as CollectionCsvExportPreviewReady;
         expect(result.preview.sampleRows.first[0], 'Miles Davis');

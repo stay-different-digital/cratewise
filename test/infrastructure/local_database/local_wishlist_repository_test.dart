@@ -13,16 +13,15 @@ WishlistItem makeItem({
   String artist = 'Miles Davis',
   String title = 'Kind Of Blue',
   WishlistPriority priority = WishlistPriority.medium,
-}) =>
-    WishlistItem(
-      id: id,
-      discogsReleaseId: discogsReleaseId,
-      artist: artist,
-      title: title,
-      priority: priority,
-      createdAt: DateTime(2026, 1, 1),
-      updatedAt: DateTime(2026, 1, 1),
-    );
+}) => WishlistItem(
+  id: id,
+  discogsReleaseId: discogsReleaseId,
+  artist: artist,
+  title: title,
+  priority: priority,
+  createdAt: DateTime(2026, 1, 1),
+  updatedAt: DateTime(2026, 1, 1),
+);
 
 void main() {
   group('LocalWishlistRepository', () {
@@ -51,16 +50,8 @@ void main() {
       });
 
       test('returns multiple items in descending created order', () async {
-        await repo.add(makeItem(
-          id: 'a',
-          discogsReleaseId: 1,
-          title: 'First',
-        ));
-        await repo.add(makeItem(
-          id: 'b',
-          discogsReleaseId: 2,
-          title: 'Second',
-        ));
+        await repo.add(makeItem(id: 'a', discogsReleaseId: 1, title: 'First'));
+        await repo.add(makeItem(id: 'b', discogsReleaseId: 2, title: 'Second'));
         final all = await repo.getAll();
         expect(all, hasLength(2));
       });
@@ -188,9 +179,9 @@ void main() {
       });
 
       test('sync status round-trips through add and getById', () async {
-        final item = makeItem(id: 'sync-rt').copyWith(
-          syncStatus: SyncStatus.pending,
-        );
+        final item = makeItem(
+          id: 'sync-rt',
+        ).copyWith(syncStatus: SyncStatus.pending);
         await repo.add(item);
         final fetched = await repo.getById('sync-rt');
         expect(fetched!.syncStatus, SyncStatus.pending);

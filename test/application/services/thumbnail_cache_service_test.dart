@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:cratewise/application/services/thumbnail_cache_service.dart';
+import 'package:cratewise/application/services/thumbnail_eviction_service.dart';
+import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -35,15 +37,49 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
 
   @override
   Future<bool> exists(int releaseId) async => _paths.containsKey(releaseId);
+  @override
+  Future<int> totalSizeBytes() async => 0;
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async => [];
+  @override
+  Future<void> removeAll() async {}
 
   List<int>? savedBytes(int releaseId) => _bytes[releaseId];
+}
+
+class _SpyEvictionService extends ThumbnailEvictionService {
+  _SpyEvictionService() : super(repository: _FakeRepo());
+  int evictCallCount = 0;
+
+  @override
+  Future<void> evictIfNeeded({
+    int maxBytes = kDefaultThumbnailCacheLimitBytes,
+  }) async {
+    evictCallCount++;
+  }
+}
+
+class _FakeRepo implements ThumbnailRepository {
+  @override
+  Future<String?> getLocalPath(int id) async => null;
+  @override
+  Future<void> save(int id, List<int> bytes) async {}
+  @override
+  Future<void> remove(int id) async {}
+  @override
+  Future<bool> exists(int id) async => false;
+  @override
+  Future<int> totalSizeBytes() async => 0;
+  @override
+  Future<List<ThumbnailEntry>> listEntries() async => [];
+  @override
+  Future<void> removeAll() async {}
 }
 
 ThumbnailCacheService _makeService(
   _FakeThumbnailRepository repo,
   http.Client httpClient,
-) =>
-    ThumbnailCacheService(repository: repo, httpClient: httpClient);
+) => ThumbnailCacheService(repository: repo, httpClient: httpClient);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -69,21 +105,25 @@ void main() {
       expect(await service.getOrFetch(249504, ''), isNull);
     });
 
-    test('returns cached path without making HTTP call when already cached',
-        () async {
-      final repo = _FakeThumbnailRepository();
-      var httpCallCount = 0;
-      final client = MockClient((_) async {
-        httpCallCount++;
-        return http.Response('', 200);
-      });
-      await repo.save(249504, [1, 2, 3]);
-      final service = _makeService(repo, client);
-      final path =
-          await service.getOrFetch(249504, 'https://example.com/cover.jpg');
-      expect(path, '/fake/thumb_249504.jpg');
-      expect(httpCallCount, 0);
-    });
+    test(
+      'returns cached path without making HTTP call when already cached',
+      () async {
+        final repo = _FakeThumbnailRepository();
+        var httpCallCount = 0;
+        final client = MockClient((_) async {
+          httpCallCount++;
+          return http.Response('', 200);
+        });
+        await repo.save(249504, [1, 2, 3]);
+        final service = _makeService(repo, client);
+        final path = await service.getOrFetch(
+          249504,
+          'https://example.com/cover.jpg',
+        );
+        expect(path, '/fake/thumb_249504.jpg');
+        expect(httpCallCount, 0);
+      },
+    );
 
     test('downloads, saves, and returns local path when not cached', () async {
       final repo = _FakeThumbnailRepository();
@@ -92,8 +132,10 @@ void main() {
         repo,
         MockClient((_) async => http.Response.bytes(imageBytes, 200)),
       );
-      final path =
-          await service.getOrFetch(249504, 'https://example.com/cover.jpg');
+      final path = await service.getOrFetch(
+        249504,
+        'https://example.com/cover.jpg',
+      );
       expect(path, '/fake/thumb_249504.jpg');
       expect(repo.savedBytes(249504), imageBytes);
     });
@@ -104,8 +146,10 @@ void main() {
         repo,
         MockClient((_) async => http.Response('Not Found', 404)),
       );
-      final path =
-          await service.getOrFetch(249504, 'https://example.com/cover.jpg');
+      final path = await service.getOrFetch(
+        249504,
+        'https://example.com/cover.jpg',
+      );
       expect(path, isNull);
       expect(repo.saveCallCount, 0);
     });
@@ -128,8 +172,10 @@ void main() {
         repo,
         MockClient((_) async => throw Exception('no internet')),
       );
-      final path =
-          await service.getOrFetch(249504, 'https://example.com/cover.jpg');
+      final path = await service.getOrFetch(
+        249504,
+        'https://example.com/cover.jpg',
+      );
       expect(path, isNull);
     });
 
@@ -140,8 +186,10 @@ void main() {
         repo,
         MockClient((_) async => http.Response.bytes(imageBytes, 200)),
       );
-      final path =
-          await service.getOrFetch(249504, 'https://example.com/cover.jpg');
+      final path = await service.getOrFetch(
+        249504,
+        'https://example.com/cover.jpg',
+      );
       expect(path, isNull);
     });
 
@@ -151,8 +199,9 @@ void main() {
       final countBefore = repo.saveCallCount;
       final service = _makeService(
         repo,
-        MockClient((_) async =>
-            http.Response.bytes(Uint8List.fromList([]), 200)),
+        MockClient(
+          (_) async => http.Response.bytes(Uint8List.fromList([]), 200),
+        ),
       );
       await service.getOrFetch(249504, 'https://example.com/cover.jpg');
       expect(repo.saveCallCount, countBefore);
@@ -170,6 +219,51 @@ void main() {
       );
       await service.getOrFetch(249504, 'https://i.discogs.com/cover.jpg');
       expect(capturedUri?.toString(), 'https://i.discogs.com/cover.jpg');
+    });
+  });
+
+  group('ThumbnailCacheService — eviction', () {
+    test('evictIfNeeded is called after a successful download', () async {
+      final repo = _FakeThumbnailRepository();
+      final eviction = _SpyEvictionService();
+      final service = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient(
+          (_) async => http.Response.bytes(Uint8List.fromList([1, 2, 3]), 200),
+        ),
+        evictionService: eviction,
+      );
+      await service.getOrFetch(1, 'https://example.com/cover.jpg');
+      // give the unawaited future a chance to run
+      await Future<void>.delayed(Duration.zero);
+      expect(eviction.evictCallCount, 1);
+    });
+
+    test('evictIfNeeded is NOT called when already cached', () async {
+      final repo = _FakeThumbnailRepository();
+      await repo.save(249504, [1, 2, 3]);
+      final eviction = _SpyEvictionService();
+      final service = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient((_) async => http.Response('', 200)),
+        evictionService: eviction,
+      );
+      await service.getOrFetch(249504, 'https://example.com/cover.jpg');
+      await Future<void>.delayed(Duration.zero);
+      expect(eviction.evictCallCount, 0);
+    });
+
+    test('evictIfNeeded is NOT called when HTTP fetch fails', () async {
+      final repo = _FakeThumbnailRepository();
+      final eviction = _SpyEvictionService();
+      final service = ThumbnailCacheService(
+        repository: repo,
+        httpClient: MockClient((_) async => http.Response('', 500)),
+        evictionService: eviction,
+      );
+      await service.getOrFetch(1, 'https://example.com/cover.jpg');
+      await Future<void>.delayed(Duration.zero);
+      expect(eviction.evictCallCount, 0);
     });
   });
 }

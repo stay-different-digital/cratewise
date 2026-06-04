@@ -114,9 +114,9 @@ class _CollectionCsvExportPreviewScreenState
         setState(() => _state = _Done(result));
       case ExecuteCollectionCsvExportFailed(:final safeMessage):
         setState(() => _state = _Ready(preview));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(safeMessage)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(safeMessage)));
     }
   }
 
@@ -133,16 +133,16 @@ class _CollectionCsvExportPreviewScreenState
       body: switch (_state) {
         _Loading() => const Center(child: CircularProgressIndicator()),
         _Ready(:final preview) => _PreviewBody(
-            preview: preview,
-            onConfirm: _executeUseCase != null
-                ? () => _executeExport(preview)
-                : null,
-          ),
+          preview: preview,
+          onConfirm: _executeUseCase != null
+              ? () => _executeExport(preview)
+              : null,
+        ),
         _Exporting() => const _ExportingBody(),
         _Done(:final result) => _DoneBody(
-            result: result,
-            onDone: () => Navigator.of(context).pop(),
-          ),
+          result: result,
+          onDone: () => Navigator.of(context).pop(),
+        ),
         _Error() => _ErrorBody(onRetry: _load),
       },
     );
@@ -220,8 +220,9 @@ class _SummaryCard extends StatelessWidget {
             _LabelValue(
               label: 'Rows to export',
               value: '${preview.rowCount}',
-              valueColor:
-                  preview.rowCount > 0 ? theme.colorScheme.primary : null,
+              valueColor: preview.rowCount > 0
+                  ? theme.colorScheme.primary
+                  : null,
             ),
             if (preview.rowCount == 0) ...[
               const SizedBox(height: 8),
@@ -233,10 +234,7 @@ class _SummaryCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 10),
-            _LabelValue(
-              label: 'Columns',
-              value: '${preview.headers.length}',
-            ),
+            _LabelValue(label: 'Columns', value: '${preview.headers.length}'),
             const SizedBox(height: 16),
             Text('Columns', style: theme.textTheme.labelMedium),
             const SizedBox(height: 6),
@@ -256,7 +254,11 @@ class _SummaryCard extends StatelessWidget {
 }
 
 class _LabelValue extends StatelessWidget {
-  const _LabelValue({required this.label, required this.value, this.valueColor});
+  const _LabelValue({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
 
   final String label;
   final String value;
@@ -486,10 +488,7 @@ class _DoneBody extends StatelessWidget {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: FilledButton(
-              onPressed: onDone,
-              child: const Text('Done'),
-            ),
+            child: FilledButton(onPressed: onDone, child: const Text('Done')),
           ),
         ),
       ],
@@ -517,7 +516,11 @@ class _ErrorBody extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Something went wrong. Check your connection and try again.',

@@ -65,8 +65,7 @@ class _NotSupportedCapabilityUseCase
 }
 
 /// Always returns [WishlistExportSupported].
-class _SupportedCapabilityUseCase
-    extends CheckWishlistExportCapabilityUseCase {
+class _SupportedCapabilityUseCase extends CheckWishlistExportCapabilityUseCase {
   const _SupportedCapabilityUseCase();
 
   @override
@@ -107,8 +106,7 @@ BuildWishlistExportPreviewUseCase makeUseCase({
 }) {
   return BuildWishlistExportPreviewUseCase(
     repository: repository ?? _FakeWishlistRepository(items),
-    capabilityUseCase:
-        capabilityUseCase ?? const _SupportedCapabilityUseCase(),
+    capabilityUseCase: capabilityUseCase ?? const _SupportedCapabilityUseCase(),
   );
 }
 
@@ -131,8 +129,7 @@ void main() {
         final uc = makeUseCase(
           capabilityUseCase: const _NotSupportedCapabilityUseCase(),
         );
-        final result =
-            await uc.execute() as WishlistExportPreviewNotSupported;
+        final result = await uc.execute() as WishlistExportPreviewNotSupported;
         expect(result.reason, 'Not supported right now.');
       });
 
@@ -172,158 +169,220 @@ void main() {
     });
 
     group('eligible rows', () {
-      test('item with valid releaseId and localOnly status is eligible',
-          () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, syncStatus: SyncStatus.localOnly)],
-        ).execute() as WishlistExportPreviewReady;
-        expect(result.preview.rows.first, isA<EligibleWishlistExportRow>());
-      });
+      test(
+        'item with valid releaseId and localOnly status is eligible',
+        () async {
+          final result =
+              await makeUseCase(
+                    items: [
+                      makeItem(releaseId: 1, syncStatus: SyncStatus.localOnly),
+                    ],
+                  ).execute()
+                  as WishlistExportPreviewReady;
+          expect(result.preview.rows.first, isA<EligibleWishlistExportRow>());
+        },
+      );
 
-      test('item with valid releaseId and pending status is eligible', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, syncStatus: SyncStatus.pending)],
-        ).execute() as WishlistExportPreviewReady;
-        expect(result.preview.rows.first, isA<EligibleWishlistExportRow>());
-      });
+      test(
+        'item with valid releaseId and pending status is eligible',
+        () async {
+          final result =
+              await makeUseCase(
+                    items: [
+                      makeItem(releaseId: 1, syncStatus: SyncStatus.pending),
+                    ],
+                  ).execute()
+                  as WishlistExportPreviewReady;
+          expect(result.preview.rows.first, isA<EligibleWishlistExportRow>());
+        },
+      );
 
       test('item with valid releaseId and failed status is eligible', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, syncStatus: SyncStatus.failed)],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(releaseId: 1, syncStatus: SyncStatus.failed),
+                  ],
+                ).execute()
+                as WishlistExportPreviewReady;
         expect(result.preview.rows.first, isA<EligibleWishlistExportRow>());
       });
 
       test('eligible row carries correct artist', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, artist: 'Talk Talk')],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [makeItem(releaseId: 1, artist: 'Talk Talk')],
+                ).execute()
+                as WishlistExportPreviewReady;
         final row = result.preview.rows.first as EligibleWishlistExportRow;
         expect(row.artist, 'Talk Talk');
       });
 
       test('eligible row carries correct title', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, title: 'Spirit of Eden')],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [makeItem(releaseId: 1, title: 'Spirit of Eden')],
+                ).execute()
+                as WishlistExportPreviewReady;
         final row = result.preview.rows.first as EligibleWishlistExportRow;
         expect(row.title, 'Spirit of Eden');
       });
 
       test('eligible row carries correct releaseId', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 42)],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(items: [makeItem(releaseId: 42)]).execute()
+                as WishlistExportPreviewReady;
         final row = result.preview.rows.first as EligibleWishlistExportRow;
         expect(row.releaseId, 42);
       });
 
       test('eligible row carries correct itemId', () async {
-        final result = await makeUseCase(
-          items: [makeItem(id: 'abc-123', releaseId: 1)],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [makeItem(id: 'abc-123', releaseId: 1)],
+                ).execute()
+                as WishlistExportPreviewReady;
         final row = result.preview.rows.first as EligibleWishlistExportRow;
         expect(row.itemId, 'abc-123');
       });
 
       test('eligibleCount matches number of eligible items', () async {
-        final result = await makeUseCase(
-          items: [
-            makeItem(id: 'a', releaseId: 1),
-            makeItem(id: 'b', releaseId: 2),
-            makeItem(id: 'c', releaseId: 3),
-          ],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(id: 'a', releaseId: 1),
+                    makeItem(id: 'b', releaseId: 2),
+                    makeItem(id: 'c', releaseId: 3),
+                  ],
+                ).execute()
+                as WishlistExportPreviewReady;
         expect(result.preview.eligibleCount, 3);
       });
     });
 
     group('already synced rows', () {
-      test('item with synced status produces AlreadySyncedWishlistExportRow',
-          () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 1, syncStatus: SyncStatus.synced)],
-        ).execute() as WishlistExportPreviewReady;
-        expect(
-          result.preview.rows.first,
-          isA<AlreadySyncedWishlistExportRow>(),
-        );
-      });
+      test(
+        'item with synced status produces AlreadySyncedWishlistExportRow',
+        () async {
+          final result =
+              await makeUseCase(
+                    items: [
+                      makeItem(releaseId: 1, syncStatus: SyncStatus.synced),
+                    ],
+                  ).execute()
+                  as WishlistExportPreviewReady;
+          expect(
+            result.preview.rows.first,
+            isA<AlreadySyncedWishlistExportRow>(),
+          );
+        },
+      );
 
       test('alreadySyncedCount is correct', () async {
-        final result = await makeUseCase(
-          items: [
-            makeItem(id: 'a', releaseId: 1, syncStatus: SyncStatus.synced),
-            makeItem(id: 'b', releaseId: 2, syncStatus: SyncStatus.synced),
-          ],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(
+                      id: 'a',
+                      releaseId: 1,
+                      syncStatus: SyncStatus.synced,
+                    ),
+                    makeItem(
+                      id: 'b',
+                      releaseId: 2,
+                      syncStatus: SyncStatus.synced,
+                    ),
+                  ],
+                ).execute()
+                as WishlistExportPreviewReady;
         expect(result.preview.alreadySyncedCount, 2);
       });
 
       test('already synced row carries correct releaseId', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 99, syncStatus: SyncStatus.synced)],
-        ).execute() as WishlistExportPreviewReady;
-        final row =
-            result.preview.rows.first as AlreadySyncedWishlistExportRow;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(releaseId: 99, syncStatus: SyncStatus.synced),
+                  ],
+                ).execute()
+                as WishlistExportPreviewReady;
+        final row = result.preview.rows.first as AlreadySyncedWishlistExportRow;
         expect(row.releaseId, 99);
       });
     });
 
     group('invalid rows', () {
       test('item with releaseId 0 produces InvalidWishlistExportRow', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 0)],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(items: [makeItem(releaseId: 0)]).execute()
+                as WishlistExportPreviewReady;
         expect(result.preview.rows.first, isA<InvalidWishlistExportRow>());
       });
 
-      test('item with negative releaseId produces InvalidWishlistExportRow',
-          () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: -1)],
-        ).execute() as WishlistExportPreviewReady;
-        expect(result.preview.rows.first, isA<InvalidWishlistExportRow>());
-      });
+      test(
+        'item with negative releaseId produces InvalidWishlistExportRow',
+        () async {
+          final result =
+              await makeUseCase(items: [makeItem(releaseId: -1)]).execute()
+                  as WishlistExportPreviewReady;
+          expect(result.preview.rows.first, isA<InvalidWishlistExportRow>());
+        },
+      );
 
       test('invalid row has non-empty reason', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 0)],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(items: [makeItem(releaseId: 0)]).execute()
+                as WishlistExportPreviewReady;
         final row = result.preview.rows.first as InvalidWishlistExportRow;
         expect(row.reason, isNotEmpty);
       });
 
       test('invalid row reason does not contain token or secret', () async {
-        final result = await makeUseCase(
-          items: [makeItem(releaseId: 0)],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(items: [makeItem(releaseId: 0)]).execute()
+                as WishlistExportPreviewReady;
         final row = result.preview.rows.first as InvalidWishlistExportRow;
         expect(row.reason.toLowerCase(), isNot(contains('token')));
         expect(row.reason.toLowerCase(), isNot(contains('secret')));
       });
 
       test('invalidCount is correct', () async {
-        final result = await makeUseCase(
-          items: [
-            makeItem(id: 'a', releaseId: 0),
-            makeItem(id: 'b', releaseId: 0),
-          ],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(id: 'a', releaseId: 0),
+                    makeItem(id: 'b', releaseId: 0),
+                  ],
+                ).execute()
+                as WishlistExportPreviewReady;
         expect(result.preview.invalidCount, 2);
       });
     });
 
     group('mixed wishlist', () {
       test('mixed items produce correct counts', () async {
-        final result = await makeUseCase(
-          items: [
-            makeItem(id: 'a', releaseId: 1, syncStatus: SyncStatus.localOnly),
-            makeItem(id: 'b', releaseId: 2, syncStatus: SyncStatus.localOnly),
-            makeItem(id: 'c', releaseId: 3, syncStatus: SyncStatus.synced),
-            makeItem(id: 'd', releaseId: 0),
-          ],
-        ).execute() as WishlistExportPreviewReady;
+        final result =
+            await makeUseCase(
+                  items: [
+                    makeItem(
+                      id: 'a',
+                      releaseId: 1,
+                      syncStatus: SyncStatus.localOnly,
+                    ),
+                    makeItem(
+                      id: 'b',
+                      releaseId: 2,
+                      syncStatus: SyncStatus.localOnly,
+                    ),
+                    makeItem(
+                      id: 'c',
+                      releaseId: 3,
+                      syncStatus: SyncStatus.synced,
+                    ),
+                    makeItem(id: 'd', releaseId: 0),
+                  ],
+                ).execute()
+                as WishlistExportPreviewReady;
         final p = result.preview;
         expect(p.totalCount, 4);
         expect(p.eligibleCount, 2);
@@ -333,15 +392,17 @@ void main() {
     });
 
     group('repository error', () {
-      test('returns WishlistExportPreviewError on repository exception',
-          () async {
-        final uc = BuildWishlistExportPreviewUseCase(
-          repository: _ThrowingWishlistRepository(),
-          capabilityUseCase: const _SupportedCapabilityUseCase(),
-        );
-        final result = await uc.execute();
-        expect(result, isA<WishlistExportPreviewError>());
-      });
+      test(
+        'returns WishlistExportPreviewError on repository exception',
+        () async {
+          final uc = BuildWishlistExportPreviewUseCase(
+            repository: _ThrowingWishlistRepository(),
+            capabilityUseCase: const _SupportedCapabilityUseCase(),
+          );
+          final result = await uc.execute();
+          expect(result, isA<WishlistExportPreviewError>());
+        },
+      );
     });
   });
 }

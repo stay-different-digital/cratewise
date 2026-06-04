@@ -45,7 +45,8 @@ class ImportExportScreen extends StatelessWidget {
   final BuildWishlistExportPreviewUseCase? wishlistExportPreviewUseCase;
 
   /// Injected only for testing. Production code passes null.
-  final BuildCollectionCsvExportPreviewUseCase? collectionCsvExportPreviewUseCase;
+  final BuildCollectionCsvExportPreviewUseCase?
+  collectionCsvExportPreviewUseCase;
 
   /// Injected only for testing. Production code passes null.
   final BuildWishlistCsvExportPreviewUseCase? wishlistCsvExportPreviewUseCase;
@@ -69,9 +70,8 @@ class ImportExportScreen extends StatelessWidget {
           ),
           onImportWishlist: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => WishlistImportPreviewScreen(
-                useCase: wishlistImportUseCase,
-              ),
+              builder: (_) =>
+                  WishlistImportPreviewScreen(useCase: wishlistImportUseCase),
             ),
           ),
           onExportCollection: () => Navigator.of(context).push(
@@ -114,9 +114,8 @@ class ImportExportScreen extends StatelessWidget {
           ),
           onViewHistory: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => ImportExportHistoryScreen(
-                repository: jobRepository,
-              ),
+              builder: (_) =>
+                  ImportExportHistoryScreen(repository: jobRepository),
             ),
           ),
         ),
@@ -173,58 +172,58 @@ class _ActionBody extends StatelessWidget {
   final VoidCallback onViewHistory;
 
   List<_ActionConfig> get _discogsActions => [
-        _ActionConfig(
-          icon: Icons.cloud_download_outlined,
-          title: 'Import Collection from Discogs',
-          badge: null,
-          onTap: (ctx) => onImportCollection(),
-        ),
-        _ActionConfig(
-          icon: Icons.cloud_download_outlined,
-          title: 'Import Wishlist from Discogs',
-          badge: null,
-          onTap: (ctx) => onImportWishlist(),
-        ),
-        _ActionConfig(
-          icon: Icons.cloud_upload_outlined,
-          title: 'Export Collection to Discogs',
-          badge: null,
-          onTap: (ctx) => onExportCollection(),
-        ),
-        _ActionConfig(
-          icon: Icons.cloud_upload_outlined,
-          title: 'Export Wishlist to Discogs',
-          badge: null,
-          onTap: (ctx) => onExportWishlist(),
-        ),
-      ];
+    _ActionConfig(
+      icon: Icons.cloud_download_outlined,
+      title: 'Import Collection from Discogs',
+      badge: null,
+      onTap: (ctx) => onImportCollection(),
+    ),
+    _ActionConfig(
+      icon: Icons.cloud_download_outlined,
+      title: 'Import Wishlist from Discogs',
+      badge: null,
+      onTap: (ctx) => onImportWishlist(),
+    ),
+    _ActionConfig(
+      icon: Icons.cloud_upload_outlined,
+      title: 'Export Collection to Discogs',
+      badge: null,
+      onTap: (ctx) => onExportCollection(),
+    ),
+    _ActionConfig(
+      icon: Icons.cloud_upload_outlined,
+      title: 'Export Wishlist to Discogs',
+      badge: null,
+      onTap: (ctx) => onExportWishlist(),
+    ),
+  ];
 
   List<_ActionConfig> get _csvActions => [
-        _ActionConfig(
-          icon: Icons.download_outlined,
-          title: 'Export Collection to CSV',
-          badge: null,
-          onTap: (ctx) => onExportCollectionCsv(),
-        ),
-        _ActionConfig(
-          icon: Icons.download_outlined,
-          title: 'Export Wishlist to CSV',
-          badge: null,
-          onTap: (ctx) => onExportWishlistCsv(),
-        ),
-        _ActionConfig(
-          icon: Icons.upload_file_outlined,
-          title: 'Import Collection from CSV',
-          badge: null,
-          onTap: (ctx) => onImportCollectionCsv(),
-        ),
-        _ActionConfig(
-          icon: Icons.upload_file_outlined,
-          title: 'Import Wishlist from CSV',
-          badge: null,
-          onTap: (ctx) => onImportWishlistCsv(),
-        ),
-      ];
+    _ActionConfig(
+      icon: Icons.download_outlined,
+      title: 'Export Collection to CSV',
+      badge: null,
+      onTap: (ctx) => onExportCollectionCsv(),
+    ),
+    _ActionConfig(
+      icon: Icons.download_outlined,
+      title: 'Export Wishlist to CSV',
+      badge: null,
+      onTap: (ctx) => onExportWishlistCsv(),
+    ),
+    _ActionConfig(
+      icon: Icons.upload_file_outlined,
+      title: 'Import Collection from CSV',
+      badge: null,
+      onTap: (ctx) => onImportCollectionCsv(),
+    ),
+    _ActionConfig(
+      icon: Icons.upload_file_outlined,
+      title: 'Import Wishlist from CSV',
+      badge: null,
+      onTap: (ctx) => onImportWishlistCsv(),
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -263,8 +262,7 @@ class _ActionBody extends StatelessWidget {
             mainAxisExtent: _kCardExtent,
           ),
           itemCount: actions.length,
-          itemBuilder: (context, index) =>
-              _ActionCard(action: actions[index]),
+          itemBuilder: (context, index) => _ActionCard(action: actions[index]),
         ),
       );
     }
@@ -273,8 +271,7 @@ class _ActionBody extends StatelessWidget {
       sliver: SliverList.separated(
         itemCount: actions.length,
         separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemBuilder: (context, index) =>
-            _ActionCard(action: actions[index]),
+        itemBuilder: (context, index) => _ActionCard(action: actions[index]),
       ),
     );
   }
@@ -323,19 +320,16 @@ class _ActionCard extends StatelessWidget {
         onTap: action.onTap != null
             ? () => action.onTap!(context)
             : () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Coming soon'),
-                    duration: Duration(seconds: 2),
-                  ),
+                const SnackBar(
+                  content: Text('Coming soon'),
+                  duration: Duration(seconds: 2),
                 ),
+              ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Icon(
-                action.icon,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              Icon(action.icon, color: theme.colorScheme.onSurfaceVariant),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(

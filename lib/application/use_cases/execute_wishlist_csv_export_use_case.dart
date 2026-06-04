@@ -13,8 +13,7 @@ sealed class ExecuteWishlistCsvExportResult {
   const ExecuteWishlistCsvExportResult();
 }
 
-class ExecuteWishlistCsvExportCompleted
-    extends ExecuteWishlistCsvExportResult {
+class ExecuteWishlistCsvExportCompleted extends ExecuteWishlistCsvExportResult {
   const ExecuteWishlistCsvExportCompleted({
     required this.jobId,
     required this.rowCount,
@@ -39,8 +38,8 @@ class ExecuteWishlistCsvExportUseCase {
     this._mapper = const WishlistCsvMapper(),
     Future<void> Function(String filePath)? onShare,
     String Function()? idGenerator,
-  })  : _onShare = onShare ?? _defaultShare,
-        _idGenerator = idGenerator ?? _newUuid;
+  }) : _onShare = onShare ?? _defaultShare,
+       _idGenerator = idGenerator ?? _newUuid;
 
   static String _newUuid() => const Uuid().v4();
 

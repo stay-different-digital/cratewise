@@ -127,9 +127,9 @@ class _WishlistImportPreviewScreenState
         setState(() => _state = _ImportDone(result));
       case ExecuteWishlistImportFailed():
         setState(() => _state = _Loaded(preview));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result.safeMessage)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result.safeMessage)));
     }
   }
 
@@ -146,33 +146,32 @@ class _WishlistImportPreviewScreenState
       body: switch (_state) {
         _Loading() => const Center(child: CircularProgressIndicator()),
         _Loaded(:final preview) => _PreviewBody(
-            preview: preview,
-            onRetry: _load,
-            onConfirm: _executeUseCase != null
-                ? () => _executeImport(preview)
-                : null,
-          ),
+          preview: preview,
+          onRetry: _load,
+          onConfirm: _executeUseCase != null
+              ? () => _executeImport(preview)
+              : null,
+        ),
         _NoToken() => const _NoTokenState(),
         _RateLimited() => _RetriableErrorState(
-            message:
-                'Discogs is rate-limiting requests. Please wait a moment and try again.',
-            onRetry: _load,
-          ),
+          message:
+              'Discogs is rate-limiting requests. Please wait a moment and try again.',
+          onRetry: _load,
+        ),
         _NetworkError() => _RetriableErrorState(
-            message:
-                'No internet connection. Check your connection and try again.',
-            onRetry: _load,
-          ),
+          message:
+              'No internet connection. Check your connection and try again.',
+          onRetry: _load,
+        ),
         _Error() => _RetriableErrorState(
-            message:
-                'Something went wrong. Check your connection and try again.',
-            onRetry: _load,
-          ),
+          message: 'Something went wrong. Check your connection and try again.',
+          onRetry: _load,
+        ),
         _Importing() => const _ImportingBody(),
         _ImportDone(:final result) => _ImportSummaryBody(
-            result: result,
-            onDone: () => Navigator.of(context).pop(),
-          ),
+          result: result,
+          onDone: () => Navigator.of(context).pop(),
+        ),
       },
     );
   }
@@ -502,10 +501,7 @@ class _ImportSummaryBody extends StatelessWidget {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: FilledButton(
-              onPressed: onDone,
-              child: const Text('Done'),
-            ),
+            child: FilledButton(onPressed: onDone, child: const Text('Done')),
           ),
         ),
       ],
@@ -559,10 +555,7 @@ class _NoTokenState extends StatelessWidget {
 }
 
 class _RetriableErrorState extends StatelessWidget {
-  const _RetriableErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _RetriableErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
