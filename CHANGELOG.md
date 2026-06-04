@@ -7,6 +7,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7X: Discogs exports back off on rate limits (US-24)] — 2026-06-04
+
+### Changed
+- `ExecuteCollectionExportUseCase` — per-item `addToCollection` call now retried on `RateLimitedError` (up to `_kMaxItemRetries = 3`) waiting `_kRateLimitRetryDelay = 60 s` via injectable `delay`; when retries are exhausted the item counts as failed and the export continues with remaining rows; `delay` and `maxItemRetries` are constructor-injectable for fast test execution
+- `ExecuteWishlistExportUseCase` — same retry logic for `addToWantlist`
+
+### Tests
+- 14 new tests across 2 files (+0 regressions):
+  - `execute_collection_export_use_case_test.dart` — 7 new tests in `rate-limit retry` group: succeeds exported=1 after retry; delay called with 60 s duration; prior items not re-exported (total API calls verified); item fails when retries exhausted; export continues with remaining items; delay called `maxItemRetries` times before exhaustion; `ValidRow` saved for retried success
+  - `execute_wishlist_export_use_case_test.dart` — 7 matching tests for wishlist
+
+---
+
 ## [Unreleased — Phase 7W: Discogs import handles rate limits mid-pagination (US-23)] — 2026-06-04
 
 ### Changed

@@ -14,6 +14,9 @@ import '../../infrastructure/discogs/discogs_api_client.dart';
 import '../../shared/errors/app_error.dart';
 import 'check_wishlist_export_capability_use_case.dart';
 
+const _kRateLimitRetryDelay = Duration(seconds: 60);
+const _kMaxItemRetries = 3;
+
 sealed class ExecuteWishlistExportResult {
   const ExecuteWishlistExportResult();
 }
@@ -60,7 +63,11 @@ class ExecuteWishlistExportUseCase {
     required this._jobRepository,
     required this._rowResultRepository,
     String Function()? idGenerator,
-  }) : _idGenerator = idGenerator ?? _newUuid;
+    Future<void> Function(Duration)? delay,
+    int? maxItemRetries,
+  }) : _idGenerator = idGenerator ?? _newUuid,
+       _delay = delay ?? ((d) => Future.delayed(d)),
+       _maxItemRetries = maxItemRetries ?? _kMaxItemRetries;
 
   static String _newUuid() => const Uuid().v4();
 
@@ -71,6 +78,8 @@ class ExecuteWishlistExportUseCase {
   final ImportExportJobRepository _jobRepository;
   final ImportExportRowResultRepository _rowResultRepository;
   final String Function() _idGenerator;
+  final Future<void> Function(Duration) _delay;
+  final int _maxItemRetries;
 
   Future<ExecuteWishlistExportResult> execute(
     WishlistExportPreview preview,
@@ -120,7 +129,7 @@ class ExecuteWishlistExportUseCase {
         switch (row) {
           case EligibleWishlistExportRow():
             try {
-              await _apiClient.addToWantlist(username, row.releaseId, token);
+              await _addToWantlistWithRetry(username, row.releaseId, token);
               final item = await _wishlistRepository.getById(row.itemId);
               if (item != null) {
                 await _wishlistRepository.update(
@@ -208,6 +217,24 @@ class ExecuteWishlistExportUseCase {
         );
       } catch (_) {}
       return const ExecuteWishlistExportFailed('Export could not be completed');
+    }
+  }
+
+  Future<void> _addToWantlistWithRetry(
+    String username,
+    int releaseId,
+    String token,
+  ) async {
+    var attempts = 0;
+    while (true) {
+      try {
+        await _apiClient.addToWantlist(username, releaseId, token);
+        return;
+      } on RateLimitedError {
+        if (attempts >= _maxItemRetries) rethrow;
+        attempts++;
+        await _delay(_kRateLimitRetryDelay);
+      }
     }
   }
 }

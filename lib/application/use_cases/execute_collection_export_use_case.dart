@@ -14,6 +14,9 @@ import '../../infrastructure/discogs/discogs_api_client.dart';
 import '../../shared/errors/app_error.dart';
 import 'check_collection_export_capability_use_case.dart';
 
+const _kRateLimitRetryDelay = Duration(seconds: 60);
+const _kMaxItemRetries = 3;
+
 sealed class ExecuteCollectionExportResult {
   const ExecuteCollectionExportResult();
 }
@@ -60,7 +63,11 @@ class ExecuteCollectionExportUseCase {
     required this._jobRepository,
     required this._rowResultRepository,
     String Function()? idGenerator,
-  }) : _idGenerator = idGenerator ?? _newUuid;
+    Future<void> Function(Duration)? delay,
+    int? maxItemRetries,
+  }) : _idGenerator = idGenerator ?? _newUuid,
+       _delay = delay ?? ((d) => Future.delayed(d)),
+       _maxItemRetries = maxItemRetries ?? _kMaxItemRetries;
 
   static String _newUuid() => const Uuid().v4();
 
@@ -71,6 +78,8 @@ class ExecuteCollectionExportUseCase {
   final ImportExportJobRepository _jobRepository;
   final ImportExportRowResultRepository _rowResultRepository;
   final String Function() _idGenerator;
+  final Future<void> Function(Duration) _delay;
+  final int _maxItemRetries;
 
   Future<ExecuteCollectionExportResult> execute(
     CollectionExportPreview preview,
@@ -120,7 +129,7 @@ class ExecuteCollectionExportUseCase {
         switch (row) {
           case EligibleExportRow():
             try {
-              await _apiClient.addToCollection(username, row.releaseId, token);
+              await _addToCollectionWithRetry(username, row.releaseId, token);
               final item = await _collectionRepository.getById(row.itemId);
               if (item != null) {
                 await _collectionRepository.update(
@@ -208,6 +217,24 @@ class ExecuteCollectionExportUseCase {
         );
       } catch (_) {}
       return const ExecuteExportFailed('Export could not be completed');
+    }
+  }
+
+  Future<void> _addToCollectionWithRetry(
+    String username,
+    int releaseId,
+    String token,
+  ) async {
+    var attempts = 0;
+    while (true) {
+      try {
+        await _apiClient.addToCollection(username, releaseId, token);
+        return;
+      } on RateLimitedError {
+        if (attempts >= _maxItemRetries) rethrow;
+        attempts++;
+        await _delay(_kRateLimitRetryDelay);
+      }
     }
   }
 }

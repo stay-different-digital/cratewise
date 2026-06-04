@@ -292,6 +292,8 @@ ExecuteWishlistExportUseCase makeUseCase({
   ImportExportRowResultRepository? rowResultRepository,
   List<WishlistItem> items = const [],
   String Function()? idGenerator,
+  Future<void> Function(Duration)? delay,
+  int maxItemRetries = 0,
 }) {
   return ExecuteWishlistExportUseCase(
     capabilityUseCase: capabilityUseCase ?? const _SupportedCapabilityUseCase(),
@@ -302,6 +304,8 @@ ExecuteWishlistExportUseCase makeUseCase({
     jobRepository: jobRepository ?? _FakeJobRepository(),
     rowResultRepository: rowResultRepository ?? _FakeRowResultRepository(),
     idGenerator: idGenerator,
+    delay: delay,
+    maxItemRetries: maxItemRetries,
   );
 }
 
@@ -659,6 +663,127 @@ void main() {
         final result = await uc.execute(makePreview(eligibleCount: 1));
         expect(result, isA<ExecuteWishlistExportCompleted>());
         expect(spy.deleteCallCount, 0);
+      });
+    });
+
+    group('rate-limit retry', () {
+      Future<void> noOpDelay(Duration _) async {}
+
+      DiscogsApiClient _apiClientWithStatuses(List<int> statuses) {
+        var call = 0;
+        return DiscogsApiClient(
+          httpClient: MockClient((_) async {
+            final code = call < statuses.length ? statuses[call] : 201;
+            call++;
+            return http.Response(jsonEncode({}), code);
+          }),
+        );
+      }
+
+      test(
+        'returns ExportCompleted exported=1 when item succeeds on retry after 429',
+        () async {
+          final uc = makeUseCase(
+            apiClient: _apiClientWithStatuses([429, 201]),
+            delay: noOpDelay,
+            maxItemRetries: 1,
+          );
+          final result =
+              await uc.execute(makePreview(eligibleCount: 1))
+                  as ExecuteWishlistExportCompleted;
+          expect(result.exported, 1);
+          expect(result.failed, 0);
+        },
+      );
+
+      test('calls delay with 60-second duration on 429', () async {
+        final delays = <Duration>[];
+        final uc = makeUseCase(
+          apiClient: _apiClientWithStatuses([429, 201]),
+          delay: (d) async => delays.add(d),
+          maxItemRetries: 1,
+        );
+        await uc.execute(makePreview(eligibleCount: 1));
+        expect(delays, [const Duration(seconds: 60)]);
+      });
+
+      test('items exported before 429 are not re-exported', () async {
+        var totalCalls = 0;
+        final uc = makeUseCase(
+          // call 1: item-0 => 201, call 2: item-1 => 429, call 3: item-1 retry => 201
+          apiClient: DiscogsApiClient(
+            httpClient: MockClient((_) async {
+              totalCalls++;
+              return http.Response(jsonEncode({}), totalCalls == 2 ? 429 : 201);
+            }),
+          ),
+          delay: noOpDelay,
+          maxItemRetries: 1,
+        );
+        final result =
+            await uc.execute(makePreview(eligibleCount: 2))
+                as ExecuteWishlistExportCompleted;
+        expect(result.exported, 2);
+        expect(totalCalls, 3);
+      });
+
+      test('item counts as failed when retries exhausted', () async {
+        final uc = makeUseCase(
+          apiClient: _apiClientWithStatuses([429]),
+          delay: noOpDelay,
+          maxItemRetries: 0,
+        );
+        final result =
+            await uc.execute(makePreview(eligibleCount: 1))
+                as ExecuteWishlistExportCompleted;
+        expect(result.failed, 1);
+        expect(result.exported, 0);
+      });
+
+      test('export continues with remaining items after exhaustion', () async {
+        // item-0 gets 429 (exhausted immediately at maxItemRetries=0), item-1 succeeds
+        var totalCalls = 0;
+        final uc = makeUseCase(
+          apiClient: DiscogsApiClient(
+            httpClient: MockClient((_) async {
+              totalCalls++;
+              return http.Response(jsonEncode({}), totalCalls == 1 ? 429 : 201);
+            }),
+          ),
+          delay: noOpDelay,
+          maxItemRetries: 0,
+        );
+        final result =
+            await uc.execute(makePreview(eligibleCount: 2))
+                as ExecuteWishlistExportCompleted;
+        expect(result.failed, 1);
+        expect(result.exported, 1);
+      });
+
+      test('calls delay maxItemRetries times before exhaustion', () async {
+        final delays = <Duration>[];
+        // 3 consecutive 429s: 2 retries allowed, so delay called twice then rethrows
+        final uc = makeUseCase(
+          apiClient: _apiClientWithStatuses([429, 429, 429]),
+          delay: (d) async => delays.add(d),
+          maxItemRetries: 2,
+        );
+        await uc.execute(makePreview(eligibleCount: 1));
+        expect(delays, hasLength(2));
+        expect(delays.every((d) => d == const Duration(seconds: 60)), isTrue);
+      });
+
+      test('saves ValidRow for item that succeeds after retry', () async {
+        final rowRepo = _FakeRowResultRepository();
+        final uc = makeUseCase(
+          apiClient: _apiClientWithStatuses([429, 201]),
+          delay: noOpDelay,
+          maxItemRetries: 1,
+          rowResultRepository: rowRepo,
+        );
+        await uc.execute(makePreview(eligibleCount: 1));
+        final results = rowRepo.results.values.first;
+        expect(results.whereType<ValidRow>(), hasLength(1));
       });
     });
   });
