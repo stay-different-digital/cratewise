@@ -1,12 +1,14 @@
 import 'package:cratewise/application/use_cases/add_to_collection_use_case.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/release_detail.dart';
+import 'package:cratewise/domain/models/retry_action.dart';
 import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/retry_action_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ---------------------------------------------------------------------------
-// Fake repository
+// Fake repositories
 // ---------------------------------------------------------------------------
 
 class FakeCollectionRepository implements CollectionRepository {
@@ -28,6 +30,35 @@ class FakeCollectionRepository implements CollectionRepository {
 
   @override
   Future<void> update(CollectionItem item) async {}
+
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _ThrowingCollectionRepository extends FakeCollectionRepository {
+  @override
+  Future<void> add(CollectionItem item) async =>
+      throw Exception('storage error');
+}
+
+class _SpyRetryRepository implements RetryActionRepository {
+  final List<RetryAction> added = [];
+
+  @override
+  Future<void> add(RetryAction action) async => added.add(action);
+
+  @override
+  Future<List<RetryAction>> getAll() async => List.of(added);
+
+  @override
+  Future<RetryAction?> getById(String id) async => null;
+
+  @override
+  Future<List<RetryAction>> getPending() async =>
+      added.where((a) => a.status == RetryActionStatus.pending).toList();
+
+  @override
+  Future<void> update(RetryAction action) async {}
 
   @override
   Future<void> remove(String id) async {}
@@ -62,9 +93,14 @@ ReleaseDetail kindOfBlue({
 AddToCollectionUseCase makeUseCase(
   FakeCollectionRepository repo, {
   int idCounter = 0,
+  RetryActionRepository? retryRepo,
 }) {
   var counter = idCounter;
-  return AddToCollectionUseCase(repo, idGenerator: () => 'id-${++counter}');
+  return AddToCollectionUseCase(
+    repo,
+    idGenerator: () => 'id-${++counter}',
+    retryRepository: retryRepo,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -249,6 +285,82 @@ void main() {
           expect(await repo.getAll(), hasLength(2));
         },
       );
+    });
+
+    group('storage failure and retry queuing', () {
+      late _ThrowingCollectionRepository throwingRepo;
+      late _SpyRetryRepository retryRepo;
+      late AddToCollectionUseCase failingUseCase;
+
+      setUp(() {
+        throwingRepo = _ThrowingCollectionRepository();
+        retryRepo = _SpyRetryRepository();
+        failingUseCase = makeUseCase(throwingRepo, retryRepo: retryRepo);
+      });
+
+      test('returns AddToCollectionStorageError when add throws', () async {
+        final result = await failingUseCase.execute(kindOfBlue());
+        expect(result, isA<AddToCollectionStorageError>());
+      });
+
+      test(
+        'records retry action when add throws and retryRepo provided',
+        () async {
+          await failingUseCase.execute(kindOfBlue());
+          expect(retryRepo.added, hasLength(1));
+        },
+      );
+
+      test('recorded action has addCollectionItem type', () async {
+        await failingUseCase.execute(kindOfBlue());
+        expect(
+          retryRepo.added.first.actionType,
+          RetryActionType.addCollectionItem,
+        );
+      });
+
+      test('recorded action entityId is the release ID as string', () async {
+        await failingUseCase.execute(kindOfBlue());
+        expect(retryRepo.added.first.entityId, '249504');
+      });
+
+      test('recorded action safe message contains item title', () async {
+        await failingUseCase.execute(kindOfBlue());
+        expect(
+          retryRepo.added.first.safeErrorMessage,
+          contains('Kind Of Blue'),
+        );
+      });
+
+      test('recorded action payload contains serialised item', () async {
+        await failingUseCase.execute(kindOfBlue());
+        expect(retryRepo.added.first.payload, isNotNull);
+        final item = CollectionItem.tryFromJson(retryRepo.added.first.payload!);
+        expect(item, isNotNull);
+        expect(item!.artist, 'Miles Davis');
+      });
+
+      test('does not record retry action without retryRepo', () async {
+        final noRetryUseCase = makeUseCase(_ThrowingCollectionRepository());
+        await noRetryUseCase.execute(kindOfBlue());
+        // No assertion needed — test passes if no exception thrown.
+      });
+
+      test(
+        'deduplicates: second failure for same release is not re-queued',
+        () async {
+          await failingUseCase.execute(kindOfBlue());
+          await failingUseCase.execute(kindOfBlue());
+          expect(retryRepo.added, hasLength(1));
+        },
+      );
+
+      test('safe message does not contain token or secret', () async {
+        await failingUseCase.execute(kindOfBlue());
+        final msg = retryRepo.added.first.safeErrorMessage.toLowerCase();
+        expect(msg, isNot(contains('token')));
+        expect(msg, isNot(contains('secret')));
+      });
     });
   });
 }

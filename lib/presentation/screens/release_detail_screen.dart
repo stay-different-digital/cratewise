@@ -263,6 +263,13 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Already in your collection')),
         );
+      case AddToCollectionStorageError():
+        setState(() => _addState = _AddState.idle);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not save to collection — queued for retry.'),
+          ),
+        );
     }
   }
 
@@ -310,6 +317,13 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
         setState(() => _addWishlistState = _AddState.duplicate);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Already in your wishlist')),
+        );
+      case AddToWishlistStorageError():
+        setState(() => _addWishlistState = _AddState.idle);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not save to wishlist — queued for retry.'),
+          ),
         );
     }
   }

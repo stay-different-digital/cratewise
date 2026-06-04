@@ -2932,6 +2932,17 @@ class $RetryActionsTable extends RetryActions
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -2982,6 +2993,7 @@ class $RetryActionsTable extends RetryActions
     entityType,
     entityId,
     safeErrorMessage,
+    payload,
     createdAt,
     lastAttemptedAt,
     attemptCount,
@@ -3022,6 +3034,12 @@ class $RetryActionsTable extends RetryActions
       );
     } else if (isInserting) {
       context.missing(_safeErrorMessageMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
     }
     if (data.containsKey('created_at')) {
       context.handle(
@@ -3084,6 +3102,10 @@ class $RetryActionsTable extends RetryActions
         DriftSqlType.string,
         data['${effectivePrefix}safe_error_message'],
       )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -3124,6 +3146,7 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
   final RetryActionEntityType entityType;
   final String entityId;
   final String safeErrorMessage;
+  final String? payload;
   final DateTime createdAt;
   final DateTime? lastAttemptedAt;
   final int attemptCount;
@@ -3134,6 +3157,7 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
     required this.entityType,
     required this.entityId,
     required this.safeErrorMessage,
+    this.payload,
     required this.createdAt,
     this.lastAttemptedAt,
     required this.attemptCount,
@@ -3155,6 +3179,9 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
     }
     map['entity_id'] = Variable<String>(entityId);
     map['safe_error_message'] = Variable<String>(safeErrorMessage);
+    if (!nullToAbsent || payload != null) {
+      map['payload'] = Variable<String>(payload);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     if (!nullToAbsent || lastAttemptedAt != null) {
       map['last_attempted_at'] = Variable<DateTime>(lastAttemptedAt);
@@ -3175,6 +3202,9 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
       entityType: Value(entityType),
       entityId: Value(entityId),
       safeErrorMessage: Value(safeErrorMessage),
+      payload: payload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(payload),
       createdAt: Value(createdAt),
       lastAttemptedAt: lastAttemptedAt == null && nullToAbsent
           ? const Value.absent()
@@ -3197,6 +3227,7 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
       ),
       entityId: serializer.fromJson<String>(json['entityId']),
       safeErrorMessage: serializer.fromJson<String>(json['safeErrorMessage']),
+      payload: serializer.fromJson<String?>(json['payload']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       lastAttemptedAt: serializer.fromJson<DateTime?>(json['lastAttemptedAt']),
       attemptCount: serializer.fromJson<int>(json['attemptCount']),
@@ -3212,6 +3243,7 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
       'entityType': serializer.toJson<RetryActionEntityType>(entityType),
       'entityId': serializer.toJson<String>(entityId),
       'safeErrorMessage': serializer.toJson<String>(safeErrorMessage),
+      'payload': serializer.toJson<String?>(payload),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'lastAttemptedAt': serializer.toJson<DateTime?>(lastAttemptedAt),
       'attemptCount': serializer.toJson<int>(attemptCount),
@@ -3225,6 +3257,7 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
     RetryActionEntityType? entityType,
     String? entityId,
     String? safeErrorMessage,
+    Value<String?> payload = const Value.absent(),
     DateTime? createdAt,
     Value<DateTime?> lastAttemptedAt = const Value.absent(),
     int? attemptCount,
@@ -3235,6 +3268,7 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
     entityType: entityType ?? this.entityType,
     entityId: entityId ?? this.entityId,
     safeErrorMessage: safeErrorMessage ?? this.safeErrorMessage,
+    payload: payload.present ? payload.value : this.payload,
     createdAt: createdAt ?? this.createdAt,
     lastAttemptedAt: lastAttemptedAt.present
         ? lastAttemptedAt.value
@@ -3255,6 +3289,7 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
       safeErrorMessage: data.safeErrorMessage.present
           ? data.safeErrorMessage.value
           : this.safeErrorMessage,
+      payload: data.payload.present ? data.payload.value : this.payload,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       lastAttemptedAt: data.lastAttemptedAt.present
           ? data.lastAttemptedAt.value
@@ -3274,6 +3309,7 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
           ..write('entityType: $entityType, ')
           ..write('entityId: $entityId, ')
           ..write('safeErrorMessage: $safeErrorMessage, ')
+          ..write('payload: $payload, ')
           ..write('createdAt: $createdAt, ')
           ..write('lastAttemptedAt: $lastAttemptedAt, ')
           ..write('attemptCount: $attemptCount, ')
@@ -3289,6 +3325,7 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
     entityType,
     entityId,
     safeErrorMessage,
+    payload,
     createdAt,
     lastAttemptedAt,
     attemptCount,
@@ -3303,6 +3340,7 @@ class RetryActionRow extends DataClass implements Insertable<RetryActionRow> {
           other.entityType == this.entityType &&
           other.entityId == this.entityId &&
           other.safeErrorMessage == this.safeErrorMessage &&
+          other.payload == this.payload &&
           other.createdAt == this.createdAt &&
           other.lastAttemptedAt == this.lastAttemptedAt &&
           other.attemptCount == this.attemptCount &&
@@ -3315,6 +3353,7 @@ class RetryActionsCompanion extends UpdateCompanion<RetryActionRow> {
   final Value<RetryActionEntityType> entityType;
   final Value<String> entityId;
   final Value<String> safeErrorMessage;
+  final Value<String?> payload;
   final Value<DateTime> createdAt;
   final Value<DateTime?> lastAttemptedAt;
   final Value<int> attemptCount;
@@ -3326,6 +3365,7 @@ class RetryActionsCompanion extends UpdateCompanion<RetryActionRow> {
     this.entityType = const Value.absent(),
     this.entityId = const Value.absent(),
     this.safeErrorMessage = const Value.absent(),
+    this.payload = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.lastAttemptedAt = const Value.absent(),
     this.attemptCount = const Value.absent(),
@@ -3338,6 +3378,7 @@ class RetryActionsCompanion extends UpdateCompanion<RetryActionRow> {
     required RetryActionEntityType entityType,
     required String entityId,
     required String safeErrorMessage,
+    this.payload = const Value.absent(),
     required DateTime createdAt,
     this.lastAttemptedAt = const Value.absent(),
     required int attemptCount,
@@ -3357,6 +3398,7 @@ class RetryActionsCompanion extends UpdateCompanion<RetryActionRow> {
     Expression<String>? entityType,
     Expression<String>? entityId,
     Expression<String>? safeErrorMessage,
+    Expression<String>? payload,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? lastAttemptedAt,
     Expression<int>? attemptCount,
@@ -3369,6 +3411,7 @@ class RetryActionsCompanion extends UpdateCompanion<RetryActionRow> {
       if (entityType != null) 'entity_type': entityType,
       if (entityId != null) 'entity_id': entityId,
       if (safeErrorMessage != null) 'safe_error_message': safeErrorMessage,
+      if (payload != null) 'payload': payload,
       if (createdAt != null) 'created_at': createdAt,
       if (lastAttemptedAt != null) 'last_attempted_at': lastAttemptedAt,
       if (attemptCount != null) 'attempt_count': attemptCount,
@@ -3383,6 +3426,7 @@ class RetryActionsCompanion extends UpdateCompanion<RetryActionRow> {
     Value<RetryActionEntityType>? entityType,
     Value<String>? entityId,
     Value<String>? safeErrorMessage,
+    Value<String?>? payload,
     Value<DateTime>? createdAt,
     Value<DateTime?>? lastAttemptedAt,
     Value<int>? attemptCount,
@@ -3395,6 +3439,7 @@ class RetryActionsCompanion extends UpdateCompanion<RetryActionRow> {
       entityType: entityType ?? this.entityType,
       entityId: entityId ?? this.entityId,
       safeErrorMessage: safeErrorMessage ?? this.safeErrorMessage,
+      payload: payload ?? this.payload,
       createdAt: createdAt ?? this.createdAt,
       lastAttemptedAt: lastAttemptedAt ?? this.lastAttemptedAt,
       attemptCount: attemptCount ?? this.attemptCount,
@@ -3425,6 +3470,9 @@ class RetryActionsCompanion extends UpdateCompanion<RetryActionRow> {
     if (safeErrorMessage.present) {
       map['safe_error_message'] = Variable<String>(safeErrorMessage.value);
     }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -3453,6 +3501,7 @@ class RetryActionsCompanion extends UpdateCompanion<RetryActionRow> {
           ..write('entityType: $entityType, ')
           ..write('entityId: $entityId, ')
           ..write('safeErrorMessage: $safeErrorMessage, ')
+          ..write('payload: $payload, ')
           ..write('createdAt: $createdAt, ')
           ..write('lastAttemptedAt: $lastAttemptedAt, ')
           ..write('attemptCount: $attemptCount, ')
@@ -6035,6 +6084,7 @@ typedef $$RetryActionsTableCreateCompanionBuilder =
       required RetryActionEntityType entityType,
       required String entityId,
       required String safeErrorMessage,
+      Value<String?> payload,
       required DateTime createdAt,
       Value<DateTime?> lastAttemptedAt,
       required int attemptCount,
@@ -6048,6 +6098,7 @@ typedef $$RetryActionsTableUpdateCompanionBuilder =
       Value<RetryActionEntityType> entityType,
       Value<String> entityId,
       Value<String> safeErrorMessage,
+      Value<String?> payload,
       Value<DateTime> createdAt,
       Value<DateTime?> lastAttemptedAt,
       Value<int> attemptCount,
@@ -6092,6 +6143,11 @@ class $$RetryActionsTableFilterComposer
 
   ColumnFilters<String> get safeErrorMessage => $composableBuilder(
     column: $table.safeErrorMessage,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6151,6 +6207,11 @@ class $$RetryActionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -6203,6 +6264,9 @@ class $$RetryActionsTableAnnotationComposer
     column: $table.safeErrorMessage,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -6257,6 +6321,7 @@ class $$RetryActionsTableTableManager
                 Value<RetryActionEntityType> entityType = const Value.absent(),
                 Value<String> entityId = const Value.absent(),
                 Value<String> safeErrorMessage = const Value.absent(),
+                Value<String?> payload = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime?> lastAttemptedAt = const Value.absent(),
                 Value<int> attemptCount = const Value.absent(),
@@ -6268,6 +6333,7 @@ class $$RetryActionsTableTableManager
                 entityType: entityType,
                 entityId: entityId,
                 safeErrorMessage: safeErrorMessage,
+                payload: payload,
                 createdAt: createdAt,
                 lastAttemptedAt: lastAttemptedAt,
                 attemptCount: attemptCount,
@@ -6281,6 +6347,7 @@ class $$RetryActionsTableTableManager
                 required RetryActionEntityType entityType,
                 required String entityId,
                 required String safeErrorMessage,
+                Value<String?> payload = const Value.absent(),
                 required DateTime createdAt,
                 Value<DateTime?> lastAttemptedAt = const Value.absent(),
                 required int attemptCount,
@@ -6292,6 +6359,7 @@ class $$RetryActionsTableTableManager
                 entityType: entityType,
                 entityId: entityId,
                 safeErrorMessage: safeErrorMessage,
+                payload: payload,
                 createdAt: createdAt,
                 lastAttemptedAt: lastAttemptedAt,
                 attemptCount: attemptCount,

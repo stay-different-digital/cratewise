@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../application/use_cases/retry_add_collection_item_use_case.dart';
+import '../../application/use_cases/retry_add_wishlist_item_use_case.dart';
 import '../../application/use_cases/retry_metadata_refresh_use_case.dart';
 import '../../application/use_cases/retry_thumbnail_use_case.dart';
 import '../../domain/models/retry_action.dart';
@@ -38,11 +40,15 @@ class FailedActionsScreen extends StatefulWidget {
     this.repository,
     this.retryUseCase,
     this.thumbnailUseCase,
+    this.addCollectionUseCase,
+    this.addWishlistUseCase,
   });
 
   final RetryActionRepository? repository;
   final RetryMetadataRefreshUseCase? retryUseCase;
   final RetryThumbnailUseCase? thumbnailUseCase;
+  final RetryAddCollectionItemUseCase? addCollectionUseCase;
+  final RetryAddWishlistItemUseCase? addWishlistUseCase;
 
   @override
   State<FailedActionsScreen> createState() => _FailedActionsScreenState();
@@ -98,6 +104,8 @@ class _FailedActionsScreenState extends State<FailedActionsScreen> {
           actions: actions,
           retryUseCase: widget.retryUseCase,
           thumbnailUseCase: widget.thumbnailUseCase,
+          addCollectionUseCase: widget.addCollectionUseCase,
+          addWishlistUseCase: widget.addWishlistUseCase,
           onRetried: _load,
         ),
         _LoadError() => _ErrorState(onRetry: _load),
@@ -116,11 +124,15 @@ class _ActionList extends StatelessWidget {
     required this.onRetried,
     this.retryUseCase,
     this.thumbnailUseCase,
+    this.addCollectionUseCase,
+    this.addWishlistUseCase,
   });
 
   final List<RetryAction> actions;
   final RetryMetadataRefreshUseCase? retryUseCase;
   final RetryThumbnailUseCase? thumbnailUseCase;
+  final RetryAddCollectionItemUseCase? addCollectionUseCase;
+  final RetryAddWishlistItemUseCase? addWishlistUseCase;
   final VoidCallback onRetried;
 
   @override
@@ -133,6 +145,8 @@ class _ActionList extends StatelessWidget {
         action: actions[index],
         retryUseCase: retryUseCase,
         thumbnailUseCase: thumbnailUseCase,
+        addCollectionUseCase: addCollectionUseCase,
+        addWishlistUseCase: addWishlistUseCase,
         onRetried: onRetried,
       ),
     );
@@ -145,11 +159,15 @@ class _ActionCard extends StatefulWidget {
     required this.onRetried,
     this.retryUseCase,
     this.thumbnailUseCase,
+    this.addCollectionUseCase,
+    this.addWishlistUseCase,
   });
 
   final RetryAction action;
   final RetryMetadataRefreshUseCase? retryUseCase;
   final RetryThumbnailUseCase? thumbnailUseCase;
+  final RetryAddCollectionItemUseCase? addCollectionUseCase;
+  final RetryAddWishlistItemUseCase? addWishlistUseCase;
   final VoidCallback onRetried;
 
   @override
@@ -214,17 +232,49 @@ class _ActionCardState extends State<_ActionCard> {
     RetryThumbnailFailed() => 'Failed to cache cover image — try again later.',
   };
 
+  static String _addCollectionSnackbarMessage(
+    RetryAddCollectionItemResult result,
+  ) => switch (result) {
+    RetryAddCollectionItemSuccess() => 'Item added to collection.',
+    RetryAddCollectionItemAlreadyExists() => 'Already in your collection.',
+    RetryAddCollectionItemInvalidPayload() =>
+      'Retry failed — item data is invalid.',
+    RetryAddCollectionItemStorageError() =>
+      'Could not save to collection — try again later.',
+  };
+
+  static String _addWishlistSnackbarMessage(
+    RetryAddWishlistItemResult result,
+  ) => switch (result) {
+    RetryAddWishlistItemSuccess() => 'Item added to wishlist.',
+    RetryAddWishlistItemAlreadyExists() => 'Already in your wishlist.',
+    RetryAddWishlistItemInvalidPayload() =>
+      'Retry failed — item data is invalid.',
+    RetryAddWishlistItemStorageError() =>
+      'Could not save to wishlist — try again later.',
+  };
+
   Future<void> _doRetry() async {
     setState(() => _retrying = true);
 
     final String message;
-    if (widget.action.actionType == RetryActionType.refreshReleaseMetadata) {
-      final result = await widget.retryUseCase!.execute(widget.action);
-      message = _metadataSnackbarMessage(result);
-    } else {
-      // cacheThumbnail — thumbnailUseCase is non-null (guarded by _showRetryButton)
-      final result = await widget.thumbnailUseCase!.execute(widget.action);
-      message = _thumbnailSnackbarMessage(result);
+    switch (widget.action.actionType) {
+      case RetryActionType.refreshReleaseMetadata:
+        final result = await widget.retryUseCase!.execute(widget.action);
+        message = _metadataSnackbarMessage(result);
+      case RetryActionType.cacheThumbnail:
+        final result = await widget.thumbnailUseCase!.execute(widget.action);
+        message = _thumbnailSnackbarMessage(result);
+      case RetryActionType.addCollectionItem:
+        final result = await widget.addCollectionUseCase!.execute(
+          widget.action,
+        );
+        message = _addCollectionSnackbarMessage(result);
+      case RetryActionType.addWishlistItem:
+        final result = await widget.addWishlistUseCase!.execute(widget.action);
+        message = _addWishlistSnackbarMessage(result);
+      default:
+        message = 'No retry available for this action type.';
     }
 
     if (!mounted) return;
@@ -239,7 +289,11 @@ class _ActionCardState extends State<_ActionCard> {
       (widget.retryUseCase != null &&
           widget.action.actionType == RetryActionType.refreshReleaseMetadata) ||
       (widget.thumbnailUseCase != null &&
-          widget.action.actionType == RetryActionType.cacheThumbnail);
+          widget.action.actionType == RetryActionType.cacheThumbnail) ||
+      (widget.addCollectionUseCase != null &&
+          widget.action.actionType == RetryActionType.addCollectionItem) ||
+      (widget.addWishlistUseCase != null &&
+          widget.action.actionType == RetryActionType.addWishlistItem);
 
   @override
   Widget build(BuildContext context) {

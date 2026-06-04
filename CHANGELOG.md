@@ -7,6 +7,51 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7W: Discogs import handles rate limits mid-pagination (US-23)] — 2026-06-04
+
+### Changed
+- `FetchCollectionImportPreviewUseCase` — pagination loop now retries each failed page on `RateLimitedError` (up to `_kMaxPageRetries = 3`), waiting `_kRateLimitRetryDelay = 60 s` between attempts via an injectable `delay` function; after exhausting retries returns `FetchPreviewRateLimitExhausted` (replaces `FetchPreviewRateLimited`); `delay` and `maxPageRetries` are constructor-injectable for fast test execution
+- `FetchWishlistImportPreviewUseCase` — same retry logic; `FetchWishlistPreviewRateLimited` renamed to `FetchWishlistPreviewRateLimitExhausted`
+- `CollectionImportPreviewScreen` — maps `FetchPreviewRateLimitExhausted` to the existing `_RateLimited` error state; error message updated to "Discogs rate-limited requests and all retries were exhausted. Please wait a minute and try again." — the existing **Try again** button acts as the retry-from-beginning option
+- `WishlistImportPreviewScreen` — same message update
+
+### Tests
+- 14 new tests across 4 files (+0 regressions):
+  - `fetch_collection_import_preview_use_case_test.dart` — 7 new tests in `rate-limit retry` group: succeeds after one 429 on page 1; retries same page after mid-pagination 429; final preview includes all pages; `delay` called with 60 s duration; delay called once per 429; `FetchPreviewRateLimitExhausted` returned when exhausted; delay count equals `maxPageRetries`
+  - `fetch_wishlist_import_preview_use_case_test.dart` — 7 matching tests for wishlist
+
+---
+
+## [Unreleased — Phase 7V: Failed collection and wishlist writes are queued for retry (US-22)] — 2026-06-04
+
+### Added
+- `RetryAction.payload` — optional `String?` field that stores a JSON-encoded item snapshot; used by write-retry use cases to reconstruct the item that failed to persist. `RetryActions` DB table updated (schema v8, `addColumn` migration)
+- `CollectionItem.toJson()` / `CollectionItem.fromJson()` / `CollectionItem.tryFromJson()` — JSON serialisation helpers
+- `WishlistItem.toJson()` / `WishlistItem.fromJson()` / `WishlistItem.tryFromJson()` — JSON serialisation helpers
+- `AddToCollectionStorageError` — new sealed result type; returned when `CollectionRepository.add` throws; retry action is queued before returning
+- `AddToWishlistStorageError` — same for wishlist
+- `RetryAddCollectionItemUseCase` — re-attempts a failed collection add: deserialises item from payload, runs duplicate check, calls `CollectionRepository.add`; removes action on success or `AlreadyExists`; increments attempt count on `StorageError` or `InvalidPayload`
+- `RetryAddWishlistItemUseCase` — same for wishlist
+- `FailedActionsScreen` — accepts `addCollectionUseCase` and `addWishlistUseCase`; shows **Retry** button for `addCollectionItem` / `addWishlistItem` actions; dispatches to new use cases on tap; snackbar messages cover success, already-exists, invalid-payload, and storage-error outcomes
+
+### Changed
+- `AddToCollectionUseCase` — wraps `_repository.add` in try/catch; on failure calls `_retryRepository.getPending()` to dedup, then records a new `addCollectionItem` action with the serialised item in `payload`; safe message includes item title (no token or secret)
+- `AddToWishlistUseCase` — same pattern for wishlist
+- `ReleaseDetailScreen._handleAdd` — handles new `AddToCollectionStorageError` result: resets add state to `idle`, shows "Could not save to collection — queued for retry." snackbar
+- `ReleaseDetailScreen._handleAddToWishlist` — handles new `AddToWishlistStorageError` result
+
+### Tests
+- 67 new tests across 7 files:
+  - `collection_item_serialization_test.dart` (new) — 5 tests: round-trip all fields, null fields, `tryFromJson` valid/malformed/missing
+  - `wishlist_item_serialization_test.dart` (new) — 5 tests: same for wishlist
+  - `add_to_collection_use_case_test.dart` — 9 new: `StorageError` result, retry recorded, correct action type / entityId / message / payload, no-retryRepo path, dedup, no token in message
+  - `add_to_wishlist_use_case_test.dart` — 9 new: same for wishlist
+  - `retry_add_collection_item_use_case_test.dart` (new) — 15 tests: success, already-exists, invalid-payload (×2), attempt-count increment, status-to-failed, storage-error (×4)
+  - `retry_add_wishlist_item_use_case_test.dart` (new) — 15 tests: same for wishlist
+  - `failed_actions_screen_test.dart` — 11 new: Retry button visible/hidden for addCollectionItem and addWishlistItem, execute called, all snackbar messages, friendly labels
+
+---
+
 ## [Unreleased — Phase 7U: Locally-added items can be promoted to Discogs-linked status (US-21)] — 2026-06-04
 
 ### Changed

@@ -1,3 +1,5 @@
+import 'package:cratewise/application/use_cases/retry_add_collection_item_use_case.dart';
+import 'package:cratewise/application/use_cases/retry_add_wishlist_item_use_case.dart';
 import 'package:cratewise/application/use_cases/retry_metadata_refresh_use_case.dart';
 import 'package:cratewise/application/use_cases/retry_thumbnail_use_case.dart';
 import 'package:cratewise/domain/models/cached_release_metadata.dart';
@@ -6,6 +8,10 @@ import 'package:cratewise/domain/repositories/cached_release_metadata_repository
 import 'package:cratewise/domain/repositories/retry_action_repository.dart';
 import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
+import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/models/collection_item.dart';
+import 'package:cratewise/domain/repositories/wishlist_repository.dart';
+import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/presentation/screens/failed_actions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -145,6 +151,71 @@ class _FlippingRepo implements RetryActionRepository {
   Future<void> update(RetryAction action) async {}
   @override
   Future<void> remove(String id) async {}
+}
+
+// Null collection/wishlist repos for use case constructors.
+class _NullCollectionRepo implements CollectionRepository {
+  @override
+  Future<List<CollectionItem>> getAll() async => [];
+  @override
+  Future<CollectionItem?> getById(String id) async => null;
+  @override
+  Future<bool> containsRelease(int id) async => false;
+  @override
+  Future<void> add(CollectionItem item) async {}
+  @override
+  Future<void> update(CollectionItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _NullWishlistRepo implements WishlistRepository {
+  @override
+  Future<List<WishlistItem>> getAll() async => [];
+  @override
+  Future<WishlistItem?> getById(String id) async => null;
+  @override
+  Future<bool> containsRelease(int id) async => false;
+  @override
+  Future<void> add(WishlistItem item) async {}
+  @override
+  Future<void> update(WishlistItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _FakeAddCollectionUseCase extends RetryAddCollectionItemUseCase {
+  _FakeAddCollectionUseCase(this._result)
+    : super(
+        retryRepo: _NullRetryRepoForUseCase(),
+        collectionRepo: _NullCollectionRepo(),
+      );
+
+  final RetryAddCollectionItemResult _result;
+  int callCount = 0;
+
+  @override
+  Future<RetryAddCollectionItemResult> execute(RetryAction action) async {
+    callCount++;
+    return _result;
+  }
+}
+
+class _FakeAddWishlistUseCase extends RetryAddWishlistItemUseCase {
+  _FakeAddWishlistUseCase(this._result)
+    : super(
+        retryRepo: _NullRetryRepoForUseCase(),
+        wishlistRepo: _NullWishlistRepo(),
+      );
+
+  final RetryAddWishlistItemResult _result;
+  int callCount = 0;
+
+  @override
+  Future<RetryAddWishlistItemResult> execute(RetryAction action) async {
+    callCount++;
+    return _result;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -720,6 +791,216 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No failed actions'), findsOneWidget);
+    });
+  });
+
+  group('FailedActionsScreen — add collection item retry button', () {
+    RetryAction addCollectionAction() => _makeAction(
+      actionType: RetryActionType.addCollectionItem,
+      safeErrorMessage: "Could not save 'Kind Of Blue' to collection.",
+    );
+
+    testWidgets(
+      'shows Retry button for addCollectionItem when addCollectionUseCase provided',
+      (tester) async {
+        final repo = _FakeRetryRepo(actions: [addCollectionAction()]);
+        final uc = _FakeAddCollectionUseCase(
+          const RetryAddCollectionItemSuccess(),
+        );
+        await tester.pumpWidget(
+          _wrap(
+            FailedActionsScreen(repository: repo, addCollectionUseCase: uc),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(TextButton, 'Retry'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'does NOT show Retry button for addCollectionItem without use case',
+      (tester) async {
+        final repo = _FakeRetryRepo(actions: [addCollectionAction()]);
+        await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(TextButton, 'Retry'), findsNothing);
+      },
+    );
+
+    testWidgets('tapping Retry calls addCollectionUseCase.execute', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(actions: [addCollectionAction()]);
+      final uc = _FakeAddCollectionUseCase(
+        const RetryAddCollectionItemSuccess(),
+      );
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, addCollectionUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(uc.callCount, 1);
+    });
+
+    testWidgets('Success shows snackbar with added-to-collection message', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(actions: [addCollectionAction()]);
+      final uc = _FakeAddCollectionUseCase(
+        const RetryAddCollectionItemSuccess(),
+      );
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, addCollectionUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Item added to collection.'), findsOneWidget);
+    });
+
+    testWidgets('AlreadyExists shows safe snackbar message', (tester) async {
+      final repo = _FakeRetryRepo(actions: [addCollectionAction()]);
+      final uc = _FakeAddCollectionUseCase(
+        const RetryAddCollectionItemAlreadyExists(),
+      );
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, addCollectionUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Already in your collection.'), findsOneWidget);
+    });
+
+    testWidgets('StorageError shows safe snackbar message', (tester) async {
+      final repo = _FakeRetryRepo(actions: [addCollectionAction()]);
+      final uc = _FakeAddCollectionUseCase(
+        const RetryAddCollectionItemStorageError(),
+      );
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, addCollectionUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Could not save to collection — try again later.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows friendly label for addCollectionItem action', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(actions: [addCollectionAction()]);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add to collection'), findsOneWidget);
+    });
+  });
+
+  group('FailedActionsScreen — add wishlist item retry button', () {
+    RetryAction addWishlistAction() => _makeAction(
+      actionType: RetryActionType.addWishlistItem,
+      safeErrorMessage: "Could not save 'Kind Of Blue' to wishlist.",
+    );
+
+    testWidgets(
+      'shows Retry button for addWishlistItem when addWishlistUseCase provided',
+      (tester) async {
+        final repo = _FakeRetryRepo(actions: [addWishlistAction()]);
+        final uc = _FakeAddWishlistUseCase(const RetryAddWishlistItemSuccess());
+        await tester.pumpWidget(
+          _wrap(FailedActionsScreen(repository: repo, addWishlistUseCase: uc)),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(TextButton, 'Retry'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'does NOT show Retry button for addWishlistItem without use case',
+      (tester) async {
+        final repo = _FakeRetryRepo(actions: [addWishlistAction()]);
+        await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+        await tester.pumpAndSettle();
+
+        expect(find.widgetWithText(TextButton, 'Retry'), findsNothing);
+      },
+    );
+
+    testWidgets('tapping Retry calls addWishlistUseCase.execute', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(actions: [addWishlistAction()]);
+      final uc = _FakeAddWishlistUseCase(const RetryAddWishlistItemSuccess());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, addWishlistUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(uc.callCount, 1);
+    });
+
+    testWidgets('Success shows snackbar with added-to-wishlist message', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(actions: [addWishlistAction()]);
+      final uc = _FakeAddWishlistUseCase(const RetryAddWishlistItemSuccess());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, addWishlistUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Item added to wishlist.'), findsOneWidget);
+    });
+
+    testWidgets('StorageError shows safe snackbar message', (tester) async {
+      final repo = _FakeRetryRepo(actions: [addWishlistAction()]);
+      final uc = _FakeAddWishlistUseCase(
+        const RetryAddWishlistItemStorageError(),
+      );
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, addWishlistUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(TextButton, 'Retry'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Could not save to wishlist — try again later.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows friendly label for addWishlistItem action', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(actions: [addWishlistAction()]);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Add to wishlist'), findsOneWidget);
     });
   });
 

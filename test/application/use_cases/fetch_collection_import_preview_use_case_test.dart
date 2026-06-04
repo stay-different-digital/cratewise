@@ -54,7 +54,7 @@ class _SpyTokenStorage implements TokenStorage {
 }
 
 // ---------------------------------------------------------------------------
-// Fake API client
+// Fake API clients
 // ---------------------------------------------------------------------------
 
 class _FakeApiClient extends DiscogsApiClient {
@@ -88,6 +88,31 @@ class _ThrowingApiClient extends DiscogsApiClient {
     int page = 1,
     int perPage = 50,
   }) async => throw _error;
+}
+
+/// Throws [RateLimitedError] on call indices listed in [throwOnCalls];
+/// succeeds using [pages] for all other calls.
+class _PartialThrowApiClient extends DiscogsApiClient {
+  _PartialThrowApiClient({required this.pages, required this.throwOnCalls});
+
+  final List<DiscogsCollectionPageDto> pages;
+  final Set<int> throwOnCalls;
+  int _totalCalls = 0;
+  int _successIndex = 0;
+  final List<int> requestedPages = [];
+
+  @override
+  Future<DiscogsCollectionPageDto> fetchCollectionPage(
+    String username,
+    String token, {
+    int page = 1,
+    int perPage = 50,
+  }) async {
+    requestedPages.add(page);
+    final call = _totalCalls++;
+    if (throwOnCalls.contains(call)) throw const RateLimitedError();
+    return pages[_successIndex++];
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -159,6 +184,8 @@ FetchCollectionImportPreviewUseCase makeUseCase({
   TokenStorage? storage,
   DiscogsApiClient? apiClient,
   Set<int>? existingIds,
+  Future<void> Function(Duration)? delay,
+  int maxPageRetries = 0,
 }) {
   final repo = _FakeCollectionRepository(existingIds: existingIds);
   return FetchCollectionImportPreviewUseCase(
@@ -166,6 +193,8 @@ FetchCollectionImportPreviewUseCase makeUseCase({
     storage:
         storage ?? _FakeTokenStorage(token: 'fake-token', username: 'fakeuser'),
     apiClient: apiClient ?? _FakeApiClient([makePage()]),
+    delay: delay ?? (_) async {},
+    maxPageRetries: maxPageRetries,
   );
 }
 
@@ -315,14 +344,139 @@ void main() {
       });
     });
 
-    group('error handling', () {
-      test('returns FetchPreviewRateLimited on RateLimitedError', () async {
+    group('rate-limit retry', () {
+      test('returns Ready when page 1 succeeds after one 429', () async {
+        final client = _PartialThrowApiClient(
+          pages: [makePage()],
+          throwOnCalls: {0},
+        );
+        final useCase = makeUseCase(apiClient: client, maxPageRetries: 1);
+        final result = await useCase.execute();
+        expect(result, isA<FetchPreviewReady>());
+      });
+
+      test('retries the same page after a 429 mid-pagination', () async {
+        final page1 = makePage(
+          page: 1,
+          totalPages: 2,
+          items: [makeDto(releaseId: 1)],
+        );
+        final page2 = makePage(
+          page: 2,
+          totalPages: 2,
+          items: [makeDto(releaseId: 2)],
+        );
+        // Call 0 = page 1 succeeds, call 1 = page 2 throws, call 2 = page 2 succeeds
+        final client = _PartialThrowApiClient(
+          pages: [page1, page2],
+          throwOnCalls: {1},
+        );
+        final useCase = makeUseCase(apiClient: client, maxPageRetries: 1);
+        final result = await useCase.execute();
+        expect(result, isA<FetchPreviewReady>());
+        // page 2 should have been requested twice
+        expect(client.requestedPages, [1, 2, 2]);
+      });
+
+      test(
+        'final preview includes items from all pages despite mid-pagination 429',
+        () async {
+          final page1 = makePage(
+            page: 1,
+            totalPages: 2,
+            items: [makeDto(releaseId: 1)],
+          );
+          final page2 = makePage(
+            page: 2,
+            totalPages: 2,
+            items: [makeDto(releaseId: 2)],
+          );
+          final client = _PartialThrowApiClient(
+            pages: [page1, page2],
+            throwOnCalls: {1},
+          );
+          final useCase = makeUseCase(apiClient: client, maxPageRetries: 1);
+          final result = await useCase.execute() as FetchPreviewReady;
+          expect(result.preview.totalCount, 2);
+        },
+      );
+
+      test('calls delay with 60-second duration on each 429', () async {
+        final client = _PartialThrowApiClient(
+          pages: [makePage()],
+          throwOnCalls: {0},
+        );
+        final delays = <Duration>[];
+        final useCase = makeUseCase(
+          apiClient: client,
+          delay: (d) async => delays.add(d),
+          maxPageRetries: 1,
+        );
+        await useCase.execute();
+        expect(delays, [const Duration(seconds: 60)]);
+      });
+
+      test('calls delay once per 429 when multiple retries occur', () async {
+        final page1 = makePage(
+          page: 1,
+          totalPages: 2,
+          items: [makeDto(releaseId: 1)],
+        );
+        final page2 = makePage(
+          page: 2,
+          totalPages: 2,
+          items: [makeDto(releaseId: 2)],
+        );
+        // Two 429s: call 0 (page 1 first attempt) and call 2 (page 2 first attempt)
+        final client = _PartialThrowApiClient(
+          pages: [page1, page2],
+          throwOnCalls: {0, 2},
+        );
+        final delays = <Duration>[];
+        final useCase = makeUseCase(
+          apiClient: client,
+          delay: (d) async => delays.add(d),
+          maxPageRetries: 1,
+        );
+        await useCase.execute();
+        expect(delays.length, 2);
+      });
+
+      test(
+        'returns FetchPreviewRateLimitExhausted when retries exhausted',
+        () async {
+          final useCase = makeUseCase(
+            apiClient: _ThrowingApiClient(const RateLimitedError()),
+            maxPageRetries: 2,
+          );
+          final result = await useCase.execute();
+          expect(result, isA<FetchPreviewRateLimitExhausted>());
+        },
+      );
+
+      test('calls delay maxPageRetries times before exhausting', () async {
+        final delays = <Duration>[];
         final useCase = makeUseCase(
           apiClient: _ThrowingApiClient(const RateLimitedError()),
+          delay: (d) async => delays.add(d),
+          maxPageRetries: 2,
         );
-        final result = await useCase.execute();
-        expect(result, isA<FetchPreviewRateLimited>());
+        await useCase.execute();
+        expect(delays.length, 2);
       });
+    });
+
+    group('error handling', () {
+      test(
+        'returns FetchPreviewRateLimitExhausted on RateLimitedError',
+        () async {
+          final useCase = makeUseCase(
+            apiClient: _ThrowingApiClient(const RateLimitedError()),
+          );
+          final result = await useCase.execute();
+          expect(result, isA<FetchPreviewRateLimitExhausted>());
+        },
+      );
 
       test('returns FetchPreviewNetworkError on NetworkError', () async {
         final useCase = makeUseCase(

@@ -411,14 +411,14 @@ void main() {
 
     group('rate limited state', () {
       testWidgets('shows rate limit message', (tester) async {
-        final useCase = _FakeUseCase(const FetchPreviewRateLimited());
+        final useCase = _FakeUseCase(const FetchPreviewRateLimitExhausted());
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
-        expect(find.textContaining('rate-limiting'), findsOneWidget);
+        expect(find.textContaining('rate-limited'), findsOneWidget);
       });
 
       testWidgets('shows Try again button for rate limit', (tester) async {
-        final useCase = _FakeUseCase(const FetchPreviewRateLimited());
+        final useCase = _FakeUseCase(const FetchPreviewRateLimitExhausted());
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.text('Try again'), findsOneWidget);

@@ -24,6 +24,7 @@ class RetryAction {
     required this.attemptCount,
     required this.status,
     this.lastAttemptedAt,
+    this.payload,
   });
 
   final String id;
@@ -34,6 +35,10 @@ class RetryAction {
   /// A safe, user-facing description of why the action failed.
   /// Must never contain tokens, secrets, or raw API headers.
   final String safeErrorMessage;
+
+  /// JSON-encoded item payload used by write-retry use cases to reconstruct
+  /// the item that failed to be persisted.  Null for non-write actions.
+  final String? payload;
 
   final DateTime createdAt;
   final DateTime? lastAttemptedAt;
@@ -46,6 +51,7 @@ class RetryAction {
     RetryActionEntityType? entityType,
     String? entityId,
     String? safeErrorMessage,
+    String? payload,
     DateTime? createdAt,
     DateTime? lastAttemptedAt,
     int? attemptCount,
@@ -58,6 +64,7 @@ class RetryAction {
       entityType: entityType ?? this.entityType,
       entityId: entityId ?? this.entityId,
       safeErrorMessage: safeErrorMessage ?? this.safeErrorMessage,
+      payload: payload ?? this.payload,
       createdAt: createdAt ?? this.createdAt,
       lastAttemptedAt: clearLastAttemptedAt
           ? null

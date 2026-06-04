@@ -262,6 +262,7 @@ class RetryActions extends Table {
       text().map(const RetryActionEntityTypeConverter())();
   TextColumn get entityId => text()();
   TextColumn get safeErrorMessage => text()();
+  TextColumn get payload => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get lastAttemptedAt => dateTime().nullable()();
   IntColumn get attemptCount => integer()();
@@ -322,7 +323,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -349,6 +350,9 @@ class AppDatabase extends _$AppDatabase {
         // Cache stores full tracklist + all identifiers; drop and recreate.
         await customStatement('DROP TABLE IF EXISTS cached_releases');
         await m.createTable(cachedReleases);
+      }
+      if (from < 8) {
+        await m.addColumn(retryActions, retryActions.payload);
       }
     },
   );

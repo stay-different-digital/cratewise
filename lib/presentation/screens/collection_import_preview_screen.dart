@@ -109,7 +109,7 @@ class _CollectionImportPreviewScreenState
       _state = switch (result) {
         FetchPreviewReady(:final preview) => _Loaded(preview),
         FetchPreviewNoToken() => const _NoToken(),
-        FetchPreviewRateLimited() => const _RateLimited(),
+        FetchPreviewRateLimitExhausted() => const _RateLimited(),
         FetchPreviewNetworkError() => const _NetworkError(),
         FetchPreviewError() => const _Error(),
       };
@@ -155,7 +155,8 @@ class _CollectionImportPreviewScreenState
         _NoToken() => const _NoTokenState(),
         _RateLimited() => _RetriableErrorState(
           message:
-              'Discogs is rate-limiting requests. Please wait a moment and try again.',
+              'Discogs rate-limited requests and all retries were exhausted. '
+              'Please wait a minute and try again.',
           onRetry: _load,
         ),
         _NetworkError() => _RetriableErrorState(
