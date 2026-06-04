@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../domain/models/wishlist_item.dart';
@@ -49,6 +51,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
   late final ThumbnailRepository _thumbnailRepository;
   AppDatabase? _ownedDb;
   _WishlistState _state = const _Loading();
+  final _searchController = TextEditingController();
+  Timer? _debounce;
+  String _debouncedQuery = '';
 
   @override
   void initState() {
@@ -98,25 +103,99 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _ownedDb?.close();
+    _searchController.dispose();
     super.dispose();
+  }
+
+  Widget _buildBody() {
+    return switch (_state) {
+      _Loading() => const Center(child: CircularProgressIndicator()),
+      _Loaded(:final items) when items.isEmpty => const _EmptyWishlistState(),
+      _Loaded(:final items) => _buildLoadedList(items),
+      _WishlistError() => _WishlistErrorState(onRetry: _load),
+    };
+  }
+
+  Widget _buildLoadedList(List<WishlistItem> items) {
+    final q = _debouncedQuery.trim().toLowerCase();
+    final filtered = q.isEmpty
+        ? items
+        : items
+              .where(
+                (i) =>
+                    i.artist.toLowerCase().contains(q) ||
+                    i.title.toLowerCase().contains(q),
+              )
+              .toList();
+
+    if (filtered.isEmpty) {
+      return _NoSearchResults(query: _debouncedQuery.trim());
+    }
+    return RefreshIndicator(
+      onRefresh: _refresh,
+      child: _WishlistList(
+        items: filtered,
+        repository: _repository,
+        thumbnailRepository: _thumbnailRepository,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return switch (_state) {
-      _Loading() => const Center(child: CircularProgressIndicator()),
-      _Loaded(:final items) when items.isEmpty => const _EmptyWishlistState(),
-      _Loaded(:final items) => RefreshIndicator(
-        onRefresh: _refresh,
-        child: _WishlistList(
-          items: items,
-          repository: _repository,
-          thumbnailRepository: _thumbnailRepository,
+    final theme = Theme.of(context);
+    final hasQuery = _searchController.text.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: TextField(
+            controller: _searchController,
+            autocorrect: false,
+            enableSuggestions: false,
+            textInputAction: TextInputAction.search,
+            onChanged: (_) {
+              setState(() {}); // immediate: clear-button visibility
+              _debounce?.cancel();
+              _debounce = Timer(const Duration(milliseconds: 300), () {
+                if (mounted)
+                  setState(() => _debouncedQuery = _searchController.text);
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Search your wishlist…',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: hasQuery
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      tooltip: 'Clear search',
+                      onPressed: () {
+                        _debounce?.cancel();
+                        _searchController.clear();
+                        setState(() => _debouncedQuery = '');
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(28),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: theme.colorScheme.surfaceContainerHighest,
+              contentPadding: const EdgeInsets.symmetric(
+                vertical: 0,
+                horizontal: 20,
+              ),
+            ),
+          ),
         ),
-      ),
-      _WishlistError() => _WishlistErrorState(onRetry: _load),
-    };
+        Expanded(child: _buildBody()),
+      ],
+    );
   }
 }
 
@@ -261,6 +340,46 @@ class _WishlistErrorState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoSearchResults extends StatelessWidget {
+  const _NoSearchResults({required this.query});
+
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.search_off,
+              size: 56,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No results for "$query"',
+              style: theme.textTheme.titleMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try a different artist or title.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
         ),
       ),

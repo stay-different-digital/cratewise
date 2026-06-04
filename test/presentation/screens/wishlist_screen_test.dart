@@ -602,7 +602,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(repo.loadCallCount, 1);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(repo.loadCallCount, 2);
@@ -617,7 +619,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Before'), findsOneWidget);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(find.text('After'), findsOneWidget);
@@ -632,7 +636,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Kept Artist'), findsOneWidget);
 
-      await tester.widget<RefreshIndicator>(find.byType(RefreshIndicator)).onRefresh();
+      await tester
+          .widget<RefreshIndicator>(find.byType(RefreshIndicator))
+          .onRefresh();
       await tester.pump();
 
       expect(find.text('Kept Artist'), findsOneWidget);
@@ -643,6 +649,136 @@ void main() {
       await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.byType(RefreshIndicator), findsNothing);
+    });
+  });
+
+  group('WishlistScreen — search filter', () {
+    final miles = _makeItem(
+      id: '1',
+      artist: 'Miles Davis',
+      title: 'Kind of Blue',
+    );
+    final coltrane = _makeItem(
+      id: '2',
+      artist: 'John Coltrane',
+      title: 'A Love Supreme',
+    );
+
+    testWidgets('filters by artist when query matches', (tester) async {
+      final repo = _FakeWishlistRepository(items: [miles, coltrane]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsNothing);
+    });
+
+    testWidgets('filters by title when query matches', (tester) async {
+      final repo = _FakeWishlistRepository(items: [miles, coltrane]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'supreme');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.text('John Coltrane'), findsOneWidget);
+      expect(find.text('Miles Davis'), findsNothing);
+    });
+
+    testWidgets('shows no-results message when filter matches nothing', (
+      tester,
+    ) async {
+      final repo = _FakeWishlistRepository(items: [miles, coltrane]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'zzznomatch');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.textContaining('No results'), findsOneWidget);
+      expect(find.byType(WishlistItemCard), findsNothing);
+    });
+
+    testWidgets('no-results message includes the search query', (tester) async {
+      final repo = _FakeWishlistRepository(items: [miles, coltrane]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'jazz fusion');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(
+        find.textContaining('No results for "jazz fusion"'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('clearing search restores the full list', (tester) async {
+      final repo = _FakeWishlistRepository(items: [miles, coltrane]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.text('John Coltrane'), findsNothing);
+
+      await tester.tap(find.byIcon(Icons.clear));
+      await tester.pump();
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsOneWidget);
+    });
+
+    testWidgets('filter is case-insensitive', (tester) async {
+      final repo = _FakeWishlistRepository(items: [miles, coltrane]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'MILES');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsNothing);
+    });
+
+    testWidgets('list is not filtered before debounce fires', (tester) async {
+      final repo = _FakeWishlistRepository(items: [miles, coltrane]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(); // single frame — debounce not yet fired
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsOneWidget);
+    });
+
+    testWidgets('filter works in iPad GridView layout', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(1024, 768));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final repo = _FakeWishlistRepository(items: [miles, coltrane]);
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump();
+
+      expect(find.text('Miles Davis'), findsOneWidget);
+      expect(find.text('John Coltrane'), findsNothing);
+
+      await tester.binding.setSurfaceSize(null);
     });
   });
 }

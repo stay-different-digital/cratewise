@@ -7,6 +7,24 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7K: Wishlist search and filter (US-11)] — 2026-06-04
+
+### Added
+- `WishlistScreen` search field: pill-shaped `TextField` with `Icons.search` prefix and clear button — same visual style as the Collection list search field
+- `_NoSearchResults` widget shown when the active filter matches no wishlist items, displaying the query text and a hint to try a different artist or title
+- `_buildBody()` / `_buildLoadedList()` methods replace the inline `switch` in `build()`, keeping filter logic out of the state dispatcher
+
+### Changed
+- `WishlistScreen` now filters by artist and/or title as the user types — filtering is local, no network call, operates on already-loaded items
+- A 300 ms debounce via `dart:async Timer` (`_debouncedQuery`) prevents re-filtering on every keystroke; the clear button cancels the pending timer and resets `_debouncedQuery` synchronously
+- The `RefreshIndicator` wraps only the filtered list, not the no-results widget; the `_EmptyWishlistState` (empty collection) is still distinguished from `_NoSearchResults` (items exist but none match the query)
+- Filter applies to both the list layout (phone) and the grid layout (iPad), since filtering happens upstream of `_WishlistList`
+
+### Tests
+- 8 new tests in `wishlist_screen_test.dart` (group: "search filter"): filters by artist; filters by title; shows no-results message when nothing matches; no-results message includes the query; clearing search restores full list; case-insensitive matching; list is not filtered before debounce fires; filter works in iPad GridView layout
+
+---
+
 ## [Unreleased — Phase 7J: Collection list live-refreshes after adding items (US-10)] — 2026-06-04
 
 ### Added
