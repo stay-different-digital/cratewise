@@ -26,7 +26,7 @@ class _FlutterSecureStorageAdapter implements SecureKeyValueStore {
 
 class DiscogsTokenStorage implements TokenStorage {
   DiscogsTokenStorage({SecureKeyValueStore? store})
-      : _store = store ?? _FlutterSecureStorageAdapter();
+    : _store = store ?? _FlutterSecureStorageAdapter();
 
   static const _tokenKey = 'discogs_token';
   static const _usernameKey = 'discogs_username';
@@ -67,9 +67,13 @@ class DiscogsTokenStorage implements TokenStorage {
       if (savedToken != token || savedUsername != username) {
         throw const StorageError();
       }
-    } on StorageError {
-      rethrow;
     } catch (e) {
+      // Clean up any partial write so neither key is left behind.
+      try {
+        await _store.delete(key: _tokenKey);
+        await _store.delete(key: _usernameKey);
+      } catch (_) {}
+      if (e is StorageError) rethrow;
       if (kDebugMode) {
         final detail = e is PlatformException ? ' code=${e.code}' : '';
         dev.log(

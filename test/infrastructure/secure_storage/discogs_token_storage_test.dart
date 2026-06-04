@@ -3,6 +3,28 @@ import 'package:cratewise/infrastructure/secure_storage/secure_key_value_store.d
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Succeeds on all writes except the [failOnWriteNumber]-th (1-based).
+class _PartialWriteStore implements SecureKeyValueStore {
+  _PartialWriteStore({required this.failOnWriteNumber});
+
+  final int failOnWriteNumber;
+  int _writeCount = 0;
+  final Map<String, String> data = {};
+
+  @override
+  Future<String?> read({required String key}) async => data[key];
+
+  @override
+  Future<void> write({required String key, required String value}) async {
+    _writeCount++;
+    if (_writeCount == failOnWriteNumber) throw Exception('simulated failure');
+    data[key] = value;
+  }
+
+  @override
+  Future<void> delete({required String key}) async => data.remove(key);
+}
+
 class _FakeStore implements SecureKeyValueStore {
   final Map<String, String> _data = {};
   bool throwOnWrite = false;
@@ -37,63 +59,66 @@ const _fakeUsername = 'vinyl_fan';
 
 void main() {
   group('DiscogsTokenStorage.saveCredentials', () {
-    test('stores token and username and read-back confirms the values',
-        () async {
-      final store = _FakeStore();
-      final storage = DiscogsTokenStorage(store: store);
+    test(
+      'stores token and username and read-back confirms the values',
+      () async {
+        final store = _FakeStore();
+        final storage = DiscogsTokenStorage(store: store);
 
-      await storage.saveCredentials(
-        token: _fakeToken,
-        username: _fakeUsername,
-      );
+        await storage.saveCredentials(
+          token: _fakeToken,
+          username: _fakeUsername,
+        );
 
-      expect(store._data['discogs_token'], _fakeToken);
-      expect(store._data['discogs_username'], _fakeUsername);
-    });
+        expect(store._data['discogs_token'], _fakeToken);
+        expect(store._data['discogs_username'], _fakeUsername);
+      },
+    );
 
     test('throws StorageError when write throws', () async {
       final store = _FakeStore()..throwOnWrite = true;
       final storage = DiscogsTokenStorage(store: store);
 
       expect(
-        () => storage.saveCredentials(
-          token: _fakeToken,
-          username: _fakeUsername,
-        ),
+        () =>
+            storage.saveCredentials(token: _fakeToken, username: _fakeUsername),
         throwsA(isA<StorageError>()),
       );
     });
 
     test(
-        'throws StorageError when write silently fails '
-        '(iOS Keychain bug: write returns success but value is not stored)',
-        () async {
-      final store = _FakeStore()..silentWriteFailure = true;
-      final storage = DiscogsTokenStorage(store: store);
+      'throws StorageError when write silently fails '
+      '(iOS Keychain bug: write returns success but value is not stored)',
+      () async {
+        final store = _FakeStore()..silentWriteFailure = true;
+        final storage = DiscogsTokenStorage(store: store);
 
-      expect(
-        () => storage.saveCredentials(
-          token: _fakeToken,
-          username: _fakeUsername,
-        ),
-        throwsA(isA<StorageError>()),
-      );
-    });
+        expect(
+          () => storage.saveCredentials(
+            token: _fakeToken,
+            username: _fakeUsername,
+          ),
+          throwsA(isA<StorageError>()),
+        );
+      },
+    );
 
-    test('throws StorageError when read-back throws after successful write',
-        () async {
-      final store = _FakeStore();
-      final storage = DiscogsTokenStorage(store: store);
-      store.throwOnRead = true;
+    test(
+      'throws StorageError when read-back throws after successful write',
+      () async {
+        final store = _FakeStore();
+        final storage = DiscogsTokenStorage(store: store);
+        store.throwOnRead = true;
 
-      expect(
-        () => storage.saveCredentials(
-          token: _fakeToken,
-          username: _fakeUsername,
-        ),
-        throwsA(isA<StorageError>()),
-      );
-    });
+        expect(
+          () => storage.saveCredentials(
+            token: _fakeToken,
+            username: _fakeUsername,
+          ),
+          throwsA(isA<StorageError>()),
+        );
+      },
+    );
 
     test('StorageError does not contain the token value', () async {
       const sensitiveToken = 'super_secret_token_xyz_123';
@@ -112,14 +137,47 @@ void main() {
     });
   });
 
+  group('saveCredentials atomicity', () {
+    test('cleans up token when username write fails '
+        '(no half-connected state after partial write)', () async {
+      final store = _PartialWriteStore(failOnWriteNumber: 2);
+      final storage = DiscogsTokenStorage(store: store);
+
+      await expectLater(
+        () =>
+            storage.saveCredentials(token: _fakeToken, username: _fakeUsername),
+        throwsA(isA<StorageError>()),
+      );
+
+      expect(store.data.containsKey('discogs_token'), isFalse);
+      expect(store.data.containsKey('discogs_username'), isFalse);
+    });
+
+    test(
+      'cleans up both keys when read-back throws after successful writes',
+      () async {
+        final store = _FakeStore()..throwOnRead = true;
+        final storage = DiscogsTokenStorage(store: store);
+
+        await expectLater(
+          () => storage.saveCredentials(
+            token: _fakeToken,
+            username: _fakeUsername,
+          ),
+          throwsA(isA<StorageError>()),
+        );
+
+        expect(store._data.containsKey('discogs_token'), isFalse);
+        expect(store._data.containsKey('discogs_username'), isFalse);
+      },
+    );
+  });
+
   group('DiscogsTokenStorage.loadToken', () {
     test('returns the stored token after a successful save', () async {
       final store = _FakeStore();
       final storage = DiscogsTokenStorage(store: store);
-      await storage.saveCredentials(
-        token: _fakeToken,
-        username: _fakeUsername,
-      );
+      await storage.saveCredentials(token: _fakeToken, username: _fakeUsername);
 
       expect(await storage.loadToken(), _fakeToken);
     });
@@ -133,10 +191,7 @@ void main() {
       final store = _FakeStore()..throwOnRead = true;
       final storage = DiscogsTokenStorage(store: store);
 
-      expect(
-        () => storage.loadToken(),
-        throwsA(isA<StorageError>()),
-      );
+      expect(() => storage.loadToken(), throwsA(isA<StorageError>()));
     });
   });
 
@@ -144,10 +199,7 @@ void main() {
     test('returns the stored username after a successful save', () async {
       final store = _FakeStore();
       final storage = DiscogsTokenStorage(store: store);
-      await storage.saveCredentials(
-        token: _fakeToken,
-        username: _fakeUsername,
-      );
+      await storage.saveCredentials(token: _fakeToken, username: _fakeUsername);
 
       expect(await storage.loadUsername(), _fakeUsername);
     });
@@ -161,36 +213,33 @@ void main() {
       final store = _FakeStore()..throwOnRead = true;
       final storage = DiscogsTokenStorage(store: store);
 
-      expect(
-        () => storage.loadUsername(),
-        throwsA(isA<StorageError>()),
-      );
+      expect(() => storage.loadUsername(), throwsA(isA<StorageError>()));
     });
   });
 
   group('DiscogsTokenStorage.deleteCredentials', () {
-    test('removes token and username so subsequent loads return null', () async {
-      final store = _FakeStore();
-      final storage = DiscogsTokenStorage(store: store);
-      await storage.saveCredentials(
-        token: _fakeToken,
-        username: _fakeUsername,
-      );
+    test(
+      'removes token and username so subsequent loads return null',
+      () async {
+        final store = _FakeStore();
+        final storage = DiscogsTokenStorage(store: store);
+        await storage.saveCredentials(
+          token: _fakeToken,
+          username: _fakeUsername,
+        );
 
-      await storage.deleteCredentials();
+        await storage.deleteCredentials();
 
-      expect(await storage.loadToken(), isNull);
-      expect(await storage.loadUsername(), isNull);
-    });
+        expect(await storage.loadToken(), isNull);
+        expect(await storage.loadUsername(), isNull);
+      },
+    );
 
     test('throws StorageError when delete throws', () async {
       final store = _FakeStore()..throwOnDelete = true;
       final storage = DiscogsTokenStorage(store: store);
 
-      expect(
-        () => storage.deleteCredentials(),
-        throwsA(isA<StorageError>()),
-      );
+      expect(() => storage.deleteCredentials(), throwsA(isA<StorageError>()));
     });
   });
 }

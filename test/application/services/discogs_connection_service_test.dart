@@ -65,31 +65,56 @@ void main() {
       expect(status.username, isNull);
     });
 
-    test('returns connected with username when credentials are saved',
-        () async {
-      final storage = _FakeTokenStorage();
-      await storage.saveCredentials(token: 'tok', username: 'vinyl_fan');
-      final service = DiscogsConnectionService(storage: storage);
-      final status = await service.loadStatus();
-      expect(status.isConnected, isTrue);
-      expect(status.username, 'vinyl_fan');
-    });
+    test(
+      'returns connected with username when credentials are saved',
+      () async {
+        final storage = _FakeTokenStorage();
+        await storage.saveCredentials(token: 'tok', username: 'vinyl_fan');
+        final service = DiscogsConnectionService(storage: storage);
+        final status = await service.loadStatus();
+        expect(status.isConnected, isTrue);
+        expect(status.username, 'vinyl_fan');
+      },
+    );
 
     test('returns disconnected when storage throws', () async {
-      final service = DiscogsConnectionService(
-        storage: _ThrowingStorage(),
-      );
+      final service = DiscogsConnectionService(storage: _ThrowingStorage());
       final status = await service.loadStatus();
       expect(status.isConnected, isFalse);
     });
+  });
+
+  group('DiscogsConnectionService.loadStatus half-connected guard', () {
+    test(
+      'returns disconnected when token is present but username is absent',
+      () async {
+        final service = DiscogsConnectionService(
+          storage: _HalfConnectedStorage(token: 'some_token', username: null),
+        );
+        final status = await service.loadStatus();
+        expect(status.isConnected, isFalse);
+        expect(status.username, isNull);
+      },
+    );
+
+    test(
+      'returns disconnected when username is present but token is absent',
+      () async {
+        final service = DiscogsConnectionService(
+          storage: _HalfConnectedStorage(token: null, username: 'vinyl_fan'),
+        );
+        final status = await service.loadStatus();
+        expect(status.isConnected, isFalse);
+        expect(status.username, isNull);
+      },
+    );
   });
 
   group('DiscogsConnectionService.connect', () {
     test('validates token and saves credentials, returns username', () async {
       final storage = _FakeTokenStorage();
       final service = _makeService(
-        MockClient(
-            (_) async => http.Response(jsonEncode(_identityBody), 200)),
+        MockClient((_) async => http.Response(jsonEncode(_identityBody), 200)),
         storage,
       );
 
@@ -114,35 +139,29 @@ void main() {
       final service = _makeService(
         MockClient((_) async => http.Response('', 429)),
       );
-      expect(
-        () => service.connect('tok'),
-        throwsA(isA<RateLimitedError>()),
-      );
+      expect(() => service.connect('tok'), throwsA(isA<RateLimitedError>()));
     });
 
     test('propagates NetworkError when HTTP client throws', () async {
       final service = _makeService(
         MockClient((_) async => throw Exception('no internet')),
       );
-      expect(
-        () => service.connect('tok'),
-        throwsA(isA<NetworkError>()),
-      );
+      expect(() => service.connect('tok'), throwsA(isA<NetworkError>()));
     });
 
-    test('throws StorageError when token validates but storage fails',
-        () async {
-      final storage = _FakeTokenStorage()..throwOnSave = true;
-      final service = _makeService(
-        MockClient(
-            (_) async => http.Response(jsonEncode(_identityBody), 200)),
-        storage,
-      );
-      expect(
-        () => service.connect('my_token'),
-        throwsA(isA<StorageError>()),
-      );
-    });
+    test(
+      'throws StorageError when token validates but storage fails',
+      () async {
+        final storage = _FakeTokenStorage()..throwOnSave = true;
+        final service = _makeService(
+          MockClient(
+            (_) async => http.Response(jsonEncode(_identityBody), 200),
+          ),
+          storage,
+        );
+        expect(() => service.connect('my_token'), throwsA(isA<StorageError>()));
+      },
+    );
 
     test('token value is not present in any thrown error message', () async {
       const sensitiveToken = 'super_secret_token_xyz_123';
@@ -173,12 +192,29 @@ void main() {
     test('propagates StorageError when storage delete fails', () async {
       final storage = _FakeTokenStorage()..throwOnDelete = true;
       final service = DiscogsConnectionService(storage: storage);
-      expect(
-        () => service.disconnect(),
-        throwsA(isA<StorageError>()),
-      );
+      expect(() => service.disconnect(), throwsA(isA<StorageError>()));
     });
   });
+}
+
+/// Storage with explicit token/username values for testing half-connected states.
+class _HalfConnectedStorage implements TokenStorage {
+  _HalfConnectedStorage({this.token, this.username});
+
+  final String? token;
+  final String? username;
+
+  @override
+  Future<String?> loadToken() async => token;
+  @override
+  Future<String?> loadUsername() async => username;
+  @override
+  Future<void> saveCredentials({
+    required String token,
+    required String username,
+  }) async {}
+  @override
+  Future<void> deleteCredentials() async {}
 }
 
 /// Storage implementation that always throws on reads, simulating an
@@ -192,8 +228,7 @@ class _ThrowingStorage implements TokenStorage {
   Future<void> saveCredentials({
     required String token,
     required String username,
-  }) async =>
-      throw const StorageError();
+  }) async => throw const StorageError();
   @override
   Future<void> deleteCredentials() async => throw const StorageError();
 }

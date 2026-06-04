@@ -7,6 +7,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7O: Discogs credentials saved atomically (US-15)] — 2026-06-04
+
+### Changed
+- `DiscogsTokenStorage.saveCredentials` — on any failure (write throw, read-back throw, or read-back mismatch), both `discogs_token` and `discogs_username` keys are now deleted before the `StorageError` is propagated; prevents a half-connected state where the token was written but the username write failed (or vice versa)
+- `DiscogsConnectionService.loadStatus` — now reads both `loadToken()` and `loadUsername()` and returns `ConnectionStatus.disconnected()` unless both are non-null; a half-written credential pair is treated as disconnected so the user is prompted to reconnect rather than seeing a stale "Connected as @username" banner that silently fails on API calls
+
+### Tests
+- 4 new tests across 2 files:
+  - `discogs_token_storage_test.dart` — `saveCredentials atomicity` group: verifies that (a) a partial write (username write fails) leaves neither key in storage, and (b) a read-back failure also results in both keys being deleted
+  - `discogs_connection_service_test.dart` — `loadStatus half-connected guard` group: verifies disconnected is returned when token is present without username, and when username is present without token
+
+---
+
 ## [Unreleased — Phase 7N: Revoked Discogs token detected and cleared automatically (US-14)] — 2026-06-04
 
 ### Added
