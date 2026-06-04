@@ -227,7 +227,11 @@ class _PreviewBody extends StatelessWidget {
                       ),
               ),
             ),
-            _ConfirmBar(newCount: preview.newCount, onConfirm: onConfirm),
+            _ConfirmBar(
+              newCount: preview.newCount,
+              duplicateCount: preview.duplicateCount,
+              onConfirm: onConfirm,
+            ),
           ],
         );
       },
@@ -265,7 +269,7 @@ class _SummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _CountRow(
-              label: 'Already in collection',
+              label: 'Already linked',
               value: '${preview.duplicateCount}',
             ),
             const SizedBox(height: 10),
@@ -332,7 +336,7 @@ class _WarningCard extends StatelessWidget {
     if (preview.duplicateCount > 0) {
       final n = preview.duplicateCount;
       messages.add(
-        '$n ${n == 1 ? 'item is' : 'items are'} already in your collection and will be skipped.',
+        '$n ${n == 1 ? 'item is' : 'items are'} already in your collection and will be linked to Discogs.',
       );
     }
     if (preview.invalidCount > 0) {
@@ -378,23 +382,43 @@ class _WarningCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ConfirmBar extends StatelessWidget {
-  const _ConfirmBar({required this.newCount, this.onConfirm});
+  const _ConfirmBar({
+    required this.newCount,
+    required this.duplicateCount,
+    this.onConfirm,
+  });
 
   final int newCount;
+  final int duplicateCount;
   final VoidCallback? onConfirm;
+
+  String get _label {
+    if (newCount > 0 && duplicateCount > 0) {
+      final itemPart = newCount == 1 ? '1 record' : '$newCount records';
+      final linkPart = duplicateCount == 1
+          ? '1 existing item'
+          : '$duplicateCount existing items';
+      return 'Import $itemPart + link $linkPart';
+    }
+    if (newCount > 0) {
+      return 'Import $newCount ${newCount == 1 ? 'record' : 'records'}';
+    }
+    if (duplicateCount > 0) {
+      return 'Link $duplicateCount ${duplicateCount == 1 ? 'existing item' : 'existing items'}';
+    }
+    return 'Nothing to import';
+  }
 
   @override
   Widget build(BuildContext context) {
-    final label = newCount == 0
-        ? 'Nothing to import'
-        : 'Import $newCount ${newCount == 1 ? 'record' : 'records'}';
+    final canAct = newCount > 0 || duplicateCount > 0;
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         child: FilledButton(
-          onPressed: newCount > 0 ? onConfirm : null,
-          child: Text(label),
+          onPressed: canAct ? onConfirm : null,
+          child: Text(_label),
         ),
       ),
     );
@@ -474,6 +498,14 @@ class _ImportSummaryBody extends StatelessWidget {
                               ? theme.colorScheme.primary
                               : null,
                         ),
+                        if (result.linked > 0) ...[
+                          const SizedBox(height: 10),
+                          _CountRow(
+                            label: 'Linked to Discogs',
+                            value: '${result.linked}',
+                            color: theme.colorScheme.primary,
+                          ),
+                        ],
                         if (result.skipped > 0) ...[
                           const SizedBox(height: 10),
                           _CountRow(

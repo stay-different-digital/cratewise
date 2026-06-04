@@ -21,12 +21,14 @@ class ExecuteWishlistImportCompleted extends ExecuteWishlistImportResult {
     required this.imported,
     required this.skipped,
     required this.failed,
+    this.linked = 0,
   });
 
   final String jobId;
   final int imported;
   final int skipped;
   final int failed;
+  final int linked;
 }
 
 class ExecuteWishlistImportFailed extends ExecuteWishlistImportResult {
@@ -73,6 +75,16 @@ class ExecuteWishlistImportUseCase {
       var imported = 0;
       var skipped = 0;
       var failed = 0;
+      var linked = 0;
+
+      // Build release-ID lookup for duplicate-linking in a single getAll() call.
+      final hasDuplicates = preview.rows.any((r) => r is DuplicateWishlistRow);
+      final Map<int, WishlistItem> existingByReleaseId = {};
+      if (hasDuplicates) {
+        for (final item in await _wishlistRepository.getAll()) {
+          existingByReleaseId[item.discogsReleaseId] = item;
+        }
+      }
 
       for (var i = 0; i < preview.rows.length; i++) {
         final row = preview.rows[i];
@@ -96,11 +108,40 @@ class ExecuteWishlistImportUseCase {
               failed++;
             }
           case DuplicateWishlistRow():
-            await _rowResultRepository.addResult(
-              jobId,
-              SkippedRow(rowIndex: i, reason: 'Already in wishlist'),
-            );
-            skipped++;
+            final existing = existingByReleaseId[row.releaseId];
+            if (existing != null && existing.syncStatus != SyncStatus.synced) {
+              try {
+                await _wishlistRepository.update(
+                  existing.copyWith(
+                    syncStatus: SyncStatus.synced,
+                    updatedAt: DateTime.now(),
+                  ),
+                );
+                await _rowResultRepository.addResult(
+                  jobId,
+                  ValidRow(
+                    rowIndex: i,
+                    description: 'Linked: ${row.artist} – ${row.title}',
+                  ),
+                );
+                linked++;
+              } catch (_) {
+                await _rowResultRepository.addResult(
+                  jobId,
+                  FailedRow(
+                    rowIndex: i,
+                    safeErrorMessage: 'Could not link item',
+                  ),
+                );
+                failed++;
+              }
+            } else {
+              await _rowResultRepository.addResult(
+                jobId,
+                SkippedRow(rowIndex: i, reason: 'Already linked to Discogs'),
+              );
+              skipped++;
+            }
           case InvalidWishlistRow():
             await _rowResultRepository.addResult(
               jobId,
@@ -117,7 +158,7 @@ class ExecuteWishlistImportUseCase {
       await _jobRepository.update(
         job.copyWith(
           status: finalStatus,
-          validItems: imported,
+          validItems: imported + linked,
           skippedItems: skipped,
           failedItems: failed,
           updatedAt: DateTime.now(),
@@ -129,6 +170,7 @@ class ExecuteWishlistImportUseCase {
         imported: imported,
         skipped: skipped,
         failed: failed,
+        linked: linked,
       );
     } catch (_) {
       try {

@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7U: Locally-added items can be promoted to Discogs-linked status (US-21)] — 2026-06-04
+
+### Changed
+- `ExecuteImportCompleted` / `ExecuteWishlistImportCompleted` — new optional `linked` field (default `0`); counts items whose sync status was updated to `synced` during import
+- `ExecuteCollectionImportUseCase` / `ExecuteWishlistImportUseCase` — `DuplicateCollectionRow` / `DuplicateWishlistRow` items are now processed with a single `getAll()` lookup to build a release-ID map; existing items with `syncStatus != synced` have their status updated to `synced` and count as `linked`; items already `synced` (or not found in local storage) are still skipped
+- `CollectionImportPreviewScreen` / `WishlistImportPreviewScreen` — summary card label changed from "Already in collection / Already in wishlist" to **"Already linked"**; warning card updated to say items "will be linked to Discogs" (not "will be skipped"); `_ConfirmBar` now activates when `newCount > 0 || duplicateCount > 0` with dynamic label: "Import N records", "Link N existing items", or "Import N records + link M existing items"; import summary body shows "Linked to Discogs: N" row when `linked > 0`
+
+### Tests
+- 18 new tests across 4 files:
+  - `execute_collection_import_use_case_test.dart` — 4 new: links `localOnly` item to `synced`, skips already-`synced` item, `ValidRow` for linked item, linked items count towards job `validItems`; 1 updated: duplicate-row skip reason renamed "Already linked to Discogs"
+  - `execute_wishlist_import_use_case_test.dart` — same 4 new tests + 1 updated reason string
+  - `collection_import_preview_screen_test.dart` — 7 new: "Already linked" label, "Link N existing items" button, "Import N + link M" combined label, enabled when only duplicates + use case, "Linked to Discogs" in summary, no "Linked to Discogs" when zero; 4 updated (warning card now checks "linked to Discogs" text)
+  - `wishlist_import_preview_screen_test.dart` — same 6 new + 4 updated
+
+---
+
 ## [Unreleased — Phase 7T: Failed cache writes are silently retried (US-20)] — 2026-06-04
 
 ### Changed

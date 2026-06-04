@@ -223,7 +223,7 @@ void main() {
         );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
-        expect(find.text('Already in wishlist'), findsOneWidget);
+        expect(find.text('Already linked'), findsOneWidget);
         expect(find.text('3'), findsOneWidget);
       });
 
@@ -336,6 +336,7 @@ void main() {
         await tester.pump();
         expect(find.text('Notes'), findsOneWidget);
         expect(find.textContaining('already in your wishlist'), findsOneWidget);
+        expect(find.textContaining('linked to Discogs'), findsOneWidget);
       });
 
       testWidgets('shows warning when invalid items exist', (tester) async {
@@ -364,6 +365,7 @@ void main() {
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.textContaining('3 items are'), findsOneWidget);
+        expect(find.textContaining('linked to Discogs'), findsOneWidget);
       });
 
       testWidgets('singular wording for one duplicate', (tester) async {
@@ -373,6 +375,7 @@ void main() {
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.textContaining('1 item is'), findsOneWidget);
+        expect(find.textContaining('linked to Discogs'), findsOneWidget);
       });
     });
 
@@ -608,9 +611,7 @@ void main() {
           ),
         );
         final useCase = _FakeUseCase(
-          FetchWishlistPreviewReady(
-            makePreview(newCount: 3, duplicateCount: 5),
-          ),
+          FetchWishlistPreviewReady(makePreview(newCount: 3)),
         );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),

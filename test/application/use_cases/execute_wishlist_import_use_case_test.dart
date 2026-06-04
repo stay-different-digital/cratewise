@@ -36,6 +36,46 @@ class _FakeWishlistRepository implements WishlistRepository {
   Future<void> remove(String id) async {}
 }
 
+class _SpyWishlistRepository implements WishlistRepository {
+  _SpyWishlistRepository({required this.existing});
+
+  final List<WishlistItem> existing;
+  final List<WishlistItem> updated = [];
+
+  @override
+  Future<List<WishlistItem>> getAll() async => existing;
+
+  @override
+  Future<void> add(WishlistItem item) async {}
+
+  @override
+  Future<bool> containsRelease(int id) async =>
+      existing.any((e) => e.discogsReleaseId == id);
+
+  @override
+  Future<WishlistItem?> getById(String id) async => null;
+
+  @override
+  Future<void> update(WishlistItem item) async => updated.add(item);
+
+  @override
+  Future<void> remove(String id) async {}
+}
+
+WishlistItem _makeWishlistItem(int releaseId, SyncStatus status) {
+  final now = DateTime(2026, 1, 1);
+  return WishlistItem(
+    id: 'id-$releaseId',
+    discogsReleaseId: releaseId,
+    artist: 'Artist',
+    title: 'Title',
+    priority: WishlistPriority.medium,
+    syncStatus: status,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
 class _ThrowingWishlistRepository implements WishlistRepository {
   @override
   Future<void> add(WishlistItem item) async =>
@@ -328,16 +368,19 @@ void main() {
         expect(rows.whereType<SkippedRow>().length, 1);
       });
 
-      test('duplicate row skip reason is already in wishlist', () async {
-        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase();
-        final result =
-            await useCase.execute(makePreview(duplicateCount: 1))
-                as ExecuteWishlistImportCompleted;
-        final rows = await rowResultRepo.getResults(result.jobId);
-        final skipped = rows.whereType<SkippedRow>().first;
-        expect(skipped.reason, 'Already in wishlist');
-      });
+      test(
+        'duplicate row without existing local item produces SkippedRow',
+        () async {
+          final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
+              makeUseCase();
+          final result =
+              await useCase.execute(makePreview(duplicateCount: 1))
+                  as ExecuteWishlistImportCompleted;
+          final rows = await rowResultRepo.getResults(result.jobId);
+          final skipped = rows.whereType<SkippedRow>().first;
+          expect(skipped.reason, 'Already linked to Discogs');
+        },
+      );
 
       test('invalid row produces SkippedRow', () async {
         final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
@@ -495,6 +538,98 @@ void main() {
             await useCase.execute(makePreview(newCount: 1))
                 as ExecuteWishlistImportCompleted;
         expect(result.jobId, isNotEmpty);
+      });
+    });
+
+    group('duplicate linking', () {
+      test(
+        'links localOnly item to Discogs when duplicate row matches',
+        () async {
+          final existing = _makeWishlistItem(200, SyncStatus.localOnly);
+          final spy = _SpyWishlistRepository(existing: [existing]);
+          final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
+              makeUseCase(wishlistRepository: spy);
+          final preview = WishlistImportPreview(
+            rows: [
+              const DuplicateWishlistRow(
+                releaseId: 200,
+                title: 'Kind Of Blue',
+                artist: 'Miles Davis',
+              ),
+            ],
+          );
+          final result =
+              await useCase.execute(preview) as ExecuteWishlistImportCompleted;
+          expect(spy.updated, hasLength(1));
+          expect(spy.updated.first.syncStatus, SyncStatus.synced);
+          expect(result.linked, 1);
+        },
+      );
+
+      test('linked count is 0 when duplicate already synced', () async {
+        final existing = _makeWishlistItem(200, SyncStatus.synced);
+        final spy = _SpyWishlistRepository(existing: [existing]);
+        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) = makeUseCase(
+          wishlistRepository: spy,
+        );
+        final result =
+            await useCase.execute(makePreview(duplicateCount: 1))
+                as ExecuteWishlistImportCompleted;
+        expect(spy.updated, isEmpty);
+        expect(result.linked, 0);
+        expect(result.skipped, 1);
+      });
+
+      test('records ValidRow for linked item', () async {
+        final existing = _makeWishlistItem(200, SyncStatus.localOnly);
+        final spy = _SpyWishlistRepository(existing: [existing]);
+        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) = makeUseCase(
+          wishlistRepository: spy,
+        );
+        final preview = WishlistImportPreview(
+          rows: [
+            const DuplicateWishlistRow(
+              releaseId: 200,
+              title: 'Kind Of Blue',
+              artist: 'Miles Davis',
+            ),
+          ],
+        );
+        final result =
+            await useCase.execute(preview) as ExecuteWishlistImportCompleted;
+        final rows = await rowResultRepo.getResults(result.jobId);
+        final valid = rows.whereType<ValidRow>().first;
+        expect(valid.description, contains('Miles Davis'));
+        expect(valid.description, contains('Kind Of Blue'));
+      });
+
+      test('linked items count towards job validItems', () async {
+        final existing = _makeWishlistItem(200, SyncStatus.localOnly);
+        final spy = _SpyWishlistRepository(existing: [existing]);
+        final jobRepo = _FakeJobRepository();
+        final rowResultRepo = _FakeRowResultRepository();
+        final useCase = ExecuteWishlistImportUseCase(
+          wishlistRepository: spy,
+          jobRepository: jobRepo,
+          rowResultRepository: rowResultRepo,
+          idGenerator: () => 'test-id',
+        );
+        final preview = WishlistImportPreview(
+          rows: [
+            const NewWishlistRow(releaseId: 100, title: 'T', artist: 'A'),
+            const DuplicateWishlistRow(
+              releaseId: 200,
+              title: 'Kind Of Blue',
+              artist: 'Miles Davis',
+            ),
+          ],
+        );
+        final result =
+            await useCase.execute(preview) as ExecuteWishlistImportCompleted;
+        final job = await jobRepo.getById(result.jobId);
+        expect(result.imported, 1);
+        expect(result.linked, 1);
+        expect(job?.validItems, 2);
       });
     });
   });

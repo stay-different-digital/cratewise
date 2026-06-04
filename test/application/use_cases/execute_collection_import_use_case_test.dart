@@ -57,6 +57,48 @@ class _ThrowingCollectionRepository implements CollectionRepository {
   Future<void> remove(String id) async {}
 }
 
+class _SpyCollectionRepository implements CollectionRepository {
+  _SpyCollectionRepository({required this.existing});
+
+  final List<CollectionItem> existing;
+  final List<CollectionItem> updated = [];
+
+  @override
+  Future<List<CollectionItem>> getAll() async => existing;
+
+  @override
+  Future<void> add(CollectionItem item) async {}
+
+  @override
+  Future<bool> containsRelease(int id) async =>
+      existing.any((e) => e.discogsReleaseId == id);
+
+  @override
+  Future<CollectionItem?> getById(String id) async => null;
+
+  @override
+  Future<void> update(CollectionItem item) async => updated.add(item);
+
+  @override
+  Future<void> remove(String id) async {}
+}
+
+CollectionItem _makeCollectionItem(int releaseId, SyncStatus status) {
+  final now = DateTime(2026, 1, 1);
+  return CollectionItem(
+    id: 'id-$releaseId',
+    discogsReleaseId: releaseId,
+    artist: 'Artist',
+    title: 'Title',
+    mediaCondition: RecordCondition.notSet,
+    sleeveCondition: RecordCondition.notSet,
+    tags: const [],
+    syncStatus: status,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
+
 class _FakeJobRepository implements ImportExportJobRepository {
   final List<ImportExportJob> jobs = [];
 
@@ -315,16 +357,19 @@ void main() {
         expect(rows.whereType<SkippedRow>().length, 1);
       });
 
-      test('duplicate row skip reason is already in collection', () async {
-        final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
-            makeUseCase();
-        final result =
-            await useCase.execute(makePreview(duplicateCount: 1))
-                as ExecuteImportCompleted;
-        final rows = await rowResultRepo.getResults(result.jobId);
-        final skipped = rows.whereType<SkippedRow>().first;
-        expect(skipped.reason, 'Already in collection');
-      });
+      test(
+        'duplicate row without existing local item produces SkippedRow',
+        () async {
+          final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+              makeUseCase();
+          final result =
+              await useCase.execute(makePreview(duplicateCount: 1))
+                  as ExecuteImportCompleted;
+          final rows = await rowResultRepo.getResults(result.jobId);
+          final skipped = rows.whereType<SkippedRow>().first;
+          expect(skipped.reason, 'Already linked to Discogs');
+        },
+      );
 
       test('invalid row produces SkippedRow', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
@@ -477,6 +522,94 @@ void main() {
             await useCase.execute(makePreview(newCount: 1))
                 as ExecuteImportCompleted;
         expect(result.jobId, isNotEmpty);
+      });
+    });
+
+    group('duplicate linking', () {
+      test(
+        'links localOnly item to Discogs when duplicate row matches',
+        () async {
+          final existing = _makeCollectionItem(200, SyncStatus.localOnly);
+          final spy = _SpyCollectionRepository(existing: [existing]);
+          final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+              makeUseCase(collectionRepository: spy);
+          final preview = CollectionImportPreview(
+            rows: [
+              const DuplicateCollectionRow(
+                releaseId: 200,
+                title: 'Kind Of Blue',
+                artist: 'Miles Davis',
+              ),
+            ],
+          );
+          final result =
+              await useCase.execute(preview) as ExecuteImportCompleted;
+          expect(spy.updated, hasLength(1));
+          expect(spy.updated.first.syncStatus, SyncStatus.synced);
+          expect(result.linked, 1);
+        },
+      );
+
+      test('linked count is 0 when duplicate already synced', () async {
+        final existing = _makeCollectionItem(200, SyncStatus.synced);
+        final spy = _SpyCollectionRepository(existing: [existing]);
+        final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+            makeUseCase(collectionRepository: spy);
+        final result =
+            await useCase.execute(makePreview(duplicateCount: 1))
+                as ExecuteImportCompleted;
+        expect(spy.updated, isEmpty);
+        expect(result.linked, 0);
+        expect(result.skipped, 1);
+      });
+
+      test('records ValidRow for linked item', () async {
+        final existing = _makeCollectionItem(200, SyncStatus.localOnly);
+        final spy = _SpyCollectionRepository(existing: [existing]);
+        final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+            makeUseCase(collectionRepository: spy);
+        final preview = CollectionImportPreview(
+          rows: [
+            const DuplicateCollectionRow(
+              releaseId: 200,
+              title: 'Kind Of Blue',
+              artist: 'Miles Davis',
+            ),
+          ],
+        );
+        final result = await useCase.execute(preview) as ExecuteImportCompleted;
+        final rows = await rowResultRepo.getResults(result.jobId);
+        final valid = rows.whereType<ValidRow>().first;
+        expect(valid.description, contains('Miles Davis'));
+        expect(valid.description, contains('Kind Of Blue'));
+      });
+
+      test('linked items count towards job validItems', () async {
+        final existing = _makeCollectionItem(200, SyncStatus.localOnly);
+        final spy = _SpyCollectionRepository(existing: [existing]);
+        final jobRepo = _FakeJobRepository();
+        final rowResultRepo = _FakeRowResultRepository();
+        final useCase = ExecuteCollectionImportUseCase(
+          collectionRepository: spy,
+          jobRepository: jobRepo,
+          rowResultRepository: rowResultRepo,
+          idGenerator: () => 'test-id',
+        );
+        final preview = CollectionImportPreview(
+          rows: [
+            const NewCollectionRow(releaseId: 100, title: 'T', artist: 'A'),
+            const DuplicateCollectionRow(
+              releaseId: 200,
+              title: 'Kind Of Blue',
+              artist: 'Miles Davis',
+            ),
+          ],
+        );
+        final result = await useCase.execute(preview) as ExecuteImportCompleted;
+        final job = await jobRepo.getById(result.jobId);
+        expect(result.imported, 1);
+        expect(result.linked, 1);
+        expect(job?.validItems, 2);
       });
     });
   });

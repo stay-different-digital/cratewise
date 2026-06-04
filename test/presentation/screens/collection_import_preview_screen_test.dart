@@ -215,14 +215,16 @@ void main() {
         expect(find.text('5'), findsOneWidget);
       });
 
-      testWidgets('shows duplicate count', (tester) async {
+      testWidgets('shows duplicate count labelled Already linked', (
+        tester,
+      ) async {
         // newCount=1 ensures totalCount(4) != duplicateCount(3) so '3' appears once.
         final useCase = _FakeUseCase(
           FetchPreviewReady(makePreview(duplicateCount: 3, newCount: 1)),
         );
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
-        expect(find.text('Already in collection'), findsOneWidget);
+        expect(find.text('Already linked'), findsOneWidget);
         expect(find.text('3'), findsOneWidget);
       });
 
@@ -336,6 +338,7 @@ void main() {
           find.textContaining('already in your collection'),
           findsOneWidget,
         );
+        expect(find.textContaining('linked to Discogs'), findsOneWidget);
       });
 
       testWidgets('shows warning when invalid items exist', (tester) async {
@@ -364,6 +367,7 @@ void main() {
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.textContaining('3 items are'), findsOneWidget);
+        expect(find.textContaining('linked to Discogs'), findsOneWidget);
       });
 
       testWidgets('singular wording for one duplicate', (tester) async {
@@ -373,6 +377,7 @@ void main() {
         await tester.pumpWidget(buildSubject(useCase));
         await tester.pump();
         expect(find.textContaining('1 item is'), findsOneWidget);
+        expect(find.textContaining('linked to Discogs'), findsOneWidget);
       });
     });
 
@@ -640,9 +645,8 @@ void main() {
             failed: 0,
           ),
         );
-        // Use distinct values: imported=3, skipped=5, newCount=3 in preview
         final useCase = _FakeUseCase(
-          FetchPreviewReady(makePreview(newCount: 3, duplicateCount: 5)),
+          FetchPreviewReady(makePreview(newCount: 3)),
         );
         await tester.pumpWidget(
           buildSubject(useCase, executeUseCase: executeUseCase),
@@ -721,6 +725,57 @@ void main() {
         await tester.pump();
         expect(find.text('Done'), findsOneWidget);
       });
+
+      testWidgets('import summary shows Linked to Discogs when linked > 0', (
+        tester,
+      ) async {
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteImportCompleted(
+            jobId: 'j1',
+            imported: 1,
+            skipped: 0,
+            failed: 0,
+            linked: 3,
+          ),
+        );
+        final useCase = _FakeUseCase(
+          FetchPreviewReady(makePreview(newCount: 1, duplicateCount: 3)),
+        );
+        await tester.pumpWidget(
+          buildSubject(useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(
+          find.textContaining('Import 1 record + link 3 existing items'),
+        );
+        await tester.pump();
+        expect(find.text('Linked to Discogs'), findsOneWidget);
+        expect(find.text('3'), findsOneWidget);
+      });
+
+      testWidgets(
+        'import summary does not show Linked to Discogs when linked is zero',
+        (tester) async {
+          final executeUseCase = _FakeExecuteUseCase(
+            const ExecuteImportCompleted(
+              jobId: 'j1',
+              imported: 2,
+              skipped: 0,
+              failed: 0,
+            ),
+          );
+          final useCase = _FakeUseCase(
+            FetchPreviewReady(makePreview(newCount: 2)),
+          );
+          await tester.pumpWidget(
+            buildSubject(useCase, executeUseCase: executeUseCase),
+          );
+          await tester.pump();
+          await tester.tap(find.text('Import 2 records'));
+          await tester.pump();
+          expect(find.text('Linked to Discogs'), findsNothing);
+        },
+      );
 
       testWidgets('ExecuteImportFailed shows snackbar and returns to preview', (
         tester,
