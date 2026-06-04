@@ -344,8 +344,9 @@ void main() {
       expect(find.textContaining('1–2 of 2'), findsOneWidget);
     });
 
-    testWidgets('count reflects all loaded items after auto-pagination',
-        (tester) async {
+    testWidgets('count reflects all loaded items after auto-pagination', (
+      tester,
+    ) async {
       // The post-frame trigger auto-loads page 2 because page 1 fits in view.
       final service = _PaginatingSearchService(
         page1Items: [_kindOfBlue],
@@ -359,8 +360,9 @@ void main() {
   });
 
   group('SearchScreen pagination', () {
-    testWidgets('shows pagination loading indicator when loading more',
-        (tester) async {
+    testWidgets('shows pagination loading indicator when loading more', (
+      tester,
+    ) async {
       final completer = Completer<SearchResultPage>();
 
       // Page 2 blocks; the post-frame trigger fires _loadMore automatically.
@@ -584,13 +586,13 @@ void main() {
     testWidgets('tapping a result card opens release detail screen', (
       tester,
     ) async {
+      // Default test surface is 800×600 dp (wide layout) — result is shown
+      // inline in the right pane rather than pushed as a new route.
       final service = _FakeSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
 
       await tester.tap(find.byType(ReleaseSearchResultCard).first);
-      // Advance past the navigation animation without waiting for the detail
-      // fetch (which would try to call FlutterSecureStorage in tests).
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
@@ -598,23 +600,118 @@ void main() {
       expect(find.byKey(const Key('release-detail-loading')), findsOneWidget);
     });
 
-    testWidgets('back from detail screen returns to search results', (
+    testWidgets(
+      'on narrow layout, back from detail screen returns to results',
+      (tester) async {
+        // Force narrow viewport (< 700 dp) so tapping uses Navigator.push.
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final service = _FakeSearchService(results: [_kindOfBlue]);
+        await tester.pumpWidget(_buildScreen(service));
+        await submitSearch(tester, 'miles');
+
+        await tester.tap(find.byType(ReleaseSearchResultCard).first);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.byType(ReleaseDetailScreen), findsOneWidget);
+
+        await tester.pageBack();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.byType(ReleaseDetailScreen), findsNothing);
+        expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+      },
+    );
+  });
+
+  group('SearchScreen wide layout', () {
+    testWidgets('shows no-selection placeholder before any result is tapped', (
       tester,
     ) async {
       final service = _FakeSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
 
+      expect(find.text('Select a result'), findsOneWidget);
+      expect(find.byType(ReleaseDetailScreen), findsNothing);
+    });
+
+    testWidgets('shows placeholder when query is empty', (tester) async {
+      await tester.pumpWidget(_buildScreen(_FakeSearchService()));
+      expect(find.text('Select a result'), findsOneWidget);
+    });
+
+    testWidgets(
+      'tapping a result shows its details in the right pane without pushing a route',
+      (tester) async {
+        final service = _FakeSearchService(results: [_kindOfBlue]);
+        await tester.pumpWidget(_buildScreen(service));
+        await submitSearch(tester, 'miles');
+
+        await tester.tap(find.byType(ReleaseSearchResultCard).first);
+        await tester.pump();
+
+        // Detail is embedded — no Navigator route was pushed, no Back button.
+        expect(find.byType(ReleaseDetailScreen), findsOneWidget);
+        expect(find.text('Select a result'), findsNothing);
+        // ReleaseDetailScreen AppBar title reflects the tapped result.
+        expect(find.text('Miles Davis — Kind Of Blue'), findsOneWidget);
+      },
+    );
+
+    testWidgets('selecting a different result updates the detail pane', (
+      tester,
+    ) async {
+      final service = _FakeSearchService(results: [_kindOfBlue, _abbeyRoad]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'vinyl');
+
+      // Tap first result.
       await tester.tap(find.byType(ReleaseSearchResultCard).first);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('Miles Davis — Kind Of Blue'), findsOneWidget);
+
+      // Tap second result.
+      await tester.tap(find.byType(ReleaseSearchResultCard).at(1));
+      await tester.pump();
+      expect(find.text('The Beatles — Abbey Road'), findsOneWidget);
+      expect(find.text('Miles Davis — Kind Of Blue'), findsNothing);
+    });
+
+    testWidgets('clearing search clears the detail pane', (tester) async {
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+
+      await tester.tap(find.byType(ReleaseSearchResultCard).first);
+      await tester.pump();
       expect(find.byType(ReleaseDetailScreen), findsOneWidget);
 
-      await tester.pageBack();
+      await tester.tap(find.byTooltip('Clear search'));
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+
       expect(find.byType(ReleaseDetailScreen), findsNothing);
-      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+      expect(find.text('Select a result'), findsOneWidget);
+    });
+
+    testWidgets('new search clears the detail pane', (tester) async {
+      final service = _FakeSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'miles');
+
+      await tester.tap(find.byType(ReleaseSearchResultCard).first);
+      await tester.pump();
+      expect(find.byType(ReleaseDetailScreen), findsOneWidget);
+
+      await submitSearch(tester, 'beatles');
+
+      // While loading the new search, detail pane is cleared.
+      expect(find.byType(ReleaseDetailScreen), findsNothing);
+      expect(find.text('Select a result'), findsOneWidget);
+      await tester.pumpAndSettle();
     });
   });
 

@@ -7,6 +7,24 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7M: Wide-screen navigation keeps the nav rail visible (US-13)] — 2026-06-04
+
+### Added
+- `SearchScreen` now renders a split-pane layout on screens ≥ 700 dp wide: a 320 dp search results column on the left and a full-height detail pane on the right
+- `_NoSelectionPlaceholder` widget — shown in the right pane before any result is tapped
+- Tapping a search result on a wide layout sets `_selectedResult` and renders `ReleaseDetailScreen` directly in the right pane (using `ValueKey` to rebuild when the selection changes); the nav rail in `HomeShellScreen` stays visible at all times
+- On narrow layouts (< 700 dp), the existing `Navigator.push` behaviour is unchanged
+
+### Changed
+- `_ResultsList` now accepts `onResultTap: ValueChanged<ReleaseSearchResult>` instead of constructing `ReleaseDetailScreen` and calling `Navigator.push` internally; the `addToCollectionUseCase`, `addToWishlistUseCase`, and `cacheRepository` parameters are removed from `_ResultsList` (moved up to the state-level callback)
+- `_selectedResult` is cleared when a new search query is submitted or the query is emptied, so the detail pane resets to the placeholder on each new search
+
+### Tests
+- 6 new tests in `search_screen_test.dart` (group: "SearchScreen wide layout"): placeholder shown before tap; placeholder shown when query is empty; tapping shows detail without Navigator push; detail pane shows correct artist/title; selecting different result updates pane; clearing search clears pane; new search clears pane
+- Existing "back from detail" navigation test updated to use a 390×844 dp narrow viewport to preserve push-route coverage
+
+---
+
 ## [Unreleased — Phase 7L: "Already in wishlist" indicator on release detail (US-12)] — 2026-06-04
 
 ### Added

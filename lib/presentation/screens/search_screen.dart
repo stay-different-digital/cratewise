@@ -11,6 +11,8 @@ import '../../shared/errors/app_error.dart';
 import '../widgets/release_search_result_card.dart';
 import 'release_detail_screen.dart';
 
+const _kWideBreakpoint = 700.0;
+
 // ---------------------------------------------------------------------------
 // State machine
 // ---------------------------------------------------------------------------
@@ -103,6 +105,7 @@ class _SearchScreenState extends State<SearchScreen> {
   _SearchState _state = const _Idle();
   Timer? _debounce;
   String _lastQuery = '';
+  ReleaseSearchResult? _selectedResult;
 
   @override
   void initState() {
@@ -116,7 +119,10 @@ class _SearchScreenState extends State<SearchScreen> {
     final query = _controller.text.trim();
     if (query.isEmpty) {
       _lastQuery = '';
-      setState(() => _state = const _Idle());
+      setState(() {
+        _state = const _Idle();
+        _selectedResult = null;
+      });
       return;
     }
     setState(() {}); // rebuild clear button
@@ -136,7 +142,10 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
     _lastQuery = trimmed;
-    setState(() => _state = const _Loading());
+    setState(() {
+      _state = const _Loading();
+      _selectedResult = null;
+    });
     try {
       final page = await _service.search(trimmed);
       if (!mounted) return;
@@ -200,8 +209,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasQuery = _controller.text.isNotEmpty;
+    final isWide = MediaQuery.sizeOf(context).width >= _kWideBreakpoint;
 
-    return Column(
+    final searchPane = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
@@ -235,12 +245,35 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
         ),
-        Expanded(child: _buildBody()),
+        Expanded(child: _buildBody(isWide: isWide)),
+      ],
+    );
+
+    if (!isWide) return searchPane;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(width: 320, child: searchPane),
+        const VerticalDivider(width: 1, thickness: 1),
+        Expanded(
+          child: _selectedResult != null
+              ? ReleaseDetailScreen(
+                  key: ValueKey(_selectedResult!.id),
+                  releaseId: _selectedResult!.id,
+                  initialArtist: _selectedResult!.artist,
+                  initialTitle: _selectedResult!.title,
+                  addToCollectionUseCase: widget.addToCollectionUseCase,
+                  addToWishlistUseCase: widget.addToWishlistUseCase,
+                  cacheRepository: widget.cacheRepository,
+                )
+              : const _NoSelectionPlaceholder(),
+        ),
       ],
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody({required bool isWide}) {
     if (_controller.text.isEmpty) return const _EmptyState();
     return switch (_state) {
       _Idle() => const _EmptyState(),
@@ -260,9 +293,24 @@ class _SearchScreenState extends State<SearchScreen> {
           paginationError: paginationError,
           onLoadMore: hasMore && !isLoadingMore ? _loadMore : null,
           onRetry: _loadMore,
-          addToCollectionUseCase: widget.addToCollectionUseCase,
-          addToWishlistUseCase: widget.addToWishlistUseCase,
-          cacheRepository: widget.cacheRepository,
+          onResultTap: (result) {
+            if (isWide) {
+              setState(() => _selectedResult = result);
+            } else {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ReleaseDetailScreen(
+                    releaseId: result.id,
+                    initialArtist: result.artist,
+                    initialTitle: result.title,
+                    addToCollectionUseCase: widget.addToCollectionUseCase,
+                    addToWishlistUseCase: widget.addToWishlistUseCase,
+                    cacheRepository: widget.cacheRepository,
+                  ),
+                ),
+              );
+            }
+          },
         ),
       _SearchError(:final error) => _SearchErrorState(error: error),
     };
@@ -392,6 +440,40 @@ class _SearchErrorState extends StatelessWidget {
   }
 }
 
+class _NoSelectionPlaceholder extends StatelessWidget {
+  const _NoSelectionPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.album_outlined,
+              size: 56,
+              color: theme.colorScheme.outlineVariant,
+            ),
+            const SizedBox(height: 16),
+            Text('Select a result', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              'Tap a search result to view its details.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Paginated results list
 // ---------------------------------------------------------------------------
@@ -404,9 +486,7 @@ class _ResultsList extends StatefulWidget {
     required this.paginationError,
     required this.onLoadMore,
     required this.onRetry,
-    this.addToCollectionUseCase,
-    this.addToWishlistUseCase,
-    this.cacheRepository,
+    required this.onResultTap,
   });
 
   final List<ReleaseSearchResult> items;
@@ -415,9 +495,7 @@ class _ResultsList extends StatefulWidget {
   final AppError? paginationError;
   final VoidCallback? onLoadMore;
   final VoidCallback? onRetry;
-  final AddToCollectionUseCase? addToCollectionUseCase;
-  final AddToWishlistUseCase? addToWishlistUseCase;
-  final CachedReleaseMetadataRepository? cacheRepository;
+  final ValueChanged<ReleaseSearchResult> onResultTap;
 
   @override
   State<_ResultsList> createState() => _ResultsListState();
@@ -522,18 +600,7 @@ class _ResultsListState extends State<_ResultsList> {
               final item = widget.items[index];
               return ReleaseSearchResultCard(
                 result: item,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => ReleaseDetailScreen(
-                      releaseId: item.id,
-                      initialArtist: item.artist,
-                      initialTitle: item.title,
-                      addToCollectionUseCase: widget.addToCollectionUseCase,
-                      addToWishlistUseCase: widget.addToWishlistUseCase,
-                      cacheRepository: widget.cacheRepository,
-                    ),
-                  ),
-                ),
+                onTap: () => widget.onResultTap(item),
               );
             },
           ),
