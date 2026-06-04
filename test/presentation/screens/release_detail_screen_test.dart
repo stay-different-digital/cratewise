@@ -1680,4 +1680,95 @@ void main() {
       },
     );
   });
+
+  group('ReleaseDetailScreen — already in wishlist indicator', () {
+    testWidgets(
+      'shows In Wishlist on load when release is already in wishlist',
+      (tester) async {
+        final repo = _FakeWishlistRepository(alreadyContains: true);
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _LoadedService(detail: _kindOfBlue),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: AddToWishlistUseCase(repo),
+              wishlistRepository: repo,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('In Wishlist'), findsOneWidget);
+        expect(find.text('Add to Wishlist'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'In Wishlist button is disabled on load when already in wishlist',
+      (tester) async {
+        final repo = _FakeWishlistRepository(alreadyContains: true);
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _LoadedService(detail: _kindOfBlue),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: AddToWishlistUseCase(repo),
+              wishlistRepository: repo,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final button = tester.widget<OutlinedButton>(
+          find.byKey(const Key('add-to-wishlist-button')),
+        );
+        expect(button.onPressed, isNull);
+      },
+    );
+
+    testWidgets(
+      'shows Add to Wishlist on load when release is not in wishlist',
+      (tester) async {
+        final repo = _FakeWishlistRepository(alreadyContains: false);
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _LoadedService(detail: _kindOfBlue),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: AddToWishlistUseCase(repo),
+              wishlistRepository: repo,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Add to Wishlist'), findsOneWidget);
+        expect(find.text('In Wishlist'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'shows In Wishlist on load in cached state when already in wishlist',
+      (tester) async {
+        final repo = _FakeWishlistRepository(alreadyContains: true);
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _ErrorService(error: const NetworkError()),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: AddToWishlistUseCase(repo),
+              wishlistRepository: repo,
+              cacheRepository: _FakeCacheRepository(
+                cachedMetadata: _cachedKindOfBlue,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('In Wishlist'), findsOneWidget);
+        expect(find.text('Add to Wishlist'), findsNothing);
+      },
+    );
+  });
 }

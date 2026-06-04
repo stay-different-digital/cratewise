@@ -11,6 +11,7 @@ import '../../domain/models/release_detail.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
+import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
@@ -65,6 +66,7 @@ class ReleaseDetailScreen extends StatefulWidget {
     this.addToCollectionUseCase,
     this.addToWishlistUseCase,
     this.collectionRepository,
+    this.wishlistRepository,
     this.cacheRepository,
     this.thumbnailCacheService,
     this.thumbnailRepository,
@@ -77,6 +79,7 @@ class ReleaseDetailScreen extends StatefulWidget {
   final AddToCollectionUseCase? addToCollectionUseCase;
   final AddToWishlistUseCase? addToWishlistUseCase;
   final CollectionRepository? collectionRepository;
+  final WishlistRepository? wishlistRepository;
   final CachedReleaseMetadataRepository? cacheRepository;
   final ThumbnailCacheService? thumbnailCacheService;
   final ThumbnailRepository? thumbnailRepository;
@@ -91,6 +94,7 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   late final AddToWishlistUseCase _addWishlistUseCase;
   late final CachedReleaseMetadataRepository? _cacheRepository;
   CollectionRepository? _collectionRepository;
+  WishlistRepository? _wishlistRepository;
   AppDatabase? _ownedDb;
 
   _DetailState _state = const _Loading();
@@ -107,6 +111,7 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
       _addWishlistUseCase = widget.addToWishlistUseCase!;
       _cacheRepository = widget.cacheRepository;
       _collectionRepository = widget.collectionRepository;
+      _wishlistRepository = widget.wishlistRepository;
       _service =
           widget.detailService ??
           DiscogsReleaseDetailService(
@@ -122,9 +127,10 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
       _collectionRepository = collRepo;
       _addUseCase =
           widget.addToCollectionUseCase ?? AddToCollectionUseCase(collRepo);
+      final wishlistRepo = LocalWishlistRepository(db);
+      _wishlistRepository = wishlistRepo;
       _addWishlistUseCase =
-          widget.addToWishlistUseCase ??
-          AddToWishlistUseCase(LocalWishlistRepository(db));
+          widget.addToWishlistUseCase ?? AddToWishlistUseCase(wishlistRepo);
       _cacheRepository =
           widget.cacheRepository ?? LocalCachedReleaseMetadataRepository(db);
       _service =
@@ -138,6 +144,7 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     }
     _fetch();
     _checkInitialCollectionStatus();
+    _checkInitialWishlistStatus();
   }
 
   @override
@@ -185,6 +192,21 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
       if (!mounted) return;
       if (inCollection && _addState == _AddState.idle) {
         setState(() => _addState = _AddState.duplicate);
+      }
+    } catch (_) {
+      // silently ignore — button stays enabled so the user can try to add
+    }
+  }
+
+  Future<void> _checkInitialWishlistStatus() async {
+    if (_wishlistRepository == null) return;
+    try {
+      final inWishlist = await _wishlistRepository!.containsRelease(
+        widget.releaseId,
+      );
+      if (!mounted) return;
+      if (inWishlist && _addWishlistState == _AddState.idle) {
+        setState(() => _addWishlistState = _AddState.duplicate);
       }
     } catch (_) {
       // silently ignore — button stays enabled so the user can try to add

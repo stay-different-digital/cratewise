@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7L: "Already in wishlist" indicator on release detail (US-12)] — 2026-06-04
+
+### Added
+- `ReleaseDetailScreen` now accepts a `wishlistRepository` constructor parameter (`WishlistRepository?`) — mirrors the existing `collectionRepository` parameter
+- `_checkInitialWishlistStatus()` — runs on screen mount, calls `wishlistRepository.containsRelease()` against local storage and pre-sets `_addWishlistState` to `_AddState.duplicate` if the release is already wishlisted
+- In the production code path, `LocalWishlistRepository` is now stored as `_wishlistRepository` so the initial check has a reference to it; the same instance is passed to `AddToWishlistUseCase`
+
+### Changed
+- `_addWishlistState` is initialized to `_AddState.duplicate` (showing "In Wishlist", disabled) on load when the release ID already exists in local wishlist storage — no network call required
+- Adding a wishlist item and navigating back to the same `ReleaseDetailScreen` then navigating back again correctly shows "In Wishlist" on the next mount (check runs again from local storage)
+
+### Tests
+- 4 new tests in `release_detail_screen_test.dart` (group: "already in wishlist indicator"): shows In Wishlist on load when already in wishlist; In Wishlist button is disabled on load; shows Add to Wishlist on load when not in wishlist; shows In Wishlist on load in cached state when already in wishlist
+
+---
+
 ## [Unreleased — Phase 7K: Wishlist search and filter (US-11)] — 2026-06-04
 
 ### Added
