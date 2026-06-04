@@ -7,6 +7,25 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 7P: Rate-limit response headers used to back off proactively (US-16)] — 2026-06-04
+
+### Changed
+- `DiscogsApiClient` — accepts an optional `delay` parameter (`Future<void> Function(Duration)`) so tests can override the real `Future.delayed` without slowing the suite
+- `DiscogsApiClient._get` and `_post` — call `_waitIfNeeded()` before sending the HTTP request and `_updateRateLimitState(response)` after a successful response; both paths are covered (all GET endpoints: search, release detail, collection/wishlist import, identity; all POST endpoints: collection/wishlist export)
+- `_waitIfNeeded()` — if `_nextAllowedAt` is set and is still in the future, awaits the remaining delay then clears the field; clears before awaiting so only the very next concurrent request waits
+- `_updateRateLimitState(response)` — reads `X-Discogs-Ratelimit-Remaining` header (lowercase); if the value is ≤ 0 (the default threshold), sets `_nextAllowedAt = now + 60 seconds` (the Discogs rate-limit reset window)
+
+### Tests
+- 6 new tests in `DiscogsApiClient rate-limit back-off` group:
+  - No delay when the remaining header is absent
+  - No delay when remaining is above the threshold
+  - Delay is scheduled when remaining reaches 0 on a GET response
+  - Delay duration is at least 59 seconds (≈ the 60-second reset window)
+  - Delay fires exactly once then clears for subsequent calls
+  - Delay also applies to the next POST request after a GET with remaining=0
+
+---
+
 ## [Unreleased — Phase 7O: Discogs credentials saved atomically (US-15)] — 2026-06-04
 
 ### Changed

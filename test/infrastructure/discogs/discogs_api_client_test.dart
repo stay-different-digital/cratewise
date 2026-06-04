@@ -1449,6 +1449,131 @@ void main() {
     });
   });
 
+  group('DiscogsApiClient rate-limit back-off', () {
+    const identityBody = '{"username":"u","resource_url":"u"}';
+
+    http.Response _withRemaining(
+      int remaining, {
+      int status = 200,
+      String body = identityBody,
+    }) => http.Response(
+      body,
+      status,
+      headers: {'x-discogs-ratelimit-remaining': '$remaining'},
+    );
+
+    test('does not delay when rate-limit remaining header is absent', () async {
+      final delays = <Duration>[];
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async => http.Response(identityBody, 200)),
+        delay: (d) async => delays.add(d),
+      );
+
+      await client.fetchIdentity(_fakeToken);
+      await client.fetchIdentity(_fakeToken);
+
+      expect(delays, isEmpty);
+    });
+
+    test('does not delay when remaining is above the threshold', () async {
+      final delays = <Duration>[];
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async => _withRemaining(5)),
+        delay: (d) async => delays.add(d),
+      );
+
+      await client.fetchIdentity(_fakeToken);
+      await client.fetchIdentity(_fakeToken);
+
+      expect(delays, isEmpty);
+    });
+
+    test('delays the next GET request when remaining reaches 0', () async {
+      final delays = <Duration>[];
+      int callCount = 0;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async {
+          callCount++;
+          return callCount == 1
+              ? _withRemaining(0)
+              : http.Response(identityBody, 200);
+        }),
+        delay: (d) async => delays.add(d),
+      );
+
+      await client.fetchIdentity(_fakeToken); // remaining=0 → schedules delay
+      await client.fetchIdentity(_fakeToken); // preceded by delay
+
+      expect(delays, hasLength(1));
+    });
+
+    test(
+      'delay duration is approximately the rate-limit reset window',
+      () async {
+        final delays = <Duration>[];
+        int callCount = 0;
+        final client = DiscogsApiClient(
+          httpClient: MockClient((_) async {
+            callCount++;
+            return callCount == 1
+                ? _withRemaining(0)
+                : http.Response(identityBody, 200);
+          }),
+          delay: (d) async => delays.add(d),
+        );
+
+        await client.fetchIdentity(_fakeToken);
+        await client.fetchIdentity(_fakeToken);
+
+        expect(delays.first.inSeconds, greaterThanOrEqualTo(59));
+      },
+    );
+
+    test('delay fires only once then clears for subsequent calls', () async {
+      final delays = <Duration>[];
+      int callCount = 0;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async {
+          callCount++;
+          return callCount == 1
+              ? _withRemaining(0)
+              : http.Response(identityBody, 200);
+        }),
+        delay: (d) async => delays.add(d),
+      );
+
+      await client.fetchIdentity(_fakeToken); // remaining=0 → schedules delay
+      await client.fetchIdentity(_fakeToken); // fires delay
+      await client.fetchIdentity(_fakeToken); // no delay (cleared)
+
+      expect(delays, hasLength(1));
+    });
+
+    test(
+      'delays the next POST request when previous response had remaining=0',
+      () async {
+        final delays = <Duration>[];
+        int callCount = 0;
+        final client = DiscogsApiClient(
+          httpClient: MockClient((_) async {
+            callCount++;
+            return callCount == 1 ? _withRemaining(0) : http.Response('', 201);
+          }),
+          delay: (d) async => delays.add(d),
+        );
+
+        await client.fetchIdentity(_fakeToken); // GET with remaining=0
+        await client.addToCollection(
+          'user',
+          123,
+          _fakeToken,
+        ); // POST: should delay
+
+        expect(delays, hasLength(1));
+      },
+    );
+  });
+
   group('DiscogsApiClient.addToCollection', () {
     const fakeUsername = 'vinyl_fan';
     const fakeReleaseId = 12345;

@@ -16,13 +16,28 @@ const _userAgent = 'Cratewise/1.0';
 const _accept = 'application/vnd.discogs.v2.discogs+json';
 const _kDefaultTimeout = Duration(seconds: 15);
 
+/// Discogs rate-limit reset window. Requests per window is typically 60.
+const _kRateLimitWindow = Duration(seconds: 60);
+
+/// Delay the next request when remaining allowance is at or below this value.
+const _kRateLimitThreshold = 0;
+
 class DiscogsApiClient {
-  DiscogsApiClient({http.Client? httpClient, Duration? requestTimeout})
-    : _client = httpClient ?? http.Client(),
-      _timeout = requestTimeout ?? _kDefaultTimeout;
+  DiscogsApiClient({
+    http.Client? httpClient,
+    Duration? requestTimeout,
+    Future<void> Function(Duration)? delay,
+  }) : _client = httpClient ?? http.Client(),
+       _timeout = requestTimeout ?? _kDefaultTimeout,
+       _delay = delay ?? ((d) => Future.delayed(d));
 
   final http.Client _client;
   final Duration _timeout;
+  final Future<void> Function(Duration) _delay;
+
+  /// Set when the last response had remaining ≤ [_kRateLimitThreshold].
+  /// Cleared at the start of [_waitIfNeeded] so only the very next request waits.
+  DateTime? _nextAllowedAt;
 
   /// Fetches the authenticated user's Discogs identity.
   /// Suitable for checking whether a token is valid.
@@ -153,6 +168,7 @@ class DiscogsApiClient {
     String token, {
     Map<String, String>? queryParameters,
   }) async {
+    await _waitIfNeeded();
     var uri = Uri.parse('$_baseUrl$path');
     if (queryParameters != null) {
       uri = uri.replace(queryParameters: queryParameters);
@@ -170,10 +186,12 @@ class DiscogsApiClient {
       throw const NetworkError();
     }
     _checkStatus(response);
+    _updateRateLimitState(response);
     return response;
   }
 
   Future<http.Response> _post(String path, String token) async {
+    await _waitIfNeeded();
     final uri = Uri.parse('$_baseUrl$path');
     final http.Response response;
     try {
@@ -188,7 +206,29 @@ class DiscogsApiClient {
       throw const NetworkError();
     }
     _checkStatus(response, 201);
+    _updateRateLimitState(response);
     return response;
+  }
+
+  /// Waits out any proactive rate-limit back-off before sending the next request.
+  /// Clears [_nextAllowedAt] before awaiting so only one concurrent caller waits.
+  Future<void> _waitIfNeeded() async {
+    final until = _nextAllowedAt;
+    if (until == null) return;
+    _nextAllowedAt = null;
+    final wait = until.difference(DateTime.now());
+    if (wait > Duration.zero) await _delay(wait);
+  }
+
+  /// Reads [X-Discogs-Ratelimit-Remaining] from a successful response and
+  /// schedules a back-off delay if the allowance is at or below the threshold.
+  void _updateRateLimitState(http.Response response) {
+    final raw = response.headers['x-discogs-ratelimit-remaining'];
+    if (raw == null) return;
+    final remaining = int.tryParse(raw);
+    if (remaining != null && remaining <= _kRateLimitThreshold) {
+      _nextAllowedAt = DateTime.now().add(_kRateLimitWindow);
+    }
   }
 
   Map<String, String> _headers(String token) => {
