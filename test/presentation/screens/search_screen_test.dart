@@ -349,6 +349,31 @@ void main() {
       expect(find.textContaining('Too many requests'), findsOneWidget);
     });
 
+    testWidgets(
+      'shows countdown Retry button when search returns rate limit error',
+      (tester) async {
+        final service = _FakeSearchService(throws: const RateLimitedError());
+        await tester.pumpWidget(_buildScreen(service));
+        await submitSearch(tester, 'miles');
+        // No fake time advance — countdown has not fired yet.
+        expect(find.textContaining('Retry in'), findsOneWidget);
+        final button = tester.widget<FilledButton>(find.byType(FilledButton));
+        expect(button.onPressed, isNull);
+      },
+    );
+
+    testWidgets(
+      'shows active Retry button when search returns non-rate-limit error',
+      (tester) async {
+        final service = _FakeSearchService(throws: const NetworkError());
+        await tester.pumpWidget(_buildScreen(service));
+        await submitSearch(tester, 'miles');
+        expect(find.widgetWithText(FilledButton, 'Retry'), findsOneWidget);
+        final button = tester.widget<FilledButton>(find.byType(FilledButton));
+        expect(button.onPressed, isNotNull);
+      },
+    );
+
     testWidgets('shows invalid token message on 401 error', (tester) async {
       final service = _FakeSearchService(throws: const InvalidTokenError());
       await tester.pumpWidget(_buildScreen(service));
@@ -409,9 +434,9 @@ void main() {
     });
 
     testWidgets(
-      'shows inline retry button when page 2 returns rate-limit error',
+      'shows inline countdown retry button when page 2 returns rate-limit error',
       (tester) async {
-        // The post-frame trigger fires _loadMore → RateLimitedError → retry shown.
+        // The post-frame trigger fires _loadMore → RateLimitedError → countdown shown.
         final service = _BlockingPaginationService(
           page1Items: [_kindOfBlue],
           page2Error: const RateLimitedError(),
@@ -419,10 +444,13 @@ void main() {
 
         await tester.pumpWidget(_buildScreen(service));
         await submitSearch(tester, 'vinyl');
-        await tester.pumpAndSettle();
+        // Limited pumps: process page-2 error without advancing fake time so the
+        // 60-second countdown has not elapsed.
+        await tester.pump();
+        await tester.pump();
 
         expect(find.byKey(const Key('pagination-retry')), findsOneWidget);
-        expect(find.textContaining('Rate limited'), findsOneWidget);
+        expect(find.textContaining('Retry in'), findsOneWidget);
         // Original page 1 results still visible
         expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
       },
@@ -437,7 +465,8 @@ void main() {
         );
         await tester.pumpWidget(_buildScreen(service));
         await submitSearch(tester, 'vinyl');
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump();
 
         expect(find.byType(ReleaseSearchResultCard), findsNWidgets(2));
         expect(find.byKey(const Key('pagination-retry')), findsOneWidget);

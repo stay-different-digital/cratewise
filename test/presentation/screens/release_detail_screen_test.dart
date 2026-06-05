@@ -648,6 +648,28 @@ void main() {
         expect(find.widgetWithText(FilledButton, 'Retry'), findsNothing);
       });
 
+      testWidgets('shows countdown on Retry button when error is rate limit', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 1,
+              detailService: _ErrorService(error: const RateLimitedError()),
+              cacheRepository: _FakeCacheRepository(),
+            ),
+          ),
+        );
+        // Process async chain without advancing fake time, so the 60-second
+        // countdown has not fired yet.
+        await tester.pump();
+        await tester.pump();
+        await tester.pump();
+        expect(find.textContaining('Retry in'), findsOneWidget);
+        final button = tester.widget<FilledButton>(find.byType(FilledButton));
+        expect(button.onPressed, isNull);
+      });
+
       testWidgets('retry button refetches and shows loaded state on success', (
         tester,
       ) async {

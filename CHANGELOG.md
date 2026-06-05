@@ -7,6 +7,24 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8G: Retry button uses back-off delay after rate-limit errors (US-34)] — 2026-06-05
+
+### Added
+- `lib/presentation/widgets/rate_limit_retry_button.dart` — `RateLimitRetryButton` StatefulWidget: shows a disabled "Retry in X s" countdown (60 s default) when `isRateLimited` is true; becomes active once the window elapses; immediately active for non-rate-limit errors
+
+### Changed
+- Release Detail `_ErrorBody` — Retry button replaced with `RateLimitRetryButton`; rate-limit errors now show a countdown and are disabled until the window elapses
+- Search `_SearchErrorState` — added `onRetry` callback and `RateLimitRetryButton`; non-retriable errors (no-token, invalid-token) show no retry button; rate-limit errors show countdown; other errors show an immediately-active Retry button
+- Search pagination footer (`_ResultsList._buildFooter`) — rate-limit pagination error now shows a disabled "Retry in X s" countdown (TextButton.icon style); becomes active once the window elapses; previously showed "Rate limited — tap to retry" with no countdown
+
+### Tests
+- 4 new tests in `rate_limit_retry_button_test.dart`: active immediately when not rate-limited; disabled countdown when rate-limited; countdown decrements each second; button active and tappable after countdown
+- 1 new test in `release_detail_screen_test.dart`: `shows countdown on Retry button when error is rate limit`
+- 2 new tests in `search_screen_test.dart`: `shows countdown Retry button when search returns rate limit error`; `shows active Retry button when search returns non-rate-limit error`
+- Updated `search_screen_test.dart`: pagination rate-limit test renamed + text assertion updated to check for `'Retry in'` countdown; uses `pump()` instead of `pumpAndSettle()` to avoid advancing 60 s of fake time
+
+---
+
 ## [Unreleased — Phase 8F: Multi-format releases show all format entries (US-33)] — 2026-06-05
 
 ### Changed

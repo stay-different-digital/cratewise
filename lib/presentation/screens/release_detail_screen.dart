@@ -19,6 +19,7 @@ import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
+import '../widgets/rate_limit_retry_button.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -631,7 +632,10 @@ class _ErrorBody extends StatelessWidget {
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 24),
-              FilledButton(onPressed: onRetry, child: const Text('Retry')),
+              RateLimitRetryButton(
+                onRetry: onRetry!,
+                isRateLimited: error is RateLimitedError,
+              ),
             ],
           ],
         ),

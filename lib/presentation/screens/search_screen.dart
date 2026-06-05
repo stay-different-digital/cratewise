@@ -10,6 +10,7 @@ import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/release_search_result.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../shared/errors/app_error.dart';
+import '../widgets/rate_limit_retry_button.dart';
 import '../widgets/release_search_result_card.dart';
 import 'release_detail_screen.dart';
 
@@ -309,7 +310,12 @@ class _SearchScreenState extends State<SearchScreen> {
             }
           },
         ),
-      _SearchError(:final error) => _SearchErrorState(error: error),
+      _SearchError(:final error) => _SearchErrorState(
+        error: error,
+        onRetry: error is NoTokenError || error is InvalidTokenError
+            ? null
+            : () => _onSubmit(_lastQuery),
+      ),
     };
   }
 }
@@ -396,9 +402,10 @@ class _NoResultsState extends StatelessWidget {
 }
 
 class _SearchErrorState extends StatelessWidget {
-  const _SearchErrorState({required this.error});
+  const _SearchErrorState({required this.error, this.onRetry});
 
   final AppError error;
+  final VoidCallback? onRetry;
 
   String get _message => switch (error) {
     NoTokenError() => 'Connect a Discogs token in Settings to search.',
@@ -430,6 +437,13 @@ class _SearchErrorState extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 24),
+              RateLimitRetryButton(
+                onRetry: onRetry!,
+                isRateLimited: error is RateLimitedError,
+              ),
+            ],
           ],
         ),
       ),
@@ -500,11 +514,14 @@ class _ResultsList extends StatefulWidget {
 
 class _ResultsListState extends State<_ResultsList> {
   final _scrollController = ScrollController();
+  Timer? _rateLimitTimer;
+  int _rateLimitSecondsLeft = 0;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    if (widget.paginationError is RateLimitedError) _startRateLimitCountdown();
     // If the first page fits entirely within the viewport, the scroll listener
     // never fires. Check after the first frame so we can pre-fetch page 2.
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -522,6 +539,34 @@ class _ResultsListState extends State<_ResultsList> {
         if (mounted) _onScroll();
       });
     }
+    if (oldWidget.paginationError is! RateLimitedError &&
+        widget.paginationError is RateLimitedError) {
+      _startRateLimitCountdown();
+    } else if (oldWidget.paginationError is RateLimitedError &&
+        widget.paginationError is! RateLimitedError) {
+      _cancelRateLimitTimer();
+    }
+  }
+
+  void _startRateLimitCountdown() {
+    _cancelRateLimitTimer();
+    setState(() => _rateLimitSecondsLeft = kRateLimitCountdownSeconds);
+    _rateLimitTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        if (_rateLimitSecondsLeft > 1) {
+          _rateLimitSecondsLeft--;
+        } else {
+          _rateLimitSecondsLeft = 0;
+          _cancelRateLimitTimer();
+        }
+      });
+    });
+  }
+
+  void _cancelRateLimitTimer() {
+    _rateLimitTimer?.cancel();
+    _rateLimitTimer = null;
   }
 
   void _onScroll() {
@@ -534,6 +579,7 @@ class _ResultsListState extends State<_ResultsList> {
 
   @override
   void dispose() {
+    _cancelRateLimitTimer();
     _scrollController.dispose();
     super.dispose();
   }
@@ -548,16 +594,20 @@ class _ResultsListState extends State<_ResultsList> {
       );
     }
     if (widget.paginationError != null) {
-      final isRateLimit = widget.paginationError is RateLimitedError;
+      final counting =
+          widget.paginationError is RateLimitedError &&
+          _rateLimitSecondsLeft > 0;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: TextButton.icon(
           key: const Key('pagination-retry'),
-          onPressed: widget.onRetry,
-          icon: const Icon(Icons.refresh),
+          onPressed: counting ? null : widget.onRetry,
+          icon: Icon(counting ? Icons.hourglass_empty : Icons.refresh),
           label: Text(
-            isRateLimit
-                ? 'Rate limited — tap to retry'
+            counting
+                ? 'Retry in $_rateLimitSecondsLeft s'
+                : widget.paginationError is RateLimitedError
+                ? 'Retry'
                 : 'Failed to load more — tap to retry',
           ),
         ),
