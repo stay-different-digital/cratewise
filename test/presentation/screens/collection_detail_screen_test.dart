@@ -4,6 +4,7 @@ import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
+import 'package:cratewise/shared/route_observer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -150,6 +151,30 @@ class _SuccessThenErrorCollectionRepository implements CollectionRepository {
   Future<void> remove(String id) async {}
 }
 
+class _ThenRemovedCollectionRepository implements CollectionRepository {
+  _ThenRemovedCollectionRepository({required this.firstItem});
+
+  final CollectionItem firstItem;
+  int _calls = 0;
+
+  @override
+  Future<CollectionItem?> getById(String id) async {
+    _calls++;
+    return _calls == 1 ? firstItem : null;
+  }
+
+  @override
+  Future<List<CollectionItem>> getAll() async => [];
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => false;
+  @override
+  Future<void> add(CollectionItem item) async {}
+  @override
+  Future<void> update(CollectionItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -189,6 +214,9 @@ CollectionItem _makeItem({
 );
 
 Widget _wrap(Widget child) => MaterialApp(home: child);
+
+Widget _wrapWithObserver(Widget child) =>
+    MaterialApp(navigatorObservers: [appRouteObserver], home: child);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -1970,5 +1998,59 @@ void main() {
       final safeAreas = tester.widgetList<SafeArea>(find.byType(SafeArea));
       expect(safeAreas.any((sa) => !sa.top), isTrue);
     });
+  });
+
+  group('CollectionDetailScreen — live-reload on route pop', () {
+    testWidgets('silent re-fetch after sheet dismiss reflects updated item', (
+      tester,
+    ) async {
+      final repo = _UpdatingCollectionRepository(
+        first: _makeItem(title: 'Old Title'),
+        second: _makeItem(title: 'New Title'),
+      );
+      await tester.pumpWidget(
+        _wrapWithObserver(
+          CollectionDetailScreen(itemId: 'test-1', repository: repo),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Old Title'), findsWidgets);
+
+      await tester.tap(find.byKey(const Key('edit-conditions-button')));
+      await tester.pumpAndSettle();
+
+      // Dismiss sheet by tapping the modal barrier above it
+      await tester.tapAt(const Offset(200, 50));
+      await tester.pumpAndSettle();
+
+      expect(find.text('New Title'), findsWidgets);
+      expect(find.text('Old Title'), findsNothing);
+    });
+
+    testWidgets(
+      'silent re-fetch after sheet dismiss transitions to not-found if item removed',
+      (tester) async {
+        final repo = _ThenRemovedCollectionRepository(
+          firstItem: _makeItem(title: 'Will Be Removed'),
+        );
+        await tester.pumpWidget(
+          _wrapWithObserver(
+            CollectionDetailScreen(itemId: 'test-1', repository: repo),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Will Be Removed'), findsWidgets);
+
+        await tester.tap(find.byKey(const Key('edit-conditions-button')));
+        await tester.pumpAndSettle();
+
+        // Dismiss sheet by tapping the modal barrier above it
+        await tester.tapAt(const Offset(200, 50));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Item not found.'), findsOneWidget);
+        expect(find.text('Will Be Removed'), findsNothing);
+      },
+    );
   });
 }

@@ -7,6 +7,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8H: Collection detail live-reloads when the item is changed (US-35)] — 2026-06-05
+
+### Changed
+- `CollectionDetailScreen` now mixes in `RouteAware` and subscribes to `appRouteObserver` (already attached to the Collection branch navigator in `router.dart`)
+- On `didPopNext()` (fired when any route above the detail screen — including edit sheets — is popped), the screen silently re-fetches the item from local storage via the existing `_refresh()` method
+- Silent re-fetch: existing content remains visible during the fetch; no full-screen loading spinner
+- If the item has been removed since the detail was opened, the screen transitions to the `_NotFound` state
+- No change to the existing edit-and-save flow (sheet handlers continue to update state immediately and show snackbars)
+
+### Tests
+- 1 new fake `_ThenRemovedCollectionRepository` in `collection_detail_screen_test.dart`
+- 2 new tests in `collection_detail_screen_test.dart` (`live-reload on route pop` group): silent re-fetch reflects updated item; silent re-fetch transitions to not-found if item removed; both tests use `_wrapWithObserver` which wires `appRouteObserver` into the test navigator
+
+---
+
 ## [Unreleased — Phase 8G: Retry button uses back-off delay after rate-limit errors (US-34)] — 2026-06-05
 
 ### Added

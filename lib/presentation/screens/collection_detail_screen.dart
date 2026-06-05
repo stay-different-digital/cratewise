@@ -9,6 +9,7 @@ import '../../domain/repositories/thumbnail_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
+import '../../shared/route_observer.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -61,7 +62,8 @@ class CollectionDetailScreen extends StatefulWidget {
   State<CollectionDetailScreen> createState() => _CollectionDetailScreenState();
 }
 
-class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
+class _CollectionDetailScreenState extends State<CollectionDetailScreen>
+    with RouteAware {
   late final CollectionRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
   AppDatabase? _ownedDb;
@@ -81,6 +83,16 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     }
     _load();
   }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) appRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() => _refresh();
 
   Future<void> _load() async {
     setState(() => _state = const _Loading());
@@ -113,6 +125,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
 
   @override
   void dispose() {
+    appRouteObserver.unsubscribe(this);
     _ownedDb?.close();
     super.dispose();
   }
