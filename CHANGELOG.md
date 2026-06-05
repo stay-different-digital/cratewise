@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8B: Tappable help link on Discogs token setup screen (US-29)] — 2026-06-05
+
+### Added
+- `url_launcher: ^6.3.0` dependency
+- `DiscogsTokenSection` — `discogs.com/settings/developers` URL is now rendered as a tappable `_HelpLink` widget; tapping opens the URL in the device's default browser via `launchUrl(mode: externalApplication)`; falls back to a snackbar if the browser cannot be opened
+- `DiscogsTokenSection.urlLauncher` — optional injectable callback (`Future<bool> Function(Uri)`) for testing without platform channel setup
+
+### Changed
+- `DiscogsTokenSection` — removed `helperText` / `helperMaxLines` from `InputDecoration`; replaced with `_HelpLink` widget (touch target ≥ 48 dp, URL styled with `primary` colour and underline)
+- `AndroidManifest.xml` — added `<intent>` with `scheme="https"` to `<queries>` block so `url_launcher` can resolve HTTPS browser intents on Android 11+
+
+### Tests
+- 2 new tests in `discogs_token_section_test.dart`: tapping help link calls injected launcher with correct `https://discogs.com/settings/developers` URI; returns false → snackbar shown
+
+---
+
 ## [Unreleased — Phase 8A: Deep linking and named routes (US-28)] — 2026-06-05
 
 ### Added

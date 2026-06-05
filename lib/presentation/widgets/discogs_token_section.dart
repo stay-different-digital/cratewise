@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../application/services/discogs_connection_service.dart';
 import '../../shared/errors/app_error.dart';
@@ -8,9 +9,17 @@ const _developerSettingsUrl = 'discogs.com/settings/developers';
 enum _ConnectionState { idle, loading, connected, failure }
 
 class DiscogsTokenSection extends StatefulWidget {
-  const DiscogsTokenSection({super.key, this.connectionService});
+  const DiscogsTokenSection({
+    super.key,
+    this.connectionService,
+    this.urlLauncher,
+  });
 
   final DiscogsConnectionService? connectionService;
+
+  /// Injected only for testing. Production code passes null and uses
+  /// url_launcher's [launchUrl] directly.
+  final Future<bool> Function(Uri uri)? urlLauncher;
 
   @override
   State<DiscogsTokenSection> createState() => _DiscogsTokenSectionState();
@@ -45,6 +54,30 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
         _status = _ConnectionState.connected;
         _connectedUsername = status.username;
       });
+    }
+  }
+
+  Future<void> _launchTokenSetupUrl() async {
+    final uri = Uri.parse('https://$_developerSettingsUrl');
+    bool launched;
+    try {
+      if (widget.urlLauncher != null) {
+        launched = await widget.urlLauncher!(uri);
+      } else {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        launched = true;
+      }
+    } catch (_) {
+      launched = false;
+    }
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not open browser. Visit discogs.com/settings/developers manually.',
+          ),
+        ),
+      );
     }
   }
 
@@ -177,8 +210,6 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
             decoration: InputDecoration(
               labelText: 'Personal access token',
               hintText: 'Paste your token here',
-              helperText: 'Find your token at $_developerSettingsUrl',
-              helperMaxLines: 2,
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: Icon(
@@ -189,7 +220,9 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
+          _HelpLink(onTap: _launchTokenSetupUrl),
+          const SizedBox(height: 8),
           ValueListenableBuilder<TextEditingValue>(
             valueListenable: _controller,
             builder: (context, value, _) {
@@ -252,6 +285,48 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
           ],
         ],
       ],
+    );
+  }
+}
+
+class _HelpLink extends StatelessWidget {
+  const _HelpLink({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Semantics(
+        link: true,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text.rich(
+              TextSpan(
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                children: [
+                  const TextSpan(text: 'Find your token at '),
+                  TextSpan(
+                    text: 'discogs.com/settings/developers',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      decoration: TextDecoration.underline,
+                      decorationColor: theme.colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -21,6 +21,7 @@ dependencies:
   path_provider: ^2.1.5
   share_plus: ^10.0.0
   sqlite3_flutter_libs: ^0.6.0+eol
+  url_launcher: ^6.3.0
   uuid: ^4.5.1
 
 dev_dependencies:

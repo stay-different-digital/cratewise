@@ -123,6 +123,45 @@ void main() {
       );
     });
 
+    testWidgets('tapping help link calls url launcher with correct URL', (
+      tester,
+    ) async {
+      Uri? launchedUri;
+      await tester.pumpWidget(
+        _buildApp(
+          DiscogsTokenSection(
+            urlLauncher: (uri) async {
+              launchedUri = uri;
+              return true;
+            },
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.textContaining('discogs.com/settings/developers'));
+      await tester.pump();
+
+      expect(launchedUri, isNotNull);
+      expect(
+        launchedUri.toString(),
+        contains('discogs.com/settings/developers'),
+      );
+      expect(launchedUri!.scheme, 'https');
+    });
+
+    testWidgets('shows snackbar when browser cannot be opened', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(DiscogsTokenSection(urlLauncher: (uri) async => false)),
+      );
+      await tester.pump();
+
+      await tester.tap(find.textContaining('discogs.com/settings/developers'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Could not open browser'), findsOneWidget);
+    });
+
     testWidgets(
       'Validate and Remove buttons are disabled when field is empty',
       (tester) async {
