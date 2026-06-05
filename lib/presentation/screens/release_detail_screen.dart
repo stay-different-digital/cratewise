@@ -343,7 +343,8 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     }
     if (state is _Loaded && state.detail.title.isNotEmpty) {
       final d = state.detail;
-      return d.artist.isNotEmpty ? '${d.artist} — ${d.title}' : d.title;
+      final a = d.displayArtist ?? d.artist;
+      return a.isNotEmpty ? '$a — ${d.title}' : d.title;
     }
     if (state is _CachedLoaded && state.metadata.title.isNotEmpty) {
       final m = state.metadata;
@@ -896,10 +897,10 @@ class _TitleArtist extends StatelessWidget {
           detail.title.isEmpty ? '(Untitled)' : detail.title,
           style: theme.textTheme.headlineSmall,
         ),
-        if (detail.artist.isNotEmpty) ...[
+        if ((detail.displayArtist ?? detail.artist).isNotEmpty) ...[
           const SizedBox(height: 4),
           Text(
-            detail.artist,
+            detail.displayArtist ?? detail.artist,
             style: theme.textTheme.titleMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

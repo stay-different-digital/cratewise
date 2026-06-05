@@ -22,6 +22,7 @@ class ReleaseDetail {
     required this.id,
     required this.title,
     required this.artist,
+    this.displayArtist,
     required this.label,
     required this.catno,
     required this.format,
@@ -37,7 +38,12 @@ class ReleaseDetail {
 
   final int id;
   final String title;
+
+  /// Canonical artist name — stored in collection and wishlist.
   final String artist;
+
+  /// ANV (credited name as it appears on the label). Null when same as [artist].
+  final String? displayArtist;
   final String label;
   final String catno;
   final String format;

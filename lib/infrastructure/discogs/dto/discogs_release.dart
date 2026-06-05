@@ -37,6 +37,7 @@ class DiscogsReleaseDto {
     required this.id,
     required this.title,
     required this.artist,
+    required this.displayArtist,
     required this.label,
     required this.catno,
     required this.format,
@@ -53,7 +54,12 @@ class DiscogsReleaseDto {
 
   final int id;
   final String title;
+
+  /// Canonical artist name — used for storage and search.
   final String artist;
+
+  /// Display name — uses ANV when the credited name differs from canonical.
+  final String displayArtist;
   final String label;
   final String catno;
   final String format;
@@ -68,14 +74,24 @@ class DiscogsReleaseDto {
   final List<DiscogsIdentifierDto> identifiers;
 
   factory DiscogsReleaseDto.fromJson(Map<String, dynamic> json) {
-    // Artist — join all credited names
+    // Artist — canonical name from `name`; display name from `anv` when present
     final rawArtists = json['artists'] as List<dynamic>?;
-    final artist = rawArtists != null && rawArtists.isNotEmpty
-        ? rawArtists
-              .map((a) => (a as Map<String, dynamic>)['name'] as String? ?? '')
-              .where((n) => n.isNotEmpty)
-              .join(', ')
-        : '';
+    String artist = '';
+    String displayArtist = '';
+    if (rawArtists != null && rawArtists.isNotEmpty) {
+      final maps = rawArtists.cast<Map<String, dynamic>>();
+      artist = maps
+          .map((a) => (a['name'] as String?) ?? '')
+          .where((n) => n.isNotEmpty)
+          .join(', ');
+      displayArtist = maps
+          .map((a) {
+            final anv = (a['anv'] as String?) ?? '';
+            return anv.isNotEmpty ? anv : ((a['name'] as String?) ?? '');
+          })
+          .where((n) => n.isNotEmpty)
+          .join(', ');
+    }
 
     // Label and catalog number — use first entry
     final rawLabels = json['labels'] as List<dynamic>?;
@@ -143,6 +159,7 @@ class DiscogsReleaseDto {
       id: json['id'] as int,
       title: (json['title'] as String?) ?? '',
       artist: artist,
+      displayArtist: displayArtist.isNotEmpty ? displayArtist : artist,
       label: label,
       catno: catno,
       format: format,

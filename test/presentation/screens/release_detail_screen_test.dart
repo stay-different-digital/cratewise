@@ -343,6 +343,66 @@ void main() {
         expect(find.text('Miles Davis'), findsOneWidget);
       });
 
+      testWidgets(
+        'shows ANV instead of canonical name when displayArtist set',
+        (tester) async {
+          const withAnv = ReleaseDetail(
+            id: 249504,
+            title: 'Kind Of Blue',
+            artist: 'Miles Davis',
+            displayArtist: 'Miles Davis Sextet',
+            label: 'Columbia',
+            catno: 'CL 1355',
+            format: 'Vinyl, LP, Album',
+            country: 'US',
+            year: 1959,
+            genres: ['Jazz'],
+            styles: [],
+            tracklist: [],
+            identifiers: [],
+          );
+          await tester.pumpWidget(
+            _wrap(
+              ReleaseDetailScreen(
+                releaseId: 249504,
+                detailService: _LoadedService(detail: withAnv),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(find.text('Miles Davis Sextet'), findsOneWidget);
+          expect(find.text('Miles Davis'), findsNothing);
+        },
+      );
+
+      testWidgets('app bar uses ANV when displayArtist is set', (tester) async {
+        const withAnv = ReleaseDetail(
+          id: 249504,
+          title: 'Kind Of Blue',
+          artist: 'Miles Davis',
+          displayArtist: 'Miles Davis Sextet',
+          label: 'Columbia',
+          catno: 'CL 1355',
+          format: 'Vinyl, LP, Album',
+          country: 'US',
+          year: 1959,
+          genres: ['Jazz'],
+          styles: [],
+          tracklist: [],
+          identifiers: [],
+        );
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _LoadedService(detail: withAnv),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Miles Davis Sextet — Kind Of Blue'), findsOneWidget);
+      });
+
       testWidgets('shows label and catalog number when loaded', (tester) async {
         await tester.pumpWidget(
           _wrap(

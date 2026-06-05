@@ -92,6 +92,7 @@ class DiscogsReleaseDetailService {
       id: dto.id,
       title: dto.title,
       artist: dto.artist,
+      displayArtist: dto.displayArtist != dto.artist ? dto.displayArtist : null,
       label: dto.label,
       catno: dto.catno,
       format: dto.format,

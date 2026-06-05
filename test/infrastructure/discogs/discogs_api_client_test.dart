@@ -900,6 +900,33 @@ void main() {
       expect(release.artist, 'Miles Davis');
     });
 
+    test('displayArtist equals artist when anv is absent', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(kindOfBlueRelease), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.displayArtist, 'Miles Davis');
+    });
+
+    test('uses anv as displayArtist when present and non-empty', () async {
+      final withAnv = {
+        ...kindOfBlueRelease,
+        'artists': [
+          {'name': 'Miles Davis', 'anv': 'Miles Davis Sextet', 'id': 15885},
+        ],
+      };
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(jsonEncode(withAnv), 200),
+        ),
+      );
+      final release = await client.fetchRelease(249504, _fakeToken);
+      expect(release.artist, 'Miles Davis');
+      expect(release.displayArtist, 'Miles Davis Sextet');
+    });
+
     test('parses label and catalog number', () async {
       final client = DiscogsApiClient(
         httpClient: MockClient(

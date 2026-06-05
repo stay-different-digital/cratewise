@@ -7,6 +7,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8E: ANV (credited artist name) shown on release detail (US-32)] — 2026-06-05
+
+### Changed
+- `DiscogsReleaseDto` — added `displayArtist` field: joins artist entries using `anv` when non-empty, `name` otherwise; equals `artist` when no ANV is present
+- `ReleaseDetail` — added optional `displayArtist` field (null when same as canonical `artist`)
+- `DiscogsReleaseDetailService._toDetail` — maps `dto.displayArtist` to `detail.displayArtist` (null when equal to canonical, so storage is unaffected)
+- Release Detail screen — `_TitleArtist` and `_appBarTitle` use `displayArtist ?? artist`, so the ANV is shown when available and canonical name is shown otherwise
+- Canonical `artist` field remains unchanged in use-cases and cache, preserving search/filter consistency
+
+### Tests
+- 2 new tests in `discogs_api_client_test.dart`: `displayArtist` equals canonical when `anv` absent; `displayArtist` uses `anv` when present and non-empty
+- 2 new tests in `release_detail_screen_test.dart`: ANV shown in detail body instead of canonical; app bar uses ANV in title
+
+---
+
 ## [Unreleased — Phase 8D: Artist name parsed correctly for releases with " – " in the title (US-31)] — 2026-06-05
 
 ### Fixed
