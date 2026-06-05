@@ -50,9 +50,21 @@ class DiscogsSearchResultDto {
 
   factory DiscogsSearchResultDto.fromJson(Map<String, dynamic> json) {
     final rawTitle = (json['title'] as String?) ?? '';
-    final sep = rawTitle.indexOf(' - ');
-    final artist = sep >= 0 ? rawTitle.substring(0, sep) : '';
-    final title = sep >= 0 ? rawTitle.substring(sep + 3) : rawTitle;
+
+    // Prefer a dedicated artist field when the API provides one.
+    // Otherwise split the combined "Artist - Title" string on the last " - "
+    // so artist names that themselves contain " - " are handled correctly.
+    final dedicatedArtist = json['artist'] as String?;
+    final String artist;
+    final String title;
+    if (dedicatedArtist != null && dedicatedArtist.isNotEmpty) {
+      artist = dedicatedArtist;
+      title = rawTitle;
+    } else {
+      final sep = rawTitle.lastIndexOf(' - ');
+      artist = sep >= 0 ? rawTitle.substring(0, sep) : '';
+      title = sep >= 0 ? rawTitle.substring(sep + 3) : rawTitle;
+    }
 
     final formats = json['format'] as List<dynamic>?;
     final labels = json['label'] as List<dynamic>?;

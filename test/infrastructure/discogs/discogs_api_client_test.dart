@@ -202,6 +202,41 @@ void main() {
       expect(page.results.first.title, 'Kind Of Blue');
     });
 
+    test('uses dedicated artist field when present', () async {
+      final withDedicatedArtist = {
+        ...kindOfBlue,
+        'title': 'Kind Of Blue',
+        'artist': 'Miles Davis',
+      };
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(searchBody([withDedicatedArtist]), 200),
+        ),
+      );
+      final page = await client.searchReleases('kind of blue', _fakeToken);
+      expect(page.results.first.artist, 'Miles Davis');
+      expect(page.results.first.title, 'Kind Of Blue');
+    });
+
+    test('splits on last separator when artist name contains " - "', () async {
+      final dashArtist = {
+        'id': 99,
+        'title': 'This - Artist - The Album',
+        'format': ['Vinyl'],
+        'label': ['Test Label'],
+        'year': '1985',
+        'country': 'UK',
+      };
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response(searchBody([dashArtist]), 200),
+        ),
+      );
+      final page = await client.searchReleases('test', _fakeToken);
+      expect(page.results.first.artist, 'This - Artist');
+      expect(page.results.first.title, 'The Album');
+    });
+
     test('uses first format from array', () async {
       final client = DiscogsApiClient(
         httpClient: MockClient(

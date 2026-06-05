@@ -7,6 +7,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8D: Artist name parsed correctly for releases with " – " in the title (US-31)] — 2026-06-05
+
+### Fixed
+- `DiscogsSearchResultDto.fromJson` — artist name now parsed correctly when the Discogs `title` field contains more than one ` - ` separator (e.g., `"This - Artist - The Album"` → artist=`"This - Artist"`, title=`"The Album"`). Previously, `indexOf` split on the first separator; now `lastIndexOf` is used so artist names containing ` - ` are preserved
+- `DiscogsSearchResultDto.fromJson` — when the API response includes a dedicated `artist` field (string), it is used directly and the combined `title` field is taken as the pure album title without splitting
+
+### Tests
+- 2 new tests in `discogs_api_client_test.dart`: dedicated `artist` field used directly without splitting; artist name with embedded ` - ` split on last separator; no regression on existing single-separator test
+
+---
+
 ## [Unreleased — Phase 8C: Token input field shows format guidance (US-30)] — 2026-06-05
 
 ### Changed
