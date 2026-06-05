@@ -403,6 +403,38 @@ void main() {
         expect(find.text('Miles Davis Sextet — Kind Of Blue'), findsOneWidget);
       });
 
+      testWidgets('shows all format entries separated by newline', (
+        tester,
+      ) async {
+        const multiFormat = ReleaseDetail(
+          id: 249504,
+          title: 'Kind Of Blue',
+          artist: 'Miles Davis',
+          label: 'Columbia',
+          catno: 'CL 1355',
+          format: 'Vinyl, LP, Album\nVinyl, 7", Single',
+          country: 'US',
+          year: 1959,
+          genres: ['Jazz'],
+          styles: [],
+          tracklist: [],
+          identifiers: [],
+        );
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _LoadedService(detail: multiFormat),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text('Vinyl, LP, Album\nVinyl, 7", Single'),
+          findsOneWidget,
+        );
+      });
+
       testWidgets('shows label and catalog number when loaded', (tester) async {
         await tester.pumpWidget(
           _wrap(

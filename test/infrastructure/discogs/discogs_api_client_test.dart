@@ -617,6 +617,38 @@ void main() {
       expect(page.items.first.format, 'Vinyl, LP, Album');
     });
 
+    test(
+      'joins all format entries with newline when multiple formats present',
+      () async {
+        final multiFormat = {
+          ...kindOfBlueRelease,
+          'basic_information': {
+            ...(kindOfBlueRelease['basic_information'] as Map<String, dynamic>),
+            'formats': [
+              {
+                'name': 'Vinyl',
+                'qty': '1',
+                'descriptions': ['LP', 'Album'],
+              },
+              {
+                'name': 'Vinyl',
+                'qty': '1',
+                'descriptions': ['7"', 'Single'],
+              },
+            ],
+          },
+        };
+        final body = collectionBody(releases: [multiFormat]);
+        final client = DiscogsApiClient(
+          httpClient: MockClient(
+            (_) async => http.Response(jsonEncode(body), 200),
+          ),
+        );
+        final page = await client.fetchCollectionPage(fakeUsername, _fakeToken);
+        expect(page.items.first.format, 'Vinyl, LP, Album\nVinyl, 7", Single');
+      },
+    );
+
     test('parses genres', () async {
       final body = collectionBody(releases: [kindOfBlueRelease]);
       final client = DiscogsApiClient(
@@ -948,6 +980,34 @@ void main() {
       expect(release.format, 'Vinyl, LP, Album');
     });
 
+    test(
+      'joins all format entries with newline when multiple formats present',
+      () async {
+        final multiFormat = {
+          ...kindOfBlueRelease,
+          'formats': [
+            {
+              'name': 'Vinyl',
+              'qty': '1',
+              'descriptions': ['LP', 'Album'],
+            },
+            {
+              'name': 'Vinyl',
+              'qty': '1',
+              'descriptions': ['7"', 'Single'],
+            },
+          ],
+        };
+        final client = DiscogsApiClient(
+          httpClient: MockClient(
+            (_) async => http.Response(jsonEncode(multiFormat), 200),
+          ),
+        );
+        final release = await client.fetchRelease(249504, _fakeToken);
+        expect(release.format, 'Vinyl, LP, Album\nVinyl, 7", Single');
+      },
+    );
+
     test('parses country, year, genres, and styles', () async {
       final client = DiscogsApiClient(
         httpClient: MockClient(
@@ -1277,6 +1337,39 @@ void main() {
       final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
       expect(page.items.first.format, 'Vinyl, LP, Album');
     });
+
+    test(
+      'joins all format entries with newline when multiple formats present',
+      () async {
+        final multiFormat = {
+          ...bridgeStrippedBare,
+          'basic_information': {
+            ...(bridgeStrippedBare['basic_information']
+                as Map<String, dynamic>),
+            'formats': [
+              {
+                'name': 'Vinyl',
+                'qty': '1',
+                'descriptions': ['LP', 'Album'],
+              },
+              {
+                'name': 'Vinyl',
+                'qty': '1',
+                'descriptions': ['7"', 'Single'],
+              },
+            ],
+          },
+        };
+        final body = wantlistBody(wants: [multiFormat]);
+        final client = DiscogsApiClient(
+          httpClient: MockClient(
+            (_) async => http.Response(jsonEncode(body), 200),
+          ),
+        );
+        final page = await client.fetchWantlistPage(fakeUsername, _fakeToken);
+        expect(page.items.first.format, 'Vinyl, LP, Album\nVinyl, 7", Single');
+      },
+    );
 
     test('parses genres', () async {
       final body = wantlistBody(wants: [bridgeStrippedBare]);

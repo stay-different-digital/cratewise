@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8F: Multi-format releases show all format entries (US-33)] — 2026-06-05
+
+### Changed
+- `DiscogsReleaseDto.fromJson` — format now built from all entries in the `formats` array (previously only the first); each entry is `name + descriptions` joined with `, `; multiple entries are joined with `\n`
+- `DiscogsCollectionItemDto.fromJson` — same multi-format change, so imported Discogs collection items also carry all format entries
+- `DiscogsWantlistItemDto.fromJson` — same multi-format change for imported wantlist items
+- Release Detail, Collection Detail, and Wishlist Detail screens — no code change needed; the Format row displays the `format` string as-is, and Flutter's `Text` widget renders `\n` as line breaks
+
+### Tests
+- 3 new tests in `discogs_api_client_test.dart`: `joins all format entries with newline when multiple formats present` for `fetchRelease`, `fetchCollectionPage`, and `fetchWantlistPage`
+- 1 new test in `release_detail_screen_test.dart`: `shows all format entries separated by newline`
+
+---
+
 ## [Unreleased — Phase 8E: ANV (credited artist name) shown on release detail (US-32)] — 2026-06-05
 
 ### Changed

@@ -81,20 +81,24 @@ class DiscogsCollectionItemDto {
         : '';
 
     final rawFormats = info['formats'] as List<dynamic>?;
-    final firstFormat = rawFormats != null && rawFormats.isNotEmpty
-        ? rawFormats.first as Map<String, dynamic>
-        : null;
     final String format;
-    if (firstFormat != null) {
-      final name = (firstFormat['name'] as String?) ?? '';
-      final descriptions =
-          (firstFormat['descriptions'] as List<dynamic>?)
-              ?.map((d) => d as String)
-              .toList() ??
-          [];
-      format = descriptions.isNotEmpty
-          ? '$name, ${descriptions.join(', ')}'
-          : name;
+    if (rawFormats != null && rawFormats.isNotEmpty) {
+      final entries = rawFormats
+          .cast<Map<String, dynamic>>()
+          .map((f) {
+            final name = (f['name'] as String?) ?? '';
+            final descriptions =
+                (f['descriptions'] as List<dynamic>?)
+                    ?.map((d) => d as String)
+                    .toList() ??
+                [];
+            return descriptions.isNotEmpty
+                ? '$name, ${descriptions.join(', ')}'
+                : name;
+          })
+          .where((s) => s.isNotEmpty)
+          .toList();
+      format = entries.join('\n');
     } else {
       format = '';
     }
