@@ -123,6 +123,15 @@ void main() {
       );
     });
 
+    testWidgets('helper text shows 40-character format guidance', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_buildApp(const DiscogsTokenSection()));
+      await tester.pump();
+
+      expect(find.textContaining('40 characters'), findsOneWidget);
+    });
+
     testWidgets('tapping help link calls url launcher with correct URL', (
       tester,
     ) async {

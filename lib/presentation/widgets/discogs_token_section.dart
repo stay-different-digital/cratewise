@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../application/services/discogs_connection_service.dart';
@@ -207,9 +208,12 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
             autocorrect: false,
             enableSuggestions: false,
             keyboardType: TextInputType.visiblePassword,
+            maxLength: 40,
+            maxLengthEnforcement: MaxLengthEnforcement.none,
             decoration: InputDecoration(
               labelText: 'Personal access token',
               hintText: 'Paste your token here',
+              helperText: 'Discogs personal access tokens are 40 characters',
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: Icon(

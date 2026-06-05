@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8C: Token input field shows format guidance (US-30)] — 2026-06-05
+
+### Changed
+- `DiscogsTokenSection` — token `TextField` now shows `helperText: 'Discogs personal access tokens are 40 characters'` and a `maxLength: 40` character counter (soft limit — `MaxLengthEnforcement.none` — so tokens longer than 40 chars still display their count rather than being truncated)
+
+### Tests
+- 1 new test in `discogs_token_section_test.dart`: helper text containing "40 characters" is visible in the disconnected token form
+
+---
+
 ## [Unreleased — Phase 8B: Tappable help link on Discogs token setup screen (US-29)] — 2026-06-05
 
 ### Added
