@@ -8,6 +8,7 @@ import 'package:cratewise/presentation/widgets/collection_item_card.dart';
 import 'package:cratewise/shared/route_observer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -171,10 +172,38 @@ CollectionItem _makeItem({
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
-Widget _wrapObserved(Widget child) => MaterialApp(
-  navigatorObservers: [appRouteObserver],
-  home: Scaffold(body: child),
-);
+GoRouter _makeCollectionRouter({
+  required CollectionRepository repo,
+  ThumbnailRepository? thumbnailRepo,
+}) {
+  return GoRouter(
+    initialLocation: '/collection',
+    observers: [appRouteObserver],
+    routes: [
+      GoRoute(
+        path: '/collection',
+        builder: (_, _) => Scaffold(
+          body: CollectionScreen(
+            repository: repo,
+            thumbnailRepository: thumbnailRepo,
+          ),
+        ),
+        routes: [
+          GoRoute(
+            path: ':itemId',
+            builder: (_, state) => CollectionDetailScreen(
+              itemId: state.pathParameters['itemId']!,
+              repository: repo,
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+Widget _wrapNavigable(GoRouter router) =>
+    MaterialApp.router(routerConfig: router);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -363,7 +392,8 @@ void main() {
       final repo = _FakeCollectionRepository(
         items: [_makeItem(id: 'detail-id-1')],
       );
-      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      final router = _makeCollectionRouter(repo: repo);
+      await tester.pumpWidget(_wrapNavigable(router));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(CollectionItemCard).first);
       await tester.pumpAndSettle();
@@ -374,7 +404,8 @@ void main() {
       final repo = _FakeCollectionRepository(
         items: [_makeItem(id: 'my-unique-id', artist: 'Detail Artist')],
       );
-      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      final router = _makeCollectionRouter(repo: repo);
+      await tester.pumpWidget(_wrapNavigable(router));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(CollectionItemCard).first);
       await tester.pumpAndSettle();
@@ -385,15 +416,15 @@ void main() {
       final repo = _FakeCollectionRepository(
         items: [_makeItem(id: 'nav-test-id', artist: 'Return Artist')],
       );
-      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      final router = _makeCollectionRouter(repo: repo);
+      await tester.pumpWidget(_wrapNavigable(router));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(CollectionItemCard).first);
       await tester.pumpAndSettle();
       // Detail screen is shown
       expect(find.byType(CollectionDetailScreen), findsOneWidget);
       // Navigate back
-      final NavigatorState navigator = tester.state(find.byType(Navigator));
-      navigator.pop();
+      await tester.pageBack();
       await tester.pumpAndSettle();
       // Collection list is visible again
       expect(find.text('Return Artist'), findsOneWidget);
@@ -571,7 +602,8 @@ void main() {
       final repo = _FakeCollectionRepository(
         items: [_makeItem(id: 'grid-detail-1', artist: 'Grid Artist')],
       );
-      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      final router = _makeCollectionRouter(repo: repo);
+      await tester.pumpWidget(_wrapNavigable(router));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(CollectionItemCard).first);
       await tester.pumpAndSettle();
@@ -848,25 +880,18 @@ void main() {
   });
 
   group('CollectionScreen — live refresh after navigation', () {
-    // Helper: capture the root NavigatorState from the test harness.
-    NavigatorState _nav(WidgetTester tester) =>
-        tester.state<NavigatorState>(find.byType(Navigator));
-
     testWidgets('calls getAll again after a pushed route is popped', (
       tester,
     ) async {
       final repo = _FakeCollectionRepository(items: [_makeItem()]);
-      await tester.pumpWidget(
-        _wrapObserved(CollectionScreen(repository: repo)),
-      );
+      final router = _makeCollectionRouter(repo: repo);
+      await tester.pumpWidget(_wrapNavigable(router));
       await tester.pumpAndSettle();
       final countAfterInit = repo.loadCallCount;
 
-      _nav(
-        tester,
-      ).push(MaterialPageRoute<void>(builder: (_) => const Scaffold()));
+      router.push('/collection/test-id');
       await tester.pumpAndSettle();
-      _nav(tester).pop();
+      await tester.pageBack();
       await tester.pumpAndSettle();
 
       expect(repo.loadCallCount, greaterThan(countAfterInit));
@@ -876,17 +901,14 @@ void main() {
       'does not show loading spinner during silent refresh triggered by pop',
       (tester) async {
         final repo = _FakeCollectionRepository(items: [_makeItem()]);
-        await tester.pumpWidget(
-          _wrapObserved(CollectionScreen(repository: repo)),
-        );
+        final router = _makeCollectionRouter(repo: repo);
+        await tester.pumpWidget(_wrapNavigable(router));
         await tester.pumpAndSettle();
 
-        _nav(
-          tester,
-        ).push(MaterialPageRoute<void>(builder: (_) => const Scaffold()));
+        router.push('/collection/test-id');
         await tester.pumpAndSettle();
-        _nav(tester).pop();
-        await tester.pump(); // one frame — refresh in flight
+        await tester.pageBack();
+        await tester.pump(); // one frame — refresh settling
 
         // Old items remain visible; no full-screen spinner
         expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -904,21 +926,16 @@ void main() {
           _makeItem(id: '2', artist: 'John Coltrane', title: 'A Love Supreme'),
         ],
       );
-      await tester.pumpWidget(
-        _wrapObserved(CollectionScreen(repository: repo)),
-      );
+      final router = _makeCollectionRouter(repo: repo);
+      await tester.pumpWidget(_wrapNavigable(router));
       await tester.pumpAndSettle();
 
       expect(find.text('Miles Davis'), findsOneWidget);
       expect(find.text('John Coltrane'), findsNothing);
 
-      _nav(tester).push(
-        MaterialPageRoute<void>(
-          builder: (_) => const Scaffold(body: Text('release detail')),
-        ),
-      );
+      router.push('/collection/1');
       await tester.pumpAndSettle();
-      _nav(tester).pop();
+      await tester.pageBack();
       await tester.pumpAndSettle();
 
       expect(find.text('Miles Davis'), findsOneWidget);

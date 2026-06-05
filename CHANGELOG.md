@@ -7,6 +7,31 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8A: Deep linking and named routes (US-28)] — 2026-06-05
+
+### Added
+- `go_router: ^17.0.0` dependency — GoRouter replaces `MaterialPageRoute` push navigation throughout the app
+- `lib/app/router.dart` — full `GoRouter` config with `StatefulShellRoute.indexedStack` for the five tab branches; `AppRoutes` constants for every named path; typed path helpers `AppRoutes.searchRelease`, `AppRoutes.collectionDetail`, `AppRoutes.wishlistDetail`
+- Android deep linking — `<intent-filter>` with `scheme="cratewise"` added to `AndroidManifest.xml` so custom-scheme URLs open the correct screen
+- iOS deep linking — `CFBundleURLSchemes: [cratewise]` added to `Info.plist`
+
+### Changed
+- `CratewiseApp` — now uses `MaterialApp.router(routerConfig: appRouter)` instead of `MaterialApp(home: HomeShellScreen())`
+- `HomeShellScreen` — converted from `StatefulWidget` to `StatelessWidget`; now accepts a `StatefulNavigationShell` and delegates tab-switching to `navigationShell.goBranch`; no longer creates the `AppDatabase` (each tab screen manages its own connection)
+- `SearchScreen` — narrow-layout "tap result" now calls `context.push(AppRoutes.searchRelease(...))` instead of `Navigator.push(MaterialPageRoute(...))`
+- `CollectionScreen` — list item tap calls `context.push(AppRoutes.collectionDetail(id))`; `_CollectionList` no longer carries the `repository` reference (detail is routed via GoRouter); `RouteAware` / `appRouteObserver` refresh-on-pop pattern retained, wired via `StatefulShellBranch.observers`
+- `WishlistScreen` — same pattern: item tap calls `context.push(AppRoutes.wishlistDetail(id))`; `_WishlistList` no longer carries `repository`
+- `SettingsScreen` — constructor simplified (removed unused `retryUseCase`/`thumbnailUseCase` params); "Import & Export" tile calls `context.push(AppRoutes.importExport)`, "Failed Actions" tile calls `context.push(AppRoutes.failedActions)`; `evictionService` injected from router builder so the Thumbnail Cache section always shows
+- `ImportExportScreen` — all nine sub-screen navigations (`onImportCollection`, …, `onViewHistory`) now call `context.push(AppRoutes.*)` instead of `Navigator.push(MaterialPageRoute(...))`
+
+### Tests
+- Navigation tests in `collection_screen_test.dart` — updated to use `_makeCollectionRouter` / `_wrapNavigable` GoRouter helpers; "live refresh" tests drive navigation via `router.push` / `tester.pageBack()`; `observers: [appRouteObserver]` added to test router so `didPopNext` still fires
+- Navigation tests in `wishlist_screen_test.dart` — same pattern (`_makeWishlistRouter` / `_wrapNavigable`)
+- Navigation test in `search_screen_test.dart` — narrow-layout back-navigation test uses `_buildScreenWithRouter` which includes `/search/release/:releaseId` route
+- Navigation tests in `import_export_screen_test.dart` — all 19 `pumpWidget` calls in navigation groups updated to `_buildSubjectWithRouter`; new helper creates a GoRouter at `/settings/import-export` with all sub-routes mapped to fake-use-case screen builders so `pumpAndSettle` settles correctly
+
+---
+
 ## [Unreleased — Phase 7Z: Safe area applied correctly for scrollable screen content (US-27)] — 2026-06-04
 
 ### Changed

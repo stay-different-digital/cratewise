@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../app/router.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
@@ -9,7 +11,6 @@ import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../widgets/wishlist_item_card.dart';
-import 'wishlist_detail_screen.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -137,7 +138,6 @@ class _WishlistScreenState extends State<WishlistScreen> {
       onRefresh: _refresh,
       child: _WishlistList(
         items: filtered,
-        repository: _repository,
         thumbnailRepository: _thumbnailRepository,
       ),
     );
@@ -204,29 +204,16 @@ class _WishlistScreenState extends State<WishlistScreen> {
 // ---------------------------------------------------------------------------
 
 class _WishlistList extends StatelessWidget {
-  const _WishlistList({
-    required this.items,
-    required this.repository,
-    required this.thumbnailRepository,
-  });
+  const _WishlistList({required this.items, required this.thumbnailRepository});
 
   final List<WishlistItem> items;
-  final WishlistRepository repository;
   final ThumbnailRepository thumbnailRepository;
 
   static const _kWideBreakpoint = 700.0;
   static const _kGridItemExtent = 124.0;
 
   void _openDetail(BuildContext context, int index) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => WishlistDetailScreen(
-          itemId: items[index].id,
-          repository: repository,
-          thumbnailRepository: thumbnailRepository,
-        ),
-      ),
-    );
+    context.push(AppRoutes.wishlistDetail(items[index].id));
   }
 
   @override

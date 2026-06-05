@@ -10,7 +10,11 @@
       "Bash(python3 -c ' *)",
       "Bash(python3)",
       "Bash(dart run *)",
-      "Bash(xxd)"
+      "Bash(xxd)",
+      "Bash(pub search *)",
+      "Bash(dart analyze *)",
+      "Bash(sed -n '185,200p' /Users/fred/.pub-cache/hosted/pub.dev/go_router-17.3.0/lib/src/delegate.dart)",
+      "Bash(sed -n '315,325p' /Users/fred/.pub-cache/hosted/pub.dev/go_router-17.3.0/lib/src/delegate.dart)"
     ]
   }
 }

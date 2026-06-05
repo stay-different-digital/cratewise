@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../app/router.dart';
 import '../../application/use_cases/build_collection_csv_export_preview_use_case.dart';
 import '../../application/use_cases/build_collection_export_preview_use_case.dart';
 import '../../application/use_cases/build_wishlist_csv_export_preview_use_case.dart';
@@ -7,15 +9,6 @@ import '../../application/use_cases/build_wishlist_export_preview_use_case.dart'
 import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
 import '../../application/use_cases/fetch_wishlist_import_preview_use_case.dart';
 import '../../domain/repositories/import_export_job_repository.dart';
-import 'collection_csv_export_preview_screen.dart';
-import 'collection_csv_import_preview_screen.dart';
-import 'collection_export_preview_screen.dart';
-import 'collection_import_preview_screen.dart';
-import 'import_export_history_screen.dart';
-import 'wishlist_csv_export_preview_screen.dart';
-import 'wishlist_csv_import_preview_screen.dart';
-import 'wishlist_export_preview_screen.dart';
-import 'wishlist_import_preview_screen.dart';
 
 const _kWideBreakpoint = 700.0;
 const _kCardExtent = 96.0;
@@ -63,63 +56,19 @@ class ImportExportScreen extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) => _ActionBody(
             isWide: constraints.maxWidth >= _kWideBreakpoint,
-            onImportCollection: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => CollectionImportPreviewScreen(
-                  useCase: collectionImportUseCase,
-                ),
-              ),
-            ),
-            onImportWishlist: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) =>
-                    WishlistImportPreviewScreen(useCase: wishlistImportUseCase),
-              ),
-            ),
-            onExportCollection: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => CollectionExportPreviewScreen(
-                  useCase: collectionExportPreviewUseCase,
-                ),
-              ),
-            ),
-            onExportWishlist: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => WishlistExportPreviewScreen(
-                  useCase: wishlistExportPreviewUseCase,
-                ),
-              ),
-            ),
-            onExportCollectionCsv: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => CollectionCsvExportPreviewScreen(
-                  previewUseCase: collectionCsvExportPreviewUseCase,
-                ),
-              ),
-            ),
-            onExportWishlistCsv: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => WishlistCsvExportPreviewScreen(
-                  previewUseCase: wishlistCsvExportPreviewUseCase,
-                ),
-              ),
-            ),
-            onImportCollectionCsv: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const CollectionCsvImportPreviewScreen(),
-              ),
-            ),
-            onImportWishlistCsv: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const WishlistCsvImportPreviewScreen(),
-              ),
-            ),
-            onViewHistory: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) =>
-                    ImportExportHistoryScreen(repository: jobRepository),
-              ),
-            ),
+            onImportCollection: () => context.push(AppRoutes.importCollection),
+            onImportWishlist: () => context.push(AppRoutes.importWishlist),
+            onExportCollection: () => context.push(AppRoutes.exportCollection),
+            onExportWishlist: () => context.push(AppRoutes.exportWishlist),
+            onExportCollectionCsv: () =>
+                context.push(AppRoutes.exportCollectionCsv),
+            onExportWishlistCsv: () =>
+                context.push(AppRoutes.exportWishlistCsv),
+            onImportCollectionCsv: () =>
+                context.push(AppRoutes.importCollectionCsv),
+            onImportWishlistCsv: () =>
+                context.push(AppRoutes.importWishlistCsv),
+            onViewHistory: () => context.push(AppRoutes.importExportHistory),
           ),
         ),
       ),

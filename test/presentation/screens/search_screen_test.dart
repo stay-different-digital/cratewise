@@ -11,6 +11,7 @@ import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -135,6 +136,29 @@ Widget _buildScreen(DiscogsSearchService service) {
   return MaterialApp(
     home: Scaffold(body: SearchScreen(searchService: service)),
   );
+}
+
+Widget _buildScreenWithRouter(DiscogsSearchService service) {
+  final router = GoRouter(
+    initialLocation: '/search',
+    routes: [
+      GoRoute(
+        path: '/search',
+        builder: (_, _) => Scaffold(body: SearchScreen(searchService: service)),
+        routes: [
+          GoRoute(
+            path: 'release/:releaseId',
+            builder: (_, state) => ReleaseDetailScreen(
+              releaseId: int.parse(state.pathParameters['releaseId']!),
+              initialArtist: state.uri.queryParameters['artist'],
+              initialTitle: state.uri.queryParameters['title'],
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+  return MaterialApp.router(routerConfig: router);
 }
 
 const _kindOfBlue = ReleaseSearchResult(
@@ -603,14 +627,14 @@ void main() {
     testWidgets(
       'on narrow layout, back from detail screen returns to results',
       (tester) async {
-        // Force narrow viewport (< 700 dp) so tapping uses Navigator.push.
+        // Force narrow viewport (< 700 dp) so tapping uses context.push.
         tester.view.physicalSize = const Size(390, 844);
         tester.view.devicePixelRatio = 1.0;
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
         final service = _FakeSearchService(results: [_kindOfBlue]);
-        await tester.pumpWidget(_buildScreen(service));
+        await tester.pumpWidget(_buildScreenWithRouter(service));
         await submitSearch(tester, 'miles');
 
         await tester.tap(find.byType(ReleaseSearchResultCard).first);

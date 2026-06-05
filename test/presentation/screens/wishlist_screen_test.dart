@@ -7,6 +7,7 @@ import 'package:cratewise/presentation/screens/wishlist_screen.dart';
 import 'package:cratewise/presentation/widgets/wishlist_item_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -167,6 +168,38 @@ WishlistItem _makeItem({
 );
 
 Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+
+GoRouter _makeWishlistRouter({
+  required WishlistRepository repo,
+  ThumbnailRepository? thumbnailRepo,
+}) {
+  return GoRouter(
+    initialLocation: '/wishlist',
+    routes: [
+      GoRoute(
+        path: '/wishlist',
+        builder: (_, _) => Scaffold(
+          body: WishlistScreen(
+            repository: repo,
+            thumbnailRepository: thumbnailRepo,
+          ),
+        ),
+        routes: [
+          GoRoute(
+            path: ':itemId',
+            builder: (_, state) => WishlistDetailScreen(
+              itemId: state.pathParameters['itemId']!,
+              repository: repo,
+            ),
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+Widget _wrapNavigable(GoRouter router) =>
+    MaterialApp.router(routerConfig: router);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -438,7 +471,8 @@ void main() {
       final repo = _FakeWishlistRepository(
         items: [_makeItem(id: 'detail-id-1')],
       );
-      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      final router = _makeWishlistRouter(repo: repo);
+      await tester.pumpWidget(_wrapNavigable(router));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(WishlistItemCard).first);
       await tester.pumpAndSettle();
@@ -449,7 +483,8 @@ void main() {
       final repo = _FakeWishlistRepository(
         items: [_makeItem(id: 'unique-id', artist: 'Nav Artist')],
       );
-      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      final router = _makeWishlistRouter(repo: repo);
+      await tester.pumpWidget(_wrapNavigable(router));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(WishlistItemCard).first);
       await tester.pumpAndSettle();
@@ -460,13 +495,13 @@ void main() {
       final repo = _FakeWishlistRepository(
         items: [_makeItem(id: 'back-nav-id', artist: 'Return Artist')],
       );
-      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      final router = _makeWishlistRouter(repo: repo);
+      await tester.pumpWidget(_wrapNavigable(router));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(WishlistItemCard).first);
       await tester.pumpAndSettle();
       expect(find.byType(WishlistDetailScreen), findsOneWidget);
-      final NavigatorState navigator = tester.state(find.byType(Navigator));
-      navigator.pop();
+      await tester.pageBack();
       await tester.pumpAndSettle();
       expect(find.text('Return Artist'), findsOneWidget);
     });
@@ -572,7 +607,8 @@ void main() {
       final repo = _FakeWishlistRepository(
         items: [_makeItem(id: 'grid-detail-1', artist: 'Grid Artist')],
       );
-      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      final router = _makeWishlistRouter(repo: repo);
+      await tester.pumpWidget(_wrapNavigable(router));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(WishlistItemCard).first);
       await tester.pumpAndSettle();

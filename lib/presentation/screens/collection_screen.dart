@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../app/router.dart';
 import '../../domain/models/collection_item.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
@@ -10,7 +12,6 @@ import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../shared/route_observer.dart';
 import '../widgets/collection_item_card.dart';
-import 'collection_detail_screen.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -210,7 +211,6 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
       onRefresh: _refresh,
       child: _CollectionList(
         items: filtered,
-        repository: _repository,
         thumbnailRepository: _thumbnailRepository,
       ),
     );
@@ -224,12 +224,10 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
 class _CollectionList extends StatelessWidget {
   const _CollectionList({
     required this.items,
-    required this.repository,
     required this.thumbnailRepository,
   });
 
   final List<CollectionItem> items;
-  final CollectionRepository repository;
   final ThumbnailRepository thumbnailRepository;
 
   static const _kWideBreakpoint = 700.0;
@@ -279,15 +277,7 @@ class _CollectionList extends StatelessWidget {
   }
 
   void _openDetail(BuildContext context, int index) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => CollectionDetailScreen(
-          itemId: items[index].id,
-          repository: repository,
-          thumbnailRepository: thumbnailRepository,
-        ),
-      ),
-    );
+    context.push(AppRoutes.collectionDetail(items[index].id));
   }
 }
 

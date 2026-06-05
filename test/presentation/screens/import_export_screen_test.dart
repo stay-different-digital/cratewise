@@ -28,6 +28,7 @@ import 'package:cratewise/presentation/screens/wishlist_export_preview_screen.da
 import 'package:cratewise/presentation/screens/wishlist_import_preview_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 // ---------------------------------------------------------------------------
 // Fake use cases for navigation tests
@@ -174,6 +175,87 @@ Widget _buildSubject({
   ),
 );
 
+/// Router-backed wrapper for tests that navigate to sub-screens.
+/// Fake use cases are injected directly into the sub-screen route builders so
+/// that [pumpAndSettle] can settle without opening a real database.
+Widget _buildSubjectWithRouter({
+  FetchCollectionImportPreviewUseCase? importUseCase,
+  FetchWishlistImportPreviewUseCase? wishlistImportUseCase,
+  BuildCollectionExportPreviewUseCase? collectionExportPreviewUseCase,
+  BuildWishlistExportPreviewUseCase? wishlistExportPreviewUseCase,
+  BuildCollectionCsvExportPreviewUseCase? collectionCsvExportPreviewUseCase,
+  BuildWishlistCsvExportPreviewUseCase? wishlistCsvExportPreviewUseCase,
+  ImportExportJobRepository? jobRepository,
+}) {
+  final router = GoRouter(
+    initialLocation: '/settings/import-export',
+    routes: [
+      GoRoute(
+        path: '/settings/import-export',
+        builder: (_, _) => ImportExportScreen(
+          collectionImportUseCase: importUseCase,
+          wishlistImportUseCase: wishlistImportUseCase,
+          collectionExportPreviewUseCase: collectionExportPreviewUseCase,
+          wishlistExportPreviewUseCase: wishlistExportPreviewUseCase,
+          collectionCsvExportPreviewUseCase: collectionCsvExportPreviewUseCase,
+          wishlistCsvExportPreviewUseCase: wishlistCsvExportPreviewUseCase,
+          jobRepository: jobRepository,
+        ),
+        routes: [
+          GoRoute(
+            path: 'collection-import',
+            builder: (_, _) =>
+                CollectionImportPreviewScreen(useCase: importUseCase),
+          ),
+          GoRoute(
+            path: 'wishlist-import',
+            builder: (_, _) =>
+                WishlistImportPreviewScreen(useCase: wishlistImportUseCase),
+          ),
+          GoRoute(
+            path: 'collection-export',
+            builder: (_, _) => CollectionExportPreviewScreen(
+              useCase: collectionExportPreviewUseCase,
+            ),
+          ),
+          GoRoute(
+            path: 'wishlist-export',
+            builder: (_, _) => WishlistExportPreviewScreen(
+              useCase: wishlistExportPreviewUseCase,
+            ),
+          ),
+          GoRoute(
+            path: 'collection-csv-export',
+            builder: (_, _) => CollectionCsvExportPreviewScreen(
+              previewUseCase: collectionCsvExportPreviewUseCase,
+            ),
+          ),
+          GoRoute(
+            path: 'wishlist-csv-export',
+            builder: (_, _) => WishlistCsvExportPreviewScreen(
+              previewUseCase: wishlistCsvExportPreviewUseCase,
+            ),
+          ),
+          GoRoute(
+            path: 'collection-csv-import',
+            builder: (_, _) => const CollectionCsvImportPreviewScreen(),
+          ),
+          GoRoute(
+            path: 'wishlist-csv-import',
+            builder: (_, _) => const WishlistCsvImportPreviewScreen(),
+          ),
+          GoRoute(
+            path: 'history',
+            builder: (_, _) =>
+                ImportExportHistoryScreen(repository: jobRepository),
+          ),
+        ],
+      ),
+    ],
+  );
+  return MaterialApp.router(routerConfig: router);
+}
+
 void _setNarrowTallScreen(WidgetTester tester) {
   tester.view.physicalSize = const Size(800, 1800);
   tester.view.devicePixelRatio = 2.0;
@@ -192,12 +274,12 @@ void main() {
   group('ImportExportScreen', () {
     group('structure', () {
       testWidgets('shows Import & Export in AppBar', (tester) async {
-        await tester.pumpWidget(_buildSubject());
+        await tester.pumpWidget(_buildSubjectWithRouter());
         expect(find.text('Import & Export'), findsOneWidget);
       });
 
       testWidgets('shows Discogs section header', (tester) async {
-        await tester.pumpWidget(_buildSubject());
+        await tester.pumpWidget(_buildSubjectWithRouter());
         expect(find.text('Discogs'), findsOneWidget);
       });
 
@@ -206,7 +288,7 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
+        await tester.pumpWidget(_buildSubjectWithRouter());
         expect(find.text('CSV files'), findsOneWidget);
       });
 
@@ -215,7 +297,7 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
+        await tester.pumpWidget(_buildSubjectWithRouter());
 
         expect(find.text('Import Collection from Discogs'), findsOneWidget);
         expect(find.text('Import Wishlist from Discogs'), findsOneWidget);
@@ -232,7 +314,7 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
+        await tester.pumpWidget(_buildSubjectWithRouter());
 
         expect(find.text('Coming soon'), findsNothing);
       });
@@ -244,7 +326,7 @@ void main() {
         (tester) async {
           final wishlistUseCase = _FakeWishlistImportUseCase();
           await tester.pumpWidget(
-            _buildSubject(wishlistImportUseCase: wishlistUseCase),
+            _buildSubjectWithRouter(wishlistImportUseCase: wishlistUseCase),
           );
           await tester.tap(find.text('Import Wishlist from Discogs'));
           await tester.pump();
@@ -257,7 +339,9 @@ void main() {
       ) async {
         final wishlistExportUseCase = _FakeWishlistExportUseCase();
         await tester.pumpWidget(
-          _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase),
+          _buildSubjectWithRouter(
+            wishlistExportPreviewUseCase: wishlistExportUseCase,
+          ),
         );
         await tester.tap(find.text('Export Wishlist to Discogs'));
         await tester.pump();
@@ -271,7 +355,7 @@ void main() {
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
 
-          await tester.pumpWidget(_buildSubject());
+          await tester.pumpWidget(_buildSubjectWithRouter());
           await tester.tap(find.text('Import Collection from CSV'));
           await tester.pumpAndSettle();
           expect(find.byType(CollectionCsvImportPreviewScreen), findsOneWidget);
@@ -285,7 +369,7 @@ void main() {
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
 
-          await tester.pumpWidget(_buildSubject());
+          await tester.pumpWidget(_buildSubjectWithRouter());
           await tester.tap(find.text('Import Wishlist from CSV'));
           await tester.pumpAndSettle();
           expect(find.byType(WishlistCsvImportPreviewScreen), findsOneWidget);
@@ -298,7 +382,9 @@ void main() {
         'tapping Import Collection from Discogs navigates to preview screen',
         (tester) async {
           final importUseCase = _FakeCollectionImportUseCase();
-          await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
+          await tester.pumpWidget(
+            _buildSubjectWithRouter(importUseCase: importUseCase),
+          );
           await tester.tap(find.text('Import Collection from Discogs'));
           await tester.pumpAndSettle();
           expect(find.byType(CollectionImportPreviewScreen), findsOneWidget);
@@ -309,7 +395,9 @@ void main() {
         tester,
       ) async {
         final importUseCase = _FakeCollectionImportUseCase();
-        await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
+        await tester.pumpWidget(
+          _buildSubjectWithRouter(importUseCase: importUseCase),
+        );
         await tester.tap(find.text('Import Collection from Discogs'));
         await tester.pumpAndSettle();
         expect(find.text('Import from Discogs'), findsOneWidget);
@@ -319,7 +407,9 @@ void main() {
         'tapping Import Collection does not show Coming soon snackbar',
         (tester) async {
           final importUseCase = _FakeCollectionImportUseCase();
-          await tester.pumpWidget(_buildSubject(importUseCase: importUseCase));
+          await tester.pumpWidget(
+            _buildSubjectWithRouter(importUseCase: importUseCase),
+          );
           await tester.tap(find.text('Import Collection from Discogs'));
           await tester.pump();
           expect(find.byType(SnackBar), findsNothing);
@@ -333,7 +423,7 @@ void main() {
         (tester) async {
           final wishlistUseCase = _FakeWishlistImportUseCase();
           await tester.pumpWidget(
-            _buildSubject(wishlistImportUseCase: wishlistUseCase),
+            _buildSubjectWithRouter(wishlistImportUseCase: wishlistUseCase),
           );
           await tester.tap(find.text('Import Wishlist from Discogs'));
           await tester.pumpAndSettle();
@@ -346,7 +436,7 @@ void main() {
       ) async {
         final wishlistUseCase = _FakeWishlistImportUseCase();
         await tester.pumpWidget(
-          _buildSubject(wishlistImportUseCase: wishlistUseCase),
+          _buildSubjectWithRouter(wishlistImportUseCase: wishlistUseCase),
         );
         await tester.tap(find.text('Import Wishlist from Discogs'));
         await tester.pumpAndSettle();
@@ -358,7 +448,7 @@ void main() {
         (tester) async {
           final wishlistUseCase = _FakeWishlistImportUseCase();
           await tester.pumpWidget(
-            _buildSubject(wishlistImportUseCase: wishlistUseCase),
+            _buildSubjectWithRouter(wishlistImportUseCase: wishlistUseCase),
           );
           await tester.tap(find.text('Import Wishlist from Discogs'));
           await tester.pump();
@@ -373,7 +463,9 @@ void main() {
         (tester) async {
           final exportUseCase = _FakeCollectionExportUseCase();
           await tester.pumpWidget(
-            _buildSubject(collectionExportPreviewUseCase: exportUseCase),
+            _buildSubjectWithRouter(
+              collectionExportPreviewUseCase: exportUseCase,
+            ),
           );
           await tester.tap(find.text('Export Collection to Discogs'));
           await tester.pumpAndSettle();
@@ -386,7 +478,9 @@ void main() {
       ) async {
         final exportUseCase = _FakeCollectionExportUseCase();
         await tester.pumpWidget(
-          _buildSubject(collectionExportPreviewUseCase: exportUseCase),
+          _buildSubjectWithRouter(
+            collectionExportPreviewUseCase: exportUseCase,
+          ),
         );
         await tester.tap(find.text('Export Collection to Discogs'));
         await tester.pumpAndSettle();
@@ -398,7 +492,9 @@ void main() {
         (tester) async {
           final exportUseCase = _FakeCollectionExportUseCase();
           await tester.pumpWidget(
-            _buildSubject(collectionExportPreviewUseCase: exportUseCase),
+            _buildSubjectWithRouter(
+              collectionExportPreviewUseCase: exportUseCase,
+            ),
           );
           await tester.tap(find.text('Export Collection to Discogs'));
           await tester.pump();
@@ -413,7 +509,9 @@ void main() {
         (tester) async {
           final wishlistExportUseCase = _FakeWishlistExportUseCase();
           await tester.pumpWidget(
-            _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase),
+            _buildSubjectWithRouter(
+              wishlistExportPreviewUseCase: wishlistExportUseCase,
+            ),
           );
           await tester.tap(find.text('Export Wishlist to Discogs'));
           await tester.pumpAndSettle();
@@ -426,7 +524,9 @@ void main() {
       ) async {
         final wishlistExportUseCase = _FakeWishlistExportUseCase();
         await tester.pumpWidget(
-          _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase),
+          _buildSubjectWithRouter(
+            wishlistExportPreviewUseCase: wishlistExportUseCase,
+          ),
         );
         await tester.tap(find.text('Export Wishlist to Discogs'));
         await tester.pumpAndSettle();
@@ -438,7 +538,9 @@ void main() {
         (tester) async {
           final wishlistExportUseCase = _FakeWishlistExportUseCase();
           await tester.pumpWidget(
-            _buildSubject(wishlistExportPreviewUseCase: wishlistExportUseCase),
+            _buildSubjectWithRouter(
+              wishlistExportPreviewUseCase: wishlistExportUseCase,
+            ),
           );
           await tester.tap(find.text('Export Wishlist to Discogs'));
           await tester.pump();
@@ -457,7 +559,9 @@ void main() {
 
           final csvUseCase = _FakeCollectionCsvExportUseCase();
           await tester.pumpWidget(
-            _buildSubject(collectionCsvExportPreviewUseCase: csvUseCase),
+            _buildSubjectWithRouter(
+              collectionCsvExportPreviewUseCase: csvUseCase,
+            ),
           );
           await tester.tap(find.text('Export Collection to CSV'));
           await tester.pumpAndSettle();
@@ -474,7 +578,9 @@ void main() {
 
         final csvUseCase = _FakeCollectionCsvExportUseCase();
         await tester.pumpWidget(
-          _buildSubject(collectionCsvExportPreviewUseCase: csvUseCase),
+          _buildSubjectWithRouter(
+            collectionCsvExportPreviewUseCase: csvUseCase,
+          ),
         );
         await tester.tap(find.text('Export Collection to CSV'));
         await tester.pumpAndSettle();
@@ -490,7 +596,9 @@ void main() {
 
         final csvUseCase = _FakeCollectionCsvExportUseCase();
         await tester.pumpWidget(
-          _buildSubject(collectionCsvExportPreviewUseCase: csvUseCase),
+          _buildSubjectWithRouter(
+            collectionCsvExportPreviewUseCase: csvUseCase,
+          ),
         );
         await tester.tap(find.text('Export Collection to CSV'));
         await tester.pump();
@@ -508,7 +616,9 @@ void main() {
 
           final csvUseCase = _FakeWishlistCsvExportUseCase();
           await tester.pumpWidget(
-            _buildSubject(wishlistCsvExportPreviewUseCase: csvUseCase),
+            _buildSubjectWithRouter(
+              wishlistCsvExportPreviewUseCase: csvUseCase,
+            ),
           );
           await tester.tap(find.text('Export Wishlist to CSV'));
           await tester.pumpAndSettle();
@@ -525,7 +635,7 @@ void main() {
 
         final csvUseCase = _FakeWishlistCsvExportUseCase();
         await tester.pumpWidget(
-          _buildSubject(wishlistCsvExportPreviewUseCase: csvUseCase),
+          _buildSubjectWithRouter(wishlistCsvExportPreviewUseCase: csvUseCase),
         );
         await tester.tap(find.text('Export Wishlist to CSV'));
         await tester.pumpAndSettle();
@@ -541,7 +651,7 @@ void main() {
 
         final csvUseCase = _FakeWishlistCsvExportUseCase();
         await tester.pumpWidget(
-          _buildSubject(wishlistCsvExportPreviewUseCase: csvUseCase),
+          _buildSubjectWithRouter(wishlistCsvExportPreviewUseCase: csvUseCase),
         );
         await tester.tap(find.text('Export Wishlist to CSV'));
         await tester.pump();
@@ -555,7 +665,7 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
+        await tester.pumpWidget(_buildSubjectWithRouter());
 
         expect(find.text('Import & Export'), findsOneWidget);
         expect(find.text('Discogs'), findsOneWidget);
@@ -569,7 +679,7 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
+        await tester.pumpWidget(_buildSubjectWithRouter());
 
         expect(find.text('Import Collection from Discogs'), findsOneWidget);
         expect(find.text('Import Wishlist from Discogs'), findsOneWidget);
@@ -588,7 +698,7 @@ void main() {
           addTearDown(tester.view.resetPhysicalSize);
           addTearDown(tester.view.resetDevicePixelRatio);
 
-          await tester.pumpWidget(_buildSubject());
+          await tester.pumpWidget(_buildSubjectWithRouter());
           await tester.tap(find.text('Import Collection from CSV'));
           await tester.pumpAndSettle();
           expect(find.byType(CollectionCsvImportPreviewScreen), findsOneWidget);
@@ -602,7 +712,7 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
+        await tester.pumpWidget(_buildSubjectWithRouter());
         expect(find.text('Coming soon'), findsNothing);
       });
     });
@@ -613,7 +723,7 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
+        await tester.pumpWidget(_buildSubjectWithRouter());
         expect(find.text('History'), findsOneWidget);
       });
 
@@ -622,7 +732,7 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
 
-        await tester.pumpWidget(_buildSubject());
+        await tester.pumpWidget(_buildSubjectWithRouter());
         expect(find.text('View import & export history'), findsOneWidget);
       });
 
@@ -634,7 +744,9 @@ void main() {
           addTearDown(tester.view.resetDevicePixelRatio);
 
           final jobRepo = _FakeJobRepository();
-          await tester.pumpWidget(_buildSubject(jobRepository: jobRepo));
+          await tester.pumpWidget(
+            _buildSubjectWithRouter(jobRepository: jobRepo),
+          );
           await tester.tap(find.text('View import & export history'));
           await tester.pumpAndSettle();
           expect(find.byType(ImportExportHistoryScreen), findsOneWidget);
@@ -649,7 +761,9 @@ void main() {
         addTearDown(tester.view.resetDevicePixelRatio);
 
         final jobRepo = _FakeJobRepository();
-        await tester.pumpWidget(_buildSubject(jobRepository: jobRepo));
+        await tester.pumpWidget(
+          _buildSubjectWithRouter(jobRepository: jobRepo),
+        );
         await tester.tap(find.text('View import & export history'));
         await tester.pumpAndSettle();
         expect(find.text('Import & Export History'), findsOneWidget);
@@ -659,7 +773,7 @@ void main() {
 
   group('ImportExportScreen — safe area', () {
     testWidgets('body has SafeArea with top: false', (tester) async {
-      await tester.pumpWidget(_buildSubject());
+      await tester.pumpWidget(_buildSubjectWithRouter());
       await tester.pump();
       final safeAreas = tester.widgetList<SafeArea>(find.byType(SafeArea));
       expect(safeAreas.any((sa) => !sa.top), isTrue);

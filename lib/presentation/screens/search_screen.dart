@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../app/router.dart';
 import '../../application/services/discogs_search_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
@@ -297,16 +299,11 @@ class _SearchScreenState extends State<SearchScreen> {
             if (isWide) {
               setState(() => _selectedResult = result);
             } else {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => ReleaseDetailScreen(
-                    releaseId: result.id,
-                    initialArtist: result.artist,
-                    initialTitle: result.title,
-                    addToCollectionUseCase: widget.addToCollectionUseCase,
-                    addToWishlistUseCase: widget.addToWishlistUseCase,
-                    cacheRepository: widget.cacheRepository,
-                  ),
+              context.push(
+                AppRoutes.searchRelease(
+                  result.id,
+                  artist: result.artist,
+                  title: result.title,
                 ),
               );
             }

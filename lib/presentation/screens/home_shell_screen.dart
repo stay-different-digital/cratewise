@@ -1,83 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../application/services/thumbnail_eviction_service.dart';
-import '../../application/use_cases/add_to_collection_use_case.dart';
-import '../../application/use_cases/add_to_wishlist_use_case.dart';
-import '../../application/use_cases/retry_metadata_refresh_use_case.dart';
-import '../../application/use_cases/retry_thumbnail_use_case.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
-import '../../infrastructure/local_database/local_retry_action_repository.dart';
-import '../../infrastructure/local_database/local_thumbnail_repository.dart';
-import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_nav_rail.dart';
-import 'barcode_scan_screen.dart';
-import 'collection_screen.dart';
-import 'search_screen.dart';
-import 'settings_screen.dart';
-import 'wishlist_screen.dart';
 
 const _kWideBreakpoint = 700.0;
 
-class HomeShellScreen extends StatefulWidget {
-  const HomeShellScreen({super.key});
+class HomeShellScreen extends StatelessWidget {
+  const HomeShellScreen({super.key, required this.navigationShell});
 
-  @override
-  State<HomeShellScreen> createState() => _HomeShellScreenState();
-}
-
-class _HomeShellScreenState extends State<HomeShellScreen> {
-  int _selectedIndex = 0;
-  late final AppDatabase _db;
-  late final List<Widget> _screens;
-
-  @override
-  void initState() {
-    super.initState();
-    _db = AppDatabase(openAppDatabase());
-    final repo = LocalCollectionRepository(_db);
-    final addUseCase = AddToCollectionUseCase(repo);
-    final wishlistRepo = LocalWishlistRepository(_db);
-    final addToWishlistUseCase = AddToWishlistUseCase(wishlistRepo);
-    final cacheRepo = LocalCachedReleaseMetadataRepository(_db);
-    final retryRepo = LocalRetryActionRepository(_db);
-    final retryUseCase = RetryMetadataRefreshUseCase(
-      retryRepo: retryRepo,
-      cacheRepo: cacheRepo,
-    );
-    final thumbnailRetryUseCase = RetryThumbnailUseCase(
-      retryRepo: retryRepo,
-      cacheRepo: cacheRepo,
-    );
-    final thumbnailRepo = LocalThumbnailRepository();
-    final evictionService = ThumbnailEvictionService(repository: thumbnailRepo);
-    _screens = [
-      SearchScreen(
-        addToCollectionUseCase: addUseCase,
-        addToWishlistUseCase: addToWishlistUseCase,
-        cacheRepository: cacheRepo,
-      ),
-      CollectionScreen(repository: repo),
-      WishlistScreen(repository: wishlistRepo),
-      const BarcodeScanScreen(),
-      SettingsScreen(
-        retryUseCase: retryUseCase,
-        thumbnailUseCase: thumbnailRetryUseCase,
-        evictionService: evictionService,
-      ),
-    ];
-  }
-
-  @override
-  void dispose() {
-    _db.close();
-    super.dispose();
-  }
+  final StatefulNavigationShell navigationShell;
 
   void _onTabSelected(int index) {
-    setState(() => _selectedIndex = index);
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
   }
 
   @override
@@ -90,16 +28,11 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
         body: Row(
           children: [
             AppNavRail(
-              selectedIndex: _selectedIndex,
+              selectedIndex: navigationShell.currentIndex,
               onDestinationSelected: _onTabSelected,
             ),
             const VerticalDivider(width: 1, thickness: 1),
-            Expanded(
-              child: SafeArea(
-                top: false,
-                child: IndexedStack(index: _selectedIndex, children: _screens),
-              ),
-            ),
+            Expanded(child: SafeArea(top: false, child: navigationShell)),
           ],
         ),
       );
@@ -107,9 +40,9 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Cratewise')),
-      body: IndexedStack(index: _selectedIndex, children: _screens),
+      body: navigationShell,
       bottomNavigationBar: AppBottomNav(
-        selectedIndex: _selectedIndex,
+        selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: _onTabSelected,
       ),
     );

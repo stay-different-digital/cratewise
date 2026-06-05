@@ -1,22 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../app/router.dart';
 import '../../application/services/thumbnail_eviction_service.dart';
-import '../../application/use_cases/retry_metadata_refresh_use_case.dart';
-import '../../application/use_cases/retry_thumbnail_use_case.dart';
 import '../widgets/discogs_token_section.dart';
-import 'failed_actions_screen.dart';
-import 'import_export_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({
-    super.key,
-    this.retryUseCase,
-    this.thumbnailUseCase,
-    this.evictionService,
-  });
+  const SettingsScreen({super.key, this.evictionService});
 
-  final RetryMetadataRefreshUseCase? retryUseCase;
-  final RetryThumbnailUseCase? thumbnailUseCase;
   final ThumbnailEvictionService? evictionService;
 
   @override
@@ -32,9 +23,7 @@ class SettingsScreen extends StatelessWidget {
           title: const Text('Import & Export'),
           subtitle: const Text('Move records to and from Discogs or CSV files'),
           trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const ImportExportScreen()),
-          ),
+          onTap: () => context.push(AppRoutes.importExport),
         ),
         const SizedBox(height: 8),
         ListTile(
@@ -43,14 +32,7 @@ class SettingsScreen extends StatelessWidget {
           title: const Text('Failed Actions'),
           subtitle: const Text('View actions waiting to be retried'),
           trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => FailedActionsScreen(
-                retryUseCase: retryUseCase,
-                thumbnailUseCase: thumbnailUseCase,
-              ),
-            ),
-          ),
+          onTap: () => context.push(AppRoutes.failedActions),
         ),
         if (evictionService != null) ...[
           const SizedBox(height: 8),
