@@ -483,19 +483,74 @@ class _CameraScanArea extends StatelessWidget {
         color: Colors.black,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: MobileScanner(
-        onDetect: onDetect,
-        errorBuilder: (context, error) {
-          if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
-            WidgetsBinding.instance.addPostFrameCallback(
-              (_) => onPermissionDenied(),
-            );
-          }
-          return const SizedBox.expand();
-        },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          MobileScanner(
+            onDetect: onDetect,
+            errorBuilder: (context, error) {
+              if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
+                WidgetsBinding.instance.addPostFrameCallback(
+                  (_) => onPermissionDenied(),
+                );
+              }
+              return const SizedBox.expand();
+            },
+          ),
+          const _ViewfinderOverlay(),
+        ],
       ),
     );
   }
+}
+
+class _ViewfinderOverlay extends StatelessWidget {
+  const _ViewfinderOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      key: const Key('viewfinder-overlay'),
+      painter: _ViewfinderPainter(),
+    );
+  }
+}
+
+class _ViewfinderPainter extends CustomPainter {
+  static const _bracketLength = 24.0;
+  static const _strokeWidth = 3.0;
+  // Fraction of total width/height between the container edge and viewfinder rect
+  static const _inset = 0.15;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.9)
+      ..strokeWidth = _strokeWidth
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.square;
+
+    final l = size.width * _inset;
+    final t = size.height * _inset;
+    final r = size.width * (1 - _inset);
+    final b = size.height * (1 - _inset);
+
+    // Top-left corner
+    canvas.drawLine(Offset(l, t + _bracketLength), Offset(l, t), paint);
+    canvas.drawLine(Offset(l, t), Offset(l + _bracketLength, t), paint);
+    // Top-right corner
+    canvas.drawLine(Offset(r - _bracketLength, t), Offset(r, t), paint);
+    canvas.drawLine(Offset(r, t), Offset(r, t + _bracketLength), paint);
+    // Bottom-left corner
+    canvas.drawLine(Offset(l, b - _bracketLength), Offset(l, b), paint);
+    canvas.drawLine(Offset(l, b), Offset(l + _bracketLength, b), paint);
+    // Bottom-right corner
+    canvas.drawLine(Offset(r - _bracketLength, b), Offset(r, b), paint);
+    canvas.drawLine(Offset(r, b - _bracketLength), Offset(r, b), paint);
+  }
+
+  @override
+  bool shouldRepaint(_ViewfinderPainter oldDelegate) => false;
 }
 
 // ---------------------------------------------------------------------------

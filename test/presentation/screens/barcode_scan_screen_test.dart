@@ -311,4 +311,26 @@ void main() {
       expect(find.text('Something went wrong'), findsOneWidget);
     });
   });
+
+  group('BarcodeScanScreen — viewfinder overlay', () {
+    testWidgets('viewfinder overlay is absent in initial placeholder state', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      expect(find.byKey(const Key('viewfinder-overlay')), findsNothing);
+    });
+
+    testWidgets(
+      'viewfinder overlay remains absent after scan button tap on non-scanner platform',
+      (tester) async {
+        // On macOS/Linux test environments, _supportsScanner is false so the
+        // scan button leaves the scan area in placeholder state.
+        await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+        await tester.tap(find.byKey(const Key('scan-barcode-button')));
+        await tester.pump();
+        expect(find.byKey(const Key('viewfinder-overlay')), findsNothing);
+        expect(find.byKey(const Key('scan-area-placeholder')), findsOneWidget);
+      },
+    );
+  });
 }

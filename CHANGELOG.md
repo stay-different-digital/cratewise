@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8J: Barcode scan area shows a viewfinder frame (US-37)] — 2026-06-08
+
+### Added
+- `_ViewfinderOverlay` widget — `CustomPaint` with key `'viewfinder-overlay'` placed in a `Stack` above the `MobileScanner` inside `_CameraScanArea`
+- `_ViewfinderPainter` (`CustomPainter`) — draws four L-shaped bracket corners (white, 90% opacity, 24 dp arms, 3 dp stroke) inset 15% from each edge of the scan area; `shouldRepaint` always returns false (static drawing)
+- The overlay uses `Stack(fit: StackFit.expand)` so it fills the full camera container and adapts automatically to both the 160 dp phone height and the 280 dp iPad height; no separate sizing logic needed
+
+### Tests
+- 2 new tests in `barcode_scan_screen_test.dart` (`viewfinder overlay` group):
+  - `'viewfinder overlay is absent in initial placeholder state'` — verifies the `'viewfinder-overlay'` key is not present when the screen shows the placeholder (guards against overlay leaking to wrong states)
+  - `'viewfinder overlay remains absent after scan button tap on non-scanner platform'` — verifies the placeholder is still shown and no overlay appears after tapping Scan on macOS/Linux where `_supportsScanner` is false
+
+---
+
 ## [Unreleased — Phase 8I: Dates displayed in the device's locale format (US-36)] — 2026-06-08
 
 ### Added
