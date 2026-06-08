@@ -7,6 +7,26 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8I: Dates displayed in the device's locale format (US-36)] — 2026-06-08
+
+### Added
+- `intl: ^0.20.0` dependency (resolves to 0.20.2)
+- `lib/shared/utils/date_format_utils.dart` — two top-level utility functions: `formatDate(DateTime, Locale)` (date-only, `yMMMd` skeleton) and `formatDateTime(DateTime, Locale)` (date + locale-aware short time, `yMMMd + jm` combined)
+
+### Changed
+- `CollectionDetailScreen` (`_HistorySection`) — "Added" and "Updated" rows now use `formatDate(dt, Localizations.localeOf(context))` instead of the hardcoded `YYYY-MM-DD` formatter; output for en_US: `"Jan 5, 2026"`
+- `WishlistDetailScreen` (`_HistorySection`) — same change; "Added" and "Updated" rows are now locale-aware
+- `FailedActionsScreen` (`_ActionCardState`) — "Last tried" and "Queued" rows now use `formatDateTime(dt, locale)` instead of the hardcoded `"d MMM y, HH:mm"` formatter; output for en_US: `"Jun 1, 2026, 2:30 PM"`
+- `ReleaseDetailScreen` (`_CachedBanner`) — "last updated" date in the offline cached-data banner now uses `formatDate(dt, locale)` instead of the hardcoded `"d MMM y"` formatter
+- `ImportExportHistoryScreen` (`_JobCard`) — "Started" row now uses `formatDateTime(dt, locale)` instead of the hardcoded `"d MMM y, HH:mm"` formatter
+- All hardcoded month-name arrays (`'Jan'`, `'Feb'`, …, `'Dec'`) and manual zero-padding removed from all five screens
+
+### Tests
+- 8 new tests in `test/shared/utils/date_format_utils_test.dart`: `formatDate` produces `yMMMd` output, contains expected month/day/year, is not ISO-8601, converts UTC to local; `formatDateTime` includes date and time, uses AM/PM in en_US, contains comma separator, matches expected `yMMMd + jm` composition
+- 10 existing test assertions updated from old format strings (`'2026-01-05'`, `'15 Jan 2026'`, `'1 Jun 2026, 14:30'`) to locale-aware equivalents (`'Jan 5, 2026'`, `'Jan 15, 2026'`, `find.textContaining('Jun 1, 2026')`)
+
+---
+
 ## [Unreleased — Phase 8H: Collection detail live-reloads when the item is changed (US-35)] — 2026-06-05
 
 ### Changed

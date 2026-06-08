@@ -231,7 +231,7 @@ void main() {
         );
         await tester.pumpWidget(_buildSubject(repository: repo));
         await tester.pump();
-        expect(find.text('1 Jun 2026, 14:30'), findsOneWidget);
+        expect(find.textContaining('Jun 1, 2026'), findsOneWidget);
       });
 
       testWidgets('shows safe error message when present', (tester) async {

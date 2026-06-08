@@ -8,6 +8,7 @@ import '../../domain/models/retry_action.dart';
 import '../../domain/repositories/retry_action_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_retry_action_repository.dart';
+import '../../shared/utils/date_format_utils.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -197,26 +198,6 @@ class _ActionCardState extends State<_ActionCard> {
     RetryActionStatus.abandoned => 'Abandoned',
   };
 
-  static String _formatDate(DateTime dt) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '${dt.day} ${months[dt.month - 1]} ${dt.year}, $h:$m';
-  }
-
   static String _metadataSnackbarMessage(RetryMetadataResult result) =>
       switch (result) {
         RetryMetadataSuccess() => 'Release info updated.',
@@ -301,6 +282,7 @@ class _ActionCardState extends State<_ActionCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final locale = Localizations.localeOf(context);
     final isPending = widget.action.status == RetryActionStatus.pending;
     final statusColor = isPending
         ? theme.colorScheme.tertiary
@@ -355,11 +337,11 @@ class _ActionCardState extends State<_ActionCard> {
             if (widget.action.lastAttemptedAt != null)
               _InfoRow(
                 label: 'Last tried',
-                value: _formatDate(widget.action.lastAttemptedAt!),
+                value: formatDateTime(widget.action.lastAttemptedAt!, locale),
               ),
             _InfoRow(
               label: 'Queued',
-              value: _formatDate(widget.action.createdAt),
+              value: formatDateTime(widget.action.createdAt, locale),
             ),
             if (_showRetryButton) ...[
               const SizedBox(height: 8),

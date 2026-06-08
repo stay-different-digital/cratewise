@@ -1119,7 +1119,7 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.textContaining('15 Jan 2026'), findsOneWidget);
+        expect(find.textContaining('Jan 15, 2026'), findsOneWidget);
       });
 
       testWidgets('shows title from cache when API fails', (tester) async {

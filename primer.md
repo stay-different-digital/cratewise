@@ -1,8 +1,8 @@
 # Cratewise — Session Primer
 
-**Date:** 2026-06-05  
-**Test count:** 2141/2141 passing  
-**Last completed phase:** 8H (US-35)
+**Date:** 2026-06-08  
+**Test count:** 2149/2149 passing  
+**Last completed phase:** 8I (US-36)
 
 ---
 
@@ -21,7 +21,7 @@ Cratewise is a Flutter vinyl record collection manager with local-first storage 
 | 5 | — | Sync status, metadata cache, thumbnail cache, failed action queue, retry use cases, offline fallback |
 | 6 | — | Import/export domain + UI: Discogs collection/wishlist import+export, CSV import+export, history screen |
 | 7A–7Z | US-01–27 | HTTP timeout, iOS Keychain guard, search pagination, pull-to-refresh, app bar titles, search context on detail, uri150 thumbnails, "In Collection/Wishlist" indicators, collection/wishlist search+filter, collection live-refresh (RouteObserver), split-pane search on iPad, token revocation auto-clear, atomic credential save, rate-limit header back-off, condition prompt on add, full cached offline detail, thumbnail eviction (200 MB LRU), silent cache retry, Discogs-link promotion on import, failed-write retry queue, mid-pagination rate-limit retry, per-item export rate-limit retry, CSV BOM for Excel, safe area on all scrollable screens |
-| 8A–8H | US-28–35 | GoRouter deep linking, tappable help URL, token format hint, artist dash parsing, ANV display, multi-format entries, rate-limit retry countdown button, collection detail live-reload on pop |
+| 8A–8I | US-28–36 | GoRouter deep linking, tappable help URL, token format hint, artist dash parsing, ANV display, multi-format entries, rate-limit retry countdown button, collection detail live-reload on pop, locale-aware date formatting (intl) |
 
 ### Key architecture points
 - **Router:** GoRouter (`lib/app/router.dart`), `StatefulShellRoute.indexedStack` for 5 tabs. `AppRoutes` constants for all paths.
@@ -62,25 +62,22 @@ All from `docs/user-stories/beta-user-stories-s.md`. Listed in order, with story
 
 | # | Story | SP | Summary |
 |---|-------|----|---------|
-| **US-36** | **Dates displayed in the device's locale format** | **3** | All user-visible dates use `intl` package with device locale. Affects collection/wishlist added/updated dates, import/export job dates, cached-data banner date. Release year (plain int) unaffected. |
-| US-37 | Barcode scan area shows a viewfinder frame | 3 | Rectangular overlay on camera preview; bracket corners; adapts to phone/iPad sizes |
+| ~~US-36~~ | ~~Dates displayed in the device's locale format~~ | ~~3~~ | **Done (Phase 8I).** intl 0.20.2; `formatDate`/`formatDateTime` in `lib/shared/utils/date_format_utils.dart`; 5 screens updated; 2149 tests. |
+| **US-37** | **Barcode scan area shows a viewfinder frame** | **3** | Rectangular overlay on camera preview; bracket corners; adapts to phone/iPad sizes |
 | US-38 | Manual barcode entry validates format | 2 | Numeric-only, 8/12/13 digit length check; inline error; search button disabled while invalid |
 | US-39 | Barcode scanner uses wide two-panel layout on iPad | 2 | ≥700dp: camera left, results right; left panel proportional, not fixed 360dp |
 | US-40 | Camera scan area has flashlight toggle | 2 | Torch on/off button; icon reflects state; torch off on deactivate; graceful if no torch |
 | US-41 | Cached release detail banner shows data age | 1 | Banner always shows date without truncation; >30-day data uses warning colour |
 | US-42 | Failed action queue entries expire after configurable period | 2 | TTL (default 30 days) auto-deletes `failed` entries on launch; `pending` entries exempt |
 
-**Recommended next task: US-36 (3 SP)** — locale-aware date formatting.
+**Recommended next task: US-37 (3 SP)** — barcode scan area shows a viewfinder frame.
 
-### US-36 implementation notes
-- Add `intl: ^0.20.x` to `pubspec.yaml` (check current Flutter-bundled version first)
-- Search for all hardcoded date formatting in the codebase: `DateFormat`, `toString()`, ISO 8601 strings in UI widgets. Key locations to check:
-  - Collection detail: added/updated date rows
-  - Wishlist detail: added/updated date rows
-  - Import/export history screen: job `startedAt`/`finishedAt`
-  - Cached release detail banner: "last updated [date]" string in `ReleaseDetailScreen`
-- Replace with `DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(date)` or equivalent
-- Tests: inject a fixed `DateTime` and assert the formatted string matches `intl`'s output for a known locale; do NOT assert a hardcoded "Jan 15, 2026" string since locale varies
+### US-37 implementation notes
+- Draw a centered rectangular overlay on the camera preview in `BarcodeScanScreen`
+- Use `CustomPaint` or a `Stack` with positioned decorative corner brackets (white/green lines, not a filled box)
+- Overlay should adapt to both the narrow (phone) scan area and the wide (iPad) scan area; the scan area widget already uses a `height` parameter
+- No new package required — `CustomPainter` in Flutter can draw the brackets natively
+- Tests: widget test that the overlay `Key` is present when the camera is active (not just when in placeholder state)
 
 ---
 

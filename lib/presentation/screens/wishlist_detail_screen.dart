@@ -9,6 +9,7 @@ import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
+import '../../shared/utils/date_format_utils.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -884,6 +885,7 @@ class _HistorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final locale = Localizations.localeOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -892,8 +894,8 @@ class _HistorySection extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              _InfoRow('Added', _formatDate(item.createdAt)),
-              _InfoRow('Updated', _formatDate(item.updatedAt)),
+              _InfoRow('Added', formatDate(item.createdAt, locale)),
+              _InfoRow('Updated', formatDate(item.updatedAt, locale)),
             ],
           ),
         ),
@@ -1033,13 +1035,6 @@ class _InfoRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-String _formatDate(DateTime dt) {
-  final d = dt.toLocal();
-  return '${d.year}-'
-      '${d.month.toString().padLeft(2, '0')}-'
-      '${d.day.toString().padLeft(2, '0')}';
-}
 
 String _syncStatusLabel(SyncStatus status) => switch (status) {
   SyncStatus.localOnly => 'Saved on this device',

@@ -6,6 +6,7 @@ import '../../domain/models/import_export_status.dart';
 import '../../domain/repositories/import_export_job_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_import_export_job_repository.dart';
+import '../../shared/utils/date_format_utils.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -158,29 +159,10 @@ class _JobCard extends StatelessWidget {
     _ => 'Exported',
   };
 
-  static String _formatDate(DateTime dt) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '${dt.day} ${months[dt.month - 1]} ${dt.year}, $h:$m';
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final locale = Localizations.localeOf(context);
     final colors = _statusColors(job.status, theme.colorScheme);
     final hasCounts =
         job.validItems != null ||
@@ -231,7 +213,10 @@ class _JobCard extends StatelessWidget {
               _InfoRow(label: 'Skipped', value: '${job.skippedItems ?? 0}'),
               _InfoRow(label: 'Failed', value: '${job.failedItems ?? 0}'),
             ],
-            _InfoRow(label: 'Started', value: _formatDate(job.createdAt)),
+            _InfoRow(
+              label: 'Started',
+              value: formatDateTime(job.createdAt, locale),
+            ),
             if (job.safeErrorMessage != null) ...[
               const SizedBox(height: 4),
               Text(

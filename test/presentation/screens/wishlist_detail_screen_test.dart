@@ -352,7 +352,7 @@ void main() {
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
       await tester.pumpAndSettle();
-      expect(find.text('2026-01-15'), findsOneWidget);
+      expect(find.textContaining('Jan 15, 2026'), findsOneWidget);
     });
 
     testWidgets('shows updated date', (tester) async {
@@ -363,7 +363,7 @@ void main() {
         _wrap(WishlistDetailScreen(itemId: 'w-1', repository: repo)),
       );
       await tester.pumpAndSettle();
-      expect(find.text('2026-03-20'), findsOneWidget);
+      expect(find.textContaining('Mar 20, 2026'), findsOneWidget);
     });
   });
 

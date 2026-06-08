@@ -19,6 +19,7 @@ import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
+import '../../shared/utils/date_format_utils.dart';
 import '../widgets/rate_limit_retry_button.dart';
 
 // ---------------------------------------------------------------------------
@@ -834,7 +835,7 @@ class _CachedBanner extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Showing saved data · last updated ${_formatCachedDate(fetchedAt)}',
+                'Showing saved data · last updated ${formatDate(fetchedAt, Localizations.localeOf(context))}',
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSecondaryContainer,
                 ),
@@ -845,24 +846,6 @@ class _CachedBanner extends StatelessWidget {
       ),
     );
   }
-}
-
-String _formatCachedDate(DateTime dt) {
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
-  return '${dt.day} ${months[dt.month - 1]} ${dt.year}';
 }
 
 ReleaseDetail _cachedMetadataToDetail(CachedReleaseMetadata m) => ReleaseDetail(

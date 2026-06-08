@@ -411,7 +411,7 @@ void main() {
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('2026-01-05'), findsOneWidget);
+      expect(find.textContaining('Jan 5, 2026'), findsOneWidget);
     });
 
     testWidgets('shows updated date', (tester) async {
@@ -422,7 +422,7 @@ void main() {
         _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
       );
       await tester.pumpAndSettle();
-      expect(find.textContaining('2026-06-20'), findsOneWidget);
+      expect(find.textContaining('Jun 20, 2026'), findsOneWidget);
     });
 
     testWidgets('renders without error when all optional fields are null', (
@@ -649,7 +649,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('2026-02-15'), findsOneWidget);
+      expect(find.textContaining('Feb 15, 2026'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('edit-conditions-button')));
       await tester.pumpAndSettle();
@@ -657,7 +657,7 @@ void main() {
       await tester.tap(find.byKey(const Key('save-conditions-button')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('2026-02-15'), findsNothing);
+      expect(find.textContaining('Feb 15, 2026'), findsNothing);
     });
 
     testWidgets('save error shows error message in sheet', (tester) async {
@@ -927,7 +927,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('2025-11-05'), findsOneWidget);
+      expect(find.textContaining('Nov 5, 2025'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('edit-tags-button')));
       await tester.pumpAndSettle();
@@ -935,7 +935,7 @@ void main() {
       await tester.tap(find.byKey(const Key('save-tags-button')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('2025-11-05'), findsNothing);
+      expect(find.textContaining('Nov 5, 2025'), findsNothing);
     });
 
     testWidgets('save error shows error message in sheet', (tester) async {
@@ -1134,7 +1134,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('2025-12-10'), findsOneWidget);
+      expect(find.textContaining('Dec 10, 2025'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('edit-notes-button')));
       await tester.pumpAndSettle();
@@ -1142,7 +1142,7 @@ void main() {
       await tester.tap(find.byKey(const Key('save-notes-button')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('2025-12-10'), findsNothing);
+      expect(find.textContaining('Dec 10, 2025'), findsNothing);
     });
 
     testWidgets('clearing notes hides the notes section', (tester) async {
@@ -1382,7 +1382,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('2025-09-03'), findsOneWidget);
+      expect(find.textContaining('Sep 3, 2025'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('edit-storage-location-button')));
       await tester.pumpAndSettle();
@@ -1390,7 +1390,7 @@ void main() {
       await tester.tap(find.byKey(const Key('save-storage-location-button')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('2025-09-03'), findsNothing);
+      expect(find.textContaining('Sep 3, 2025'), findsNothing);
     });
 
     testWidgets('clearing storage location hides Location row', (tester) async {
