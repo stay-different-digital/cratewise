@@ -35,6 +35,28 @@ flutter build apk --debug
 flutter build ios --debug --no-codesign
 ```
 
+## Test the project
+
+Run for iOS:
+
+```bash
+open -a Simulator
+```
+
+```bash
+flutter run
+```
+
+Run for Android:
+
+- Start android studio
+- Go to virtual 
+- Start a phone 
+
+```bash
+flutter run
+```
+
 ## Project Structure
 
 ```text
