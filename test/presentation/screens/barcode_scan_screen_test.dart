@@ -56,6 +56,18 @@ class _BlockingLookupUseCase extends BarcodeLookupUseCase {
       _completer.future;
 }
 
+class _SequencedBlockingLookupUseCase extends BarcodeLookupUseCase {
+  _SequencedBlockingLookupUseCase(this._completers)
+    : super(storage: _FakeStorage(), apiClient: DiscogsApiClient());
+
+  final List<Completer<BarcodeLookupResult>> _completers;
+  int _callIndex = 0;
+
+  @override
+  Future<BarcodeLookupResult> execute(String barcode, {int page = 1}) =>
+      _completers[_callIndex++].future;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -582,6 +594,59 @@ void main() {
       await tester.pump();
       expect(find.byKey(const Key('scan-area-placeholder')), findsOneWidget);
       expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+    });
+  });
+
+  group('BarcodeScanScreen — in-flight cancellation', () {
+    testWidgets('second search supersedes an in-flight first search', (
+      tester,
+    ) async {
+      final c1 = Completer<BarcodeLookupResult>();
+      final c2 = Completer<BarcodeLookupResult>();
+      final useCase = _SequencedBlockingLookupUseCase([c1, c2]);
+      await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
+
+      await tester.enterText(
+        find.byKey(const Key('barcode-input')),
+        '5099706035422',
+      );
+      await tester.pump();
+
+      // First search
+      await tester.tap(find.byKey(const Key('search-barcode-button')));
+      await tester.pump();
+
+      // Second search before first completes
+      await tester.tap(find.byKey(const Key('search-barcode-button')));
+      await tester.pump();
+
+      // Complete first (stale) request — result must be discarded.
+      const staleResult = ReleaseSearchResult(
+        id: 99999,
+        artist: 'The Beatles',
+        title: 'Abbey Road',
+        format: 'LP',
+        label: 'Apple Records',
+        country: 'UK',
+        year: 1969,
+      );
+      c1.complete(
+        BarcodeLookupSuccess(
+          SearchResultPage(
+            items: const [staleResult],
+            currentPage: 1,
+            totalPages: 1,
+            totalResults: 1,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Abbey Road'), findsNothing);
+
+      // Complete second (current) request — result must be shown.
+      c2.complete(_kSuccess);
+      await tester.pumpAndSettle();
+      expect(find.text('Kind Of Blue'), findsOneWidget);
     });
   });
 }

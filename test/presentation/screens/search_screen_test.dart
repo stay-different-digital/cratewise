@@ -95,6 +95,18 @@ class _DelayedSearchService extends DiscogsSearchService {
       _completer.future;
 }
 
+class _SequencedDelayedSearchService extends DiscogsSearchService {
+  _SequencedDelayedSearchService(this._completers)
+    : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
+
+  final List<Completer<SearchResultPage>> _completers;
+  int _callIndex = 0;
+
+  @override
+  Future<SearchResultPage> search(String query, {int page = 1}) =>
+      _completers[_callIndex++].future;
+}
+
 /// Returns page 1 with [page1Items] (hasMore = true), then page 2 with
 /// [page2Items] on subsequent calls.
 class _PaginatingSearchService extends DiscogsSearchService {
@@ -780,6 +792,52 @@ void main() {
           .widgetList<Text>(find.byType(Text))
           .where((w) => w.data?.contains(sensitiveToken) == true);
       expect(tokenInText, isEmpty);
+    });
+  });
+
+  group('SearchScreen — in-flight cancellation', () {
+    testWidgets('stale result is discarded when a new query fires mid-flight', (
+      tester,
+    ) async {
+      final c1 = Completer<SearchResultPage>();
+      final c2 = Completer<SearchResultPage>();
+      final service = _SequencedDelayedSearchService([c1, c2]);
+      await tester.pumpWidget(_buildScreen(service));
+
+      await submitSearch(tester, 'miles');
+      await submitSearch(tester, 'beatles');
+
+      // First (stale) request completes — result must be silently discarded.
+      c1.complete(_singlePage([_kindOfBlue]));
+      await tester.pump();
+      expect(find.text('Kind Of Blue'), findsNothing);
+
+      // Second (current) request completes — result must be shown.
+      c2.complete(_singlePage([_abbeyRoad]));
+      await tester.pumpAndSettle();
+      expect(find.text('Abbey Road'), findsOneWidget);
+    });
+
+    testWidgets('stale error is discarded when a new query fires mid-flight', (
+      tester,
+    ) async {
+      final c1 = Completer<SearchResultPage>();
+      final c2 = Completer<SearchResultPage>();
+      final service = _SequencedDelayedSearchService([c1, c2]);
+      await tester.pumpWidget(_buildScreen(service));
+
+      await submitSearch(tester, 'miles');
+      await submitSearch(tester, 'beatles');
+
+      // First (stale) request errors — error state must NOT be shown.
+      c1.completeError(const NetworkError());
+      await tester.pump();
+      expect(find.textContaining('No internet'), findsNothing);
+
+      // Second (current) request completes — result must be shown.
+      c2.complete(_singlePage([_abbeyRoad]));
+      await tester.pumpAndSettle();
+      expect(find.text('Abbey Road'), findsOneWidget);
     });
   });
 }

@@ -110,6 +110,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   String _lastBarcode = '';
   String? _validationError;
   bool _isWide = false;
+  int _lookupGeneration = 0;
 
   static bool get _supportsScanner =>
       !kIsWeb && (Platform.isAndroid || Platform.isIOS);
@@ -153,9 +154,10 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     if (barcode.isEmpty) return;
     if (_validationError != null) return;
     _lastBarcode = barcode;
+    final gen = ++_lookupGeneration;
     setState(() => _state = const _Loading());
     final result = await _useCase.execute(barcode);
-    if (!mounted) return;
+    if (!mounted || gen != _lookupGeneration) return;
     setState(() {
       _state = switch (result) {
         BarcodeLookupSuccess(:final page) => _HasResults(
@@ -178,6 +180,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     final current = _state as _HasResults;
     if (!current.hasMore || current.isLoadingMore) return;
 
+    final gen = _lookupGeneration;
     setState(
       () => _state = current.copyWith(
         isLoadingMore: true,
@@ -189,7 +192,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
       _lastBarcode,
       page: current.currentPage + 1,
     );
-    if (!mounted) return;
+    if (!mounted || gen != _lookupGeneration) return;
     setState(() {
       _state = switch (result) {
         BarcodeLookupSuccess(:final page) => _HasResults(

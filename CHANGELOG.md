@@ -7,6 +7,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8X: In-flight search cancellation (US-51)] — 2026-06-09
+
+### Changed
+- `SearchScreen`: when a new debounced query fires while a previous search is still in-flight, the stale result (or error) is silently discarded — the UI always reflects the latest query
+- `SearchScreen`: a stale `_loadMore` response is discarded the same way if a new query fires before the extra page returns
+- `BarcodeScanScreen`: same generation-counter guard applied to `_onSearch` and `_loadMore` — a second barcode search supersedes any in-flight first search without leaving stale results
+
+### Tests
+- 3 new tests:
+  - `SearchScreen — in-flight cancellation`: stale result is discarded when a new query fires mid-flight
+  - `SearchScreen — in-flight cancellation`: stale error is discarded when a new query fires mid-flight
+  - `BarcodeScanScreen — in-flight cancellation`: second search supersedes an in-flight first search
+
+---
+
 ## [Unreleased — Phase 8W: Import/export history entry deletion (US-49)] — 2026-06-09
 
 ### Added

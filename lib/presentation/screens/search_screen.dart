@@ -109,6 +109,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Timer? _debounce;
   String _lastQuery = '';
   ReleaseSearchResult? _selectedResult;
+  int _searchGeneration = 0;
 
   @override
   void initState() {
@@ -145,13 +146,14 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
     _lastQuery = trimmed;
+    final gen = ++_searchGeneration;
     setState(() {
       _state = const _Loading();
       _selectedResult = null;
     });
     try {
       final page = await _service.search(trimmed);
-      if (!mounted) return;
+      if (!mounted || gen != _searchGeneration) return;
       setState(
         () => _state = _Results(
           items: page.items,
@@ -161,7 +163,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       );
     } on AppError catch (e) {
-      if (!mounted) return;
+      if (!mounted || gen != _searchGeneration) return;
       setState(() => _state = _SearchError(e));
     }
   }
@@ -171,6 +173,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final current = _state as _Results;
     if (!current.hasMore || current.isLoadingMore) return;
 
+    final gen = _searchGeneration;
     setState(
       () => _state = current.copyWith(
         isLoadingMore: true,
@@ -183,7 +186,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _lastQuery,
         page: current.currentPage + 1,
       );
-      if (!mounted) return;
+      if (!mounted || gen != _searchGeneration) return;
       setState(
         () => _state = _Results(
           items: [...current.items, ...page.items],
@@ -193,7 +196,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       );
     } on AppError catch (e) {
-      if (!mounted) return;
+      if (!mounted || gen != _searchGeneration) return;
       setState(
         () =>
             _state = current.copyWith(isLoadingMore: false, paginationError: e),
