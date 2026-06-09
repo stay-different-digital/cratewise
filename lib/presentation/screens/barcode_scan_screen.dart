@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../application/services/search_query_cache.dart';
 import '../../application/use_cases/barcode_lookup_use_case.dart';
 import '../../domain/models/release_search_result.dart';
 import '../../shared/errors/app_error.dart';
@@ -34,6 +35,7 @@ class _HasResults extends _ScanState {
     required this.totalResults,
     this.isLoadingMore = false,
     this.paginationError,
+    this.fromCache = false,
   });
 
   final List<ReleaseSearchResult> items;
@@ -42,6 +44,8 @@ class _HasResults extends _ScanState {
   final int totalResults;
   final bool isLoadingMore;
   final AppError? paginationError;
+  // True while a background network refresh is pending or after it failed.
+  final bool fromCache;
 
   bool get hasMore => currentPage < totalPages;
 
@@ -53,6 +57,7 @@ class _HasResults extends _ScanState {
     bool? isLoadingMore,
     AppError? paginationError,
     bool clearPaginationError = false,
+    bool? fromCache,
   }) {
     return _HasResults(
       items: items ?? this.items,
@@ -63,6 +68,7 @@ class _HasResults extends _ScanState {
       paginationError: clearPaginationError
           ? null
           : (paginationError ?? this.paginationError),
+      fromCache: fromCache ?? this.fromCache,
     );
   }
 }
@@ -94,9 +100,10 @@ enum _ScanAreaState { placeholder, scanning, permissionDenied }
 // ---------------------------------------------------------------------------
 
 class BarcodeScanScreen extends StatefulWidget {
-  const BarcodeScanScreen({super.key, this.useCase});
+  const BarcodeScanScreen({super.key, this.useCase, this.barcodeCache});
 
   final BarcodeLookupUseCase? useCase;
+  final SearchQueryCache? barcodeCache;
 
   @override
   State<BarcodeScanScreen> createState() => _BarcodeScanScreenState();
@@ -105,6 +112,7 @@ class BarcodeScanScreen extends StatefulWidget {
 class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   final _controller = TextEditingController();
   late final BarcodeLookupUseCase _useCase;
+  late final SearchQueryCache _barcodeCache;
   _ScanState _state = const _Idle();
   _ScanAreaState _scanAreaState = _ScanAreaState.placeholder;
   String _lastBarcode = '';
@@ -119,6 +127,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   void initState() {
     super.initState();
     _useCase = widget.useCase ?? BarcodeLookupUseCase();
+    _barcodeCache = widget.barcodeCache ?? SearchQueryCache();
     _controller.addListener(_onInputChanged);
   }
 
@@ -155,9 +164,30 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     if (_validationError != null) return;
     _lastBarcode = barcode;
     final gen = ++_lookupGeneration;
+
+    // Check cache first — show immediately and refresh in background.
+    final cacheKey = SearchQueryCache.normalizeKey(barcode);
+    final cached = _barcodeCache.get(cacheKey);
+    if (cached != null) {
+      setState(
+        () => _state = _HasResults(
+          items: cached.items,
+          currentPage: cached.currentPage,
+          totalPages: cached.totalPages,
+          totalResults: cached.totalResults,
+          fromCache: true,
+        ),
+      );
+      _searchBarcodeInBackground(barcode, cacheKey, gen);
+      return;
+    }
+
     setState(() => _state = const _Loading());
     final result = await _useCase.execute(barcode);
     if (!mounted || gen != _lookupGeneration) return;
+    if (result case BarcodeLookupSuccess(:final page)) {
+      _barcodeCache.put(cacheKey, page);
+    }
     setState(() {
       _state = switch (result) {
         BarcodeLookupSuccess(:final page) => _HasResults(
@@ -173,6 +203,27 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
         BarcodeLookupError() => const _LookupError(),
       };
     });
+  }
+
+  Future<void> _searchBarcodeInBackground(
+    String barcode,
+    String cacheKey,
+    int gen,
+  ) async {
+    final result = await _useCase.execute(barcode);
+    if (!mounted || gen != _lookupGeneration) return;
+    if (result case BarcodeLookupSuccess(:final page)) {
+      _barcodeCache.put(cacheKey, page);
+      setState(() {
+        _state = _HasResults(
+          items: page.items,
+          currentPage: page.currentPage,
+          totalPages: page.totalPages,
+          totalResults: page.totalResults,
+        );
+      });
+    }
+    // Any non-success result: silently keep cached state.
   }
 
   Future<void> _loadMore() async {
@@ -258,6 +309,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
       :final isLoadingMore,
       :final paginationError,
       :final hasMore,
+      :final fromCache,
     ) =>
       _ResultsList(
         items: items,
@@ -266,6 +318,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
         paginationError: paginationError,
         onLoadMore: hasMore && !isLoadingMore ? _loadMore : null,
         onRetry: _loadMore,
+        fromCache: fromCache,
       ),
     _NoResults() => const _NoResultsState(),
     _NoToken() => const _NoTokenState(),
@@ -699,6 +752,7 @@ class _ResultsList extends StatefulWidget {
     required this.paginationError,
     required this.onLoadMore,
     required this.onRetry,
+    required this.fromCache,
   });
 
   final List<ReleaseSearchResult> items;
@@ -707,6 +761,7 @@ class _ResultsList extends StatefulWidget {
   final AppError? paginationError;
   final VoidCallback? onLoadMore;
   final VoidCallback? onRetry;
+  final bool fromCache;
 
   @override
   State<_ResultsList> createState() => _ResultsListState();
@@ -784,6 +839,7 @@ class _ResultsListState extends State<_ResultsList> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.fromCache) const _CachedResultsBanner(),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
           child: Text(
@@ -943,6 +999,42 @@ class _ErrorState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cached results banner
+// ---------------------------------------------------------------------------
+
+class _CachedResultsBanner extends StatelessWidget {
+  const _CachedResultsBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      key: const Key('cached-results-banner'),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: theme.colorScheme.secondaryContainer,
+      child: Row(
+        children: [
+          Icon(
+            Icons.offline_bolt_outlined,
+            size: 16,
+            color: theme.colorScheme.onSecondaryContainer,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Showing saved results',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

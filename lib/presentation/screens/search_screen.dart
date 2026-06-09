@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../application/services/discogs_search_service.dart';
+import '../../application/services/search_query_cache.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/release_search_result.dart';
@@ -42,6 +43,7 @@ class _Results extends _SearchState {
     required this.totalResults,
     this.isLoadingMore = false,
     this.paginationError,
+    this.fromCache = false,
   });
 
   final List<ReleaseSearchResult> items;
@@ -50,6 +52,8 @@ class _Results extends _SearchState {
   final int totalResults;
   final bool isLoadingMore;
   final AppError? paginationError;
+  // True while a background network refresh is pending or after it failed.
+  final bool fromCache;
 
   bool get hasMore => currentPage < totalPages;
 
@@ -61,6 +65,7 @@ class _Results extends _SearchState {
     bool? isLoadingMore,
     AppError? paginationError,
     bool clearPaginationError = false,
+    bool? fromCache,
   }) {
     return _Results(
       items: items ?? this.items,
@@ -71,6 +76,7 @@ class _Results extends _SearchState {
       paginationError: clearPaginationError
           ? null
           : (paginationError ?? this.paginationError),
+      fromCache: fromCache ?? this.fromCache,
     );
   }
 }
@@ -91,12 +97,14 @@ class SearchScreen extends StatefulWidget {
     this.addToCollectionUseCase,
     this.addToWishlistUseCase,
     this.cacheRepository,
+    this.queryCache,
   });
 
   final DiscogsSearchService? searchService;
   final AddToCollectionUseCase? addToCollectionUseCase;
   final AddToWishlistUseCase? addToWishlistUseCase;
   final CachedReleaseMetadataRepository? cacheRepository;
+  final SearchQueryCache? queryCache;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -104,6 +112,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   late final DiscogsSearchService _service;
+  late final SearchQueryCache _cache;
   final _controller = TextEditingController();
   _SearchState _state = const _Idle();
   Timer? _debounce;
@@ -115,6 +124,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _service = widget.searchService ?? DiscogsSearchService();
+    _cache = widget.queryCache ?? SearchQueryCache();
     _controller.addListener(_onQueryChanged);
   }
 
@@ -140,13 +150,36 @@ class _SearchScreenState extends State<SearchScreen> {
     _debounce?.cancel();
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
-    final alreadyHasResults =
-        _state is _Results && !(_state as _Results).isLoadingMore;
-    if (trimmed == _lastQuery && (_state is _Loading || alreadyHasResults)) {
+    // Only skip if we already have fresh (non-cached) results for this query.
+    final alreadyHasFreshResults =
+        _state is _Results &&
+        !(_state as _Results).isLoadingMore &&
+        !(_state as _Results).fromCache;
+    if (trimmed == _lastQuery &&
+        (_state is _Loading || alreadyHasFreshResults)) {
       return;
     }
     _lastQuery = trimmed;
     final gen = ++_searchGeneration;
+
+    // Check cache first — show immediately and refresh in background.
+    final cacheKey = SearchQueryCache.normalizeKey(trimmed);
+    final cached = _cache.get(cacheKey);
+    if (cached != null) {
+      setState(() {
+        _state = _Results(
+          items: cached.items,
+          currentPage: cached.currentPage,
+          totalPages: cached.totalPages,
+          totalResults: cached.totalResults,
+          fromCache: true,
+        );
+        _selectedResult = null;
+      });
+      _searchInBackground(trimmed, cacheKey, gen);
+      return;
+    }
+
     setState(() {
       _state = const _Loading();
       _selectedResult = null;
@@ -154,6 +187,7 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       final page = await _service.search(trimmed);
       if (!mounted || gen != _searchGeneration) return;
+      _cache.put(cacheKey, page);
       setState(
         () => _state = _Results(
           items: page.items,
@@ -165,6 +199,28 @@ class _SearchScreenState extends State<SearchScreen> {
     } on AppError catch (e) {
       if (!mounted || gen != _searchGeneration) return;
       setState(() => _state = _SearchError(e));
+    }
+  }
+
+  Future<void> _searchInBackground(
+    String query,
+    String cacheKey,
+    int gen,
+  ) async {
+    try {
+      final page = await _service.search(query);
+      if (!mounted || gen != _searchGeneration) return;
+      _cache.put(cacheKey, page);
+      setState(
+        () => _state = _Results(
+          items: page.items,
+          currentPage: page.currentPage,
+          totalPages: page.totalPages,
+          totalResults: page.totalResults,
+        ),
+      );
+    } on AppError {
+      // Silently keep the cached results; fromCache: true banner stays visible.
     }
   }
 
@@ -291,6 +347,7 @@ class _SearchScreenState extends State<SearchScreen> {
         :final isLoadingMore,
         :final paginationError,
         :final hasMore,
+        :final fromCache,
       ) =>
         _ResultsList(
           items: items,
@@ -299,6 +356,7 @@ class _SearchScreenState extends State<SearchScreen> {
           paginationError: paginationError,
           onLoadMore: hasMore && !isLoadingMore ? _loadMore : null,
           onRetry: _loadMore,
+          fromCache: fromCache,
           onResultTap: (result) {
             if (isWide) {
               setState(() => _selectedResult = result);
@@ -501,6 +559,7 @@ class _ResultsList extends StatefulWidget {
     required this.onLoadMore,
     required this.onRetry,
     required this.onResultTap,
+    required this.fromCache,
   });
 
   final List<ReleaseSearchResult> items;
@@ -510,6 +569,7 @@ class _ResultsList extends StatefulWidget {
   final VoidCallback? onLoadMore;
   final VoidCallback? onRetry;
   final ValueChanged<ReleaseSearchResult> onResultTap;
+  final bool fromCache;
 
   @override
   State<_ResultsList> createState() => _ResultsListState();
@@ -627,6 +687,7 @@ class _ResultsListState extends State<_ResultsList> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (widget.fromCache) const _CachedResultsBanner(),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
           child: Text(
@@ -656,6 +717,42 @@ class _ResultsListState extends State<_ResultsList> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cached results banner
+// ---------------------------------------------------------------------------
+
+class _CachedResultsBanner extends StatelessWidget {
+  const _CachedResultsBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      key: const Key('cached-results-banner'),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: theme.colorScheme.secondaryContainer,
+      child: Row(
+        children: [
+          Icon(
+            Icons.offline_bolt_outlined,
+            size: 16,
+            color: theme.colorScheme.onSecondaryContainer,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Showing saved results',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSecondaryContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

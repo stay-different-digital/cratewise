@@ -7,6 +7,22 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8Y: Recent search results cached locally (US-52)] — 2026-06-09
+
+### Added
+- `SearchQueryCache` — in-memory LRU cache (configurable max entries, default 20; configurable TTL, default 24 h) for search-result pages, keyed by normalised query string (trimmed + lowercased)
+- `SearchScreen`: on every query, the cache is checked first; if a hit exists the results are displayed immediately while a background network refresh runs silently in the background
+- `SearchScreen`: when the background refresh succeeds the fresh results replace the cached ones with no loading spinner; when it fails the cached results remain with a "Showing saved results" banner
+- `BarcodeScanScreen`: same stale-while-revalidate pattern applied to barcode lookups via a separate `SearchQueryCache` instance keyed by barcode value
+
+### Tests
+- 12 new tests:
+  - `SearchQueryCache` unit tests (6): missing key → null, stored page returned, expired entry → null, oldest-entry eviction, LRU recency update on get, overwrite resets TTL
+  - `SearchScreen — search caching` (3): cache hit shows results immediately without loading indicator; background refresh replaces cached results and removes banner; banner persists when background refresh fails; no-cache path unchanged
+  - `BarcodeScanScreen — search caching` (2): cache hit shows results immediately; banner persists when background refresh returns non-success
+
+---
+
 ## [Unreleased — Phase 8X: In-flight search cancellation (US-51)] — 2026-06-09
 
 ### Changed

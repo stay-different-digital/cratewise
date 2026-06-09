@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cratewise/application/services/search_query_cache.dart';
 import 'package:cratewise/application/use_cases/barcode_lookup_use_case.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
 import 'package:cratewise/domain/models/search_result_page.dart';
@@ -648,5 +649,81 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Kind Of Blue'), findsOneWidget);
     });
+  });
+
+  group('BarcodeScanScreen — search caching', () {
+    testWidgets(
+      'cache hit shows results immediately without a loading indicator',
+      (tester) async {
+        // Pre-populate cache.
+        final barcodeCache = SearchQueryCache();
+        barcodeCache.put(
+          SearchQueryCache.normalizeKey('5099706035422'),
+          _kSinglePage,
+        );
+
+        // Service blocks forever — it should not be awaited before results show.
+        final useCase = _BlockingLookupUseCase();
+        await tester.pumpWidget(
+          _wrap(
+            BarcodeScanScreen(useCase: useCase, barcodeCache: barcodeCache),
+          ),
+        );
+
+        await tester.enterText(
+          find.byKey(const Key('barcode-input')),
+          '5099706035422',
+        );
+        await tester.pump();
+        await tester.tap(find.byKey(const Key('search-barcode-button')));
+        await tester.pump();
+        await tester.pump();
+
+        // Cached result visible immediately, no spinner.
+        expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.byKey(const Key('cached-results-banner')), findsOneWidget);
+
+        // Complete background refresh — banner should disappear.
+        useCase.complete(_kSuccess);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('cached-results-banner')), findsNothing);
+        expect(find.text('Kind Of Blue'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'banner persists when background refresh returns a non-success result',
+      (tester) async {
+        final barcodeCache = SearchQueryCache();
+        barcodeCache.put(
+          SearchQueryCache.normalizeKey('5099706035422'),
+          _kSinglePage,
+        );
+
+        // Simulate a network error response (BarcodeLookupError).
+        final useCase = _FakeLookupUseCase(
+          BarcodeLookupError(const NetworkError()),
+        );
+        await tester.pumpWidget(
+          _wrap(
+            BarcodeScanScreen(useCase: useCase, barcodeCache: barcodeCache),
+          ),
+        );
+
+        await tester.enterText(
+          find.byKey(const Key('barcode-input')),
+          '5099706035422',
+        );
+        await tester.pump();
+        await tester.tap(find.byKey(const Key('search-barcode-button')));
+        await tester.pumpAndSettle();
+
+        // Cached result and banner remain; no error state shown.
+        expect(find.byKey(const Key('cached-results-banner')), findsOneWidget);
+        expect(find.text('Kind Of Blue'), findsOneWidget);
+        expect(find.text('Something went wrong'), findsNothing);
+      },
+    );
   });
 }

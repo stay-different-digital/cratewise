@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cratewise/application/services/discogs_search_service.dart';
+import 'package:cratewise/application/services/search_query_cache.dart';
 import 'package:cratewise/presentation/screens/release_detail_screen.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
 import 'package:cratewise/domain/models/search_result_page.dart';
@@ -144,9 +145,14 @@ class _PaginatingSearchService extends DiscogsSearchService {
 // Helpers
 // ---------------------------------------------------------------------------
 
-Widget _buildScreen(DiscogsSearchService service) {
+Widget _buildScreen(
+  DiscogsSearchService service, {
+  SearchQueryCache? queryCache,
+}) {
   return MaterialApp(
-    home: Scaffold(body: SearchScreen(searchService: service)),
+    home: Scaffold(
+      body: SearchScreen(searchService: service, queryCache: queryCache),
+    ),
   );
 }
 
@@ -793,6 +799,78 @@ void main() {
           .where((w) => w.data?.contains(sensitiveToken) == true);
       expect(tokenInText, isEmpty);
     });
+  });
+
+  group('SearchScreen — search caching', () {
+    testWidgets(
+      'cache hit shows results immediately without a loading indicator',
+      (tester) async {
+        // Pre-populate cache with a "miles" result.
+        final cache = SearchQueryCache();
+        cache.put(
+          SearchQueryCache.normalizeKey('miles'),
+          _singlePage([_kindOfBlue]),
+        );
+
+        // The service blocks forever — it should NOT be awaited before results
+        // are shown.
+        final c = Completer<SearchResultPage>();
+        final service = _DelayedSearchService(c);
+        await tester.pumpWidget(_buildScreen(service, queryCache: cache));
+
+        await submitSearch(tester, 'miles');
+
+        // Cached result visible immediately, no spinner.
+        expect(find.text('Kind Of Blue'), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+        expect(find.byKey(const Key('cached-results-banner')), findsOneWidget);
+
+        // Complete the background refresh with different data.
+        c.complete(_singlePage([_abbeyRoad]));
+        await tester.pumpAndSettle();
+
+        // Fresh result replaces the cached one; banner disappears.
+        expect(find.text('Abbey Road'), findsOneWidget);
+        expect(find.text('Kind Of Blue'), findsNothing);
+        expect(find.byKey(const Key('cached-results-banner')), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'banner persists when background refresh fails with a network error',
+      (tester) async {
+        final cache = SearchQueryCache();
+        cache.put(
+          SearchQueryCache.normalizeKey('miles'),
+          _singlePage([_kindOfBlue]),
+        );
+
+        final service = _FakeSearchService(throws: const NetworkError());
+        await tester.pumpWidget(_buildScreen(service, queryCache: cache));
+
+        await submitSearch(tester, 'miles');
+        await tester.pumpAndSettle();
+
+        // Cached result and banner remain; no error state shown.
+        expect(find.byKey(const Key('cached-results-banner')), findsOneWidget);
+        expect(find.text('Kind Of Blue'), findsOneWidget);
+        expect(find.textContaining('No internet'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'no-cache path still shows loading indicator then fresh results',
+      (tester) async {
+        // Empty cache — normal flow should be unchanged.
+        final service = _FakeSearchService(results: [_abbeyRoad]);
+        await tester.pumpWidget(_buildScreen(service));
+
+        await submitSearch(tester, 'beatles');
+
+        expect(find.text('Abbey Road'), findsOneWidget);
+        expect(find.byKey(const Key('cached-results-banner')), findsNothing);
+      },
+    );
   });
 
   group('SearchScreen — in-flight cancellation', () {
