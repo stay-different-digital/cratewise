@@ -7,6 +7,23 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8R: Per-item export progress (US-45)] — 2026-06-09
+
+### Added
+- `onProgress` optional named callback added to `ExecuteCollectionExportUseCase.execute()` and `ExecuteWishlistExportUseCase.execute()`: called for each eligible row with `(current, total, description)` before the API call
+- `_Exporting` state in both export preview screens now carries `current`, `total`, and `currentItem` fields (all default to 0/empty)
+- `_ExportingBody` widget in both screens updated: shows `LinearProgressIndicator(value: current/total)` and "Exporting item N of M…" + current item label when progress is active; falls back to `CircularProgressIndicator` + generic label in the brief initial state
+
+### Tests
+- `_FakeExecuteUseCase` and `_PausingExecuteUseCase` override signatures updated in both screen test files to accept the new optional `{onProgress}` parameter
+- `_ProgressingExecuteUseCase` added to both screen test files (calls `onProgress(1, 2, ...)` then delays 10 s)
+- 6 new tests across `collection_export_preview_screen_test.dart` and `wishlist_export_preview_screen_test.dart`:
+  - shows "Exporting item N of M…" when progress callback fires
+  - shows current item description when progress callback fires
+  - shows `LinearProgressIndicator` when progress callback fires
+
+---
+
 ## [Unreleased — Phase 8Q: Failed Actions screen "Clear All" button (US-44)] — 2026-06-09
 
 ### Added

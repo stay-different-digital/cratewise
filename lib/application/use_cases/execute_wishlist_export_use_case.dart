@@ -82,8 +82,9 @@ class ExecuteWishlistExportUseCase {
   final int _maxItemRetries;
 
   Future<ExecuteWishlistExportResult> execute(
-    WishlistExportPreview preview,
-  ) async {
+    WishlistExportPreview preview, {
+    void Function(int current, int total, String description)? onProgress,
+  }) async {
     final capability = _capabilityUseCase.execute();
     if (capability is WishlistExportNotSupported) {
       return ExecuteWishlistExportNotSupported(capability.reason);
@@ -123,11 +124,19 @@ class ExecuteWishlistExportUseCase {
       var exported = 0;
       var skipped = 0;
       var failed = 0;
+      var eligibleIndex = 0;
+      final eligibleTotal = preview.eligibleCount;
 
       for (var i = 0; i < preview.rows.length; i++) {
         final row = preview.rows[i];
         switch (row) {
           case EligibleWishlistExportRow():
+            eligibleIndex++;
+            onProgress?.call(
+              eligibleIndex,
+              eligibleTotal,
+              '${row.artist} – ${row.title}',
+            );
             try {
               await _addToWantlistWithRetry(username, row.releaseId, token);
               final item = await _wishlistRepository.getById(row.itemId);

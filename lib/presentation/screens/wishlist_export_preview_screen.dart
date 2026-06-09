@@ -44,7 +44,10 @@ class _NoToken extends _PreviewState {
 }
 
 class _Exporting extends _PreviewState {
-  const _Exporting();
+  const _Exporting({this.current = 0, this.total = 0, this.currentItem = ''});
+  final int current;
+  final int total;
+  final String currentItem;
 }
 
 class _ExportDone extends _PreviewState {
@@ -126,7 +129,19 @@ class _WishlistExportPreviewScreenState
     final uc = _executeUseCase;
     if (uc == null) return;
     setState(() => _state = const _Exporting());
-    final result = await uc.execute(preview);
+    final result = await uc.execute(
+      preview,
+      onProgress: (current, total, item) {
+        if (!mounted) return;
+        setState(
+          () => _state = _Exporting(
+            current: current,
+            total: total,
+            currentItem: item,
+          ),
+        );
+      },
+    );
     if (!mounted) return;
     switch (result) {
       case ExecuteWishlistExportCompleted():
@@ -167,7 +182,12 @@ class _WishlistExportPreviewScreenState
           onRetry: _load,
         ),
         _NoToken() => const _NoTokenState(),
-        _Exporting() => const _ExportingBody(),
+        _Exporting(:final current, :final total, :final currentItem) =>
+          _ExportingBody(
+            current: current,
+            total: total,
+            currentItem: currentItem,
+          ),
         _ExportDone(:final result) => _ExportSummaryBody(
           result: result,
           onDone: () => Navigator.of(context).pop(),
@@ -399,21 +419,51 @@ class _ConfirmBar extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ExportingBody extends StatelessWidget {
-  const _ExportingBody();
+  const _ExportingBody({
+    this.current = 0,
+    this.total = 0,
+    this.currentItem = '',
+  });
+
+  final int current;
+  final int total;
+  final String currentItem;
 
   @override
   Widget build(BuildContext context) {
+    final hasProgress = total > 0;
+    final theme = Theme.of(context);
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 16),
-          Text(
-            'Exporting your wishlist…',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasProgress)
+              LinearProgressIndicator(value: current / total)
+            else
+              const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              hasProgress
+                  ? 'Exporting item $current of $total…'
+                  : 'Exporting your wishlist…',
+              style: theme.textTheme.bodyMedium,
+            ),
+            if (hasProgress && currentItem.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                currentItem,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

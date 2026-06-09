@@ -82,8 +82,9 @@ class ExecuteCollectionExportUseCase {
   final int _maxItemRetries;
 
   Future<ExecuteCollectionExportResult> execute(
-    CollectionExportPreview preview,
-  ) async {
+    CollectionExportPreview preview, {
+    void Function(int current, int total, String description)? onProgress,
+  }) async {
     final capability = _capabilityUseCase.execute();
     if (capability is CollectionExportNotSupported) {
       return ExecuteExportNotSupported(capability.reason);
@@ -123,11 +124,19 @@ class ExecuteCollectionExportUseCase {
       var exported = 0;
       var skipped = 0;
       var failed = 0;
+      var eligibleIndex = 0;
+      final eligibleTotal = preview.eligibleCount;
 
       for (var i = 0; i < preview.rows.length; i++) {
         final row = preview.rows[i];
         switch (row) {
           case EligibleExportRow():
+            eligibleIndex++;
+            onProgress?.call(
+              eligibleIndex,
+              eligibleTotal,
+              '${row.artist} – ${row.title}',
+            );
             try {
               await _addToCollectionWithRetry(username, row.releaseId, token);
               final item = await _collectionRepository.getById(row.itemId);

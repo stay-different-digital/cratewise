@@ -132,8 +132,9 @@ class _FakeExecuteUseCase extends ExecuteCollectionExportUseCase {
 
   @override
   Future<ExecuteCollectionExportResult> execute(
-    CollectionExportPreview preview,
-  ) async => _override;
+    CollectionExportPreview preview, {
+    void Function(int, int, String)? onProgress,
+  }) async => _override;
 }
 
 // ---------------------------------------------------------------------------
@@ -602,6 +603,62 @@ void main() {
         capturedPreview; // suppress unused warning
         await tester.pumpAndSettle(const Duration(seconds: 11));
       });
+
+      testWidgets('shows Exporting item N of M when progress callback fires', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(
+          CollectionExportPreviewReady(makePreview(eligibleCount: 2)),
+        );
+        final executeUseCase = _ProgressingExecuteUseCase();
+        await tester.pumpWidget(
+          buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 2 records'));
+        await tester.pump();
+        await tester.pump();
+        expect(find.text('Exporting item 1 of 2…'), findsOneWidget);
+        await tester.pumpAndSettle(const Duration(seconds: 11));
+      });
+
+      testWidgets(
+        'shows current item description when progress callback fires',
+        (tester) async {
+          final useCase = _FakeUseCase(
+            CollectionExportPreviewReady(makePreview(eligibleCount: 2)),
+          );
+          final executeUseCase = _ProgressingExecuteUseCase();
+          await tester.pumpWidget(
+            buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+          );
+          await tester.pump();
+          await tester.tap(find.text('Export 2 records'));
+          await tester.pump();
+          await tester.pump();
+          expect(find.textContaining('Artist – Eligible 0'), findsOneWidget);
+          await tester.pumpAndSettle(const Duration(seconds: 11));
+        },
+      );
+
+      testWidgets(
+        'shows LinearProgressIndicator when progress callback fires',
+        (tester) async {
+          final useCase = _FakeUseCase(
+            CollectionExportPreviewReady(makePreview(eligibleCount: 2)),
+          );
+          final executeUseCase = _ProgressingExecuteUseCase();
+          await tester.pumpWidget(
+            buildSubject(useCase: useCase, executeUseCase: executeUseCase),
+          );
+          await tester.pump();
+          await tester.tap(find.text('Export 2 records'));
+          await tester.pump();
+          await tester.pump();
+          expect(find.byType(LinearProgressIndicator), findsOneWidget);
+          await tester.pumpAndSettle(const Duration(seconds: 11));
+        },
+      );
     });
 
     group('export done state', () {
@@ -837,9 +894,39 @@ class _PausingExecuteUseCase extends ExecuteCollectionExportUseCase {
 
   @override
   Future<ExecuteCollectionExportResult> execute(
-    CollectionExportPreview preview,
-  ) {
+    CollectionExportPreview preview, {
+    void Function(int, int, String)? onProgress,
+  }) {
     onExecute(preview);
     return _future;
+  }
+}
+
+class _ProgressingExecuteUseCase extends ExecuteCollectionExportUseCase {
+  _ProgressingExecuteUseCase()
+    : super(
+        capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
+        tokenStorage: _FakeTokenStorage(),
+        apiClient: DiscogsApiClient(
+          httpClient: MockClient((_) async => http.Response('', 201)),
+        ),
+        collectionRepository: _FakeCollectionRepository(),
+        jobRepository: _FakeImportExportJobRepository(),
+        rowResultRepository: _FakeRowResultRepository(),
+      );
+
+  @override
+  Future<ExecuteCollectionExportResult> execute(
+    CollectionExportPreview preview, {
+    void Function(int, int, String)? onProgress,
+  }) async {
+    onProgress?.call(1, 2, 'Artist – Eligible 0');
+    await Future<void>.delayed(const Duration(seconds: 10));
+    return ExecuteExportCompleted(
+      jobId: 'j',
+      exported: 2,
+      skipped: 0,
+      failed: 0,
+    );
   }
 }
