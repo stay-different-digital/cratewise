@@ -22,6 +22,7 @@ class _FakeJobRepository implements ImportExportJobRepository {
   final int? _total;
   int loadCallCount = 0;
   int? lastOffset;
+  final List<String> removedIds = [];
 
   @override
   Future<List<ImportExportJob>> getRecent({
@@ -50,7 +51,7 @@ class _FakeJobRepository implements ImportExportJobRepository {
   Future<void> update(ImportExportJob job) async {}
 
   @override
-  Future<void> remove(String id) async {}
+  Future<void> remove(String id) async => removedIds.add(id);
 }
 
 /// A fake whose getRecent returns a preconfigured response per call index,
@@ -618,6 +619,138 @@ void main() {
       await tester.pump();
       final safeAreas = tester.widgetList<SafeArea>(find.byType(SafeArea));
       expect(safeAreas.any((sa) => !sa.top), isTrue);
+    });
+  });
+
+  group('ImportExportHistoryScreen — delete', () {
+    testWidgets('each job card is wrapped in a Dismissible', (tester) async {
+      final repo = _FakeJobRepository(
+        jobs: [
+          makeJob(id: 'j1'),
+          makeJob(id: 'j2'),
+        ],
+      );
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('j1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('j2')), findsOneWidget);
+      expect(find.byType(Dismissible), findsNWidgets(2));
+    });
+
+    testWidgets('swiping left removes entry from the list immediately', (
+      tester,
+    ) async {
+      final repo = _FakeJobRepository(
+        jobs: [
+          makeJob(
+            id: 'j1',
+            jobType: ImportExportJobType.importCollectionFromDiscogs,
+          ),
+        ],
+      );
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+
+      expect(find.text('Import collection from Discogs'), findsOneWidget);
+
+      await tester.drag(
+        find.byKey(const ValueKey('j1')),
+        const Offset(-800, 0),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Import collection from Discogs'), findsNothing);
+    });
+
+    testWidgets('swiping shows undo snackbar', (tester) async {
+      final repo = _FakeJobRepository(jobs: [makeJob(id: 'j1')]);
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+
+      await tester.drag(
+        find.byKey(const ValueKey('j1')),
+        const Offset(-800, 0),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Entry deleted'), findsOneWidget);
+      expect(find.text('Undo'), findsOneWidget);
+    });
+
+    testWidgets('tapping undo restores the entry', (tester) async {
+      final repo = _FakeJobRepository(
+        jobs: [
+          makeJob(
+            id: 'j1',
+            jobType: ImportExportJobType.importCollectionFromDiscogs,
+          ),
+        ],
+      );
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+
+      await tester.drag(
+        find.byKey(const ValueKey('j1')),
+        const Offset(-800, 0),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Import collection from Discogs'), findsNothing);
+
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Import collection from Discogs'), findsOneWidget);
+      expect(repo.removedIds, isEmpty);
+    });
+
+    testWidgets(
+      'confirming delete calls repository remove after snackbar closes',
+      (tester) async {
+        final repo = _FakeJobRepository(jobs: [makeJob(id: 'j1')]);
+        await tester.pumpWidget(_buildSubject(repository: repo));
+        await tester.pump();
+
+        await tester.drag(
+          find.byKey(const ValueKey('j1')),
+          const Offset(-800, 0),
+        );
+        await tester.pumpAndSettle();
+
+        // Dismiss snackbar without tapping Undo (triggers the else → remove branch)
+        ScaffoldMessenger.of(
+          tester.element(find.byType(Scaffold)),
+        ).hideCurrentSnackBar();
+        await tester.pumpAndSettle();
+        await tester.pump();
+
+        expect(repo.removedIds, contains('j1'));
+      },
+    );
+
+    testWidgets('count header decrements immediately after swipe', (
+      tester,
+    ) async {
+      final repo = _FakeJobRepository(
+        jobs: [
+          makeJob(id: 'j1'),
+          makeJob(id: 'j2'),
+        ],
+        total: 2,
+      );
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+
+      expect(find.textContaining('Showing 2 of 2 jobs'), findsOneWidget);
+
+      await tester.drag(
+        find.byKey(const ValueKey('j1')),
+        const Offset(-800, 0),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Showing 1 of 1 jobs'), findsOneWidget);
     });
   });
 }

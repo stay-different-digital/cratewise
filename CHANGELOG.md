@@ -7,6 +7,26 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8W: Import/export history entry deletion (US-49)] — 2026-06-09
+
+### Added
+- Swipe-to-dismiss (end-to-start) on each history entry reveals a red delete background with a trash icon
+- Optimistic removal: the entry disappears from the list immediately on swipe; the count header decrements at the same time
+- Undo snackbar ("Entry deleted" + "Undo" action) shown after every swipe; tapping Undo re-inserts the entry at its original position without reloading
+- If the snackbar closes without Undo, `ImportExportJobRepository.remove(id)` is called
+- `LocalImportExportJobRepository.remove()` now wraps both deletes in a transaction: row results for the job are deleted first, then the job record itself
+
+### Tests
+- 6 new tests in `import_export_history_screen_test.dart` (`delete` group):
+  - Each job card is wrapped in a `Dismissible` with a `ValueKey(job.id)`
+  - Swiping left removes the entry from the visible list immediately
+  - Swiping shows the undo snackbar with "Entry deleted" and "Undo" text
+  - Tapping Undo restores the entry and does not call `remove`
+  - Dismissing the snackbar without Undo calls `repository.remove` with the job id
+  - Count header decrements immediately after swipe
+
+---
+
 ## [Unreleased — Phase 8V: Import/export history status chip colours (US-50)] — 2026-06-09
 
 ### Changed

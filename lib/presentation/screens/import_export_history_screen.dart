@@ -116,6 +116,46 @@ class _ImportExportHistoryScreenState extends State<ImportExportHistoryScreen> {
     }
   }
 
+  Future<void> _onDelete(ImportExportJob job) async {
+    final loaded = _state;
+    if (loaded is! _Loaded) return;
+
+    final index = loaded.jobs.indexWhere((j) => j.id == job.id);
+    if (index < 0) return;
+
+    final updatedJobs = List<ImportExportJob>.from(loaded.jobs)
+      ..removeAt(index);
+    setState(
+      () =>
+          _state = loaded.copyWith(jobs: updatedJobs, total: loaded.total - 1),
+    );
+
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await messenger
+        .showSnackBar(
+          SnackBar(
+            content: const Text('Entry deleted'),
+            action: SnackBarAction(label: 'Undo', onPressed: () {}),
+          ),
+        )
+        .closed;
+
+    if (result == SnackBarClosedReason.action) {
+      if (!mounted) return;
+      final current = _state;
+      if (current is! _Loaded) return;
+      final restored = List<ImportExportJob>.from(current.jobs);
+      restored.insert(index.clamp(0, restored.length), job);
+      setState(
+        () =>
+            _state = current.copyWith(jobs: restored, total: current.total + 1),
+      );
+    } else {
+      await _repository.remove(job.id);
+    }
+  }
+
   @override
   void dispose() {
     _ownedDb?.close();
@@ -135,6 +175,7 @@ class _ImportExportHistoryScreenState extends State<ImportExportHistoryScreen> {
             total: total,
             isLoadingMore: isLoadingMore,
             onLoadMore: _loadMore,
+            onDelete: _onDelete,
           ),
         _LoadError() => _ErrorState(onRetry: _load),
       },
@@ -152,12 +193,14 @@ class _HistoryList extends StatelessWidget {
     required this.total,
     required this.isLoadingMore,
     required this.onLoadMore,
+    required this.onDelete,
   });
 
   final List<ImportExportJob> jobs;
   final int total;
   final bool isLoadingMore;
   final VoidCallback onLoadMore;
+  final void Function(ImportExportJob) onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -185,9 +228,16 @@ class _HistoryList extends StatelessWidget {
             );
           }
           if (index <= jobs.length) {
+            final job = jobs[index - 1];
             return Padding(
               padding: const EdgeInsets.only(bottom: 8),
-              child: _JobCard(job: jobs[index - 1]),
+              child: Dismissible(
+                key: ValueKey(job.id),
+                direction: DismissDirection.endToStart,
+                background: const _DeleteBackground(),
+                onDismissed: (_) => onDelete(job),
+                child: _JobCard(job: job),
+              ),
             );
           }
           return Padding(
@@ -206,6 +256,25 @@ class _HistoryList extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Delete background
+// ---------------------------------------------------------------------------
+
+class _DeleteBackground extends StatelessWidget {
+  const _DeleteBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      color: cs.error,
+      alignment: Alignment.centerRight,
+      padding: const EdgeInsets.only(right: 20),
+      child: Icon(Icons.delete_outline, color: cs.onError),
     );
   }
 }

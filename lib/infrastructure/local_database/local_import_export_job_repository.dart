@@ -53,9 +53,14 @@ class LocalImportExportJobRepository implements ImportExportJobRepository {
 
   @override
   Future<void> remove(String id) async {
-    await (_db.delete(
-      _db.importExportJobs,
-    )..where((t) => t.id.equals(id))).go();
+    await _db.transaction(() async {
+      await (_db.delete(
+        _db.importExportRowResults,
+      )..where((t) => t.jobId.equals(id))).go();
+      await (_db.delete(
+        _db.importExportJobs,
+      )..where((t) => t.id.equals(id))).go();
+    });
   }
 
   ImportExportJob _rowToJob(ImportExportJobRow row) {
