@@ -505,6 +505,28 @@ void main() {
     });
   });
 
+  group('BarcodeScanScreen — torch toggle', () {
+    testWidgets('torch toggle button is absent in initial placeholder state', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      expect(find.byKey(const Key('torch-toggle-button')), findsNothing);
+    });
+
+    testWidgets(
+      'torch toggle button remains absent after scan button tap on non-scanner platform',
+      (tester) async {
+        // On macOS/Linux, _supportsScanner is false so _CameraScanArea is never
+        // shown and the torch button cannot appear.
+        await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+        await tester.tap(find.byKey(const Key('scan-barcode-button')));
+        await tester.pump();
+        expect(find.byKey(const Key('torch-toggle-button')), findsNothing);
+        expect(find.byKey(const Key('scan-area-placeholder')), findsOneWidget);
+      },
+    );
+  });
+
   group('BarcodeScanScreen — wide layout', () {
     testWidgets('uses split view (VerticalDivider) at wide viewport', (
       tester,

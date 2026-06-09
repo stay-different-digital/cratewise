@@ -7,6 +7,24 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8M: Camera scan area has flashlight toggle (US-40)] — 2026-06-09
+
+### Changed
+- `_CameraScanArea` converted from `StatelessWidget` to `StatefulWidget` (`_CameraScanAreaState`) so it can own and manage a `MobileScannerController`
+- `MobileScannerController` is created in `initState` and disposed in `dispose()` — disposal stops the camera and turns the torch off automatically
+- `_CameraScanAreaState` listens to the controller (`ValueNotifier<MobileScannerState>`) via `addListener`; calls `setState` on each change so the torch button icon updates reactively
+
+### Added
+- `_TorchToggleButton` widget — an `IconButton` with a semi-transparent (`Colors.black54`) background, `Icons.flash_on` / `Icons.flash_off` icon, and yellow / white foreground colour reflecting the current `TorchState`; keyed `torch-toggle-button`
+- Torch button overlaid on the camera view (`Align(Alignment.topRight)` within the existing `Stack`) and shown only when `torchState != TorchState.unavailable` (hidden gracefully on devices without a torch)
+
+### Tests
+- 2 new tests in `barcode_scan_screen_test.dart` (`torch toggle` group):
+  - torch toggle button absent in the initial placeholder state
+  - torch toggle button remains absent after scan button tap on non-scanner platform (macOS/Linux test environment)
+
+---
+
 ## [Unreleased — Phase 8L: Barcode scanner uses wide two-panel layout on iPad (US-39)] — 2026-06-09
 
 ### Changed

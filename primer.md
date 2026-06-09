@@ -1,8 +1,8 @@
 # Cratewise — Session Primer
 
 **Date:** 2026-06-09  
-**Test count:** 2166/2166 passing  
-**Last completed phase:** 8L (US-39)
+**Test count:** 2168/2168 passing  
+**Last completed phase:** 8M (US-40)
 
 ---
 
@@ -66,11 +66,11 @@ All from `docs/user-stories/beta-user-stories-s.md`. Listed in order, with story
 | ~~US-37~~ | ~~Barcode scan area shows a viewfinder frame~~ | ~~3~~ | **Done (Phase 8J).** `_ViewfinderOverlay`/`_ViewfinderPainter` in `barcode_scan_screen.dart`; 2151 tests. |
 | ~~US-38~~ | ~~Manual barcode entry validates format~~ | ~~2~~ | **Done (Phase 8K).** `_validateBarcode` + `_canSearch` + `_onInputChanged` listener; inline `errorText`; Search button disabled while invalid; 2162 tests. |
 | ~~US-39~~ | ~~Barcode scanner uses wide two-panel layout on iPad~~ | ~~2~~ | **Done (Phase 8L).** `Expanded(flex:2)` left + `Expanded(flex:3)` right; `_isWide` tracked in `LayoutBuilder`; camera stays live after scan in wide mode; 2166 tests. |
-| US-40 | Camera scan area has flashlight toggle | 2 | Torch on/off button; icon reflects state; torch off on deactivate; graceful if no torch |
+| ~~US-40~~ | ~~Camera scan area has flashlight toggle~~ | ~~2~~ | **Done (Phase 8M).** `_CameraScanArea` → `StatefulWidget`; `MobileScannerController` owned + disposed; `_TorchToggleButton` overlaid top-right; hidden when `TorchState.unavailable`; 2168 tests. |
 | US-41 | Cached release detail banner shows data age | 1 | Banner always shows date without truncation; >30-day data uses warning colour |
 | US-42 | Failed action queue entries expire after configurable period | 2 | TTL (default 30 days) auto-deletes `failed` entries on launch; `pending` entries exempt |
 
-**Recommended next task: US-40 (2 SP)** — camera scan area has a flashlight toggle.
+**Recommended next task: US-41 (1 SP)** — cached release detail banner shows data age (>30 days → warning colour).
 
 ### US-37 implementation notes
 - Draw a centered rectangular overlay on the camera preview in `BarcodeScanScreen`

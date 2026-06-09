@@ -491,7 +491,7 @@ class _PermissionDeniedScanArea extends StatelessWidget {
   }
 }
 
-class _CameraScanArea extends StatelessWidget {
+class _CameraScanArea extends StatefulWidget {
   const _CameraScanArea({
     required this.onDetect,
     required this.onPermissionDenied,
@@ -503,10 +503,36 @@ class _CameraScanArea extends StatelessWidget {
   final double height;
 
   @override
+  State<_CameraScanArea> createState() => _CameraScanAreaState();
+}
+
+class _CameraScanAreaState extends State<_CameraScanArea> {
+  late final MobileScannerController _scanController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scanController = MobileScannerController();
+    _scanController.addListener(_onControllerChanged);
+  }
+
+  void _onControllerChanged() => setState(() {});
+
+  @override
+  void dispose() {
+    _scanController.removeListener(_onControllerChanged);
+    _scanController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final torchState = _scanController.value.torchState;
+    final showTorch = torchState != TorchState.unavailable;
+
     return Container(
       key: const Key('scan-area-scanner'),
-      height: height,
+      height: widget.height,
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
@@ -517,19 +543,52 @@ class _CameraScanArea extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           MobileScanner(
-            onDetect: onDetect,
+            controller: _scanController,
+            onDetect: widget.onDetect,
             errorBuilder: (context, error) {
               if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
                 WidgetsBinding.instance.addPostFrameCallback(
-                  (_) => onPermissionDenied(),
+                  (_) => widget.onPermissionDenied(),
                 );
               }
               return const SizedBox.expand();
             },
           ),
           const _ViewfinderOverlay(),
+          if (showTorch)
+            Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: _TorchToggleButton(
+                  torchState: torchState,
+                  onTap: _scanController.toggleTorch,
+                ),
+              ),
+            ),
         ],
       ),
+    );
+  }
+}
+
+class _TorchToggleButton extends StatelessWidget {
+  const _TorchToggleButton({required this.torchState, required this.onTap});
+
+  final TorchState torchState;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isOn = torchState == TorchState.on;
+    return IconButton(
+      key: const Key('torch-toggle-button'),
+      style: IconButton.styleFrom(
+        backgroundColor: Colors.black54,
+        foregroundColor: isOn ? Colors.yellow : Colors.white,
+      ),
+      icon: Icon(isOn ? Icons.flash_on : Icons.flash_off),
+      onPressed: onTap,
     );
   }
 }
