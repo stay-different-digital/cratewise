@@ -1,8 +1,8 @@
 # Cratewise — Session Primer
 
 **Date:** 2026-06-09  
-**Test count:** 2168/2168 passing  
-**Last completed phase:** 8M (US-40)
+**Test count:** 2170/2170 passing  
+**Last completed phase:** 8N (US-41)
 
 ---
 
@@ -22,6 +22,7 @@ Cratewise is a Flutter vinyl record collection manager with local-first storage 
 | 6 | — | Import/export domain + UI: Discogs collection/wishlist import+export, CSV import+export, history screen |
 | 7A–7Z | US-01–27 | HTTP timeout, iOS Keychain guard, search pagination, pull-to-refresh, app bar titles, search context on detail, uri150 thumbnails, "In Collection/Wishlist" indicators, collection/wishlist search+filter, collection live-refresh (RouteObserver), split-pane search on iPad, token revocation auto-clear, atomic credential save, rate-limit header back-off, condition prompt on add, full cached offline detail, thumbnail eviction (200 MB LRU), silent cache retry, Discogs-link promotion on import, failed-write retry queue, mid-pagination rate-limit retry, per-item export rate-limit retry, CSV BOM for Excel, safe area on all scrollable screens |
 | 8A–8I | US-28–36 | GoRouter deep linking, tappable help URL, token format hint, artist dash parsing, ANV display, multi-format entries, rate-limit retry countdown button, collection detail live-reload on pop, locale-aware date formatting (intl) |
+| 8J–8N | US-37–41 | Barcode viewfinder overlay, manual barcode validation, iPad wide two-panel barcode layout, camera flashlight toggle, cached banner data age + warning colour |
 
 ### Key architecture points
 - **Router:** GoRouter (`lib/app/router.dart`), `StatefulShellRoute.indexedStack` for 5 tabs. `AppRoutes` constants for all paths.
@@ -67,10 +68,10 @@ All from `docs/user-stories/beta-user-stories-s.md`. Listed in order, with story
 | ~~US-38~~ | ~~Manual barcode entry validates format~~ | ~~2~~ | **Done (Phase 8K).** `_validateBarcode` + `_canSearch` + `_onInputChanged` listener; inline `errorText`; Search button disabled while invalid; 2162 tests. |
 | ~~US-39~~ | ~~Barcode scanner uses wide two-panel layout on iPad~~ | ~~2~~ | **Done (Phase 8L).** `Expanded(flex:2)` left + `Expanded(flex:3)` right; `_isWide` tracked in `LayoutBuilder`; camera stays live after scan in wide mode; 2166 tests. |
 | ~~US-40~~ | ~~Camera scan area has flashlight toggle~~ | ~~2~~ | **Done (Phase 8M).** `_CameraScanArea` → `StatefulWidget`; `MobileScannerController` owned + disposed; `_TorchToggleButton` overlaid top-right; hidden when `TorchState.unavailable`; 2168 tests. |
-| US-41 | Cached release detail banner shows data age | 1 | Banner always shows date without truncation; >30-day data uses warning colour |
+| ~~US-41~~ | ~~Cached release detail banner shows data age~~ | ~~1~~ | **Done (Phase 8N).** `_CachedBanner._isStale` (≥ 30 days); stale → `errorContainer` + `warning_amber_rounded` icon keyed `cached-banner-stale`; fresh → `secondaryContainer`; 2170 tests. |
 | US-42 | Failed action queue entries expire after configurable period | 2 | TTL (default 30 days) auto-deletes `failed` entries on launch; `pending` entries exempt |
 
-**Recommended next task: US-41 (1 SP)** — cached release detail banner shows data age (>30 days → warning colour).
+**Recommended next task: US-42 (2 SP)** — failed action queue entries expire after configurable period (TTL default 30 days, `failed` only).
 
 ### US-37 implementation notes
 - Draw a centered rectangular overlay on the camera preview in `BarcodeScanScreen`

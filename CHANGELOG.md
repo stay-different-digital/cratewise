@@ -7,6 +7,19 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8N: Cached release detail banner shows data age (US-41)] — 2026-06-09
+
+### Changed
+- `_CachedBanner` — computes `_isStale` (`fetchedAt` is ≥ 30 days ago); when stale switches from `secondaryContainer`/`onSecondaryContainer` to `errorContainer`/`onErrorContainer` and replaces the `offline_pin_outlined` icon with `warning_amber_rounded` (keyed `cached-banner-stale`) so users get a prominent visual signal that offline data is dated; text already wraps naturally via `Expanded` — no truncation possible
+- 30-day threshold is a named constant (`_CachedBanner._kStaleDays = 30`)
+
+### Tests
+- 2 new tests in `release_detail_screen_test.dart` (`cached banner data age` group):
+  - banner does not show stale indicator for data within 30 days (`_freshCachedKindOfBlue` fixture, 1-day-old cache)
+  - banner shows stale indicator for data older than 30 days (existing `_cachedKindOfBlue` fixture, Jan 2026 = ~145 days old)
+
+---
+
 ## [Unreleased — Phase 8M: Camera scan area has flashlight toggle (US-40)] — 2026-06-09
 
 ### Changed

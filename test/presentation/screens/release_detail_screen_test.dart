@@ -256,6 +256,11 @@ final _cachedKindOfBlue = CachedReleaseMetadata(
   syncStatus: SyncStatus.localOnly,
 );
 
+// Fresh cached metadata: 1 day old — always within the 30-day threshold.
+final _freshCachedKindOfBlue = _cachedKindOfBlue.copyWith(
+  fetchedAt: DateTime.now().subtract(const Duration(days: 1)),
+);
+
 class _FakeThumbnailRepository implements ThumbnailRepository {
   int getLocalPathCallCount = 0;
 
@@ -2056,6 +2061,52 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('In Wishlist'), findsOneWidget);
         expect(find.text('Add to Wishlist'), findsNothing);
+      },
+    );
+  });
+
+  group('ReleaseDetailScreen — cached banner data age', () {
+    testWidgets(
+      'cached banner does not show stale indicator for data within 30 days',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _ErrorService(error: const NetworkError()),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              cacheRepository: _FakeCacheRepository(
+                cachedMetadata: _freshCachedKindOfBlue,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('cached-banner-stale')), findsNothing);
+        expect(find.textContaining('Showing saved data'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'cached banner shows stale indicator for data older than 30 days',
+      (tester) async {
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _ErrorService(error: const NetworkError()),
+              addToCollectionUseCase: _newUseCase(),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              cacheRepository: _FakeCacheRepository(
+                cachedMetadata: _cachedKindOfBlue,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('cached-banner-stale')), findsOneWidget);
+        expect(find.textContaining('Showing saved data'), findsOneWidget);
       },
     );
   });

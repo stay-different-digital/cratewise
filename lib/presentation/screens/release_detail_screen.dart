@@ -818,27 +818,38 @@ class _CachedBanner extends StatelessWidget {
 
   final DateTime fetchedAt;
 
+  static const _kStaleDays = 30;
+
+  bool get _isStale =>
+      DateTime.now().difference(fetchedAt).inDays >= _kStaleDays;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final stale = _isStale;
+    final bgColor = stale
+        ? theme.colorScheme.errorContainer
+        : theme.colorScheme.secondaryContainer;
+    final fgColor = stale
+        ? theme.colorScheme.onErrorContainer
+        : theme.colorScheme.onSecondaryContainer;
     return ColoredBox(
-      color: theme.colorScheme.secondaryContainer,
+      color: bgColor,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
             Icon(
-              Icons.offline_pin_outlined,
+              stale ? Icons.warning_amber_rounded : Icons.offline_pin_outlined,
+              key: stale ? const Key('cached-banner-stale') : null,
               size: 16,
-              color: theme.colorScheme.onSecondaryContainer,
+              color: fgColor,
             ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 'Showing saved data · last updated ${formatDate(fetchedAt, Localizations.localeOf(context))}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSecondaryContainer,
-                ),
+                style: theme.textTheme.labelSmall?.copyWith(color: fgColor),
               ),
             ),
           ],
