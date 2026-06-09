@@ -8,4 +8,5 @@ abstract interface class RetryActionRepository {
   Future<void> update(RetryAction action);
   Future<void> remove(String id);
   Future<void> deleteFailedBefore(DateTime cutoff);
+  Future<void> deleteAll();
 }

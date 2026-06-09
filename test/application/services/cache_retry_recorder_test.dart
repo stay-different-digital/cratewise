@@ -41,6 +41,9 @@ class _FakeRetryRepo implements RetryActionRepository {
 
   @override
   Future<void> deleteFailedBefore(DateTime cutoff) async {}
+
+  @override
+  Future<void> deleteAll() async {}
 }
 
 // ---------------------------------------------------------------------------

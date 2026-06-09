@@ -62,6 +62,11 @@ class LocalRetryActionRepository implements RetryActionRepository {
         .go();
   }
 
+  @override
+  Future<void> deleteAll() async {
+    await _db.delete(_db.retryActions).go();
+  }
+
   RetryAction _rowToAction(RetryActionRow row) {
     return RetryAction(
       id: row.id,

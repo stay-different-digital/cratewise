@@ -7,6 +7,27 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8Q: Failed Actions screen "Clear All" button (US-44)] — 2026-06-09
+
+### Added
+- `deleteAll()` method added to `RetryActionRepository` interface and `LocalRetryActionRepository` (`_db.delete(_db.retryActions).go()`)
+- "Clear All" `PopupMenuButton` (`Key('failed-actions-overflow-menu')`) in the `AppBar.actions` — visible only when the list has entries, hidden on empty/error/loading states
+- Confirmation `AlertDialog` (title: "Clear all failed actions?"; body states "This cannot be undone.") with Cancel + "Clear All" (`Key('clear-all-confirm-button')`) buttons
+- After confirmation, `_repository.deleteAll()` is called and the list reloads, showing the empty state
+
+### Tests
+- `deleteAll()` stub (`async {}`) added to 9 fake repo implementations across test files
+- 7 new tests in `failed_actions_screen_test.dart` (`FailedActionsScreen — Clear All button` group):
+  - overflow menu appears when list has entries
+  - overflow menu is hidden when list is empty
+  - tapping overflow shows Clear All menu item
+  - tapping Clear All shows confirmation dialog
+  - confirmation dialog mentions cannot be undone
+  - cancelling dialog does not call deleteAll
+  - confirming calls deleteAll and shows empty state
+
+---
+
 ## [Unreleased — Phase 8P: Failed Actions screen "Retry All" button (US-43)] — 2026-06-09
 
 ### Added

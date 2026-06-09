@@ -28,6 +28,7 @@ class _FakeRetryRepo implements RetryActionRepository {
   final List<RetryAction> actions;
   final bool throwsOnLoad;
   int loadCallCount = 0;
+  int deleteAllCallCount = 0;
 
   @override
   Future<List<RetryAction>> getAll() async {
@@ -55,6 +56,12 @@ class _FakeRetryRepo implements RetryActionRepository {
 
   @override
   Future<void> deleteFailedBefore(DateTime cutoff) async {}
+
+  @override
+  Future<void> deleteAll() async {
+    deleteAllCallCount++;
+    actions.clear();
+  }
 }
 
 // Minimal fakes for RetryMetadataRefreshUseCase super-constructor.
@@ -82,6 +89,8 @@ class _NullRetryRepoForUseCase implements RetryActionRepository {
   Future<void> remove(String id) async {}
   @override
   Future<void> deleteFailedBefore(DateTime cutoff) async {}
+  @override
+  Future<void> deleteAll() async {}
 }
 
 class _NullThumbnailRepo implements ThumbnailRepository {
@@ -160,6 +169,8 @@ class _FlippingRepo implements RetryActionRepository {
   Future<void> remove(String id) async {}
   @override
   Future<void> deleteFailedBefore(DateTime cutoff) async {}
+  @override
+  Future<void> deleteAll() async {}
 }
 
 // Null collection/wishlist repos for use case constructors.
@@ -1158,6 +1169,125 @@ void main() {
 
       expect(find.text('No failed actions'), findsOneWidget);
       expect(uc.callCount, 2);
+    });
+  });
+
+  group('FailedActionsScreen — Clear All button', () {
+    RetryAction thumbnailAction({String id = 'a1'}) => _makeAction(
+      id: id,
+      actionType: RetryActionType.cacheThumbnail,
+      safeErrorMessage: 'Cover image could not be cached.',
+    );
+
+    testWidgets('overflow menu appears when list has entries', (tester) async {
+      final actions = [thumbnailAction()];
+      final repo = _FakeRetryRepo(actions: actions);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('failed-actions-overflow-menu')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('overflow menu is hidden when list is empty', (tester) async {
+      final repo = _FakeRetryRepo(actions: []);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('failed-actions-overflow-menu')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('tapping overflow shows Clear All menu item', (tester) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('failed-actions-overflow-menu')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Clear All'), findsOneWidget);
+    });
+
+    testWidgets('tapping Clear All shows confirmation dialog', (tester) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('failed-actions-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Clear All'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+    });
+
+    testWidgets('confirmation dialog mentions cannot be undone', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('failed-actions-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Clear All'));
+      await tester.pumpAndSettle();
+
+      final dialogText = tester
+          .widgetList<Text>(
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.byType(Text),
+            ),
+          )
+          .map((t) => t.data ?? '')
+          .join(' ')
+          .toLowerCase();
+
+      expect(dialogText, contains('cannot be undone'));
+    });
+
+    testWidgets('cancelling dialog does not call deleteAll', (tester) async {
+      final actions = [thumbnailAction()];
+      final repo = _FakeRetryRepo(actions: actions);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('failed-actions-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Clear All'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(repo.deleteAllCallCount, 0);
+      expect(find.byType(Card), findsOneWidget);
+    });
+
+    testWidgets('confirming calls deleteAll and shows empty state', (
+      tester,
+    ) async {
+      final actions = [thumbnailAction(id: 'a1'), thumbnailAction(id: 'a2')];
+      final repo = _FakeRetryRepo(actions: actions);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('failed-actions-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Clear All'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('clear-all-confirm-button')));
+      await tester.pumpAndSettle();
+
+      expect(repo.deleteAllCallCount, 1);
+      expect(find.text('No failed actions'), findsOneWidget);
     });
   });
 }

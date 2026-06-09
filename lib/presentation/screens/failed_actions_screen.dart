@@ -73,6 +73,34 @@ class _FailedActionsScreenState extends State<FailedActionsScreen> {
     _load();
   }
 
+  Future<void> _confirmClearAll() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear all failed actions?'),
+        content: const Text(
+          'All failed action entries will be permanently deleted. '
+          'This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.tonal(
+            key: const Key('clear-all-confirm-button'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _repository.deleteAll();
+      _load();
+    }
+  }
+
   Future<void> _load() async {
     setState(() => _state = const _Loading());
     try {
@@ -96,8 +124,25 @@ class _FailedActionsScreenState extends State<FailedActionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hasEntries =
+        _state is _Loaded && (_state as _Loaded).actions.isNotEmpty;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Failed Actions')),
+      appBar: AppBar(
+        title: const Text('Failed Actions'),
+        actions: [
+          if (hasEntries)
+            PopupMenuButton<String>(
+              key: const Key('failed-actions-overflow-menu'),
+              onSelected: (value) {
+                if (value == 'clear-all') _confirmClearAll();
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'clear-all', child: Text('Clear All')),
+              ],
+            ),
+        ],
+      ),
       body: switch (_state) {
         _Loading() => const Center(child: CircularProgressIndicator()),
         _Loaded(:final actions) when actions.isEmpty => const _EmptyState(),

@@ -32,6 +32,9 @@ class _SpyRetryRepo implements RetryActionRepository {
   Future<void> deleteFailedBefore(DateTime cutoff) async {
     deletedBefore = cutoff;
   }
+
+  @override
+  Future<void> deleteAll() async {}
 }
 
 // ---------------------------------------------------------------------------
