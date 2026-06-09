@@ -7,6 +7,27 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8U: Import/export history pagination (US-48)] — 2026-06-09
+
+### Added
+- `offset` parameter added to `ImportExportJobRepository.getRecent` (default `0`) — enables page-based fetching without breaking existing callers
+- `count()` method added to `ImportExportJobRepository` — returns the total number of stored jobs
+- `LocalImportExportJobRepository` implements both: `getRecent` uses Drift's `.limit(limit, offset: offset)`, `count()` uses a `selectOnly` aggregate
+- `_Loaded` state in `ImportExportHistoryScreen` now carries `total` (int) and `isLoadingMore` (bool)
+- Initial screen load fetches `count()` and `getRecent()` in parallel via Dart record `.wait`
+- "Showing N of M jobs" count header rendered at the top of the list
+- "Load more" `FilledButton.tonal` rendered at the bottom of the list when more jobs remain; replaced by a `CircularProgressIndicator` while the next page is fetching
+- `_loadMore()` fetches the next 20 jobs at `offset = jobs.length` and appends them to the existing list
+
+### Tests
+- 17 new tests across 5 files:
+  - 3 new tests in `import_export_job_repository_test.dart`: offset paginates correctly, empty on out-of-range offset, count() increments/decrements
+  - 3 new tests in `local_import_export_job_repository_test.dart`: same offset and count contract against real in-memory Drift DB
+  - 7 new tests in `import_export_history_screen_test.dart`: count header shown, total reflected from repository, Load more visible/hidden based on remaining jobs, Load more appends jobs and removes button when exhausted, correct offset passed on second page
+  - All 17 existing test fakes updated: `getRecent` now accepts `offset`, `count()` stub returns `0` (or `jobs.length`)
+
+---
+
 ## [Unreleased — Phase 8T: Auto-cleanup of stale CSV export files (US-47)] — 2026-06-09
 
 ### Added

@@ -30,13 +30,25 @@ class LocalImportExportJobRepository implements ImportExportJobRepository {
   }
 
   @override
-  Future<List<ImportExportJob>> getRecent({int limit = 20}) async {
+  Future<List<ImportExportJob>> getRecent({
+    int limit = 20,
+    int offset = 0,
+  }) async {
     final rows =
         await (_db.select(_db.importExportJobs)
               ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
-              ..limit(limit))
+              ..limit(limit, offset: offset))
             .get();
     return rows.map(_rowToJob).toList();
+  }
+
+  @override
+  Future<int> count() async {
+    final countExpr = _db.importExportJobs.id.count();
+    final row = await (_db.selectOnly(
+      _db.importExportJobs,
+    )..addColumns([countExpr])).getSingle();
+    return row.read(countExpr) ?? 0;
   }
 
   @override

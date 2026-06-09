@@ -21,8 +21,25 @@ class _Loading extends _HistoryState {
 }
 
 class _Loaded extends _HistoryState {
-  const _Loaded(this.jobs);
+  const _Loaded({
+    required this.jobs,
+    required this.total,
+    this.isLoadingMore = false,
+  });
+
   final List<ImportExportJob> jobs;
+  final int total;
+  final bool isLoadingMore;
+
+  _Loaded copyWith({
+    List<ImportExportJob>? jobs,
+    int? total,
+    bool? isLoadingMore,
+  }) => _Loaded(
+    jobs: jobs ?? this.jobs,
+    total: total ?? this.total,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+  );
 }
 
 class _LoadError extends _HistoryState {
@@ -65,12 +82,37 @@ class _ImportExportHistoryScreenState extends State<ImportExportHistoryScreen> {
   Future<void> _load() async {
     setState(() => _state = const _Loading());
     try {
-      final jobs = await _repository.getRecent();
+      final (total, jobs) = await (
+        _repository.count(),
+        _repository.getRecent(),
+      ).wait;
       if (!mounted) return;
-      setState(() => _state = _Loaded(jobs));
+      setState(() => _state = _Loaded(jobs: jobs, total: total));
     } catch (_) {
       if (!mounted) return;
       setState(() => _state = const _LoadError());
+    }
+  }
+
+  Future<void> _loadMore() async {
+    final loaded = _state;
+    if (loaded is! _Loaded) return;
+    setState(() => _state = loaded.copyWith(isLoadingMore: true));
+    try {
+      final more = await _repository.getRecent(
+        limit: 20,
+        offset: loaded.jobs.length,
+      );
+      if (!mounted) return;
+      setState(
+        () => _state = loaded.copyWith(
+          jobs: [...loaded.jobs, ...more],
+          isLoadingMore: false,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _state = loaded.copyWith(isLoadingMore: false));
     }
   }
 
@@ -87,7 +129,13 @@ class _ImportExportHistoryScreenState extends State<ImportExportHistoryScreen> {
       body: switch (_state) {
         _Loading() => const Center(child: CircularProgressIndicator()),
         _Loaded(:final jobs) when jobs.isEmpty => const _EmptyState(),
-        _Loaded(:final jobs) => _HistoryList(jobs: jobs),
+        _Loaded(:final jobs, :final total, :final isLoadingMore) =>
+          _HistoryList(
+            jobs: jobs,
+            total: total,
+            isLoadingMore: isLoadingMore,
+            onLoadMore: _loadMore,
+          ),
         _LoadError() => _ErrorState(onRetry: _load),
       },
     );
@@ -99,19 +147,64 @@ class _ImportExportHistoryScreenState extends State<ImportExportHistoryScreen> {
 // ---------------------------------------------------------------------------
 
 class _HistoryList extends StatelessWidget {
-  const _HistoryList({required this.jobs});
+  const _HistoryList({
+    required this.jobs,
+    required this.total,
+    required this.isLoadingMore,
+    required this.onLoadMore,
+  });
 
   final List<ImportExportJob> jobs;
+  final int total;
+  final bool isLoadingMore;
+  final VoidCallback onLoadMore;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasMore = jobs.length < total;
+    final hasFooter = hasMore || isLoadingMore;
+    final itemCount = 1 + jobs.length + (hasFooter ? 1 : 0);
+
     return SafeArea(
       top: false,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: jobs.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemBuilder: (context, index) => _JobCard(job: jobs[index]),
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        itemCount: itemCount,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                'Showing ${jobs.length} of $total jobs',
+                key: const Key('history-count'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            );
+          }
+          if (index <= jobs.length) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _JobCard(job: jobs[index - 1]),
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: isLoadingMore
+                  ? const CircularProgressIndicator(
+                      key: Key('load-more-indicator'),
+                    )
+                  : FilledButton.tonal(
+                      key: const Key('load-more-button'),
+                      onPressed: onLoadMore,
+                      child: const Text('Load more'),
+                    ),
+            ),
+          );
+        },
       ),
     );
   }

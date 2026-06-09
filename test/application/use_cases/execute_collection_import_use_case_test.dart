@@ -116,7 +116,11 @@ class _FakeJobRepository implements ImportExportJobRepository {
       jobs.where((j) => j.id == id).firstOrNull;
 
   @override
-  Future<List<ImportExportJob>> getRecent({int limit = 20}) async => jobs;
+  Future<List<ImportExportJob>> getRecent({
+    int limit = 20,
+    int offset = 0,
+  }) async => jobs;
+  Future<int> count() async => 0;
 
   @override
   Future<void> remove(String id) async => jobs.removeWhere((j) => j.id == id);

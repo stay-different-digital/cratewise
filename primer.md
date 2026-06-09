@@ -1,8 +1,8 @@
 # Cratewise — Session Primer
 
 **Date:** 2026-06-09  
-**Test count:** 2214/2214 passing  
-**Last completed phase:** 8T (US-47)
+**Test count:** 2231/2231 passing  
+**Last completed phase:** 8U (US-48)
 
 ---
 
@@ -22,7 +22,7 @@ Cratewise is a Flutter vinyl record collection manager with local-first storage 
 | 6 | — | Import/export domain + UI: Discogs collection/wishlist import+export, CSV import+export, history screen |
 | 7A–7Z | US-01–27 | HTTP timeout, iOS Keychain guard, search pagination, pull-to-refresh, app bar titles, search context on detail, uri150 thumbnails, "In Collection/Wishlist" indicators, collection/wishlist search+filter, collection live-refresh (RouteObserver), split-pane search on iPad, token revocation auto-clear, atomic credential save, rate-limit header back-off, condition prompt on add, full cached offline detail, thumbnail eviction (200 MB LRU), silent cache retry, Discogs-link promotion on import, failed-write retry queue, mid-pagination rate-limit retry, per-item export rate-limit retry, CSV BOM for Excel, safe area on all scrollable screens |
 | 8A–8I | US-28–36 | GoRouter deep linking, tappable help URL, token format hint, artist dash parsing, ANV display, multi-format entries, rate-limit retry countdown button, collection detail live-reload on pop, locale-aware date formatting (intl) |
-| 8J–8T | US-37–47 | Barcode viewfinder overlay, manual barcode validation, iPad wide two-panel barcode layout, camera flashlight toggle, cached banner data age + warning colour, failed action TTL purge on launch, Failed Actions "Retry All" button, Failed Actions "Clear All" button, per-item export progress, Share Again on CSV export success, auto-cleanup of stale CSV export files |
+| 8J–8U | US-37–48 | Barcode viewfinder overlay, manual barcode validation, iPad wide two-panel barcode layout, camera flashlight toggle, cached banner data age + warning colour, failed action TTL purge on launch, Failed Actions "Retry All" button, Failed Actions "Clear All" button, per-item export progress, Share Again on CSV export success, auto-cleanup of stale CSV export files, import/export history pagination |
 
 ### Key architecture points
 - **Router:** GoRouter (`lib/app/router.dart`), `StatefulShellRoute.indexedStack` for 5 tabs. `AppRoutes` constants for all paths.
@@ -75,9 +75,10 @@ All from `docs/user-stories/beta-user-stories-s.md`. Listed in order, with story
 | ~~US-45~~ | ~~Export shows per-item progress during large exports~~ | ~~2~~ | **Done (Phase 8R).** `onProgress` callback on both export use cases; `_Exporting` state carries `current/total/currentItem`; `LinearProgressIndicator` + "Exporting item N of M…" + item label; 2198 tests. |
 | ~~US-46~~ | ~~Export success screen has a "Share Again" option~~ | ~~1~~ | **Done (Phase 8S).** `filePath` added to both `Completed` result types; "Share Again" `OutlinedButton` in `_DoneBody`; file-existence check before sharing; snackbar if file gone; 2204 tests. |
 | ~~US-47~~ | ~~Temp CSV export files are cleaned up automatically~~ | ~~2~~ | **Done (Phase 8T).** `CleanUpStaleCsvExportsUseCase` parses timestamp from filename; deletes files > 7 days old; fired on app launch; 2214 tests. |
-| US-48 | Import/export history is paginated | 3 | Show 20 most recent jobs; "Load more" / infinite scroll |
+| ~~US-48~~ | ~~Import/export history is paginated~~ | ~~3~~ | **Done (Phase 8U).** `count()` + `offset` on repo; "Showing N of M jobs" header; "Load more" button; spinner while loading; 2231 tests. |
+| US-49 | Import/export history allows deleting individual entries | 2 | Swipe-to-dismiss or long-press; confirmation; cascades to row results |
 
-**Recommended next task: US-48 (3 SP)** — Import/export history is paginated.
+**Recommended next task: US-49 (2 SP)** — Import/export history allows deleting individual entries.
 
 ### US-37 implementation notes
 - Draw a centered rectangular overlay on the camera preview in `BarcodeScanScreen`

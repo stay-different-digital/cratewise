@@ -235,6 +235,41 @@ void main() {
         await repo.add(makeJob(id: 'j-2', createdAt: DateTime(2026, 6, 2)));
         expect(await repo.getRecent(limit: 10), hasLength(2));
       });
+
+      test('respects offset parameter', () async {
+        for (var i = 1; i <= 5; i++) {
+          await repo.add(makeJob(id: 'j-$i', createdAt: DateTime(2026, 6, i)));
+        }
+        // Newest first: j-5, j-4, j-3, j-2, j-1
+        final page2 = await repo.getRecent(limit: 2, offset: 2);
+        expect(page2, hasLength(2));
+        expect(page2.first.id, 'j-3');
+        expect(page2.last.id, 'j-2');
+      });
+
+      test('returns empty list when offset exceeds total count', () async {
+        await repo.add(makeJob(id: 'j-1'));
+        expect(await repo.getRecent(limit: 20, offset: 10), isEmpty);
+      });
+    });
+
+    group('count', () {
+      test('returns 0 when no jobs exist', () async {
+        expect(await repo.count(), 0);
+      });
+
+      test('returns total job count', () async {
+        await repo.add(makeJob(id: 'j-1', createdAt: DateTime(2026, 6, 1)));
+        await repo.add(makeJob(id: 'j-2', createdAt: DateTime(2026, 6, 2)));
+        expect(await repo.count(), 2);
+      });
+
+      test('decrements after remove', () async {
+        await repo.add(makeJob(id: 'j-1'));
+        await repo.add(makeJob(id: 'j-2', createdAt: DateTime(2026, 6, 2)));
+        await repo.remove('j-1');
+        expect(await repo.count(), 1);
+      });
     });
 
     group('remove', () {

@@ -11,22 +11,73 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeJobRepository implements ImportExportJobRepository {
-  _FakeJobRepository({this.jobs = const [], this.throwsOnLoad = false});
+  _FakeJobRepository({
+    this.jobs = const [],
+    this.throwsOnLoad = false,
+    int? total,
+  }) : _total = total;
 
   final List<ImportExportJob> jobs;
   final bool throwsOnLoad;
+  final int? _total;
   int loadCallCount = 0;
+  int? lastOffset;
 
   @override
-  Future<List<ImportExportJob>> getRecent({int limit = 20}) async {
+  Future<List<ImportExportJob>> getRecent({
+    int limit = 20,
+    int offset = 0,
+  }) async {
     loadCallCount++;
     if (throwsOnLoad) throw Exception('db error');
-    return List.of(jobs);
+    lastOffset = offset;
+    final start = offset.clamp(0, jobs.length);
+    final end = (offset + limit).clamp(0, jobs.length);
+    return jobs.sublist(start, end);
   }
+
+  @override
+  Future<int> count() async => _total ?? jobs.length;
 
   @override
   Future<ImportExportJob?> getById(String id) async =>
       jobs.where((j) => j.id == id).firstOrNull;
+
+  @override
+  Future<void> add(ImportExportJob job) async {}
+
+  @override
+  Future<void> update(ImportExportJob job) async {}
+
+  @override
+  Future<void> remove(String id) async {}
+}
+
+/// A fake whose getRecent returns a preconfigured response per call index,
+/// allowing pagination behaviour to be tested without real page sizes.
+class _PagedFakeJobRepository implements ImportExportJobRepository {
+  _PagedFakeJobRepository({required this.responses, required this.totalCount});
+
+  final List<List<ImportExportJob>> responses;
+  final int totalCount;
+  int _callIndex = 0;
+  int? lastOffset;
+
+  @override
+  Future<List<ImportExportJob>> getRecent({
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    lastOffset = offset;
+    if (_callIndex < responses.length) return responses[_callIndex++];
+    return [];
+  }
+
+  @override
+  Future<int> count() async => totalCount;
+
+  @override
+  Future<ImportExportJob?> getById(String id) async => null;
 
   @override
   Future<void> add(ImportExportJob job) async {}
@@ -348,6 +399,96 @@ void main() {
         await tester.pump();
         expect(repo.loadCallCount, 2);
       });
+    });
+  });
+
+  group('ImportExportHistoryScreen — pagination', () {
+    testWidgets('shows job count header when jobs are loaded', (tester) async {
+      final repo = _FakeJobRepository(jobs: [makeJob()]);
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+      expect(find.textContaining('Showing 1 of 1 jobs'), findsOneWidget);
+    });
+
+    testWidgets('count header reflects total from repository', (tester) async {
+      final repo = _FakeJobRepository(jobs: [makeJob()], total: 5);
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+      expect(find.textContaining('Showing 1 of 5 jobs'), findsOneWidget);
+    });
+
+    testWidgets('shows Load more button when more jobs exist', (tester) async {
+      final repo = _FakeJobRepository(jobs: [makeJob()], total: 5);
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+      expect(find.text('Load more'), findsOneWidget);
+    });
+
+    testWidgets('does not show Load more when all jobs are loaded', (
+      tester,
+    ) async {
+      final repo = _FakeJobRepository(jobs: [makeJob()]);
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+      expect(find.text('Load more'), findsNothing);
+    });
+
+    testWidgets('does not show count header on empty state', (tester) async {
+      final repo = _FakeJobRepository();
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+      expect(find.textContaining('Showing'), findsNothing);
+    });
+
+    testWidgets('Load more appends jobs and updates count', (tester) async {
+      final j1 = makeJob(
+        id: 'j1',
+        jobType: ImportExportJobType.importCollectionFromDiscogs,
+      );
+      final j2 = makeJob(
+        id: 'j2',
+        jobType: ImportExportJobType.csvCollectionExport,
+      );
+      final repo = _PagedFakeJobRepository(
+        responses: [
+          [j1],
+          [j2],
+        ],
+        totalCount: 2,
+      );
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+
+      expect(find.textContaining('Showing 1 of 2 jobs'), findsOneWidget);
+      expect(find.text('Import collection from Discogs'), findsOneWidget);
+      expect(find.text('Load more'), findsOneWidget);
+
+      await tester.tap(find.text('Load more'));
+      await tester.pump();
+
+      expect(find.textContaining('Showing 2 of 2 jobs'), findsOneWidget);
+      expect(find.text('Import collection from Discogs'), findsOneWidget);
+      expect(find.text('Export collection to CSV'), findsOneWidget);
+      expect(find.text('Load more'), findsNothing);
+    });
+
+    testWidgets('Load more passes correct offset to repository', (
+      tester,
+    ) async {
+      final repo = _PagedFakeJobRepository(
+        responses: [
+          [makeJob(id: 'j1')],
+          [makeJob(id: 'j2')],
+        ],
+        totalCount: 2,
+      );
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+
+      await tester.tap(find.text('Load more'));
+      await tester.pump();
+
+      expect(repo.lastOffset, 1);
     });
   });
 

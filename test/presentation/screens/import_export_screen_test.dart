@@ -136,7 +136,11 @@ class _FakeWishlistCsvExportUseCase
 
 class _FakeJobRepository implements ImportExportJobRepository {
   @override
-  Future<List<ImportExportJob>> getRecent({int limit = 20}) async => [];
+  Future<List<ImportExportJob>> getRecent({
+    int limit = 20,
+    int offset = 0,
+  }) async => [];
+  Future<int> count() async => 0;
 
   @override
   Future<ImportExportJob?> getById(String id) async => null;

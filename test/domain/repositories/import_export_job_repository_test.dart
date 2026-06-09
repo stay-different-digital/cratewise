@@ -18,11 +18,17 @@ class FakeImportExportJobRepository implements ImportExportJobRepository {
   Future<ImportExportJob?> getById(String id) async => _store[id];
 
   @override
-  Future<List<ImportExportJob>> getRecent({int limit = 20}) async {
+  Future<List<ImportExportJob>> getRecent({
+    int limit = 20,
+    int offset = 0,
+  }) async {
     final sorted = _store.values.toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return sorted.take(limit).toList();
+    return sorted.skip(offset).take(limit).toList();
   }
+
+  @override
+  Future<int> count() async => _store.length;
 
   @override
   Future<void> remove(String id) async => _store.remove(id);
@@ -145,6 +151,41 @@ void main() {
         await repo.add(makeJob(id: 'j-2', createdAt: DateTime(2026, 6, 2)));
         final recent = await repo.getRecent(limit: 10);
         expect(recent, hasLength(2));
+      });
+
+      test('respects offset parameter', () async {
+        for (var i = 1; i <= 5; i++) {
+          await repo.add(makeJob(id: 'j-$i', createdAt: DateTime(2026, 6, i)));
+        }
+        // Newest first: j-5, j-4, j-3, j-2, j-1
+        final page2 = await repo.getRecent(limit: 2, offset: 2);
+        expect(page2, hasLength(2));
+        expect(page2.first.id, 'j-3');
+        expect(page2.last.id, 'j-2');
+      });
+
+      test('returns empty list when offset exceeds total count', () async {
+        await repo.add(makeJob(id: 'j-1'));
+        expect(await repo.getRecent(limit: 20, offset: 10), isEmpty);
+      });
+    });
+
+    group('count', () {
+      test('returns 0 when no jobs exist', () async {
+        expect(await repo.count(), 0);
+      });
+
+      test('returns total job count', () async {
+        await repo.add(makeJob(id: 'j-1'));
+        await repo.add(makeJob(id: 'j-2', createdAt: DateTime(2026, 6, 2)));
+        expect(await repo.count(), 2);
+      });
+
+      test('decrements after remove', () async {
+        await repo.add(makeJob(id: 'j-1'));
+        await repo.add(makeJob(id: 'j-2', createdAt: DateTime(2026, 6, 2)));
+        await repo.remove('j-1');
+        expect(await repo.count(), 1);
       });
     });
 
