@@ -19,11 +19,13 @@ class ExecuteCollectionCsvExportCompleted
     required this.jobId,
     required this.rowCount,
     required this.filename,
+    required this.filePath,
   });
 
   final String jobId;
   final int rowCount;
   final String filename;
+  final String filePath;
 }
 
 class ExecuteCollectionCsvExportFailed
@@ -97,6 +99,7 @@ class ExecuteCollectionCsvExportUseCase {
         jobId: jobId,
         rowCount: preview.rowCount,
         filename: filename,
+        filePath: filePath,
       );
     } catch (_) {
       try {

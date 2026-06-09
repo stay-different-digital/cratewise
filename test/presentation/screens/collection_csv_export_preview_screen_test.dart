@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cratewise/application/use_cases/build_collection_csv_export_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/execute_collection_csv_export_use_case.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
@@ -162,10 +164,12 @@ CsvCollectionExportPreview _preview({int count = 2}) =>
 Widget _buildSubject({
   required BuildCollectionCsvExportPreviewUseCase previewUseCase,
   ExecuteCollectionCsvExportUseCase? executeUseCase,
+  Future<void> Function(String)? onShareFile,
 }) => MaterialApp(
   home: CollectionCsvExportPreviewScreen(
     previewUseCase: previewUseCase,
     executeUseCase: executeUseCase,
+    onShareFile: onShareFile,
   ),
 );
 
@@ -316,6 +320,7 @@ void main() {
                 jobId: 'j',
                 rowCount: 0,
                 filename: 'f.csv',
+                filePath: '/tmp/f.csv',
               ),
             ),
           ),
@@ -341,6 +346,7 @@ void main() {
                   jobId: 'j',
                   rowCount: 2,
                   filename: 'f.csv',
+                  filePath: '/tmp/f.csv',
                 ),
               ),
             ),
@@ -419,6 +425,7 @@ void main() {
             jobId: 'j',
             rowCount: 2,
             filename: 'f.csv',
+            filePath: '/tmp/f.csv',
           ),
         );
         final executeUseCase = _PausingExecuteUseCase(pauseCompleter);
@@ -444,6 +451,7 @@ void main() {
             jobId: 'j',
             rowCount: 2,
             filename: 'collection_export_1234.csv',
+            filePath: '/tmp/collection_export_1234.csv',
           ),
         );
         await tester.pumpWidget(
@@ -464,6 +472,7 @@ void main() {
             jobId: 'j',
             rowCount: 3,
             filename: 'collection_export_1234.csv',
+            filePath: '/tmp/collection_export_1234.csv',
           ),
         );
         await tester.pumpWidget(
@@ -484,6 +493,7 @@ void main() {
             jobId: 'j',
             rowCount: 1,
             filename: 'f.csv',
+            filePath: '/tmp/f.csv',
           ),
         );
         await tester.pumpWidget(
@@ -504,6 +514,7 @@ void main() {
             jobId: 'j',
             rowCount: 1,
             filename: 'collection_export_123.csv',
+            filePath: '/tmp/collection_export_123.csv',
           ),
         );
         await tester.pumpWidget(
@@ -524,6 +535,7 @@ void main() {
             jobId: 'j',
             rowCount: 2,
             filename: 'f.csv',
+            filePath: '/tmp/f.csv',
           ),
         );
         await tester.pumpWidget(
@@ -546,6 +558,7 @@ void main() {
             jobId: 'j',
             rowCount: 1,
             filename: 'collection_export_123.csv',
+            filePath: '/tmp/collection_export_123.csv',
           ),
         );
         await tester.pumpWidget(
@@ -562,6 +575,90 @@ void main() {
           expect(t.toLowerCase(), isNot(contains('token')));
           expect(t.toLowerCase(), isNot(contains('secret')));
         }
+      });
+
+      testWidgets('shows Share Again button in done state', (tester) async {
+        final uc = _FakePreviewUseCase(
+          CollectionCsvExportPreviewReady(_preview(count: 1)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteCollectionCsvExportCompleted(
+            jobId: 'j',
+            rowCount: 1,
+            filename: 'f.csv',
+            filePath: '/tmp/f.csv',
+          ),
+        );
+        await tester.pumpWidget(
+          _buildSubject(previewUseCase: uc, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 1 row'));
+        await tester.pumpAndSettle();
+        expect(find.text('Share Again'), findsOneWidget);
+      });
+
+      testWidgets('Share Again shows snackbar when file is missing', (
+        tester,
+      ) async {
+        final uc = _FakePreviewUseCase(
+          CollectionCsvExportPreviewReady(_preview(count: 1)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          const ExecuteCollectionCsvExportCompleted(
+            jobId: 'j',
+            rowCount: 1,
+            filename: 'f.csv',
+            filePath: '/tmp/cratewise_does_not_exist_xyz.csv',
+          ),
+        );
+        await tester.pumpWidget(
+          _buildSubject(previewUseCase: uc, executeUseCase: executeUseCase),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 1 row'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Share Again'));
+        await tester.pump();
+        await tester.pump();
+        expect(find.byType(SnackBar), findsOneWidget);
+      });
+
+      testWidgets('Share Again calls onShareFile when file exists', (
+        tester,
+      ) async {
+        final tempFile = File(
+          '${Directory.systemTemp.path}/cratewise_test_col_${DateTime.now().millisecondsSinceEpoch}.csv',
+        );
+        tempFile.writeAsStringSync('test');
+        addTearDown(() => tempFile.deleteSync());
+
+        final sharedPaths = <String>[];
+        final uc = _FakePreviewUseCase(
+          CollectionCsvExportPreviewReady(_preview(count: 1)),
+        );
+        final executeUseCase = _FakeExecuteUseCase(
+          ExecuteCollectionCsvExportCompleted(
+            jobId: 'j',
+            rowCount: 1,
+            filename: 'f.csv',
+            filePath: tempFile.path,
+          ),
+        );
+        await tester.pumpWidget(
+          _buildSubject(
+            previewUseCase: uc,
+            executeUseCase: executeUseCase,
+            onShareFile: (path) async => sharedPaths.add(path),
+          ),
+        );
+        await tester.pump();
+        await tester.tap(find.text('Export 1 row'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Share Again'));
+        await tester.pump();
+        await tester.pump();
+        expect(sharedPaths, [tempFile.path]);
       });
     });
 

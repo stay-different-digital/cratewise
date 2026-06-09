@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../application/use_cases/build_wishlist_csv_export_preview_use_case.dart';
 import '../../application/use_cases/execute_wishlist_csv_export_use_case.dart';
@@ -50,6 +53,7 @@ class WishlistCsvExportPreviewScreen extends StatefulWidget {
     super.key,
     this.previewUseCase,
     this.executeUseCase,
+    this.onShareFile,
   });
 
   /// Injected only for testing. Production code passes null.
@@ -57,6 +61,9 @@ class WishlistCsvExportPreviewScreen extends StatefulWidget {
 
   /// Injected only for testing. Production code passes null.
   final ExecuteWishlistCsvExportUseCase? executeUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final Future<void> Function(String filePath)? onShareFile;
 
   @override
   State<WishlistCsvExportPreviewScreen> createState() =>
@@ -120,6 +127,24 @@ class _WishlistCsvExportPreviewScreenState
     }
   }
 
+  static Future<void> _defaultShareFile(String filePath) async {
+    await Share.shareXFiles([XFile(filePath, mimeType: 'text/csv')]);
+  }
+
+  Future<void> _shareAgain(String filePath) async {
+    if (!File(filePath).existsSync()) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('File no longer available. Please export again.'),
+        ),
+      );
+      return;
+    }
+    final share = widget.onShareFile ?? _defaultShareFile;
+    await share(filePath);
+  }
+
   @override
   void dispose() {
     _ownedDb?.close();
@@ -142,6 +167,7 @@ class _WishlistCsvExportPreviewScreenState
         _Done(:final result) => _DoneBody(
           result: result,
           onDone: () => Navigator.of(context).pop(),
+          onShareAgain: () => _shareAgain(result.filePath),
         ),
         _Error() => _ErrorBody(onRetry: _load),
       },
@@ -436,10 +462,15 @@ class _ExportingBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DoneBody extends StatelessWidget {
-  const _DoneBody({required this.result, required this.onDone});
+  const _DoneBody({
+    required this.result,
+    required this.onDone,
+    required this.onShareAgain,
+  });
 
   final ExecuteWishlistCsvExportCompleted result;
   final VoidCallback onDone;
+  final VoidCallback onShareAgain;
 
   @override
   Widget build(BuildContext context) {
@@ -488,7 +519,17 @@ class _DoneBody extends StatelessWidget {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: FilledButton(onPressed: onDone, child: const Text('Done')),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                OutlinedButton(
+                  onPressed: onShareAgain,
+                  child: const Text('Share Again'),
+                ),
+                const SizedBox(height: 8),
+                FilledButton(onPressed: onDone, child: const Text('Done')),
+              ],
+            ),
           ),
         ),
       ],

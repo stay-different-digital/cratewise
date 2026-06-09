@@ -7,6 +7,23 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8S: Share Again on CSV export success (US-46)] — 2026-06-09
+
+### Added
+- `filePath` field added to `ExecuteCollectionCsvExportCompleted` and `ExecuteWishlistCsvExportCompleted` (the full path to the written temp file)
+- "Share Again" `OutlinedButton` added to `_DoneBody` in both CSV export preview screens, displayed above the existing "Done" button
+- Tapping "Share Again" re-opens the share sheet for the same temp CSV file; if the file has been cleaned up, a snackbar is shown ("File no longer available. Please export again.")
+- `onShareFile: Future<void> Function(String filePath)?` injectable parameter added to `CollectionCsvExportPreviewScreen` and `WishlistCsvExportPreviewScreen` (production code passes null; used only in tests)
+
+### Tests
+- 6 new tests across `collection_csv_export_preview_screen_test.dart` and `wishlist_csv_export_preview_screen_test.dart`:
+  - shows "Share Again" button in done state
+  - tapping "Share Again" shows snackbar when file is missing
+  - tapping "Share Again" calls `onShareFile` when file exists (real temp file created/cleaned in test)
+- All existing done-state test instances of `ExecuteCollectionCsvExportCompleted` and `ExecuteWishlistCsvExportCompleted` updated to include the new required `filePath` field
+
+---
+
 ## [Unreleased — Phase 8R: Per-item export progress (US-45)] — 2026-06-09
 
 ### Added

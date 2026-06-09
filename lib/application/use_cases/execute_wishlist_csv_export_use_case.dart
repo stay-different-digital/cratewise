@@ -18,11 +18,13 @@ class ExecuteWishlistCsvExportCompleted extends ExecuteWishlistCsvExportResult {
     required this.jobId,
     required this.rowCount,
     required this.filename,
+    required this.filePath,
   });
 
   final String jobId;
   final int rowCount;
   final String filename;
+  final String filePath;
 }
 
 class ExecuteWishlistCsvExportFailed extends ExecuteWishlistCsvExportResult {
@@ -95,6 +97,7 @@ class ExecuteWishlistCsvExportUseCase {
         jobId: jobId,
         rowCount: preview.rowCount,
         filename: filename,
+        filePath: filePath,
       );
     } catch (_) {
       try {
