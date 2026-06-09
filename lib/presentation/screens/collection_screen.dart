@@ -10,6 +10,7 @@ import '../../domain/repositories/thumbnail_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
+import '../../shared/import_notifier.dart';
 import '../../shared/route_observer.dart';
 import '../widgets/collection_item_card.dart';
 
@@ -74,6 +75,11 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
       _repository = LocalCollectionRepository(db);
     }
     _load();
+    collectionImportNotifier.addListener(_onImportNotification);
+  }
+
+  void _onImportNotification() {
+    if (mounted) _load();
   }
 
   @override
@@ -122,6 +128,7 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
   @override
   void dispose() {
     appRouteObserver.unsubscribe(this);
+    collectionImportNotifier.removeListener(_onImportNotification);
     _debounce?.cancel();
     _ownedDb?.close();
     _searchController.dispose();
@@ -186,7 +193,13 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
   Widget _buildBody() {
     return switch (_state) {
       _Loading() => const Center(child: CircularProgressIndicator()),
-      _Loaded(:final items) when items.isEmpty => const _EmptyCollectionState(),
+      _Loaded(:final items) when items.isEmpty => RefreshIndicator(
+        onRefresh: _refresh,
+        child: const CustomScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          slivers: [SliverFillRemaining(child: _EmptyCollectionState())],
+        ),
+      ),
       _Loaded(:final items) => _buildLoadedList(items),
       _CollectionError() => _CollectionErrorState(onRetry: _load),
     };

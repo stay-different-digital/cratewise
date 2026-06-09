@@ -118,6 +118,7 @@ final GoRouter appRouter = GoRouter(
 
         // ── Tab 2: Wishlist ──────────────────────────────────────────────
         StatefulShellBranch(
+          observers: [wishlistRouteObserver],
           routes: [
             GoRoute(
               path: AppRoutes.wishlist,

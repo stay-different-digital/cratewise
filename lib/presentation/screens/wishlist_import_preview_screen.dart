@@ -8,6 +8,7 @@ import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_import_export_job_repository.dart';
 import '../../infrastructure/local_database/local_import_export_row_result_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
+import '../../shared/import_notifier.dart';
 
 const _kWideBreakpoint = 700.0;
 
@@ -124,6 +125,7 @@ class _WishlistImportPreviewScreenState
     if (!mounted) return;
     switch (result) {
       case ExecuteWishlistImportCompleted():
+        wishlistImportNotifier.value++;
         setState(() => _state = _ImportDone(result));
       case ExecuteWishlistImportFailed():
         setState(() => _state = _Loaded(preview));

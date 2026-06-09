@@ -10,6 +10,8 @@ import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
+import '../../shared/import_notifier.dart';
+import '../../shared/route_observer.dart';
 import '../widgets/wishlist_item_card.dart';
 
 // ---------------------------------------------------------------------------
@@ -47,7 +49,7 @@ class WishlistScreen extends StatefulWidget {
   State<WishlistScreen> createState() => _WishlistScreenState();
 }
 
-class _WishlistScreenState extends State<WishlistScreen> {
+class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   late final WishlistRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
   AppDatabase? _ownedDb;
@@ -69,7 +71,22 @@ class _WishlistScreenState extends State<WishlistScreen> {
       _repository = LocalWishlistRepository(db);
     }
     _load();
+    wishlistImportNotifier.addListener(_onImportNotification);
   }
+
+  void _onImportNotification() {
+    if (mounted) _load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) wishlistRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() => _refresh();
 
   Future<void> _load() async {
     setState(() => _state = const _Loading());
@@ -104,6 +121,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
   @override
   void dispose() {
+    wishlistRouteObserver.unsubscribe(this);
+    wishlistImportNotifier.removeListener(_onImportNotification);
     _debounce?.cancel();
     _ownedDb?.close();
     _searchController.dispose();
@@ -113,7 +132,13 @@ class _WishlistScreenState extends State<WishlistScreen> {
   Widget _buildBody() {
     return switch (_state) {
       _Loading() => const Center(child: CircularProgressIndicator()),
-      _Loaded(:final items) when items.isEmpty => const _EmptyWishlistState(),
+      _Loaded(:final items) when items.isEmpty => RefreshIndicator(
+        onRefresh: _refresh,
+        child: const CustomScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          slivers: [SliverFillRemaining(child: _EmptyWishlistState())],
+        ),
+      ),
       _Loaded(:final items) => _buildLoadedList(items),
       _WishlistError() => _WishlistErrorState(onRetry: _load),
     };
