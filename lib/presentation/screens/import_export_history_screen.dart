@@ -233,16 +233,29 @@ class _JobCard extends StatelessWidget {
   static ({Color fg, Color bg}) _statusColors(
     ImportExportStatus status,
     ColorScheme cs,
-  ) => switch (status) {
-    ImportExportStatus.completed => (fg: cs.tertiary, bg: cs.tertiaryContainer),
-    ImportExportStatus.completedWithErrors => (
-      fg: cs.secondary,
-      bg: cs.secondaryContainer,
-    ),
-    ImportExportStatus.failed => (fg: cs.error, bg: cs.errorContainer),
-    ImportExportStatus.running => (fg: cs.primary, bg: cs.primaryContainer),
-    _ => (fg: cs.onSurfaceVariant, bg: cs.surfaceContainerHighest),
-  };
+  ) {
+    final isDark = cs.brightness == Brightness.dark;
+    // Material 3 has no "warning" semantic token; use a brightness-aware amber
+    // so completedWithErrors is visually distinct from both completed (tertiary)
+    // and failed (error) in every theme.
+    final warningFg = isDark
+        ? const Color(0xFFFFD966)
+        : const Color(0xFF7A4F00);
+    final warningBg = isDark
+        ? const Color(0xFF3D2B00)
+        : const Color(0xFFFFF0C7);
+    return switch (status) {
+      ImportExportStatus.completed => (
+        fg: cs.tertiary,
+        bg: cs.tertiaryContainer,
+      ),
+      ImportExportStatus.completedWithErrors => (fg: warningFg, bg: warningBg),
+      ImportExportStatus.failed => (fg: cs.error, bg: cs.errorContainer),
+      ImportExportStatus.cancelled => (fg: cs.error, bg: cs.errorContainer),
+      ImportExportStatus.running => (fg: cs.primary, bg: cs.primaryContainer),
+      _ => (fg: cs.onSurfaceVariant, bg: cs.surfaceContainerHighest),
+    };
+  }
 
   static String _validLabel(ImportExportJobType jobType) => switch (jobType) {
     ImportExportJobType.importCollectionFromDiscogs => 'Added',
@@ -279,6 +292,7 @@ class _JobCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
+                  key: const Key('status-chip'),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
                     vertical: 2,

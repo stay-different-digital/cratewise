@@ -492,6 +492,125 @@ void main() {
     });
   });
 
+  group('ImportExportHistoryScreen — status chip colours', () {
+    Color? chipBg(WidgetTester tester) {
+      final container = tester.widget<Container>(
+        find.byKey(const Key('status-chip')),
+      );
+      return (container.decoration as BoxDecoration?)?.color;
+    }
+
+    Widget buildWithTheme(
+      ImportExportJobRepository repository,
+      Brightness brightness,
+    ) => MaterialApp(
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: brightness,
+        ),
+      ),
+      home: ImportExportHistoryScreen(repository: repository),
+    );
+
+    testWidgets(
+      'completedWithErrors chip is visually distinct from completed in light mode',
+      (tester) async {
+        final repo = _FakeJobRepository(
+          jobs: [
+            makeJob(
+              id: 'j1',
+              status: ImportExportStatus.completed,
+              createdAt: DateTime(2026, 6, 2),
+            ),
+            makeJob(
+              id: 'j2',
+              status: ImportExportStatus.completedWithErrors,
+              createdAt: DateTime(2026, 6, 1),
+            ),
+          ],
+        );
+        await tester.pumpWidget(buildWithTheme(repo, Brightness.light));
+        await tester.pump();
+
+        final chips = tester
+            .widgetList<Container>(find.byKey(const Key('status-chip')))
+            .toList();
+        expect(chips, hasLength(2));
+        final completedBg = (chips[0].decoration as BoxDecoration?)?.color;
+        final warningBg = (chips[1].decoration as BoxDecoration?)?.color;
+        expect(completedBg, isNotNull);
+        expect(warningBg, isNotNull);
+        expect(completedBg, isNot(equals(warningBg)));
+      },
+    );
+
+    testWidgets(
+      'completedWithErrors chip is visually distinct from completed in dark mode',
+      (tester) async {
+        final repo = _FakeJobRepository(
+          jobs: [
+            makeJob(
+              id: 'j1',
+              status: ImportExportStatus.completed,
+              createdAt: DateTime(2026, 6, 2),
+            ),
+            makeJob(
+              id: 'j2',
+              status: ImportExportStatus.completedWithErrors,
+              createdAt: DateTime(2026, 6, 1),
+            ),
+          ],
+        );
+        await tester.pumpWidget(buildWithTheme(repo, Brightness.dark));
+        await tester.pump();
+
+        final chips = tester
+            .widgetList<Container>(find.byKey(const Key('status-chip')))
+            .toList();
+        expect(chips, hasLength(2));
+        final completedBg = (chips[0].decoration as BoxDecoration?)?.color;
+        final warningBg = (chips[1].decoration as BoxDecoration?)?.color;
+        expect(completedBg, isNotNull);
+        expect(warningBg, isNotNull);
+        expect(completedBg, isNot(equals(warningBg)));
+      },
+    );
+
+    testWidgets('failed chip uses errorContainer background', (tester) async {
+      final repo = _FakeJobRepository(
+        jobs: [
+          makeJob(
+            status: ImportExportStatus.failed,
+            validItems: null,
+            skippedItems: null,
+            failedItems: null,
+          ),
+        ],
+      );
+      await tester.pumpWidget(buildWithTheme(repo, Brightness.light));
+      await tester.pump();
+
+      final bg = chipBg(tester);
+      final cs = Theme.of(tester.element(find.byType(Card))).colorScheme;
+      expect(bg, equals(cs.errorContainer));
+    });
+
+    testWidgets('cancelled chip uses errorContainer background', (
+      tester,
+    ) async {
+      final repo = _FakeJobRepository(
+        jobs: [makeJob(status: ImportExportStatus.cancelled)],
+      );
+      await tester.pumpWidget(buildWithTheme(repo, Brightness.light));
+      await tester.pump();
+
+      final bg = chipBg(tester);
+      final cs = Theme.of(tester.element(find.byType(Card))).colorScheme;
+      expect(bg, equals(cs.errorContainer));
+    });
+  });
+
   group('ImportExportHistoryScreen — safe area', () {
     testWidgets('loaded list has SafeArea with top: false', (tester) async {
       final repo = _FakeJobRepository(jobs: [makeJob()]);

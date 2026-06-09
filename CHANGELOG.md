@@ -7,6 +7,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8V: Import/export history status chip colours (US-50)] — 2026-06-09
+
+### Changed
+- `completedWithErrors` status chip now uses a brightness-aware amber colour (`#FFF0C7`/`#7A4F00` in light mode, `#3D2B00`/`#FFD966` in dark mode) — visually distinct from the `completed` tertiary chip and the `failed` error chip in all Material 3 colour themes
+- `cancelled` status chip now uses `errorContainer`/`error` colours (was previously neutral grey) — matches the warning/error severity implied by a cancelled job
+
+### Tests
+- 4 new tests in `import_export_history_screen_test.dart` (`status chip colours` group):
+  - `completedWithErrors` chip background differs from `completed` in light mode
+  - `completedWithErrors` chip background differs from `completed` in dark mode
+  - `failed` chip background matches theme `errorContainer`
+  - `cancelled` chip background matches theme `errorContainer`
+
+---
+
 ## [Unreleased — Phase 8U: Import/export history pagination (US-48)] — 2026-06-09
 
 ### Added
