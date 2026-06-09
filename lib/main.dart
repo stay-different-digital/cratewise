@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app/app.dart';
+import 'application/use_cases/clean_up_stale_csv_exports_use_case.dart';
 import 'application/use_cases/purge_stale_failed_actions_use_case.dart';
 import 'infrastructure/local_database/app_database.dart';
 import 'infrastructure/local_database/local_retry_action_repository.dart';
@@ -8,6 +9,7 @@ import 'infrastructure/local_database/local_retry_action_repository.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   _purgeStaleFailedActions();
+  CleanUpStaleCsvExportsUseCase().execute();
   runApp(const CratewiseApp());
 }
 

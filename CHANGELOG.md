@@ -7,6 +7,25 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8T: Auto-cleanup of stale CSV export files (US-47)] — 2026-06-09
+
+### Added
+- `CleanUpStaleCsvExportsUseCase` in `lib/application/use_cases/clean_up_stale_csv_exports_use_case.dart`: scans the system temp directory on app launch and deletes `collection_export_*.csv` and `wishlist_export_*.csv` files whose embedded timestamp is older than the TTL (default 7 days)
+- Timestamp is parsed directly from the filename (e.g. `collection_export_1749456000000.csv`) so the check is independent of file-system modification time
+- `getTempDir` and `ttl` are injectable for testing
+- Fire-and-forget call added to `main()` alongside the existing `_purgeStaleFailedActions` call
+
+### Tests
+- 10 new tests in `test/application/use_cases/clean_up_stale_csv_exports_use_case_test.dart`:
+  - deletes `collection_export` / `wishlist_export` csv files older than TTL
+  - keeps files newer than TTL
+  - ignores files with unrecognised prefix, non-csv extension, or non-numeric timestamp
+  - handles mixed old/new files in the same directory
+  - respects custom TTL
+  - does not throw when `getTempDir` fails
+
+---
+
 ## [Unreleased — Phase 8S: Share Again on CSV export success (US-46)] — 2026-06-09
 
 ### Added
