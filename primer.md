@@ -1,8 +1,8 @@
 # Cratewise — Session Primer
 
 **Date:** 2026-06-09  
-**Test count:** 2162/2162 passing  
-**Last completed phase:** 8K (US-38)
+**Test count:** 2166/2166 passing  
+**Last completed phase:** 8L (US-39)
 
 ---
 
@@ -65,12 +65,12 @@ All from `docs/user-stories/beta-user-stories-s.md`. Listed in order, with story
 | ~~US-36~~ | ~~Dates displayed in the device's locale format~~ | ~~3~~ | **Done (Phase 8I).** intl 0.20.2; `formatDate`/`formatDateTime` in `lib/shared/utils/date_format_utils.dart`; 5 screens updated; 2149 tests. |
 | ~~US-37~~ | ~~Barcode scan area shows a viewfinder frame~~ | ~~3~~ | **Done (Phase 8J).** `_ViewfinderOverlay`/`_ViewfinderPainter` in `barcode_scan_screen.dart`; 2151 tests. |
 | ~~US-38~~ | ~~Manual barcode entry validates format~~ | ~~2~~ | **Done (Phase 8K).** `_validateBarcode` + `_canSearch` + `_onInputChanged` listener; inline `errorText`; Search button disabled while invalid; 2162 tests. |
-| US-39 | Barcode scanner uses wide two-panel layout on iPad | 2 | ≥700dp: camera left, results right; left panel proportional, not fixed 360dp |
+| ~~US-39~~ | ~~Barcode scanner uses wide two-panel layout on iPad~~ | ~~2~~ | **Done (Phase 8L).** `Expanded(flex:2)` left + `Expanded(flex:3)` right; `_isWide` tracked in `LayoutBuilder`; camera stays live after scan in wide mode; 2166 tests. |
 | US-40 | Camera scan area has flashlight toggle | 2 | Torch on/off button; icon reflects state; torch off on deactivate; graceful if no torch |
 | US-41 | Cached release detail banner shows data age | 1 | Banner always shows date without truncation; >30-day data uses warning colour |
 | US-42 | Failed action queue entries expire after configurable period | 2 | TTL (default 30 days) auto-deletes `failed` entries on launch; `pending` entries exempt |
 
-**Recommended next task: US-39 (2 SP)** — barcode scanner uses wide two-panel layout on iPad.
+**Recommended next task: US-40 (2 SP)** — camera scan area has a flashlight toggle.
 
 ### US-37 implementation notes
 - Draw a centered rectangular overlay on the camera preview in `BarcodeScanScreen`

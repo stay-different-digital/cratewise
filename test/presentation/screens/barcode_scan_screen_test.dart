@@ -504,4 +504,62 @@ void main() {
       expect(find.textContaining('Barcode must be'), findsNothing);
     });
   });
+
+  group('BarcodeScanScreen — wide layout', () {
+    testWidgets('uses split view (VerticalDivider) at wide viewport', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 600));
+      addTearDown(() async => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      expect(find.byType(VerticalDivider), findsOneWidget);
+    });
+
+    testWidgets('no split view (no VerticalDivider) at narrow viewport', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(360, 800));
+      addTearDown(() async => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      expect(find.byType(VerticalDivider), findsNothing);
+    });
+
+    testWidgets('left scan panel width is proportional to viewport width', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(800, 600));
+      addTearDown(() async => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      final widthAt800 = tester
+          .getSize(find.byKey(const Key('scan-area-placeholder')))
+          .width;
+
+      await tester.binding.setSurfaceSize(const Size(1000, 600));
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      final widthAt1000 = tester
+          .getSize(find.byKey(const Key('scan-area-placeholder')))
+          .width;
+
+      // Proportional panel: wider viewport → wider left panel
+      expect(widthAt1000, greaterThan(widthAt800));
+    });
+
+    testWidgets('scan area and results panel are both visible after a search', (
+      tester,
+    ) async {
+      final useCase = _FakeLookupUseCase(_kSuccess);
+      await tester.binding.setSurfaceSize(const Size(800, 600));
+      addTearDown(() async => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
+      await tester.enterText(
+        find.byKey(const Key('barcode-input')),
+        '5099706035422',
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('search-barcode-button')));
+      await tester.pump();
+      expect(find.byKey(const Key('scan-area-placeholder')), findsOneWidget);
+      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+    });
+  });
 }

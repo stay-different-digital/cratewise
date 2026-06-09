@@ -7,6 +7,21 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8L: Barcode scanner uses wide two-panel layout on iPad (US-39)] — 2026-06-09
+
+### Changed
+- `_buildWide` left panel changed from `SizedBox(width: 360)` to `Expanded(flex: 2)`, giving a proportional 40% of available width (vs the old fixed 360 dp); right results panel changed from `Expanded` (flex: 1) to `Expanded(flex: 3)` for a 40/60 split that scales with the iPad screen width in both portrait and landscape
+- `_onBarcodeDetected` — in wide layout the camera scan area stays active after a barcode is detected (no longer resets to placeholder); in narrow layout the existing dismiss-to-placeholder behaviour is unchanged
+- `build` — `LayoutBuilder.builder` now writes `_isWide` before selecting the layout so `_onBarcodeDetected` always reads the current state
+
+### Tests
+- 4 new tests in `barcode_scan_screen_test.dart` (`wide layout` group):
+  - `VerticalDivider` present at ≥ 700 dp viewport; absent at < 700 dp viewport
+  - left scan panel width grows with viewport (proportional layout confirmed at 800 dp vs 1000 dp)
+  - scan area placeholder and result cards both visible simultaneously after a search in wide layout
+
+---
+
 ## [Unreleased — Phase 8K: Manual barcode entry validates the format before searching (US-38)] — 2026-06-09
 
 ### Added

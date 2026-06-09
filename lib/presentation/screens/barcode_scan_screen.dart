@@ -109,6 +109,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   _ScanAreaState _scanAreaState = _ScanAreaState.placeholder;
   String _lastBarcode = '';
   String? _validationError;
+  bool _isWide = false;
 
   static bool get _supportsScanner =>
       !kIsWeb && (Platform.isAndroid || Platform.isIOS);
@@ -218,7 +219,10 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     if (_scanAreaState != _ScanAreaState.scanning) return;
     final rawValue = capture.barcodes.firstOrNull?.rawValue;
     if (rawValue == null || rawValue.isEmpty) return;
-    setState(() => _scanAreaState = _ScanAreaState.placeholder);
+    // In wide (iPad) layout keep the camera live; narrow layout dismisses it.
+    if (!_isWide) {
+      setState(() => _scanAreaState = _ScanAreaState.placeholder);
+    }
     _controller.text = rawValue;
     _onSearch();
   }
@@ -323,8 +327,8 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          width: 360,
+        Expanded(
+          flex: 2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -376,7 +380,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
           ),
         ),
         const VerticalDivider(width: 1, thickness: 1),
-        Expanded(child: _buildResults()),
+        Expanded(flex: 3, child: _buildResults()),
       ],
     );
   }
@@ -384,10 +388,10 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
-      builder: (context, constraints) =>
-          constraints.maxWidth >= _kWideBreakpoint
-          ? _buildWide(context)
-          : _buildNarrow(context),
+      builder: (context, constraints) {
+        _isWide = constraints.maxWidth >= _kWideBreakpoint;
+        return _isWide ? _buildWide(context) : _buildNarrow(context);
+      },
     );
   }
 }
