@@ -119,7 +119,7 @@ class _FailedActionsScreenState extends State<FailedActionsScreen> {
 // Body widgets
 // ---------------------------------------------------------------------------
 
-class _ActionList extends StatelessWidget {
+class _ActionList extends StatefulWidget {
   const _ActionList({
     required this.actions,
     required this.onRetried,
@@ -137,21 +137,111 @@ class _ActionList extends StatelessWidget {
   final VoidCallback onRetried;
 
   @override
+  State<_ActionList> createState() => _ActionListState();
+}
+
+class _ActionListState extends State<_ActionList> {
+  bool _retryingAll = false;
+  int _retryAllCurrent = 0;
+  int _retryAllTotal = 0;
+
+  bool _isRetryable(RetryAction action) =>
+      (widget.retryUseCase != null &&
+          action.actionType == RetryActionType.refreshReleaseMetadata) ||
+      (widget.thumbnailUseCase != null &&
+          action.actionType == RetryActionType.cacheThumbnail) ||
+      (widget.addCollectionUseCase != null &&
+          action.actionType == RetryActionType.addCollectionItem) ||
+      (widget.addWishlistUseCase != null &&
+          action.actionType == RetryActionType.addWishlistItem);
+
+  Future<void> _doRetryAll() async {
+    final retryable = widget.actions.where(_isRetryable).toList();
+    if (retryable.isEmpty) return;
+
+    setState(() {
+      _retryingAll = true;
+      _retryAllCurrent = 0;
+      _retryAllTotal = retryable.length;
+    });
+
+    for (final action in retryable) {
+      if (!mounted) return;
+      setState(() => _retryAllCurrent++);
+      await _executeOne(action);
+    }
+
+    if (!mounted) return;
+    setState(() => _retryingAll = false);
+    widget.onRetried();
+  }
+
+  Future<void> _executeOne(RetryAction action) async {
+    switch (action.actionType) {
+      case RetryActionType.refreshReleaseMetadata:
+        await widget.retryUseCase?.execute(action);
+      case RetryActionType.cacheThumbnail:
+        await widget.thumbnailUseCase?.execute(action);
+      case RetryActionType.addCollectionItem:
+        await widget.addCollectionUseCase?.execute(action);
+      case RetryActionType.addWishlistItem:
+        await widget.addWishlistUseCase?.execute(action);
+      default:
+        break;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final hasRetryable = widget.actions.any(_isRetryable);
+
     return SafeArea(
       top: false,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: actions.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemBuilder: (context, index) => _ActionCard(
-          action: actions[index],
-          retryUseCase: retryUseCase,
-          thumbnailUseCase: thumbnailUseCase,
-          addCollectionUseCase: addCollectionUseCase,
-          addWishlistUseCase: addWishlistUseCase,
-          onRetried: onRetried,
-        ),
+      child: Column(
+        children: [
+          if (hasRetryable)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: _retryingAll
+                    ? Row(
+                        children: [
+                          const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            key: const Key('retry-all-progress'),
+                            'Retrying $_retryAllCurrent of $_retryAllTotal…',
+                          ),
+                        ],
+                      )
+                    : FilledButton.tonal(
+                        key: const Key('retry-all-button'),
+                        onPressed: _doRetryAll,
+                        child: const Text('Retry All'),
+                      ),
+              ),
+            ),
+          Expanded(
+            child: ListView.separated(
+              padding: EdgeInsets.fromLTRB(16, hasRetryable ? 8 : 16, 16, 16),
+              itemCount: widget.actions.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, index) => _ActionCard(
+                action: widget.actions[index],
+                retryUseCase: widget.retryUseCase,
+                thumbnailUseCase: widget.thumbnailUseCase,
+                addCollectionUseCase: widget.addCollectionUseCase,
+                addWishlistUseCase: widget.addWishlistUseCase,
+                onRetried: widget.onRetried,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

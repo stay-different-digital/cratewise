@@ -7,6 +7,26 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8P: Failed Actions screen "Retry All" button (US-43)] — 2026-06-09
+
+### Added
+- `_ActionList` converted to `StatefulWidget` (`_ActionListState`) to host retry-all state
+- "Retry All" button (`Key('retry-all-button')`) — `FilledButton.tonal` rendered above the list when at least one action is retryable; hidden when no use cases are provided
+- In-progress view — while retrying, the button is replaced by a `CircularProgressIndicator` and a progress text keyed `retry-all-progress` (e.g. "Retrying 2 of 5…")
+- `_ActionListState._doRetryAll()` — iterates all retryable actions sequentially via `_executeOne`, skipping action types with no registered use case; calls `onRetried` to reload the list after all retries complete
+
+### Tests
+- 6 new tests in `failed_actions_screen_test.dart` (`FailedActionsScreen — Retry All button` group):
+  - Retry All button appears when retryable entries exist
+  - Retry All button hidden when no use cases provided
+  - tapping Retry All calls use case for each retryable entry
+  - Retry All skips non-retryable entries
+  - progress indicator shown while retrying (Completer-based fake)
+  - screen refreshes to empty state after Retry All
+- `_CompleterThumbnailUseCase` fake added (Completer-backed use case for in-progress state testing)
+
+---
+
 ## [Unreleased — Phase 8O: Failed action queue entries expire after configurable period (US-42)] — 2026-06-09
 
 ### Added

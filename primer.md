@@ -1,8 +1,8 @@
 # Cratewise — Session Primer
 
 **Date:** 2026-06-09  
-**Test count:** 2179/2179 passing  
-**Last completed phase:** 8O (US-42)
+**Test count:** 2185/2185 passing  
+**Last completed phase:** 8P (US-43)
 
 ---
 
@@ -22,7 +22,7 @@ Cratewise is a Flutter vinyl record collection manager with local-first storage 
 | 6 | — | Import/export domain + UI: Discogs collection/wishlist import+export, CSV import+export, history screen |
 | 7A–7Z | US-01–27 | HTTP timeout, iOS Keychain guard, search pagination, pull-to-refresh, app bar titles, search context on detail, uri150 thumbnails, "In Collection/Wishlist" indicators, collection/wishlist search+filter, collection live-refresh (RouteObserver), split-pane search on iPad, token revocation auto-clear, atomic credential save, rate-limit header back-off, condition prompt on add, full cached offline detail, thumbnail eviction (200 MB LRU), silent cache retry, Discogs-link promotion on import, failed-write retry queue, mid-pagination rate-limit retry, per-item export rate-limit retry, CSV BOM for Excel, safe area on all scrollable screens |
 | 8A–8I | US-28–36 | GoRouter deep linking, tappable help URL, token format hint, artist dash parsing, ANV display, multi-format entries, rate-limit retry countdown button, collection detail live-reload on pop, locale-aware date formatting (intl) |
-| 8J–8O | US-37–42 | Barcode viewfinder overlay, manual barcode validation, iPad wide two-panel barcode layout, camera flashlight toggle, cached banner data age + warning colour, failed action TTL purge on launch |
+| 8J–8P | US-37–43 | Barcode viewfinder overlay, manual barcode validation, iPad wide two-panel barcode layout, camera flashlight toggle, cached banner data age + warning colour, failed action TTL purge on launch, Failed Actions "Retry All" button |
 
 ### Key architecture points
 - **Router:** GoRouter (`lib/app/router.dart`), `StatefulShellRoute.indexedStack` for 5 tabs. `AppRoutes` constants for all paths.
@@ -70,9 +70,10 @@ All from `docs/user-stories/beta-user-stories-s.md`. Listed in order, with story
 | ~~US-40~~ | ~~Camera scan area has flashlight toggle~~ | ~~2~~ | **Done (Phase 8M).** `_CameraScanArea` → `StatefulWidget`; `MobileScannerController` owned + disposed; `_TorchToggleButton` overlaid top-right; hidden when `TorchState.unavailable`; 2168 tests. |
 | ~~US-41~~ | ~~Cached release detail banner shows data age~~ | ~~1~~ | **Done (Phase 8N).** `_CachedBanner._isStale` (≥ 30 days); stale → `errorContainer` + `warning_amber_rounded` icon keyed `cached-banner-stale`; fresh → `secondaryContainer`; 2170 tests. |
 | ~~US-42~~ | ~~Failed action queue entries expire after configurable period~~ | ~~2~~ | **Done (Phase 8O).** `deleteFailedBefore(cutoff)` on repository; `PurgeStaleFailedActionsUseCase` (TTL=30d, configurable); fire-and-forget call in `main.dart`; 2179 tests. |
-| US-43 | Failed Actions screen has a "Retry All" button | 1 | Single button retries all retryable entries; progress indicator |
+| ~~US-43~~ | ~~Failed Actions screen has a "Retry All" button~~ | ~~1~~ | **Done (Phase 8P).** `_ActionList` → `StatefulWidget`; "Retry All" `FilledButton.tonal` + progress text; sequential retry via `_doRetryAll`; 2185 tests. |
+| US-44 | Failed Actions screen has a "Clear All" button | 1 | Overflow menu option; confirmation dialog; deletes all entries |
 
-**Recommended next task: US-43 (1 SP)** — Failed Actions screen "Retry All" button.
+**Recommended next task: US-44 (1 SP)** — Failed Actions screen "Clear All" button.
 
 ### US-37 implementation notes
 - Draw a centered rectangular overlay on the camera preview in `BarcodeScanScreen`

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cratewise/application/use_cases/retry_add_collection_item_use_case.dart';
 import 'package:cratewise/application/use_cases/retry_add_wishlist_item_use_case.dart';
 import 'package:cratewise/application/use_cases/retry_metadata_refresh_use_case.dart';
@@ -223,6 +225,21 @@ class _FakeAddWishlistUseCase extends RetryAddWishlistItemUseCase {
     callCount++;
     return _result;
   }
+}
+
+/// Thumbnail use case backed by a [Completer] — hangs until the completer fires.
+class _CompleterThumbnailUseCase extends RetryThumbnailUseCase {
+  _CompleterThumbnailUseCase(this._completer)
+    : super(
+        retryRepo: _NullRetryRepoForUseCase(),
+        cacheRepo: _NullCacheRepo(),
+        thumbnailRepo: _NullThumbnailRepo(),
+      );
+
+  final Completer<RetryThumbnailResult> _completer;
+
+  @override
+  Future<RetryThumbnailResult> execute(RetryAction action) => _completer.future;
 }
 
 // ---------------------------------------------------------------------------
@@ -1029,6 +1046,118 @@ void main() {
       await tester.pump();
       final safeAreas = tester.widgetList<SafeArea>(find.byType(SafeArea));
       expect(safeAreas.any((sa) => !sa.top), isTrue);
+    });
+  });
+
+  group('FailedActionsScreen — Retry All button', () {
+    RetryAction thumbnailAction({String id = 'a1'}) => _makeAction(
+      id: id,
+      actionType: RetryActionType.cacheThumbnail,
+      safeErrorMessage: 'Cover image could not be cached.',
+    );
+
+    testWidgets('Retry All button appears when retryable entries exist', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('retry-all-button')), findsOneWidget);
+    });
+
+    testWidgets('Retry All button hidden when no use cases provided', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      await tester.pumpWidget(_wrap(FailedActionsScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('retry-all-button')), findsNothing);
+    });
+
+    testWidgets('tapping Retry All calls use case for each retryable entry', (
+      tester,
+    ) async {
+      final repo = _FakeRetryRepo(
+        actions: [
+          thumbnailAction(id: 'a1'),
+          thumbnailAction(id: 'a2'),
+        ],
+      );
+      final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('retry-all-button')));
+      await tester.pumpAndSettle();
+
+      expect(uc.callCount, 2);
+    });
+
+    testWidgets('Retry All skips non-retryable entries', (tester) async {
+      final repo = _FakeRetryRepo(
+        actions: [
+          thumbnailAction(id: 'a1'),
+          _makeAction(
+            id: 'a2',
+            actionType: RetryActionType.updateCollectionItem,
+          ),
+        ],
+      );
+      final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('retry-all-button')));
+      await tester.pumpAndSettle();
+
+      expect(uc.callCount, 1);
+    });
+
+    testWidgets('progress indicator shown while retrying', (tester) async {
+      final completer = Completer<RetryThumbnailResult>();
+      final uc = _CompleterThumbnailUseCase(completer);
+      final repo = _FakeRetryRepo(actions: [thumbnailAction()]);
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('retry-all-button')));
+      await tester.pump();
+
+      expect(find.byKey(const Key('retry-all-progress')), findsOneWidget);
+
+      completer.complete(const RetryThumbnailSuccess());
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('screen refreshes to empty state after Retry All', (
+      tester,
+    ) async {
+      final actions = [thumbnailAction(id: 'a1'), thumbnailAction(id: 'a2')];
+      final repo = _FakeRetryRepo(actions: actions);
+      final uc = _FakeThumbnailUseCase(const RetryThumbnailSuccess());
+      await tester.pumpWidget(
+        _wrap(FailedActionsScreen(repository: repo, thumbnailUseCase: uc)),
+      );
+      await tester.pumpAndSettle();
+
+      actions.clear();
+
+      await tester.tap(find.byKey(const Key('retry-all-button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No failed actions'), findsOneWidget);
+      expect(uc.callCount, 2);
     });
   });
 }
