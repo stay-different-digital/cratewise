@@ -7,6 +7,32 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8K: Manual barcode entry validates the format before searching (US-38)] — 2026-06-09
+
+### Added
+- `_validateBarcode(String trimmed)` static method in `_BarcodeScanScreenState` — returns `null` for blank or valid EAN/UPC input (8, 12, or 13 numeric digits), `"This doesn't look like a barcode"` for non-numeric input (QR codes, alphanumeric), and `'Barcode must be 8, 12, or 13 digits'` for numeric input of the wrong length
+- `_canSearch` getter — `true` only when the trimmed field is non-empty and `_validationError` is null; drives the Search button's `onPressed`
+- `_onInputChanged()` controller listener registered in `initState` — calls `setState(() => _validationError = _validateBarcode(...))` on every text change, so validation and button state update in real time
+
+### Changed
+- `_BarcodeScanScreenState.initState` — adds `_controller.addListener(_onInputChanged)` to wire up real-time validation
+- `_BarcodeScanScreenState.dispose` — removes the listener before disposing the controller
+- `_onSearch()` — early-returns if `_validationError != null`, guarding the keyboard-submit path as well as the button path
+- Both `TextField` decorations (narrow and wide layouts) — changed from `const InputDecoration` to `InputDecoration` with `errorText: _validationError`, displaying the inline validation message below the field
+- Both Search `FilledButton.onPressed` — changed from `_onSearch` to `_canSearch ? _onSearch : null`; button is visually disabled while input is invalid
+
+### Tests
+- 11 new tests in `barcode_scan_screen_test.dart` (`barcode validation` group):
+  - button disabled for empty input; enabled for valid 13-, 12-, and 8-digit barcodes; disabled for non-numeric and wrong-length input
+  - non-numeric input shows `"This doesn't look like a barcode"` error message
+  - wrong-length numeric input shows `'Barcode must be 8, 12, or 13 digits'` error message
+  - keyboard submit with invalid input fires no search
+  - validation error clears when a valid barcode is entered; blank input shows no error
+- 4 existing tests updated: `'1234567890'` (10-digit, now invalid) replaced with `'5099706035422'` (valid EAN-13) to remain compatible with the new validation rules
+- 12 existing tests updated: `await tester.pump()` added between `enterText` and `tap(search-barcode-button)` — required so the `setState` from the controller listener is processed before the button's `onPressed` is read
+
+---
+
 ## [Unreleased — Phase 8J: Barcode scan area shows a viewfinder frame (US-37)] — 2026-06-08
 
 ### Added

@@ -108,6 +108,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   _ScanState _state = const _Idle();
   _ScanAreaState _scanAreaState = _ScanAreaState.placeholder;
   String _lastBarcode = '';
+  String? _validationError;
 
   static bool get _supportsScanner =>
       !kIsWeb && (Platform.isAndroid || Platform.isIOS);
@@ -116,10 +117,32 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   void initState() {
     super.initState();
     _useCase = widget.useCase ?? BarcodeLookupUseCase();
+    _controller.addListener(_onInputChanged);
   }
+
+  void _onInputChanged() {
+    setState(
+      () => _validationError = _validateBarcode(_controller.text.trim()),
+    );
+  }
+
+  static String? _validateBarcode(String trimmed) {
+    if (trimmed.isEmpty) return null;
+    if (!RegExp(r'^\d+$').hasMatch(trimmed)) {
+      return "This doesn't look like a barcode";
+    }
+    if (trimmed.length != 8 && trimmed.length != 12 && trimmed.length != 13) {
+      return 'Barcode must be 8, 12, or 13 digits';
+    }
+    return null;
+  }
+
+  bool get _canSearch =>
+      _controller.text.trim().isNotEmpty && _validationError == null;
 
   @override
   void dispose() {
+    _controller.removeListener(_onInputChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -127,6 +150,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   Future<void> _onSearch() async {
     final barcode = _controller.text.trim();
     if (barcode.isEmpty) return;
+    if (_validationError != null) return;
     _lastBarcode = barcode;
     setState(() => _state = const _Loading());
     final result = await _useCase.execute(barcode);
@@ -260,21 +284,22 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
                   enableSuggestions: false,
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => _onSearch(),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'Enter barcode manually…',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(
+                    contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 12,
                     ),
+                    errorText: _validationError,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               FilledButton(
                 key: const Key('search-barcode-button'),
-                onPressed: _onSearch,
+                onPressed: _canSearch ? _onSearch : null,
                 child: const Text('Search'),
               ),
             ],
@@ -317,21 +342,22 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
                         enableSuggestions: false,
                         textInputAction: TextInputAction.search,
                         onSubmitted: (_) => _onSearch(),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           hintText: 'Enter barcode manually…',
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                           isDense: true,
-                          contentPadding: EdgeInsets.symmetric(
+                          contentPadding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 12,
                           ),
+                          errorText: _validationError,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
                       key: const Key('search-barcode-button'),
-                      onPressed: _onSearch,
+                      onPressed: _canSearch ? _onSearch : null,
                       child: const Text('Search'),
                     ),
                   ],

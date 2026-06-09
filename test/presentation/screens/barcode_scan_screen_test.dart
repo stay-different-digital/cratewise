@@ -147,6 +147,7 @@ void main() {
         find.byKey(const Key('barcode-input')),
         '5099706035422',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -163,6 +164,7 @@ void main() {
         find.byKey(const Key('barcode-input')),
         '5099706035422',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
@@ -175,6 +177,7 @@ void main() {
         find.byKey(const Key('barcode-input')),
         '5099706035422',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(find.text('Miles Davis'), findsOneWidget);
@@ -187,6 +190,7 @@ void main() {
         find.byKey(const Key('barcode-input')),
         '5099706035422',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(find.text('Kind Of Blue'), findsOneWidget);
@@ -199,6 +203,7 @@ void main() {
         find.byKey(const Key('barcode-input')),
         '5099706035422',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(find.text('#249504'), findsOneWidget);
@@ -211,6 +216,7 @@ void main() {
         find.byKey(const Key('barcode-input')),
         '  5099706035422  ',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(useCase.lastBarcode, '5099706035422');
@@ -220,6 +226,7 @@ void main() {
       final useCase = _FakeLookupUseCase(_kSuccess);
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(find.byKey(const Key('barcode-input')), '   ');
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(find.text('Scan or enter a barcode'), findsOneWidget);
@@ -247,6 +254,7 @@ void main() {
         find.byKey(const Key('barcode-input')),
         '0000000000000',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(find.text('No releases found'), findsOneWidget);
@@ -259,8 +267,9 @@ void main() {
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
         find.byKey(const Key('barcode-input')),
-        '1234567890',
+        '5099706035422',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(find.text('Discogs account not connected'), findsOneWidget);
@@ -271,8 +280,9 @@ void main() {
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
         find.byKey(const Key('barcode-input')),
-        '1234567890',
+        '5099706035422',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(
@@ -288,8 +298,9 @@ void main() {
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
         find.byKey(const Key('barcode-input')),
-        '1234567890',
+        '5099706035422',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(find.text('Too many requests'), findsOneWidget);
@@ -304,8 +315,9 @@ void main() {
       await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
       await tester.enterText(
         find.byKey(const Key('barcode-input')),
-        '1234567890',
+        '5099706035422',
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('search-barcode-button')));
       await tester.pump();
       expect(find.text('Something went wrong'), findsOneWidget);
@@ -332,5 +344,164 @@ void main() {
         expect(find.byKey(const Key('scan-area-placeholder')), findsOneWidget);
       },
     );
+  });
+
+  group('BarcodeScanScreen — barcode validation', () {
+    testWidgets('search button is disabled when input is empty', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      final button = tester.widget<FilledButton>(
+        find.byKey(const Key('search-barcode-button')),
+      );
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('search button is enabled for a valid 13-digit barcode', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      await tester.enterText(
+        find.byKey(const Key('barcode-input')),
+        '5099706035422',
+      );
+      await tester.pump();
+      final button = tester.widget<FilledButton>(
+        find.byKey(const Key('search-barcode-button')),
+      );
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('search button is enabled for a valid 12-digit barcode', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      await tester.enterText(
+        find.byKey(const Key('barcode-input')),
+        '012345678905',
+      );
+      await tester.pump();
+      final button = tester.widget<FilledButton>(
+        find.byKey(const Key('search-barcode-button')),
+      );
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('search button is enabled for a valid 8-digit barcode', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      await tester.enterText(
+        find.byKey(const Key('barcode-input')),
+        '01234565',
+      );
+      await tester.pump();
+      final button = tester.widget<FilledButton>(
+        find.byKey(const Key('search-barcode-button')),
+      );
+      expect(button.onPressed, isNotNull);
+    });
+
+    testWidgets('non-numeric input shows a friendly error message', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      await tester.enterText(
+        find.byKey(const Key('barcode-input')),
+        'https://example.com',
+      );
+      await tester.pump();
+      expect(
+        find.textContaining("This doesn't look like a barcode"),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('search button is disabled for non-numeric input', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      await tester.enterText(
+        find.byKey(const Key('barcode-input')),
+        'not-a-barcode',
+      );
+      await tester.pump();
+      final button = tester.widget<FilledButton>(
+        find.byKey(const Key('search-barcode-button')),
+      );
+      expect(button.onPressed, isNull);
+    });
+
+    testWidgets('numeric input with wrong length shows a length error', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      await tester.enterText(find.byKey(const Key('barcode-input')), '12345');
+      await tester.pump();
+      expect(
+        find.textContaining('Barcode must be 8, 12, or 13 digits'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'search button is disabled for numeric input with wrong length',
+      (tester) async {
+        await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+        await tester.enterText(find.byKey(const Key('barcode-input')), '12345');
+        await tester.pump();
+        final button = tester.widget<FilledButton>(
+          find.byKey(const Key('search-barcode-button')),
+        );
+        expect(button.onPressed, isNull);
+      },
+    );
+
+    testWidgets(
+      'keyboard submit with invalid input does not trigger a search',
+      (tester) async {
+        final useCase = _FakeLookupUseCase(_kSuccess);
+        await tester.pumpWidget(_wrap(BarcodeScanScreen(useCase: useCase)));
+        await tester.enterText(
+          find.byKey(const Key('barcode-input')),
+          'abc123',
+        );
+        await tester.testTextInput.receiveAction(TextInputAction.search);
+        await tester.pump();
+        expect(useCase.lastBarcode, isNull);
+        expect(find.byType(ReleaseSearchResultCard), findsNothing);
+      },
+    );
+
+    testWidgets('validation error clears when a valid barcode is entered', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      await tester.enterText(find.byKey(const Key('barcode-input')), 'abc');
+      await tester.pump();
+      expect(
+        find.textContaining("This doesn't look like a barcode"),
+        findsOneWidget,
+      );
+      await tester.enterText(
+        find.byKey(const Key('barcode-input')),
+        '5099706035422',
+      );
+      await tester.pump();
+      expect(
+        find.textContaining("This doesn't look like a barcode"),
+        findsNothing,
+      );
+    });
+
+    testWidgets('blank input shows no validation error', (tester) async {
+      await tester.pumpWidget(_wrap(const BarcodeScanScreen()));
+      await tester.pump();
+      expect(
+        find.textContaining("This doesn't look like a barcode"),
+        findsNothing,
+      );
+      expect(find.textContaining('Barcode must be'), findsNothing);
+    });
   });
 }
