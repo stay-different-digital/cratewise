@@ -38,6 +38,9 @@ class _FakeRetryRepo implements RetryActionRepository {
   @override
   Future<void> remove(String id) async =>
       _actions.removeWhere((a) => a.id == id);
+
+  @override
+  Future<void> deleteFailedBefore(DateTime cutoff) async {}
 }
 
 // ---------------------------------------------------------------------------

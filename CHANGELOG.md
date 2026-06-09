@@ -7,6 +7,30 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 8O: Failed action queue entries expire after configurable period (US-42)] — 2026-06-09
+
+### Added
+- `RetryActionRepository.deleteFailedBefore(DateTime cutoff)` — new interface method that deletes all `failed` entries whose `createdAt` is before the given cutoff; `pending` and `abandoned` entries are untouched
+- `LocalRetryActionRepository.deleteFailedBefore` — Drift implementation; single DELETE WHERE `status = 'failed' AND createdAt < cutoff`
+- `PurgeStaleFailedActionsUseCase` (`lib/application/use_cases/purge_stale_failed_actions_use_case.dart`) — computes `cutoff = now − ttl` (default `Duration(days: 30)`) and delegates to `RetryActionRepository.deleteFailedBefore`; TTL is configurable for testing
+- `main.dart` — calls `_purgeStaleFailedActions()` (fire-and-forget) on every app launch, before `runApp`; opens and closes its own short-lived `AppDatabase` instance; fully silent (no user notification)
+
+### Tests
+- 6 new tests in `local_retry_action_repository_test.dart` (`deleteFailedBefore` group):
+  - deletes failed entries older than cutoff
+  - does not delete pending entries older than cutoff
+  - does not delete failed entries newer than cutoff
+  - does not delete abandoned entries older than cutoff
+  - is a no-op when no failed entries exist
+  - deletes only failed entries past cutoff, keeps others
+- 3 new tests in `purge_stale_failed_actions_use_case_test.dart`:
+  - calls `deleteFailedBefore` with cutoff 30 days before now by default
+  - respects custom TTL
+  - delegates to repository `deleteFailedBefore` exactly once
+- 11 existing test fakes updated with no-op `deleteFailedBefore` implementation
+
+---
+
 ## [Unreleased — Phase 8N: Cached release detail banner shows data age (US-41)] — 2026-06-09
 
 ### Changed

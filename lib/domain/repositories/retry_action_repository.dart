@@ -7,4 +7,5 @@ abstract interface class RetryActionRepository {
   Future<List<RetryAction>> getPending();
   Future<void> update(RetryAction action);
   Future<void> remove(String id);
+  Future<void> deleteFailedBefore(DateTime cutoff);
 }

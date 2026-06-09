@@ -61,6 +61,9 @@ class _SpyRetryRepository implements RetryActionRepository {
 
   @override
   Future<void> remove(String id) async {}
+
+  @override
+  Future<void> deleteFailedBefore(DateTime cutoff) async {}
 }
 
 // ---------------------------------------------------------------------------

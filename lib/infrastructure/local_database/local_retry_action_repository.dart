@@ -52,6 +52,16 @@ class LocalRetryActionRepository implements RetryActionRepository {
     await (_db.delete(_db.retryActions)..where((t) => t.id.equals(id))).go();
   }
 
+  @override
+  Future<void> deleteFailedBefore(DateTime cutoff) async {
+    await (_db.delete(_db.retryActions)..where(
+          (t) =>
+              t.status.equals(RetryActionStatus.failed.name) &
+              t.createdAt.isSmallerThanValue(cutoff),
+        ))
+        .go();
+  }
+
   RetryAction _rowToAction(RetryActionRow row) {
     return RetryAction(
       id: row.id,

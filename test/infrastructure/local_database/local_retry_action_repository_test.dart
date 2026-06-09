@@ -287,6 +287,98 @@ void main() {
       }
     });
 
+    group('deleteFailedBefore', () {
+      test('deletes failed entries older than cutoff', () async {
+        await repo.add(
+          makeAction(
+            id: 'old-failed',
+            entityId: 'item-1',
+            status: RetryActionStatus.failed,
+            createdAt: DateTime(2026, 1, 1),
+          ),
+        );
+        await repo.deleteFailedBefore(DateTime(2026, 3, 1));
+        expect(await repo.getById('old-failed'), isNull);
+      });
+
+      test('does not delete pending entries older than cutoff', () async {
+        await repo.add(
+          makeAction(
+            id: 'old-pending',
+            entityId: 'item-1',
+            status: RetryActionStatus.pending,
+            createdAt: DateTime(2026, 1, 1),
+          ),
+        );
+        await repo.deleteFailedBefore(DateTime(2026, 3, 1));
+        expect(await repo.getById('old-pending'), isNotNull);
+      });
+
+      test('does not delete failed entries newer than cutoff', () async {
+        await repo.add(
+          makeAction(
+            id: 'new-failed',
+            entityId: 'item-1',
+            status: RetryActionStatus.failed,
+            createdAt: DateTime(2026, 5, 1),
+          ),
+        );
+        await repo.deleteFailedBefore(DateTime(2026, 3, 1));
+        expect(await repo.getById('new-failed'), isNotNull);
+      });
+
+      test('does not delete abandoned entries older than cutoff', () async {
+        await repo.add(
+          makeAction(
+            id: 'old-abandoned',
+            entityId: 'item-1',
+            status: RetryActionStatus.abandoned,
+            createdAt: DateTime(2026, 1, 1),
+          ),
+        );
+        await repo.deleteFailedBefore(DateTime(2026, 3, 1));
+        expect(await repo.getById('old-abandoned'), isNotNull);
+      });
+
+      test('is a no-op when no failed entries exist', () async {
+        await repo.add(makeAction(status: RetryActionStatus.pending));
+        await repo.deleteFailedBefore(DateTime(2026, 3, 1));
+        expect(await repo.getAll(), hasLength(1));
+      });
+
+      test('deletes only failed entries past cutoff, keeps others', () async {
+        await repo.add(
+          makeAction(
+            id: 'old-failed',
+            entityId: 'item-1',
+            status: RetryActionStatus.failed,
+            createdAt: DateTime(2026, 1, 1),
+          ),
+        );
+        await repo.add(
+          makeAction(
+            id: 'new-failed',
+            entityId: 'item-2',
+            status: RetryActionStatus.failed,
+            createdAt: DateTime(2026, 5, 1),
+          ),
+        );
+        await repo.add(
+          makeAction(
+            id: 'old-pending',
+            entityId: 'item-3',
+            status: RetryActionStatus.pending,
+            createdAt: DateTime(2026, 1, 1),
+          ),
+        );
+        await repo.deleteFailedBefore(DateTime(2026, 3, 1));
+        expect(await repo.getAll(), hasLength(2));
+        expect(await repo.getById('old-failed'), isNull);
+        expect(await repo.getById('new-failed'), isNotNull);
+        expect(await repo.getById('old-pending'), isNotNull);
+      });
+    });
+
     group('security', () {
       test('model has no token field', () {
         final action = makeAction();

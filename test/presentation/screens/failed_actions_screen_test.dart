@@ -50,6 +50,9 @@ class _FakeRetryRepo implements RetryActionRepository {
 
   @override
   Future<void> remove(String id) async {}
+
+  @override
+  Future<void> deleteFailedBefore(DateTime cutoff) async {}
 }
 
 // Minimal fakes for RetryMetadataRefreshUseCase super-constructor.
@@ -75,6 +78,8 @@ class _NullRetryRepoForUseCase implements RetryActionRepository {
   Future<void> update(RetryAction a) async {}
   @override
   Future<void> remove(String id) async {}
+  @override
+  Future<void> deleteFailedBefore(DateTime cutoff) async {}
 }
 
 class _NullThumbnailRepo implements ThumbnailRepository {
@@ -151,6 +156,8 @@ class _FlippingRepo implements RetryActionRepository {
   Future<void> update(RetryAction action) async {}
   @override
   Future<void> remove(String id) async {}
+  @override
+  Future<void> deleteFailedBefore(DateTime cutoff) async {}
 }
 
 // Null collection/wishlist repos for use case constructors.
