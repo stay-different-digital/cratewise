@@ -3,7 +3,7 @@
 **Date:** 2026-06-11  
 **Test count:** 2264/2264 passing  
 **Last completed phase:** 9 (Roadmap V2: workspace and docs consistency)  
-**In progress:** Phase 10 (device validation) — checklist at `docs/qa/PHASE_10_DEVICE_VALIDATION.md`, baseline 2256/2256 green, awaiting manual QA on physical Android/iPhone/iPad
+**In progress:** Phase 10 (device validation) — checklist at `docs/qa/PHASE_10_DEVICE_VALIDATION.md`. Section A simulator pre-pass done (iPhone 17 Pro sim, via `flutter drive` + `integration_test/qa_section_a_test.dart`): app icon finding fixed (launcher icons generated), 3 open findings incl. cold-launch tab inconsistency. Physical-device QA on Android/iPhone/iPad still required; valid-token items need Fred's real token.
 
 ---
 

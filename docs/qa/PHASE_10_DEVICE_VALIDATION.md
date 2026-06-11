@@ -33,18 +33,32 @@ open blocking issues remain.
 
 ## Section A: First launch and setup (all devices)
 
-- [ ] App installs and launches without crash.
+Simulator pre-pass done 2026-06-11 on the iPhone 17 Pro simulator (iOS 26),
+driven by `integration_test/qa_section_a_test.dart` plus `simctl`
+(screenshots in `/tmp/qa_shots/`). Simulator results below as [S-…];
+physical-device boxes stay open.
+
+- [ ] App installs and launches without crash. [S-pass]
 - [ ] App icon renders correctly (no alpha artefacts on iOS, adaptive icon on Android).
-- [ ] Light mode renders correctly; dark mode renders correctly (toggle device theme).
+      [S-FAIL → finding #1: default Flutter icon; generator never run. Fixed
+      2026-06-11 by running `dart run flutter_launcher_icons`; re-verify.]
+- [ ] Light mode renders correctly; dark mode renders correctly (toggle device theme). [S-pass]
 - [ ] All five tabs are reachable; navigation state survives tab switches.
+      [S-pass — search query retained across tab switch]
 - [ ] No content hidden behind notch, Dynamic Island, status bar, or home indicator
-      (safe areas on every scrollable screen).
-- [ ] Settings: token field masks input by default; show/hide toggle works.
+      (safe areas on every scrollable screen). [S-pass on screens seen]
+- [ ] Settings: token field masks input by default; show/hide toggle works. [S-pass]
 - [ ] Token help link opens discogs.com in the external browser.
+      [S-partial: link present and styled; external open not driven]
 - [ ] Pasting an invalid token shows a friendly error (no raw API error, no token echoed).
+      [S-pass — real 401 from api.discogs.com → "Token not recognised. Check
+      your token and try again."; token string appears in no Text widget]
 - [ ] Pasting a valid token validates and shows the connected state with masked token.
-- [ ] Removing the token works; app returns to disconnected state.
+      [S-blocked: needs a real token — manual]
+- [ ] Removing the token works; app returns to disconnected state. [S-pass at UI level]
 - [ ] Kill and relaunch the app: token connection state is remembered (secure storage).
+      [S-partial: relaunch is crash-free, but see finding #2; token
+      persistence needs a real token — manual]
 
 ## Section B: Search and release detail (all devices)
 
@@ -145,8 +159,10 @@ open blocking issues remain.
 
 | # | Device | Section | Severity (blocker/major/minor) | Description | Screenshot |
 |---|--------|---------|--------------------------------|-------------|------------|
-| 1 |        |         |                                |             |            |
-| 2 |        |         |                                |             |            |
+| 1 | iPhone 17 Pro sim | A | major | App icon was the default Flutter logo — `flutter_launcher_icons` was never run after `assets/icon/app_icon.png` was added on 2026-06-04. Fixed same day (`dart run flutter_launcher_icons`); verify on all three physical devices. | /tmp/qa_a2_icon.png |
+| 2 | iPhone 17 Pro sim | A | major | Cold launch does not consistently open the Search tab: consecutive relaunches landed on Wishlist, then Scan, then Settings (sticky), with the nav-bar indicator animating in from the adjacent tab. `router.dart` has `initialLocation: AppRoutes.search` and no restoration scope, so the cause is unknown. Reproduce on physical hardware and investigate. | /tmp/qa_a11_relaunch.png |
+| 3 | iPhone 17 Pro sim | A | minor | Token helper text truncates with an ellipsis on a 402dp-wide phone: "Discogs personal access tokens are 40 char…". | /tmp/qa_shots/a6_token_masked.png |
+| 4 | iPhone 17 Pro sim | A | minor | In the dark-mode screenshot an unidentified glyph appeared at the right end of the search bar that is absent in light mode (no query entered, so it is not the clear button). Recheck. | /tmp/qa_a3_dark.png |
 
 ## Converting findings to user stories
 

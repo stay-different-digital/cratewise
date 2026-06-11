@@ -7,6 +7,23 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 10 Section A: simulator pre-pass + app icon fix] — 2026-06-11
+
+### Added
+- `integration_test/qa_section_a_test.dart` + `test_driver/integration_test.dart` — drives Section A of the device-validation checklist on a real device/simulator via `flutter drive`: all five tabs, search-state retention across tab switches, token masking + show/hide toggle, help-link presence, live invalid-token validation against api.discogs.com (friendly error, no token echo), and token removal; saves screenshots per step
+- `integration_test` (SDK) added to dev_dependencies
+- Section A results recorded in `docs/qa/PHASE_10_DEVICE_VALIDATION.md` ([S-…] markers) with 4 findings in the findings log
+
+### Fixed
+- App icon showed the default Flutter logo on device: `flutter_launcher_icons` had never been run after `assets/icon/app_icon.png` was added on 2026-06-04. Generated Android + iOS launcher icons from the configured assets; verified on the iOS simulator home screen
+
+### Known issues (from QA findings, to investigate)
+- Cold launch lands on varying tabs (Wishlist/Scan/Settings) instead of Search on the iOS simulator, despite `initialLocation: AppRoutes.search`
+- Token helper text truncates on narrow screens
+- Unidentified glyph in the search bar in dark mode
+
+---
+
 ## [Unreleased — Fix: Discogs export did not work] — 2026-06-11
 
 Found during Phase 10 device validation (reported by Fred): exporting to Discogs failed for both collection and wishlist.
