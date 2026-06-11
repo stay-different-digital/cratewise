@@ -161,7 +161,7 @@ physical-device boxes stay open.
 |---|--------|---------|--------------------------------|-------------|------------|
 | 1 | iPhone 17 Pro sim | A | major | App icon was the default Flutter logo — `flutter_launcher_icons` was never run after `assets/icon/app_icon.png` was added on 2026-06-04. Fixed same day (`dart run flutter_launcher_icons`); verify on all three physical devices. | /tmp/qa_a2_icon.png |
 | 2 | iPhone 17 Pro sim | A | major | Cold launch does not consistently open the Search tab: consecutive relaunches landed on Wishlist, then Scan, then Settings (sticky), with the nav-bar indicator animating in from the adjacent tab. `router.dart` has `initialLocation: AppRoutes.search` and no restoration scope, so the cause is unknown. → **US-53** in `docs/user-stories/phase-10-device-validation-stories.md`. | /tmp/qa_a11_relaunch.png |
-| 3 | iPhone 17 Pro sim | A | minor | Token helper text truncates with an ellipsis on a 402dp-wide phone: "Discogs personal access tokens are 40 char…". | /tmp/qa_shots/a6_token_masked.png |
+| 3 | iPhone 17 Pro sim | A | minor | Token helper text truncates with an ellipsis on a 402dp-wide phone: "Discogs personal access tokens are 40 char…". → **US-54** in `docs/user-stories/phase-10-device-validation-stories.md`. | /tmp/qa_shots/a6_token_masked.png |
 | 4 | iPhone 17 Pro sim | A | minor | In the dark-mode screenshot an unidentified glyph appeared at the right end of the search bar that is absent in light mode (no query entered, so it is not the clear button). Recheck. | /tmp/qa_a3_dark.png |
 
 ## Converting findings to user stories

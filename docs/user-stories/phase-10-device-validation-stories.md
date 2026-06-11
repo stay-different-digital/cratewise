@@ -28,3 +28,28 @@ Derived from findings in `docs/qa/PHASE_10_DEVICE_VALIDATION.md`.
 - Observed sequence across cold starts: Wishlist → Scan → Settings → Settings (sticky); evidence in `/tmp/qa_a11_relaunch.png` and `/tmp/qa_relaunch3.png`.
 - `GoRouter` is created as a top-level/global instance — if it (or `StatefulShellRoute`) preserves state across engine restarts in some configuration, or if the launch sequence replays a navigation event, that could explain the drift. Check whether the router instance is rebuilt per `runApp` and whether `StatefulShellRoute.indexedStack` restores a stale branch index.
 - The drive test ended its session on the Settings tab; the drift pattern suggests something replays or restores prior-session navigation rather than randomness.
+
+---
+
+### US-54: Token helper text wraps instead of truncating on narrow screens
+
+**Beta: S · 1 SP**
+
+> As a user setting up my Discogs token on a phone,
+> I want the helper text under the token field to be fully readable,
+> so that I know the expected token format without guessing at a cut-off sentence.
+
+**Acceptance criteria:**
+- The helper text "Discogs personal access tokens are 40 characters" wraps onto multiple lines when it does not fit on one line, instead of truncating with an ellipsis ("…are 40 char…").
+- The full text is readable on the narrowest supported phone width, in both portrait and landscape.
+- The character counter (`0/40`) remains visible and correctly positioned next to or below the wrapped helper text.
+- Wrapping does not overlap or push the token field, the help link, or the buttons out of alignment.
+- Still readable at the largest system text size (accessibility text scaling).
+- A widget test asserts the helper text is not truncated (e.g. `helperMaxLines` is set, or equivalent).
+
+**Found during:** Phase 10 device validation, iPhone 17 Pro simulator (iOS 26), finding #3.
+
+**Implementation note:** the token `TextField` in
+`lib/presentation/widgets/discogs_token_section.dart` uses `helperText` in its
+`InputDecoration`; Flutter truncates helper text to one line unless
+`helperMaxLines` (e.g. `2`–`3`) is set.
