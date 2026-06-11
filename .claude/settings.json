@@ -17,7 +17,9 @@
       "Bash(sed -n '315,325p' /Users/fred/.pub-cache/hosted/pub.dev/go_router-17.3.0/lib/src/delegate.dart)",
       "Bash(echo \"exit: $?\")",
       "Bash(xargs -I{} git show {} --name-only)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(flutter devices *)",
+      "Bash(git commit -m 'Added Phase 10 device validation QA checklist *)"
     ]
   }
 }
