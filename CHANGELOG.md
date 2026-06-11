@@ -7,6 +7,16 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 9: Workspace and docs consistency (Roadmap V2)] — 2026-06-11
+
+### Changed
+- Removed stale Windows platform references from the VS Code agent files (`.github/agents/`: product planner, QA reviewer, UI designer), skill files (`.github/skills/`: flutter-feature, flutter-testing, airbnb-ui-flutter, release-checklist, secure-token-storage), and `.github/prompts/review-code.prompt.md` — all now consistently target Android + iPhone + iPad
+- `docs/api/DISCOGS_API.md` updated with the base URL (`https://api.discogs.com`) and the Discogs API v2 Accept header, matching the implemented `DiscogsApiClient`
+- Verified the `tools:` names in the agent files against the current VS Code agent mode documentation
+- Changes applied manually (outside the AI-assisted sessions); see `docs/product/ROADMAP_V2.md` Phase 9 for the original task list
+
+---
+
 ## [Unreleased — Phase 8Y: Recent search results cached locally (US-52)] — 2026-06-09
 
 ### Added

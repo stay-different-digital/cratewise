@@ -1,8 +1,8 @@
 # Cratewise — Session Primer
 
-**Date:** 2026-06-09  
-**Test count:** 2231/2231 passing  
-**Last completed phase:** 8U (US-48)
+**Date:** 2026-06-11  
+**Test count:** 2256/2256 passing  
+**Last completed phase:** 9 (Roadmap V2: workspace and docs consistency)
 
 ---
 

@@ -41,6 +41,8 @@ Not done yet:
 
 ## Phase 9: Workspace and docs consistency
 
+Status: done (2026-06-11, handled manually — see `CHANGELOG.md`).
+
 Goal:
 
 - Make every config and doc file match the Android + iPhone + iPad scope.
