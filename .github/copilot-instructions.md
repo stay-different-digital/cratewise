@@ -81,6 +81,18 @@ Add tests for:
 - Wishlist repository behavior
 - CSV import and export
 
+## Git and commit rules
+
+- Commit every completed change automatically. Do not leave finished work uncommitted.
+- Commit only after `dart format`, `flutter analyze`, and `flutter test` pass.
+- Use this commit message format:
+  - User story work: `Resolved: US-XX: <user story title>`
+  - Bug fixes: `Resolved <short description>`
+  - Docs/config changes: short imperative summary
+- One logical change per commit, including its tests and doc updates.
+- Never push unless the user explicitly asks.
+- Never commit secrets, tokens, or `.env` files.
+
 ## Documentation rules
 
 Update docs when you change:

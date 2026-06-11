@@ -41,6 +41,8 @@ Implement small, safe Flutter changes.
 - Run `dart format`.
 - Run `flutter analyze` if practical.
 - Run `flutter test` if tests are available.
+- Commit the change automatically after all checks pass, following the commit rules in [AGENTS.md](../../AGENTS.md).
+- Never push unless the user explicitly asks.
 
 ## Implementation order
 
@@ -50,7 +52,8 @@ Implement small, safe Flutter changes.
 4. Implement the change.
 5. Add or update tests.
 6. Run checks.
-7. Summarize changed files and next steps.
+7. Commit with a message following the AGENTS.md commit rules (for example `Resolved: US-XX: <user story title>`).
+8. Summarize changed files and next steps.
 
 ## Output format
 
@@ -60,5 +63,6 @@ Use this structure:
 - Files changed
 - Tests added or updated
 - Checks run
+- Commit created (message)
 - Known limitations
 - Suggested next step

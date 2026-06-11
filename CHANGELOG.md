@@ -7,6 +7,15 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Agent workflow: automatic commits] — 2026-06-11
+
+### Added
+- "Git and commit rules" section in `AGENTS.md`: agents must commit every completed change automatically (only after `dart format`/`flutter analyze`/`flutter test` pass), with the commit message convention `Resolved: US-XX: <user story title>` for user stories, `Resolved <description>` for bug fixes, and a short imperative summary for docs/config changes; never push or commit secrets without explicit instruction
+- Same rules added to `.github/copilot-instructions.md` so they apply to every VS Code agent mode session
+- `cratewise-flutter-implementer` agent: commit step added to the rules, implementation order (step 7), and output format ("Commit created")
+
+---
+
 ## [Unreleased — Phase 9: Workspace and docs consistency (Roadmap V2)] — 2026-06-11
 
 ### Changed

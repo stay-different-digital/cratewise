@@ -84,6 +84,24 @@ Do not use:
 - Airbnb logo
 - Airbnb brand identity
 
+## Git and commit rules
+
+Agents must commit their own changes automatically.
+
+- After every completed change, create a git commit. Do not leave finished work uncommitted.
+- Only commit after checks pass: `dart format`, `flutter analyze`, and `flutter test` (when tests are available).
+- Commit on the current branch. Never push unless the user explicitly asks.
+- Never commit secrets, tokens, or `.env` files.
+
+Commit message format:
+
+- User story work: `Resolved: US-XX: <user story title>`
+  - Example: `Resolved: US-52: Recent search results are cached locally`
+- Bug fixes outside a user story: `Resolved <short description of the fix>`
+- Docs, config, or workflow changes: short imperative summary, e.g. `Updated roadmap for release phases`
+- Keep the subject line under 72 characters. Add a body only when the change needs explanation.
+- One logical change per commit. Include the related test and doc updates in the same commit.
+
 ## Agent workflow
 
 Use these agents:
