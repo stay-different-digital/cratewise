@@ -7,6 +7,14 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Phase 10: Device validation checklist (Roadmap V2)] — 2026-06-11
+
+### Added
+- `docs/qa/PHASE_10_DEVICE_VALIDATION.md` — manual QA checklist for physical Android phone, iPhone, and iPad covering: first launch and token setup, search (debounce, cancellation, caching, offline banner), release detail (cached offline view, condition prompt), collection and wishlist CRUD with live refresh, barcode scanning (permissions, viewfinder, torch, EAN-13/UPC-A/EAN-8, manual validation), import/export and history, deep linking, iPad layout review (split-pane, two-panel scanner, Split View, text scaling, hardware keyboard), stability and rate-limit checks; includes findings log and a finding-to-user-story template (numbering continues at US-53)
+- Roadmap V2 Phase 10 marked in progress; test baseline confirmed green (2256/2256) before device QA begins
+
+---
+
 ## [Unreleased — Agent workflow: automatic commits] — 2026-06-11
 
 ### Added

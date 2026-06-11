@@ -63,6 +63,11 @@ Done criteria:
 
 ## Phase 10: Device validation
 
+Status: in progress (2026-06-11) — QA checklist prepared at
+`docs/qa/PHASE_10_DEVICE_VALIDATION.md`; test baseline confirmed green
+(2256/2256). Awaiting manual QA passes on physical Android phone, iPhone,
+and iPad.
+
 Goal:
 
 - Prove the app works well on real hardware for all three targets.
