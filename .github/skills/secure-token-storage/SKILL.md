@@ -1,6 +1,6 @@
 ---
 name: secure-token-storage
-description: Implement or review secure storage for Discogs tokens on Android and Windows, including masking, removal, and safe logging rules.
+description: Implement or review secure storage for Discogs tokens on Android, iOS and iPadOS, including masking, removal, and safe logging rules.
 argument-hint: '[token storage task]'
 ---
 

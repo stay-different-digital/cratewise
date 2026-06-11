@@ -49,7 +49,8 @@ The UI should feel:
 ## Done criteria
 
 - UI works on Android.
-- UI works on Windows.
+- UI works on iOS.
+- UI works on iPadOS.
 - UI has loading state.
 - UI has empty state.
 - UI has error state.

@@ -36,7 +36,8 @@ Prioritize tests for:
 Check:
 
 - Android
-- Windows
+- iOS
+- iPadOS
 - Light mode
 - Dark mode
 - Valid token

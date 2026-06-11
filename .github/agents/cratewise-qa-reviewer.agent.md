@@ -21,7 +21,8 @@ Review changes for:
 - Acceptance criteria
 - Test coverage
 - Android behavior
-- Windows behavior
+- iOS behavior
+- iPadOS behavior
 - Error states
 - Empty states
 - Offline behavior

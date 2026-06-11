@@ -41,7 +41,7 @@ Focus on:
 - Do not edit code.
 - Do not create broad plans that are too big to implement.
 - Split work into small, testable tasks.
-- Prefer Android and Windows support from the start.
+- Prefer Android, iOS and iPadOS support from the start.
 - Keep marketplace buying and selling out of MVP.
 - Keep social features out of MVP.
 

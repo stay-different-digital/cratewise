@@ -13,7 +13,8 @@ Check:
 - Architecture boundaries
 - Tests
 - Android behavior
-- Windows behavior
+- iOS behavior
+- iPadOS behavior
 - Error states
 - Token safety
 - Documentation updates

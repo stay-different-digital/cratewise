@@ -28,7 +28,6 @@ Create UI plans for Flutter screens and components.
 Focus on:
 
 - Mobile-first layout
-- Windows responsive layout
 - Clean spacing
 - Large cover artwork
 - Rounded cards

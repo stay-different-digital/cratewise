@@ -1,6 +1,6 @@
 ---
 name: release-checklist
-description: Prepare Android and Windows release checks for Cratewise, including build checks, privacy text, branding, QA, and documentation.
+description: Prepare Android, iOS and iPadOS release checks for Cratewise, including build checks, privacy text, branding, QA, and documentation.
 argument-hint: '[release version]'
 ---
 
@@ -13,7 +13,8 @@ Use this skill before beta or production releases.
 Check:
 
 - Android build
-- Windows build
+- iOS build
+- iPadOS build
 - App name
 - App icon
 - Splash screen
