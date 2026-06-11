@@ -15,17 +15,13 @@ class CollectionExportNotSupported
 
 /// Checks whether the app can export local collection items to Discogs.
 ///
-/// Exporting to Discogs requires a write API endpoint
-/// (POST /users/{username}/collection/folders/{folder_id}/releases/{release_id}).
-/// The Discogs API client currently only supports read operations, so this
-/// use case returns [CollectionExportNotSupported] until write support is added.
+/// The Discogs API client supports the required write endpoint
+/// (POST /users/{username}/collection/folders/{folder_id}/releases/{release_id})
+/// via `DiscogsApiClient.addToCollection`, so exporting is available.
 class CheckCollectionExportCapabilityUseCase {
   const CheckCollectionExportCapabilityUseCase();
 
   CheckCollectionExportCapabilityResult execute() {
-    return const CollectionExportNotSupported(
-      'Exporting to Discogs is not yet available. '
-      "Use 'Export Collection to CSV' to save a backup of your collection.",
-    );
+    return const CollectionExportSupported();
   }
 }

@@ -154,13 +154,14 @@ class DiscogsApiClient {
 
   /// Adds [releaseId] to the authenticated user's Discogs wantlist.
   ///
+  /// The Discogs API requires PUT for this endpoint; POST returns 405.
   /// Returns normally on success (HTTP 201); throws an [AppError] subtype on failure.
   Future<void> addToWantlist(
     String username,
     int releaseId,
     String token,
   ) async {
-    await _post('/users/$username/wants/$releaseId', token);
+    await _put('/users/$username/wants/$releaseId', token);
   }
 
   Future<http.Response> _get(
@@ -190,14 +191,25 @@ class DiscogsApiClient {
     return response;
   }
 
-  Future<http.Response> _post(String path, String token) async {
+  Future<http.Response> _post(String path, String token) => _write(
+    (uri, headers) => _client.post(uri, headers: headers),
+    path,
+    token,
+  );
+
+  Future<http.Response> _put(String path, String token) =>
+      _write((uri, headers) => _client.put(uri, headers: headers), path, token);
+
+  Future<http.Response> _write(
+    Future<http.Response> Function(Uri uri, Map<String, String> headers) send,
+    String path,
+    String token,
+  ) async {
     await _waitIfNeeded();
     final uri = Uri.parse('$_baseUrl$path');
     final http.Response response;
     try {
-      response = await _client
-          .post(uri, headers: _headers(token))
-          .timeout(_timeout);
+      response = await send(uri, _headers(token)).timeout(_timeout);
     } on TimeoutException {
       throw const NetworkError();
     } on SocketException {

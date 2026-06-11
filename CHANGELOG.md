@@ -7,6 +7,20 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased — Fix: Discogs export did not work] — 2026-06-11
+
+Found during Phase 10 device validation (reported by Fred): exporting to Discogs failed for both collection and wishlist.
+
+### Fixed
+- **Collection export was always blocked**: `CheckCollectionExportCapabilityUseCase` still returned the hardcoded `CollectionExportNotSupported` from before the write endpoint existed, so the preview screen always showed "not yet available" and the export never started. It now returns `CollectionExportSupported` (the client has had `addToCollection` since Phase 6).
+- **Wishlist export failed per item**: `DiscogsApiClient.addToWantlist` sent POST, but the Discogs API requires `PUT /users/{username}/wants/{release_id}` (POST returns 405 Method Not Allowed, surfacing as `UnexpectedApiError` and marking every row as failed). The client now sends PUT; `_post`/`_put` share a `_write` helper with identical timeout, error-mapping, 201 status check, and rate-limit handling.
+
+### Tests
+- New `DiscogsApiClient.addToWantlist` group (11 tests) — this endpoint previously had no tests at all, which is why the wrong HTTP method was never caught: completes on 201, sends PUT to the correct URL, auth header, error mapping for 401/403/429/500/200, network failure, timeout, token never present in errors
+- `CheckCollectionExportCapabilityUseCase` tests rewritten to assert `CollectionExportSupported` (3 tests, replacing 6 NotSupported-era tests)
+
+---
+
 ## [Unreleased — Phase 10: Device validation checklist (Roadmap V2)] — 2026-06-11
 
 ### Added

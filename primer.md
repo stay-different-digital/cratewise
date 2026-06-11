@@ -1,7 +1,7 @@
 # Cratewise — Session Primer
 
 **Date:** 2026-06-11  
-**Test count:** 2256/2256 passing  
+**Test count:** 2264/2264 passing  
 **Last completed phase:** 9 (Roadmap V2: workspace and docs consistency)  
 **In progress:** Phase 10 (device validation) — checklist at `docs/qa/PHASE_10_DEVICE_VALIDATION.md`, baseline 2256/2256 green, awaiting manual QA on physical Android/iPhone/iPad
 

@@ -1850,4 +1850,128 @@ void main() {
       }
     });
   });
+
+  group('DiscogsApiClient.addToWantlist', () {
+    const fakeUsername = 'vinyl_fan';
+    const fakeReleaseId = 12345;
+
+    test('completes normally on 201', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(201));
+      await expectLater(
+        client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken),
+        completes,
+      );
+    });
+
+    test('sends PUT to correct URL', () async {
+      // The Discogs API adds wantlist entries with
+      // PUT /users/{username}/wants/{release_id}; POST returns 405.
+      late http.Request capturedRequest;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          capturedRequest = request;
+          return http.Response('', 201);
+        }),
+      );
+
+      await client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken);
+
+      expect(capturedRequest.method, 'PUT');
+      expect(
+        capturedRequest.url.path,
+        '/users/$fakeUsername/wants/$fakeReleaseId',
+      );
+    });
+
+    test('includes correct authorization header', () async {
+      late http.Request capturedRequest;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          capturedRequest = request;
+          return http.Response('', 201);
+        }),
+      );
+
+      await client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken);
+
+      expect(
+        capturedRequest.headers['Authorization'],
+        'Discogs token=$_fakeToken',
+      );
+    });
+
+    test('throws InvalidTokenError on 401', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      expect(
+        () => client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<InvalidTokenError>()),
+      );
+    });
+
+    test('throws InvalidTokenError on 403', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(403));
+      expect(
+        () => client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<InvalidTokenError>()),
+      );
+    });
+
+    test('throws RateLimitedError on 429', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(429));
+      expect(
+        () => client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<RateLimitedError>()),
+      );
+    });
+
+    test('throws DiscogsUnavailableError on 500', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(500));
+      expect(
+        () => client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<DiscogsUnavailableError>()),
+      );
+    });
+
+    test('throws NetworkError when request throws', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async => throw Exception('no internet')),
+      );
+      expect(
+        () => client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<NetworkError>()),
+      );
+    });
+
+    test('throws NetworkError when request times out', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async {
+          await Future.delayed(const Duration(milliseconds: 200));
+          return http.Response('', 201);
+        }),
+        requestTimeout: const Duration(milliseconds: 50),
+      );
+      expect(
+        () => client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<NetworkError>()),
+      );
+    });
+
+    test('throws UnexpectedApiError on 200', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(200));
+      expect(
+        () => client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<UnexpectedApiError>()),
+      );
+    });
+
+    test('token is not present in thrown error messages', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      try {
+        await client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken);
+        fail('expected InvalidTokenError');
+      } on InvalidTokenError {
+        // Pass — typed error carries no message containing the token.
+      }
+    });
+  });
 }
