@@ -132,6 +132,27 @@ void main() {
       expect(find.textContaining('40 characters'), findsOneWidget);
     });
 
+    testWidgets('helper text is not truncated on a narrow screen (US-54)', (
+      tester,
+    ) async {
+      // 402 logical pixels — narrowest observed width where truncation occurred.
+      tester.view.physicalSize = const Size(402 * 3, 800 * 3);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(_buildApp(const DiscogsTokenSection()));
+      await tester.pump();
+
+      // The InputDecoration helper renders via a Text widget. We verify it
+      // shows the full string — if helperMaxLines is unset, Flutter clips it
+      // to one line and the trailing word "characters" would be cut off.
+      expect(
+        find.text('Discogs personal access tokens are 40 characters'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('tapping help link calls url launcher with correct URL', (
       tester,
     ) async {

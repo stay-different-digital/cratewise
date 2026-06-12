@@ -214,6 +214,7 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
               labelText: 'Personal access token',
               hintText: 'Paste your token here',
               helperText: 'Discogs personal access tokens are 40 characters',
+              helperMaxLines: 3,
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: Icon(
