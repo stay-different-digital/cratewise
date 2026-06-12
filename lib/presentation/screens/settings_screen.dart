@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
 import '../../application/services/thumbnail_eviction_service.dart';
+import '../widgets/about_section_tile.dart';
 import '../widgets/discogs_token_section.dart';
 import '../widgets/send_feedback_tile.dart';
 
@@ -41,6 +42,8 @@ class SettingsScreen extends StatelessWidget {
         ],
         const SizedBox(height: 8),
         const SendFeedbackTile(),
+        const SizedBox(height: 8),
+        const AboutSectionTile(),
       ],
     );
   }

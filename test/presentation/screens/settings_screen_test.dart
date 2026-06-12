@@ -138,4 +138,13 @@ void main() {
       expect(find.text('Send feedback'), findsOneWidget);
     });
   });
+
+  group('SettingsScreen — about tile (US-68)', () {
+    testWidgets('shows the About tile', (tester) async {
+      await tester.pumpWidget(_wrap(const SettingsScreen()));
+      await tester.pump();
+
+      expect(find.text('About Cratewise'), findsOneWidget);
+    });
+  });
 }
