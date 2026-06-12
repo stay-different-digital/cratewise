@@ -60,5 +60,8 @@ One issue per email is perfect. "Search feels slow" is useful; "search for
 - Discogs connection requires a personal access token — there is no
   "Log in with Discogs" button yet.
 - No automatic sync; import/export is manual and on-demand.
+- Export to Discogs only **adds** records. Deleting a record locally never
+  removes it from your Discogs collection (the app tells you this when you
+  delete) — full two-way sync is planned for after 1.0.
 - Collection export to Discogs sets folder and wantlist items with default
   settings (no per-item folder/notes mapping yet).
