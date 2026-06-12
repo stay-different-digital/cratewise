@@ -918,6 +918,68 @@ void main() {
       expect(find.text('Abbey Road'), findsOneWidget);
     });
   });
+
+  // Regression for US-55: an unexpected glyph was observed at the right end of
+  // the search bar in dark mode with no query entered (finding #4). The suffix
+  // is driven entirely by Flutter code (null when empty, clear IconButton when
+  // hasQuery). These tests confirm no suffix icon leaks in through the widget
+  // tree in either theme — ruling out the Flutter layer as the source.
+  group('SearchScreen — search bar suffix icon (US-55)', () {
+    InputDecoration _searchBarDecoration(WidgetTester tester) {
+      final tf = tester.widget<TextField>(find.byType(TextField));
+      return tf.decoration!;
+    }
+
+    testWidgets('no suffix icon in light mode with empty query', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(useMaterial3: true, brightness: Brightness.light),
+          home: Scaffold(
+            body: SearchScreen(searchService: _FakeSearchService()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(_searchBarDecoration(tester).suffixIcon, isNull);
+    });
+
+    testWidgets('no suffix icon in dark mode with empty query', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(useMaterial3: true, brightness: Brightness.dark),
+          home: Scaffold(
+            body: SearchScreen(searchService: _FakeSearchService()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(_searchBarDecoration(tester).suffixIcon, isNull);
+    });
+
+    testWidgets('clear IconButton appears in dark mode once query is entered', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(useMaterial3: true, brightness: Brightness.dark),
+          home: Scaffold(
+            body: SearchScreen(searchService: _FakeSearchService()),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      await tester.enterText(find.byType(TextField), 'miles');
+      await tester.pump();
+
+      expect(_searchBarDecoration(tester).suffixIcon, isNotNull);
+      expect(find.byIcon(Icons.clear), findsOneWidget);
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------

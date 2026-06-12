@@ -53,3 +53,25 @@ Derived from findings in `docs/qa/PHASE_10_DEVICE_VALIDATION.md`.
 `lib/presentation/widgets/discogs_token_section.dart` uses `helperText` in its
 `InputDecoration`; Flutter truncates helper text to one line unless
 `helperMaxLines` (e.g. `2`–`3`) is set.
+
+---
+
+### US-55: No unexpected glyph in the search bar in dark mode
+
+**Beta: S · 1 SP**
+
+> As a user in dark mode with no query entered,
+> I want the search bar to show only the search icon on the left,
+> so that the bar looks clean and intentional in both light and dark mode.
+
+**Acceptance criteria:**
+- With no query entered, the search bar shows the search icon (prefix) and no suffix icon in both light and dark mode.
+- The glyph observed at the right end of the search bar in dark mode during QA is identified, explained, and either removed or intentionally replaced with a correctly styled widget.
+- A widget test asserts that no suffix icon is rendered when the query field is empty, in both light and dark theme.
+
+**Found during:** Phase 10 device validation, iPhone 17 Pro simulator (iOS 26), finding #4.
+
+**Investigation notes:**
+- Screenshot: `/tmp/qa_a3_dark.png`. The glyph appears at the right end of the search bar with no query text entered (so it is not the clear button, which is only shown when `hasQuery` is true).
+- The `SearchScreen` `TextField` sets `suffixIcon: hasQuery ? IconButton(Icons.clear, …) : null`. With no query, suffix is explicitly `null` — Flutter's `InputDecoration` should render nothing there.
+- Hypothesis: iOS renders a platform-level dictation/microphone button as a keyboard accessory that bleeds into the text field's suffix area under certain dark-mode contrast conditions. The `TextField` does not set `keyboardType`, so it defaults to `TextInputType.text` which allows dictation on iOS.
