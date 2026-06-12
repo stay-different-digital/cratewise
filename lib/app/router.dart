@@ -70,7 +70,7 @@ abstract final class AppRoutes {
 // Router instance
 // ---------------------------------------------------------------------------
 
-final GoRouter appRouter = GoRouter(
+GoRouter createAppRouter() => GoRouter(
   initialLocation: AppRoutes.search,
   routes: [
     StatefulShellRoute.indexedStack(
