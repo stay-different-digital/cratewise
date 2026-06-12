@@ -93,3 +93,36 @@ devices. Everything else lives in the repo.
 - A crash follow-up story template is included (version+build, device/OS, symbolicated trace, reproduction status, severity per US-65).
 - The doc cross-references `RELEASE_BUILD.md`'s symbol-archiving step as the hard prerequisite.
 - The decision to stay SDK-free for beta is recorded with its trade-off (privacy promise upheld; crashes only visible when testers opt in to platform sharing or report manually), and the revisit point (post-beta) is named.
+
+---
+
+### US-73: Large Discogs imports complete quickly and show progress
+
+**S2 · 3 SP**
+
+> As a user importing a real-world collection (thousands of records),
+> I want the import to finish in seconds and show its progress,
+> so that it visibly completes instead of appearing to hang forever.
+
+**Acceptance criteria:**
+- Importing 2,800 rows completes in seconds, not minutes: all per-row database writes (collection/wishlist items **and** import-history row results) happen inside a single transaction or batch instead of one implicit transaction per insert.
+- The Importing state shows per-item progress ("Importing item N of M…", same pattern as the export progress from US-45) instead of a static spinner.
+- An interrupted import no longer leaves a partially-saved state that the user can't distinguish from success: either the transaction makes it all-or-nothing, or the job record correctly reflects the interruption.
+- Applies to both collection and wishlist Discogs imports (identical code structure), and the CSV imports if they share the per-insert pattern.
+- A test demonstrates the batching (e.g. repository receives a batched call / runs inside a transaction) and existing import tests still pass.
+- **[Fred]** Re-test the 2,800-record import on the physical device: completion screen appears, counts correct.
+
+**Found during:** Beta QA (2026-06-12): importing a 2,800-record Discogs
+collection never showed the "Import complete" screen; importing afterwards
+(1 new + 2,618 already linked) completed and showed it.
+
+**Investigation notes:**
+- `ExecuteCollectionImportUseCase` does 2 awaited inserts per row
+  (~5,600 sequential implicit transactions for 2,800 rows); no
+  `transaction()`/`batch()` anywhere in the import path; each insert pays a
+  disk sync.
+- The tester's screenshot ("Skipped 2618, Added 1") proves the first run
+  partially persisted before being abandoned — items were saved as synced,
+  so the rerun skipped them as "Already linked".
+- The Importing UI (`_ImportingBody`) is a static spinner with no progress;
+  exports already have the per-item progress pattern to copy (US-45).
