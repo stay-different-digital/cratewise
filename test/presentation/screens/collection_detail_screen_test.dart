@@ -1551,7 +1551,10 @@ void main() {
       await tester.tap(find.text('Remove from Cratewise'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Discogs'), findsOneWidget);
+      expect(
+        find.textContaining('Your Discogs collection is not affected'),
+        findsOneWidget,
+      );
     });
 
     testWidgets(

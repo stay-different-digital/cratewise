@@ -126,3 +126,34 @@ collection never showed the "Import complete" screen; importing afterwards
   so the rerun skipped them as "Already linked".
 - The Importing UI (`_ImportingBody`) is a static spinner with no progress;
   exports already have the per-item progress pattern to copy (US-45).
+
+---
+
+### US-74: Collection detail shows the full release details
+
+**S3 · 3 SP**
+
+> As a collector looking at a record in my collection,
+> I want the same release details I saw on the search detail page — label, format, country, released, genre, style, Discogs ID, tracklist, and release notes,
+> so that I don't have to re-search a record I already own to see its details.
+
+**Acceptance criteria:**
+- The collection detail page shows, when available: label (with catalogue number), format, country, year, genre(s), style(s), Discogs release ID, the full tracklist (position, title, duration), and the Discogs release notes.
+- The Discogs release ID is always shown (it is stored locally on every item).
+- Details come from the existing release-metadata cache first (no network, no API quota); when not cached, they are fetched once via the existing `DiscogsReleaseDetailService`, which caches them for next time.
+- When details are unavailable (offline + never cached, or no token), the page works exactly as before — the local item view never degrades.
+- Discogs release notes are visually distinct from the user's personal notes.
+- The wide (iPad) layout places the tracklist in the right-hand column.
+- Widget tests cover: rows rendered from cached metadata, live-fetch fallback when not cached, graceful absence when both fail, and the always-present Discogs ID row.
+
+**Found during:** Beta QA (2026-06-12): the search/release detail page shows
+far more information than the collection detail page for the same record.
+
+**Investigation notes:**
+- `_InfoRows` on the collection detail already renders label/format/country —
+  but only from local `CollectionItem` fields, which the Discogs import never
+  populates (`_buildItem` maps artist/title/year/thumb only), so they are
+  empty in practice.
+- Genre, style, tracklist, and release notes are not stored locally at all;
+  `CachedReleaseMetadata` has every needed field, and the cache is already
+  populated whenever a release detail page was viewed.
