@@ -26,6 +26,24 @@ class DiscogsReleaseDetailService {
   final ThumbnailCacheService? _thumbnailCacheService;
   final CacheRetryRecorder? _cacheRetryRecorder;
 
+  /// The standard way for screens that show a locally stored item
+  /// (collection, wishlist) to obtain its Discogs release details.
+  ///
+  /// Cache-first: cached metadata is used without network or API quota; a
+  /// live [fetchDetail] (which populates the cache for next time) happens
+  /// only when the release was never cached. Returns null when neither is
+  /// available (offline + never cached, or no token) — callers render their
+  /// local view unchanged in that case.
+  Future<ReleaseDetail?> getCachedOrFetch(int releaseId) async {
+    try {
+      final cached = await _cacheRepository?.getByReleaseId(releaseId);
+      if (cached != null) return releaseDetailFromCachedMetadata(cached);
+      return await fetchDetail(releaseId);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Fetches full release details for [releaseId] using the saved token.
   /// Throws [NoTokenError] if no token is stored.
   /// Propagates [AppError] subtypes from the API client.
@@ -117,3 +135,23 @@ class DiscogsReleaseDetailService {
     );
   }
 }
+
+/// Maps cached metadata to the [ReleaseDetail] shape screens render. The
+/// single mapper shared by every screen that shows cached release details.
+ReleaseDetail releaseDetailFromCachedMetadata(CachedReleaseMetadata m) =>
+    ReleaseDetail(
+      id: m.discogsReleaseId,
+      title: m.title,
+      artist: m.artist,
+      label: m.label ?? '',
+      catno: m.catno ?? '',
+      format: m.format ?? '',
+      country: m.country ?? '',
+      year: m.year,
+      genres: m.genres,
+      styles: m.styles,
+      tracklist: m.tracklist,
+      notes: m.notes,
+      coverUrl: m.coverUrl,
+      identifiers: m.identifiers,
+    );

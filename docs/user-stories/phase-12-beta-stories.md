@@ -186,3 +186,32 @@ page does not load the Discogs item's image.
 - `ThumbnailCacheService.getOrFetch(releaseId, imageUrl)` already implements
   exactly the needed behaviour (cache hit → path; miss → download + cache);
   it was only wired into the search release detail flow.
+
+---
+
+### US-76: Release details load the same standard way on every item detail page
+
+**S3 · 3 SP**
+
+> As a user opening any record I own or want,
+> I want every detail page to show the full release details (and cover) the same way,
+> so that the wishlist isn't a second-class view of the same record.
+
+**Acceptance criteria:**
+- One standard mechanism exists for showing Discogs release details on local-item pages: `DiscogsReleaseDetailService.getCachedOrFetch(releaseId)` — cache-first (no network, no API quota), live fetch only when never cached, null on failure (callers render the local view unchanged).
+- The cached-metadata→`ReleaseDetail` mapping exists once (`releaseDetailFromCachedMetadata`), shared by the release, collection, and wishlist detail screens — no per-screen copies.
+- The tracklist and Release Notes sections are shared widgets used by both the collection and wishlist detail screens.
+- The wishlist detail page shows the same release details as the collection detail page (US-74): label, format, country, released, genre, style, Discogs ID, tracklist, release notes — alongside its wishlist-specific rows (priority, target price).
+- The wishlist detail cover falls back to the release-details cover URL when the local item has none (completing US-75 on the wishlist side).
+- Widget tests for the wishlist mirror the US-74 collection tests: cached-first without API call, live-fetch fallback, graceful absence, always-present Discogs ID.
+
+**Found during:** Beta QA (2026-06-12): wishlist detail page shows the cover
+placeholder and lacks the details added to the collection page in US-74;
+request to make the US-74 approach the app-wide standard.
+
+**Investigation notes:**
+- The cover placeholder finding is the same root cause as US-75 (fixed but
+  not yet in the tested build); the wishlist import does map `coverUrl`.
+- Before this story, the cache-first logic and the cached→detail mapper were
+  private to the collection screen (and a mapper copy lived in the release
+  screen); the wishlist had neither.

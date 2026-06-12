@@ -821,7 +821,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Remove from wishlist'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Discogs'), findsOneWidget);
+      expect(
+        find.textContaining('Your Discogs account is not affected'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('tapping Cancel does not call repository.remove', (

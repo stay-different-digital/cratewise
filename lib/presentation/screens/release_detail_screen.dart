@@ -242,7 +242,9 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   ReleaseDetail? _currentDetail() {
     final state = _state;
     if (state is _Loaded) return state.detail;
-    if (state is _CachedLoaded) return _cachedMetadataToDetail(state.metadata);
+    if (state is _CachedLoaded) {
+      return releaseDetailFromCachedMetadata(state.metadata);
+    }
     return null;
   }
 
@@ -787,7 +789,7 @@ class _CachedDetailBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final detail = _cachedMetadataToDetail(metadata);
+    final detail = releaseDetailFromCachedMetadata(metadata);
     if (thumbnailRepository == null) {
       return Column(
         children: [
@@ -858,23 +860,6 @@ class _CachedBanner extends StatelessWidget {
     );
   }
 }
-
-ReleaseDetail _cachedMetadataToDetail(CachedReleaseMetadata m) => ReleaseDetail(
-  id: m.discogsReleaseId,
-  title: m.title,
-  artist: m.artist,
-  label: m.label ?? '',
-  catno: m.catno ?? '',
-  format: m.format ?? '',
-  country: m.country ?? '',
-  year: m.year,
-  genres: m.genres,
-  styles: m.styles,
-  tracklist: m.tracklist,
-  notes: m.notes,
-  coverUrl: m.coverUrl,
-  identifiers: m.identifiers,
-);
 
 // ---------------------------------------------------------------------------
 // Shared sub-widgets

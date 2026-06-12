@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/services/thumbnail_cache_service.dart';
-import '../../domain/models/cached_release_metadata.dart';
 import '../../domain/models/collection_item.dart';
 import '../../domain/models/release_detail.dart';
 import '../../domain/models/sync_status.dart';
@@ -17,6 +16,7 @@ import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../shared/route_observer.dart';
 import '../../shared/utils/date_format_utils.dart';
+import '../widgets/release_details_sections.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -135,26 +135,13 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   }
 
   /// Loads Discogs release details (label, genres, tracklist, …) for the
-  /// item: cache first (no network, no API quota), live fetch only when the
-  /// release was never cached. Failures are silent — the local item view
-  /// stands on its own without these details.
+  /// item via the standard cache-first path. Null result (offline + never
+  /// cached, or no token) leaves the plain local view unchanged.
   Future<void> _loadReleaseDetail(int releaseId) async {
     if (_releaseDetail?.id == releaseId) return;
-    try {
-      final cached = await _cacheRepository?.getByReleaseId(releaseId);
-      if (cached != null) {
-        if (!mounted) return;
-        setState(() => _releaseDetail = _cachedToDetail(cached));
-        return;
-      }
-      final service = _detailService;
-      if (service == null) return;
-      final detail = await service.fetchDetail(releaseId);
-      if (!mounted) return;
-      setState(() => _releaseDetail = detail);
-    } catch (_) {
-      // No token, offline, or fetch error: keep the plain local view.
-    }
+    final detail = await _detailService?.getCachedOrFetch(releaseId);
+    if (!mounted || detail == null) return;
+    setState(() => _releaseDetail = detail);
   }
 
   Future<void> _refresh() async {
@@ -893,9 +880,9 @@ class _CollectionDetailBody extends StatelessWidget {
               _NotesSection(notes: item.notes!),
             if (item.tags.isNotEmpty) _TagsSection(tags: item.tags),
             if (_hasTracklist)
-              _TracklistSection(tracks: releaseDetail!.tracklist),
+              ReleaseTracklistSection(tracks: releaseDetail!.tracklist),
             if (_hasReleaseNotes)
-              _ReleaseNotesSection(notes: releaseDetail!.notes!),
+              ReleaseNotesSection(notes: releaseDetail!.notes!),
             _HistorySection(item: item),
             const SizedBox(height: 32),
           ],
@@ -940,9 +927,9 @@ class _CollectionDetailBody extends StatelessWidget {
                     _NotesSection(notes: item.notes!),
                   if (item.tags.isNotEmpty) _TagsSection(tags: item.tags),
                   if (_hasTracklist)
-                    _TracklistSection(tracks: releaseDetail!.tracklist),
+                    ReleaseTracklistSection(tracks: releaseDetail!.tracklist),
                   if (_hasReleaseNotes)
-                    _ReleaseNotesSection(notes: releaseDetail!.notes!),
+                    ReleaseNotesSection(notes: releaseDetail!.notes!),
                   _HistorySection(item: item),
                 ],
               ),
@@ -1127,85 +1114,6 @@ class _InfoRows extends StatelessWidget {
         if (item.storageLocation != null && item.storageLocation!.isNotEmpty)
           _InfoRow('Location', item.storageLocation!),
         _InfoRow('Status', _syncStatusLabel(item.syncStatus)),
-      ],
-    );
-  }
-}
-
-class _TracklistSection extends StatelessWidget {
-  const _TracklistSection({required this.tracks});
-
-  final List<ReleaseTrack> tracks;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Divider(height: 1),
-        const _SectionHeader('Tracklist'),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Column(
-            children: [
-              for (final track in tracks)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(
-                        width: 40,
-                        child: Text(
-                          track.position,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          track.title,
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                      if (track.duration.isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          track.duration,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ReleaseNotesSection extends StatelessWidget {
-  const _ReleaseNotesSection({required this.notes});
-
-  final String notes;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const Divider(height: 1),
-        const _SectionHeader('Release Notes'),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Text(notes, style: Theme.of(context).textTheme.bodyMedium),
-        ),
       ],
     );
   }
@@ -1410,23 +1318,6 @@ class _InfoRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-ReleaseDetail _cachedToDetail(CachedReleaseMetadata m) => ReleaseDetail(
-  id: m.discogsReleaseId,
-  title: m.title,
-  artist: m.artist,
-  label: m.label ?? '',
-  catno: m.catno ?? '',
-  format: m.format ?? '',
-  country: m.country ?? '',
-  year: m.year,
-  genres: m.genres,
-  styles: m.styles,
-  tracklist: m.tracklist,
-  notes: m.notes,
-  coverUrl: m.coverUrl,
-  identifiers: m.identifiers,
-);
 
 String _syncStatusLabel(SyncStatus status) => switch (status) {
   SyncStatus.localOnly => 'Saved on this device',

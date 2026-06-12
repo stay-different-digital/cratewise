@@ -2,15 +2,20 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/services/thumbnail_cache_service.dart';
+import '../../domain/models/release_detail.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
+import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/utils/date_format_utils.dart';
+import '../widgets/release_details_sections.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -50,12 +55,16 @@ class WishlistDetailScreen extends StatefulWidget {
     this.repository,
     this.thumbnailRepository,
     this.thumbnailCacheService,
+    this.releaseDetailService,
+    this.cacheRepository,
   });
 
   final String itemId;
   final WishlistRepository? repository;
   final ThumbnailRepository? thumbnailRepository;
   final ThumbnailCacheService? thumbnailCacheService;
+  final DiscogsReleaseDetailService? releaseDetailService;
+  final CachedReleaseMetadataRepository? cacheRepository;
 
   @override
   State<WishlistDetailScreen> createState() => _WishlistDetailScreenState();
@@ -65,8 +74,10 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   late final WishlistRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
   late final ThumbnailCacheService _thumbnailCacheService;
+  DiscogsReleaseDetailService? _detailService;
   AppDatabase? _ownedDb;
   _DetailState _state = const _Loading();
+  ReleaseDetail? _releaseDetail;
 
   @override
   void initState() {
@@ -78,10 +89,18 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
         ThumbnailCacheService(repository: _thumbnailRepository);
     if (widget.repository != null) {
       _repository = widget.repository!;
+      _detailService = widget.releaseDetailService;
     } else {
       final db = AppDatabase(openAppDatabase());
       _ownedDb = db;
       _repository = LocalWishlistRepository(db);
+      _detailService =
+          widget.releaseDetailService ??
+          DiscogsReleaseDetailService(
+            cacheRepository:
+                widget.cacheRepository ??
+                LocalCachedReleaseMetadataRepository(db),
+          );
     }
     _load();
   }
@@ -92,10 +111,20 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
       final item = await _repository.getById(widget.itemId);
       if (!mounted) return;
       setState(() => _state = item != null ? _Loaded(item) : const _NotFound());
+      if (item != null) _loadReleaseDetail(item.discogsReleaseId);
     } catch (_) {
       if (!mounted) return;
       setState(() => _state = const _DetailError());
     }
+  }
+
+  /// Loads Discogs release details via the standard cache-first path
+  /// (US-76). Null result leaves the plain local view unchanged.
+  Future<void> _loadReleaseDetail(int releaseId) async {
+    if (_releaseDetail?.id == releaseId) return;
+    final detail = await _detailService?.getCachedOrFetch(releaseId);
+    if (!mounted || detail == null) return;
+    setState(() => _releaseDetail = detail);
   }
 
   Future<void> _refresh() async {
@@ -103,6 +132,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
       final item = await _repository.getById(widget.itemId);
       if (!mounted) return;
       setState(() => _state = item != null ? _Loaded(item) : const _NotFound());
+      if (item != null) _loadReleaseDetail(item.discogsReleaseId);
     } catch (_) {
       if (!mounted) return;
       if (_state is _Loaded) {
@@ -265,6 +295,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
           onRefresh: _refresh,
           child: _WishlistDetailBody(
             item: item,
+            releaseDetail: _releaseDetail,
             thumbnailCacheService: _thumbnailCacheService,
           ),
         ),
@@ -612,10 +643,19 @@ class _WishlistDetailBody extends StatelessWidget {
   const _WishlistDetailBody({
     required this.item,
     required this.thumbnailCacheService,
+    this.releaseDetail,
   });
 
   final WishlistItem item;
+  final ReleaseDetail? releaseDetail;
   final ThumbnailCacheService thumbnailCacheService;
+
+  String? get _coverUrl => item.coverUrl ?? releaseDetail?.coverUrl;
+
+  bool get _hasReleaseNotes =>
+      releaseDetail?.notes != null && releaseDetail!.notes!.trim().isNotEmpty;
+
+  bool get _hasTracklist => releaseDetail?.tracklist.isNotEmpty ?? false;
 
   static const _kWideBreakpoint = 700.0;
 
@@ -639,7 +679,7 @@ class _WishlistDetailBody extends StatelessWidget {
           children: [
             _CachedCoverImage(
               releaseId: item.discogsReleaseId,
-              coverUrl: item.coverUrl,
+              coverUrl: _coverUrl,
               borderRadius: BorderRadius.zero,
               thumbnailCacheService: thumbnailCacheService,
             ),
@@ -650,10 +690,14 @@ class _WishlistDetailBody extends StatelessWidget {
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.all(16),
-              child: _InfoRows(item: item),
+              child: _InfoRows(item: item, detail: releaseDetail),
             ),
             if (item.notes != null && item.notes!.isNotEmpty)
               _NotesSection(notes: item.notes!),
+            if (_hasTracklist)
+              ReleaseTracklistSection(tracks: releaseDetail!.tracklist),
+            if (_hasReleaseNotes)
+              ReleaseNotesSection(notes: releaseDetail!.notes!),
             _HistorySection(item: item),
             const SizedBox(height: 32),
           ],
@@ -678,14 +722,14 @@ class _WishlistDetailBody extends StatelessWidget {
                 children: [
                   _CachedCoverImage(
                     releaseId: item.discogsReleaseId,
-                    coverUrl: item.coverUrl,
+                    coverUrl: _coverUrl,
                     borderRadius: BorderRadius.circular(8),
                     thumbnailCacheService: thumbnailCacheService,
                   ),
                   const SizedBox(height: 20),
                   _TitleArtist(item: item),
                   const SizedBox(height: 16),
-                  _InfoRows(item: item),
+                  _InfoRows(item: item, detail: releaseDetail),
                 ],
               ),
             ),
@@ -696,6 +740,10 @@ class _WishlistDetailBody extends StatelessWidget {
                 children: [
                   if (item.notes != null && item.notes!.isNotEmpty)
                     _NotesSection(notes: item.notes!),
+                  if (_hasTracklist)
+                    ReleaseTracklistSection(tracks: releaseDetail!.tracklist),
+                  if (_hasReleaseNotes)
+                    ReleaseNotesSection(notes: releaseDetail!.notes!),
                   _HistorySection(item: item),
                 ],
               ),
@@ -832,24 +880,36 @@ class _TitleArtist extends StatelessWidget {
 }
 
 class _InfoRows extends StatelessWidget {
-  const _InfoRows({required this.item});
+  const _InfoRows({required this.item, this.detail});
 
   final WishlistItem item;
 
+  /// Discogs release details (US-76 standard). Preferred over the local
+  /// item's sparse fields when available.
+  final ReleaseDetail? detail;
+
+  String? _firstNonEmpty(String? a, String? b) {
+    if (a != null && a.trim().isNotEmpty) return a;
+    if (b != null && b.trim().isNotEmpty) return b;
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final hasLabel = item.label != null && item.label!.isNotEmpty;
-    final hasCatno = item.catno != null && item.catno!.isNotEmpty;
+    final label = _firstNonEmpty(detail?.label, item.label);
+    final catno = _firstNonEmpty(detail?.catno, item.catno);
     final String? labelCatno;
-    if (hasLabel && hasCatno) {
-      labelCatno = '${item.label} — ${item.catno}';
-    } else if (hasLabel) {
-      labelCatno = item.label;
-    } else if (hasCatno) {
-      labelCatno = item.catno;
+    if (label != null && catno != null) {
+      labelCatno = '$label — $catno';
     } else {
-      labelCatno = null;
+      labelCatno = label ?? catno;
     }
+
+    final format = _firstNonEmpty(detail?.format, item.format);
+    final country = _firstNonEmpty(detail?.country, item.country);
+    final year = detail?.year ?? item.year;
+    final genres = detail?.genres ?? const <String>[];
+    final styles = detail?.styles ?? const <String>[];
 
     final targetPriceText = item.targetPrice != null
         ? item.targetPrice!.toStringAsFixed(2)
@@ -858,11 +918,13 @@ class _InfoRows extends StatelessWidget {
     return Column(
       children: [
         if (labelCatno != null) _InfoRow('Label', labelCatno),
-        if (item.format != null && item.format!.isNotEmpty)
-          _InfoRow('Format', item.format!),
-        if (item.country != null && item.country!.isNotEmpty)
-          _InfoRow('Country', item.country!),
-        if (item.year != null) _InfoRow('Year', '${item.year}'),
+        if (format != null) _InfoRow('Format', format),
+        if (country != null) _InfoRow('Country', country),
+        if (year != null) _InfoRow('Released', '$year'),
+        if (genres.isNotEmpty) _InfoRow('Genre', genres.join(', ')),
+        if (styles.isNotEmpty) _InfoRow('Style', styles.join(', ')),
+        if (item.discogsReleaseId > 0)
+          _InfoRow('Discogs ID', '${item.discogsReleaseId}'),
         _InfoRow('Priority', item.priority.label),
         _InfoRow('Target price', targetPriceText),
         _InfoRow('Status', _syncStatusLabel(item.syncStatus)),

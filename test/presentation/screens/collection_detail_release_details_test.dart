@@ -48,7 +48,7 @@ class _FakeCacheRepository implements CachedReleaseMetadataRepository {
 }
 
 class _FakeDetailService extends DiscogsReleaseDetailService {
-  _FakeDetailService({this.detail, this.error});
+  _FakeDetailService({this.detail, this.error, super.cacheRepository});
 
   final ReleaseDetail? detail;
   final AppError? error;
@@ -167,13 +167,15 @@ void main() {
 
     testWidgets('shows full release details from cached metadata '
         'without calling the API', (tester) async {
-      final service = _FakeDetailService(detail: _makeDetail());
+      final service = _FakeDetailService(
+        detail: _makeDetail(),
+        cacheRepository: _FakeCacheRepository(metadata: _makeMetadata()),
+      );
       await tester.pumpWidget(
         _wrap(
           CollectionDetailScreen(
             itemId: 'test-1',
             repository: _FakeCollectionRepository(item: _makeItem()),
-            cacheRepository: _FakeCacheRepository(metadata: _makeMetadata()),
             releaseDetailService: service,
           ),
         ),
@@ -187,13 +189,15 @@ void main() {
     testWidgets('fetches details live when the release is not cached', (
       tester,
     ) async {
-      final service = _FakeDetailService(detail: _makeDetail());
+      final service = _FakeDetailService(
+        detail: _makeDetail(),
+        cacheRepository: _FakeCacheRepository(),
+      );
       await tester.pumpWidget(
         _wrap(
           CollectionDetailScreen(
             itemId: 'test-1',
             repository: _FakeCollectionRepository(item: _makeItem()),
-            cacheRepository: _FakeCacheRepository(),
             releaseDetailService: service,
           ),
         ),
@@ -207,13 +211,15 @@ void main() {
     testWidgets('local item view is unchanged when no cache and fetch fails', (
       tester,
     ) async {
-      final service = _FakeDetailService(error: const NoTokenError());
+      final service = _FakeDetailService(
+        error: const NoTokenError(),
+        cacheRepository: _FakeCacheRepository(),
+      );
       await tester.pumpWidget(
         _wrap(
           CollectionDetailScreen(
             itemId: 'test-1',
             repository: _FakeCollectionRepository(item: _makeItem()),
-            cacheRepository: _FakeCacheRepository(),
             releaseDetailService: service,
           ),
         ),
