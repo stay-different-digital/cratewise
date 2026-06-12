@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
+import '../../application/services/thumbnail_cache_service.dart';
 import '../../domain/models/collection_item.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
@@ -44,10 +45,12 @@ class CollectionScreen extends StatefulWidget {
     super.key,
     this.repository,
     this.thumbnailRepository,
+    this.thumbnailCacheService,
   });
 
   final CollectionRepository? repository;
   final ThumbnailRepository? thumbnailRepository;
+  final ThumbnailCacheService? thumbnailCacheService;
 
   @override
   State<CollectionScreen> createState() => _CollectionScreenState();
@@ -56,6 +59,7 @@ class CollectionScreen extends StatefulWidget {
 class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
   late final CollectionRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
+  late final ThumbnailCacheService _thumbnailCacheService;
   AppDatabase? _ownedDb;
   _CollectionState _state = const _Loading();
   final _searchController = TextEditingController();
@@ -67,6 +71,9 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
     super.initState();
     _thumbnailRepository =
         widget.thumbnailRepository ?? LocalThumbnailRepository();
+    _thumbnailCacheService =
+        widget.thumbnailCacheService ??
+        ThumbnailCacheService(repository: _thumbnailRepository);
     if (widget.repository != null) {
       _repository = widget.repository!;
     } else {
@@ -224,7 +231,7 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
       onRefresh: _refresh,
       child: _CollectionList(
         items: filtered,
-        thumbnailRepository: _thumbnailRepository,
+        thumbnailCacheService: _thumbnailCacheService,
       ),
     );
   }
@@ -237,11 +244,11 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
 class _CollectionList extends StatelessWidget {
   const _CollectionList({
     required this.items,
-    required this.thumbnailRepository,
+    required this.thumbnailCacheService,
   });
 
   final List<CollectionItem> items;
-  final ThumbnailRepository thumbnailRepository;
+  final ThumbnailCacheService thumbnailCacheService;
 
   static const _kWideBreakpoint = 700.0;
   static const _kGridItemExtent = 124.0;
@@ -265,7 +272,7 @@ class _CollectionList extends StatelessWidget {
       itemBuilder: (context, index) => CollectionItemCard(
         item: items[index],
         onTap: () => _openDetail(context, index),
-        thumbnailRepository: thumbnailRepository,
+        thumbnailCacheService: thumbnailCacheService,
       ),
     );
   }
@@ -284,7 +291,7 @@ class _CollectionList extends StatelessWidget {
       itemBuilder: (context, index) => CollectionItemCard(
         item: items[index],
         onTap: () => _openDetail(context, index),
-        thumbnailRepository: thumbnailRepository,
+        thumbnailCacheService: thumbnailCacheService,
       ),
     );
   }

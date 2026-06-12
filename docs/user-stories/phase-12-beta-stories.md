@@ -215,3 +215,32 @@ request to make the US-74 approach the app-wide standard.
 - Before this story, the cache-first logic and the cached→detail mapper were
   private to the collection screen (and a mapper copy lived in the release
   screen); the wishlist had neither.
+
+---
+
+### US-77: Collection and wishlist lists lazily load missing cover thumbnails
+
+**S3 · 2 SP**
+
+> As a collector scrolling my collection or wishlist,
+> I want covers to appear for every record, loading lazily as they scroll into view,
+> so that imported records aren't a wall of grey placeholders until I open each one.
+
+**Acceptance criteria:**
+- List and grid cards on the collection and wishlist screens show the cover for any item with a cover URL: cached thumbnails appear instantly; uncached ones are downloaded once via `ThumbnailCacheService.getOrFetch` and cached for offline use afterwards.
+- Loading is lazy: thumbnails are only requested for cards that are actually built (the lists already use `ListView.separated`/`GridView.builder`, which build visible items only) — scrolling a 2,800-item collection does not prefetch 2,800 images.
+- The existing size-capped LRU thumbnail cache (200 MB, clearable in Settings) keeps memory and disk bounded.
+- Offline or on download failure, the existing placeholder appears silently — no error states in the list.
+- Items cached by visiting a detail page (US-75) show up in the lists without re-downloading, and vice versa.
+- Widget tests cover: cover requested via the cache service with the item's URL, instant render from cache, and placeholder when no URL/cache.
+
+**Found during:** Beta QA (2026-06-12): list views show no images for
+imported items; items added via search do show images (their thumbnails were
+cached when the detail page was viewed). QA suggested lazy loading.
+
+**Investigation notes:**
+- The cards' `_LocalCoverThumbnail` only called `ThumbnailRepository.getLocalPath`
+  (cache-only, a deliberate Phase 7G offline-first choice) and never fell
+  back to the item's `coverUrl` — the same root cause as US-75, one layer up.
+- Thumbnail downloads hit the Discogs image CDN (uri150, small files), not
+  the rate-limited API.

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../application/services/thumbnail_cache_service.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 
@@ -11,11 +12,17 @@ class WishlistItemCard extends StatelessWidget {
     required this.item,
     this.onTap,
     this.thumbnailRepository,
+    this.thumbnailCacheService,
   });
 
   final WishlistItem item;
   final VoidCallback? onTap;
   final ThumbnailRepository? thumbnailRepository;
+
+  /// When provided, covers missing from the cache are lazily downloaded
+  /// once (US-77) instead of showing the placeholder forever. Without it,
+  /// the card stays cache-only.
+  final ThumbnailCacheService? thumbnailCacheService;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +39,9 @@ class WishlistItemCard extends StatelessWidget {
               _LocalCoverThumbnail(
                 theme: theme,
                 releaseId: item.discogsReleaseId,
+                coverUrl: item.coverUrl,
                 repository: thumbnailRepository,
+                cacheService: thumbnailCacheService,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -161,12 +170,16 @@ class _LocalCoverThumbnail extends StatefulWidget {
   const _LocalCoverThumbnail({
     required this.theme,
     required this.releaseId,
+    this.coverUrl,
     this.repository,
+    this.cacheService,
   });
 
   final ThemeData theme;
   final int releaseId;
+  final String? coverUrl;
   final ThumbnailRepository? repository;
+  final ThumbnailCacheService? cacheService;
 
   @override
   State<_LocalCoverThumbnail> createState() => _LocalCoverThumbnailState();
@@ -179,6 +192,7 @@ class _LocalCoverThumbnailState extends State<_LocalCoverThumbnail> {
   void initState() {
     super.initState();
     _pathFuture =
+        widget.cacheService?.getOrFetch(widget.releaseId, widget.coverUrl) ??
         widget.repository?.getLocalPath(widget.releaseId) ??
         Future<String?>.value();
   }

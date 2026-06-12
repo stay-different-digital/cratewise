@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/router.dart';
+import '../../application/services/thumbnail_cache_service.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
@@ -40,10 +41,16 @@ class _WishlistError extends _WishlistState {
 // ---------------------------------------------------------------------------
 
 class WishlistScreen extends StatefulWidget {
-  const WishlistScreen({super.key, this.repository, this.thumbnailRepository});
+  const WishlistScreen({
+    super.key,
+    this.repository,
+    this.thumbnailRepository,
+    this.thumbnailCacheService,
+  });
 
   final WishlistRepository? repository;
   final ThumbnailRepository? thumbnailRepository;
+  final ThumbnailCacheService? thumbnailCacheService;
 
   @override
   State<WishlistScreen> createState() => _WishlistScreenState();
@@ -52,6 +59,7 @@ class WishlistScreen extends StatefulWidget {
 class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   late final WishlistRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
+  late final ThumbnailCacheService _thumbnailCacheService;
   AppDatabase? _ownedDb;
   _WishlistState _state = const _Loading();
   final _searchController = TextEditingController();
@@ -63,6 +71,9 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
     super.initState();
     _thumbnailRepository =
         widget.thumbnailRepository ?? LocalThumbnailRepository();
+    _thumbnailCacheService =
+        widget.thumbnailCacheService ??
+        ThumbnailCacheService(repository: _thumbnailRepository);
     if (widget.repository != null) {
       _repository = widget.repository!;
     } else {
@@ -163,7 +174,7 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
       onRefresh: _refresh,
       child: _WishlistList(
         items: filtered,
-        thumbnailRepository: _thumbnailRepository,
+        thumbnailCacheService: _thumbnailCacheService,
       ),
     );
   }
@@ -229,10 +240,13 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
 // ---------------------------------------------------------------------------
 
 class _WishlistList extends StatelessWidget {
-  const _WishlistList({required this.items, required this.thumbnailRepository});
+  const _WishlistList({
+    required this.items,
+    required this.thumbnailCacheService,
+  });
 
   final List<WishlistItem> items;
-  final ThumbnailRepository thumbnailRepository;
+  final ThumbnailCacheService thumbnailCacheService;
 
   static const _kWideBreakpoint = 700.0;
   static const _kGridItemExtent = 124.0;
@@ -260,7 +274,7 @@ class _WishlistList extends StatelessWidget {
       itemBuilder: (context, index) => WishlistItemCard(
         item: items[index],
         onTap: () => _openDetail(context, index),
-        thumbnailRepository: thumbnailRepository,
+        thumbnailCacheService: thumbnailCacheService,
       ),
     );
   }
@@ -279,7 +293,7 @@ class _WishlistList extends StatelessWidget {
       itemBuilder: (context, index) => WishlistItemCard(
         item: items[index],
         onTap: () => _openDetail(context, index),
-        thumbnailRepository: thumbnailRepository,
+        thumbnailCacheService: thumbnailCacheService,
       ),
     );
   }
