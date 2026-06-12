@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../app/router.dart';
 import '../../application/services/thumbnail_eviction_service.dart';
 import '../widgets/discogs_token_section.dart';
+import '../widgets/send_feedback_tile.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key, this.evictionService});
@@ -38,6 +39,8 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           _ThumbnailCacheSection(evictionService: evictionService!),
         ],
+        const SizedBox(height: 8),
+        const SendFeedbackTile(),
       ],
     );
   }

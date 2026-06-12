@@ -129,4 +129,13 @@ void main() {
       expect(btn.onPressed, isNull);
     });
   });
+
+  group('SettingsScreen — send feedback tile (US-64)', () {
+    testWidgets('shows the Send feedback tile', (tester) async {
+      await tester.pumpWidget(_wrap(const SettingsScreen()));
+      await tester.pump();
+
+      expect(find.text('Send feedback'), findsOneWidget);
+    });
+  });
 }
