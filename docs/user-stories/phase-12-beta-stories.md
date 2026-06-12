@@ -157,3 +157,32 @@ far more information than the collection detail page for the same record.
 - Genre, style, tracklist, and release notes are not stored locally at all;
   `CachedReleaseMetadata` has every needed field, and the cache is already
   populated whenever a release detail page was viewed.
+
+---
+
+### US-75: Collection and wishlist detail pages load the cover image
+
+**S3 · 2 SP**
+
+> As a collector opening a record in my collection or wishlist,
+> I want the cover art to load,
+> so that the detail page shows the record instead of a "No cover" placeholder.
+
+**Acceptance criteria:**
+- The collection detail and wishlist detail pages show the cover image for items that have a cover URL, even when the thumbnail was never cached before (e.g. items that came in via Discogs import and were never opened in the search detail page).
+- The cover resolves cache-first via the existing `ThumbnailCacheService.getOrFetch`: a cached thumbnail is used without network; otherwise it is downloaded once and cached for offline use afterwards.
+- On the collection detail, the Discogs release details (US-74) provide a fallback cover URL when the local item has none.
+- Offline with no cached thumbnail, the existing "No cover" placeholder still appears — no error states, no broken-image artifacts.
+- Widget tests cover: cover requested with the item's URL via the cache service, placeholder when no URL and no cache, and the existing cached-path behaviour unchanged.
+
+**Found during:** Beta QA (2026-06-12): the collection ("catalog") detail
+page does not load the Discogs item's image.
+
+**Investigation notes:**
+- Both detail screens use a private `_CachedCoverImage` that only calls
+  `ThumbnailRepository.getLocalPath` — cache-only, never falls back to the
+  item's `coverUrl`. Thumbnails are only cached when a release was viewed in
+  the search detail page, so imported items show the placeholder forever.
+- `ThumbnailCacheService.getOrFetch(releaseId, imageUrl)` already implements
+  exactly the needed behaviour (cache hit → path; miss → download + cache);
+  it was only wired into the search release detail flow.

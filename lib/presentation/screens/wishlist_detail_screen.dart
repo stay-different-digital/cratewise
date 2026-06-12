@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../application/services/thumbnail_cache_service.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
@@ -48,11 +49,13 @@ class WishlistDetailScreen extends StatefulWidget {
     required this.itemId,
     this.repository,
     this.thumbnailRepository,
+    this.thumbnailCacheService,
   });
 
   final String itemId;
   final WishlistRepository? repository;
   final ThumbnailRepository? thumbnailRepository;
+  final ThumbnailCacheService? thumbnailCacheService;
 
   @override
   State<WishlistDetailScreen> createState() => _WishlistDetailScreenState();
@@ -61,6 +64,7 @@ class WishlistDetailScreen extends StatefulWidget {
 class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   late final WishlistRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
+  late final ThumbnailCacheService _thumbnailCacheService;
   AppDatabase? _ownedDb;
   _DetailState _state = const _Loading();
 
@@ -69,6 +73,9 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     super.initState();
     _thumbnailRepository =
         widget.thumbnailRepository ?? LocalThumbnailRepository();
+    _thumbnailCacheService =
+        widget.thumbnailCacheService ??
+        ThumbnailCacheService(repository: _thumbnailRepository);
     if (widget.repository != null) {
       _repository = widget.repository!;
     } else {
@@ -258,7 +265,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
           onRefresh: _refresh,
           child: _WishlistDetailBody(
             item: item,
-            thumbnailRepository: _thumbnailRepository,
+            thumbnailCacheService: _thumbnailCacheService,
           ),
         ),
         _NotFound() => const _NotFoundBody(),
@@ -604,11 +611,11 @@ class _EditNotesSheetState extends State<_EditNotesSheet> {
 class _WishlistDetailBody extends StatelessWidget {
   const _WishlistDetailBody({
     required this.item,
-    required this.thumbnailRepository,
+    required this.thumbnailCacheService,
   });
 
   final WishlistItem item;
-  final ThumbnailRepository thumbnailRepository;
+  final ThumbnailCacheService thumbnailCacheService;
 
   static const _kWideBreakpoint = 700.0;
 
@@ -630,7 +637,12 @@ class _WishlistDetailBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _CoverSection(item: item, thumbnailRepository: thumbnailRepository),
+            _CachedCoverImage(
+              releaseId: item.discogsReleaseId,
+              coverUrl: item.coverUrl,
+              borderRadius: BorderRadius.zero,
+              thumbnailCacheService: thumbnailCacheService,
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: _TitleArtist(item: item),
@@ -666,8 +678,9 @@ class _WishlistDetailBody extends StatelessWidget {
                 children: [
                   _CachedCoverImage(
                     releaseId: item.discogsReleaseId,
+                    coverUrl: item.coverUrl,
                     borderRadius: BorderRadius.circular(8),
-                    thumbnailRepository: thumbnailRepository,
+                    thumbnailCacheService: thumbnailCacheService,
                   ),
                   const SizedBox(height: 20),
                   _TitleArtist(item: item),
@@ -724,27 +737,44 @@ class _CachedCoverImage extends StatefulWidget {
   const _CachedCoverImage({
     required this.releaseId,
     required this.borderRadius,
-    this.thumbnailRepository,
+    required this.thumbnailCacheService,
+    this.coverUrl,
   });
 
   final int releaseId;
   final BorderRadius borderRadius;
-  final ThumbnailRepository? thumbnailRepository;
+
+  /// Source URL for the cover. Used only when no thumbnail is cached yet;
+  /// the download is cached for offline use afterwards (US-75).
+  final String? coverUrl;
+  final ThumbnailCacheService thumbnailCacheService;
 
   @override
   State<_CachedCoverImage> createState() => _CachedCoverImageState();
 }
 
 class _CachedCoverImageState extends State<_CachedCoverImage> {
-  late final Future<String?> _pathFuture;
+  late Future<String?> _pathFuture;
 
   @override
   void initState() {
     super.initState();
-    _pathFuture =
-        widget.thumbnailRepository?.getLocalPath(widget.releaseId) ??
-        Future<String?>.value();
+    _pathFuture = _resolve();
   }
+
+  @override
+  void didUpdateWidget(_CachedCoverImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.coverUrl != widget.coverUrl ||
+        oldWidget.releaseId != widget.releaseId) {
+      setState(() => _pathFuture = _resolve());
+    }
+  }
+
+  Future<String?> _resolve() => widget.thumbnailCacheService.getOrFetch(
+    widget.releaseId,
+    widget.coverUrl,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -768,22 +798,6 @@ class _CachedCoverImageState extends State<_CachedCoverImage> {
           },
         ),
       ),
-    );
-  }
-}
-
-class _CoverSection extends StatelessWidget {
-  const _CoverSection({required this.item, this.thumbnailRepository});
-
-  final WishlistItem item;
-  final ThumbnailRepository? thumbnailRepository;
-
-  @override
-  Widget build(BuildContext context) {
-    return _CachedCoverImage(
-      releaseId: item.discogsReleaseId,
-      borderRadius: BorderRadius.zero,
-      thumbnailRepository: thumbnailRepository,
     );
   }
 }
