@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} — Cratewise</title>
+  <meta name="description" content="{{ description or 'Cratewise — the vinyl collection app for collectors and DJs.' }}">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Cratewise</a>
+    <nav>
+      <a href="/privacy/">Privacy Policy</a>
+    </nav>
+  </header>
+  <main>
+    {{ content | safe }}
+  </main>
+  <footer class="site-footer">
+    <p>© 2026 Cratewise · <a href="/privacy/">Privacy Policy</a> · <a href="mailto:hellowerecratewise@gmail.com">Contact</a></p>
+    <p class="fineprint">Cratewise uses the Discogs API but is not affiliated with Discogs.</p>
+  </footer>
+</body>
+</html>

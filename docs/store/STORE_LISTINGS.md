@@ -3,8 +3,11 @@
 Draft content for the Play Console and App Store Connect. Copy-paste into the
 consoles; keep this file as the source of truth.
 
-**Privacy policy URL:** _TODO — host `PRIVACY_POLICY.md` publicly (GitHub
-Pages or cratewise.app) and record the URL here. Both stores require it._
+**Privacy policy URL:** `https://itris.github.io/Crate/privacy/` — served by
+the 11ty site in `site/`, deployed by `.github/workflows/deploy-pages.yml`.
+_Goes live once GitHub Pages is enabled (repo Settings → Pages → Source:
+"GitHub Actions") and the workflow has run; verify the URL before filing
+either store form._
 
 **Contact email:** hellowerecratewise@gmail.com
 

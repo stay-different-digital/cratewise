@@ -1,0 +1,14 @@
+{
+  "name": "cratewise-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cratewise website (privacy policy) for GitHub Pages",
+  "scripts": {
+    "build": "eleventy",
+    "serve": "eleventy --serve"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.0.0"
+  }
+}

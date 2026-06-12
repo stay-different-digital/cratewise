@@ -43,11 +43,18 @@ Google's first review of a new account can take a week).
 Both stores require a public privacy policy URL before you can complete the
 listing.
 
-1. Take `docs/store/PRIVACY_POLICY.md` and host it publicly. Easiest:
-   GitHub Pages on this repo — Settings → Pages → deploy from a `docs/`
-   branch or use a single static page. Any URL works as long as it is
-   public and stable.
-2. Record the final URL at the top of `docs/store/STORE_LISTINGS.md`.
+The repo contains a ready-made 11ty site in `site/` (landing page + privacy
+policy) and a deploy workflow (`.github/workflows/deploy-pages.yml`).
+
+1. GitHub → repo **Settings → Pages → Source: "GitHub Actions"**.
+2. Push `master` (or run the "Deploy site to GitHub Pages" workflow
+   manually); it builds `site/` and publishes it.
+3. Verify `https://itris.github.io/Crate/privacy/` loads.
+4. The URL is already recorded in `docs/store/STORE_LISTINGS.md`.
+
+Note: Pages on a **private** repo requires a paid GitHub plan; if the repo
+is private and on the free plan, either make it public or host the same
+`site/_site` output elsewhere (Netlify, Cloudflare Pages — both free).
 
 ## 1.3 Android signing key (once, keep forever)
 
