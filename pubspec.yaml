@@ -27,6 +27,7 @@ dependencies:
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
   build_runner: ^2.15.0
   drift_dev: ^2.33.0
   flutter_lints: ^6.0.0
@@ -45,3 +46,16 @@ flutter_launcher_icons:
   remove_alpha_ios: true
   adaptive_icon_background: "#FA003F"
   adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+
+# Splash: brand colour in both light and dark mode (deliberate choice — the
+# brand red matches the adaptive icon background and reads well in both modes).
+flutter_native_splash:
+  color: "#FA003F"
+  color_dark: "#FA003F"
+  image: assets/icon/app_icon_foreground.png
+  android: true
+  ios: true
+  android_12:
+    color: "#FA003F"
+    color_dark: "#FA003F"
+    image: assets/icon/app_icon_foreground.png
