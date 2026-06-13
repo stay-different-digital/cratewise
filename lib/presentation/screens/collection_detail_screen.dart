@@ -2,17 +2,22 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:uuid/uuid.dart';
+
 import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/services/thumbnail_cache_service.dart';
 import '../../domain/models/collection_item.dart';
+import '../../domain/models/pending_discogs_deletion.dart';
 import '../../domain/models/release_detail.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
+import '../../domain/repositories/pending_discogs_deletion_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../shared/route_observer.dart';
 import '../../shared/utils/date_format_utils.dart';
@@ -62,6 +67,7 @@ class CollectionDetailScreen extends StatefulWidget {
     this.releaseDetailService,
     this.cacheRepository,
     this.thumbnailCacheService,
+    this.deletionRepository,
   });
 
   final String itemId;
@@ -70,6 +76,7 @@ class CollectionDetailScreen extends StatefulWidget {
   final DiscogsReleaseDetailService? releaseDetailService;
   final CachedReleaseMetadataRepository? cacheRepository;
   final ThumbnailCacheService? thumbnailCacheService;
+  final PendingDiscogsDeletionRepository? deletionRepository;
 
   @override
   State<CollectionDetailScreen> createState() => _CollectionDetailScreenState();
@@ -82,6 +89,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   late final ThumbnailCacheService _thumbnailCacheService;
   CachedReleaseMetadataRepository? _cacheRepository;
   DiscogsReleaseDetailService? _detailService;
+  PendingDiscogsDeletionRepository? _deletionRepository;
   AppDatabase? _ownedDb;
   _DetailState _state = const _Loading();
   ReleaseDetail? _releaseDetail;
@@ -98,6 +106,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
       _repository = widget.repository!;
       _cacheRepository = widget.cacheRepository;
       _detailService = widget.releaseDetailService;
+      _deletionRepository = widget.deletionRepository;
     } else {
       final db = AppDatabase(openAppDatabase());
       _ownedDb = db;
@@ -107,6 +116,9 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
       _detailService =
           widget.releaseDetailService ??
           DiscogsReleaseDetailService(cacheRepository: _cacheRepository);
+      _deletionRepository =
+          widget.deletionRepository ??
+          LocalPendingDiscogsDeletionRepository(db);
     }
     _load();
   }
@@ -200,38 +212,82 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   }
 
   Future<void> _confirmRemove(CollectionItem item) async {
+    // Only collection items we hold a Discogs instance id for can be removed
+    // from Discogs; for those, offer opt-in propagation (US-72).
+    final canRemoveFromDiscogs =
+        _deletionRepository != null && item.discogsInstanceId != null;
+    var alsoFromDiscogs = false;
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Remove from Cratewise?'),
-        content: const Text(
-          'This removes the item from your Cratewise collection. '
-          'Your Discogs collection is not affected.',
-        ),
-        actions: [
-          TextButton(
-            key: const Key('cancel-remove-button'),
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          title: const Text('Remove from Cratewise?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'This removes the item from your Cratewise collection.',
+              ),
+              if (canRemoveFromDiscogs)
+                CheckboxListTile(
+                  key: const Key('also-remove-from-discogs-checkbox'),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: alsoFromDiscogs,
+                  onChanged: (v) =>
+                      setLocalState(() => alsoFromDiscogs = v ?? false),
+                  title: const Text('Also remove from my Discogs collection'),
+                )
+              else
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('Your Discogs collection is not affected.'),
+                ),
+            ],
           ),
-          TextButton(
-            key: const Key('confirm-remove-button'),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(ctx).colorScheme.error,
+          actions: [
+            TextButton(
+              key: const Key('cancel-remove-button'),
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
             ),
-            child: const Text('Remove'),
-          ),
-        ],
+            TextButton(
+              key: const Key('confirm-remove-button'),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(ctx).colorScheme.error,
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
+        ),
       ),
     );
     if (confirmed == true && mounted) {
-      await _removeItem(item);
+      await _removeItem(item, alsoFromDiscogs: alsoFromDiscogs);
     }
   }
 
-  Future<void> _removeItem(CollectionItem item) async {
+  Future<void> _removeItem(
+    CollectionItem item, {
+    bool alsoFromDiscogs = false,
+  }) async {
     try {
+      if (alsoFromDiscogs && item.discogsInstanceId != null) {
+        await _deletionRepository?.add(
+          PendingDiscogsDeletion(
+            id: const Uuid().v4(),
+            entityType: DeletionEntityType.collection,
+            discogsReleaseId: item.discogsReleaseId,
+            discogsInstanceId: item.discogsInstanceId,
+            artist: item.artist,
+            title: item.title,
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
       await _repository.remove(item.id);
       if (!mounted) return;
       Navigator.of(context).pop();

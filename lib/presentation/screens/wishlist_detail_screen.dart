@@ -2,16 +2,21 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:uuid/uuid.dart';
+
 import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/services/thumbnail_cache_service.dart';
+import '../../domain/models/pending_discogs_deletion.dart';
 import '../../domain/models/release_detail.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
+import '../../domain/repositories/pending_discogs_deletion_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
+import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/utils/date_format_utils.dart';
@@ -57,6 +62,7 @@ class WishlistDetailScreen extends StatefulWidget {
     this.thumbnailCacheService,
     this.releaseDetailService,
     this.cacheRepository,
+    this.deletionRepository,
   });
 
   final String itemId;
@@ -65,6 +71,7 @@ class WishlistDetailScreen extends StatefulWidget {
   final ThumbnailCacheService? thumbnailCacheService;
   final DiscogsReleaseDetailService? releaseDetailService;
   final CachedReleaseMetadataRepository? cacheRepository;
+  final PendingDiscogsDeletionRepository? deletionRepository;
 
   @override
   State<WishlistDetailScreen> createState() => _WishlistDetailScreenState();
@@ -75,6 +82,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   late final ThumbnailRepository _thumbnailRepository;
   late final ThumbnailCacheService _thumbnailCacheService;
   DiscogsReleaseDetailService? _detailService;
+  PendingDiscogsDeletionRepository? _deletionRepository;
   AppDatabase? _ownedDb;
   _DetailState _state = const _Loading();
   ReleaseDetail? _releaseDetail;
@@ -90,6 +98,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     if (widget.repository != null) {
       _repository = widget.repository!;
       _detailService = widget.releaseDetailService;
+      _deletionRepository = widget.deletionRepository;
     } else {
       final db = AppDatabase(openAppDatabase());
       _ownedDb = db;
@@ -101,6 +110,9 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
                 widget.cacheRepository ??
                 LocalCachedReleaseMetadataRepository(db),
           );
+      _deletionRepository =
+          widget.deletionRepository ??
+          LocalPendingDiscogsDeletionRepository(db);
     }
     _load();
   }
@@ -198,38 +210,79 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   }
 
   Future<void> _confirmRemove(WishlistItem item) async {
+    // A wantlist entry can be removed from Discogs by release id (no instance
+    // id needed) when it is linked there; offer opt-in propagation (US-72).
+    final canRemoveFromDiscogs =
+        _deletionRepository != null && item.syncStatus == SyncStatus.synced;
+    var alsoFromDiscogs = false;
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Remove from wishlist?'),
-        content: const Text(
-          'This removes the item from your Cratewise wishlist. '
-          'Your Discogs account is not affected.',
-        ),
-        actions: [
-          TextButton(
-            key: const Key('cancel-remove-button'),
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          title: const Text('Remove from wishlist?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('This removes the item from your Cratewise wishlist.'),
+              if (canRemoveFromDiscogs)
+                CheckboxListTile(
+                  key: const Key('also-remove-from-discogs-checkbox'),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: alsoFromDiscogs,
+                  onChanged: (v) =>
+                      setLocalState(() => alsoFromDiscogs = v ?? false),
+                  title: const Text('Also remove from my Discogs wantlist'),
+                )
+              else
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('Your Discogs account is not affected.'),
+                ),
+            ],
           ),
-          TextButton(
-            key: const Key('confirm-remove-button'),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(ctx).colorScheme.error,
+          actions: [
+            TextButton(
+              key: const Key('cancel-remove-button'),
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
             ),
-            child: const Text('Remove'),
-          ),
-        ],
+            TextButton(
+              key: const Key('confirm-remove-button'),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(ctx).colorScheme.error,
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
+        ),
       ),
     );
     if (confirmed == true && mounted) {
-      await _removeItem(item);
+      await _removeItem(item, alsoFromDiscogs: alsoFromDiscogs);
     }
   }
 
-  Future<void> _removeItem(WishlistItem item) async {
+  Future<void> _removeItem(
+    WishlistItem item, {
+    bool alsoFromDiscogs = false,
+  }) async {
     try {
+      if (alsoFromDiscogs && item.syncStatus == SyncStatus.synced) {
+        await _deletionRepository?.add(
+          PendingDiscogsDeletion(
+            id: const Uuid().v4(),
+            entityType: DeletionEntityType.wishlist,
+            discogsReleaseId: item.discogsReleaseId,
+            artist: item.artist,
+            title: item.title,
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
       await _repository.remove(item.id);
       if (!mounted) return;
       Navigator.of(context).pop();

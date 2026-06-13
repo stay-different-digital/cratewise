@@ -520,13 +520,13 @@
     "semantic_hash": "bbb8d642d7af1212203cf8ce344e028e"
   },
   "lib/infrastructure/local_database/app_database.dart": {
-    "mtime": 1781381877.4795551,
-    "ast_hash": "58f3374577a3069fdb8e272cacb3c3be",
+    "mtime": 1781382285.9855862,
+    "ast_hash": "e6b4a633bffd7374498243c3ce5b5856",
     "semantic_hash": ""
   },
   "lib/infrastructure/local_database/app_database.g.dart": {
-    "mtime": 1781381752.9478981,
-    "ast_hash": "9745fee6e0faf46c55ef3df3188f9f66",
+    "mtime": 1781382314.580529,
+    "ast_hash": "20d7719ae768342f46847df690ae7c81",
     "semantic_hash": ""
   },
   "lib/infrastructure/local_database/local_cached_release_metadata_repository.dart": {
@@ -2352,6 +2352,26 @@
   "test/application/use_cases/import_transaction_and_progress_test.dart": {
     "mtime": 1781379806.678244,
     "ast_hash": "14a9f8a755c39a0abf071fbb660b3c2c",
+    "semantic_hash": ""
+  },
+  "lib/domain/models/pending_discogs_deletion.dart": {
+    "mtime": 1781382242.7752323,
+    "ast_hash": "d6cfd35c850c93691dc7d1a8ed684f00",
+    "semantic_hash": ""
+  },
+  "lib/domain/repositories/pending_discogs_deletion_repository.dart": {
+    "mtime": 1781382246.6171846,
+    "ast_hash": "dfdf132bee18dd88dac38f70f5380512",
+    "semantic_hash": ""
+  },
+  "lib/infrastructure/local_database/local_pending_discogs_deletion_repository.dart": {
+    "mtime": 1781382300.2263148,
+    "ast_hash": "c682cee4a1cc5c67594fb13484433fde",
+    "semantic_hash": ""
+  },
+  "test/infrastructure/local_database/local_pending_discogs_deletion_repository_test.dart": {
+    "mtime": 1781382375.0437622,
+    "ast_hash": "cb9446aa7bb27453029cc4a1fca9d12e",
     "semantic_hash": ""
   }
 }
