@@ -1,7 +1,9 @@
 import 'package:cratewise/application/use_cases/build_collection_import_preview_use_case.dart';
 import 'package:cratewise/domain/models/collection_import_preview.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
+import 'package:cratewise/domain/models/pending_discogs_deletion.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/pending_discogs_deletion_repository.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_collection_item.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -61,9 +63,33 @@ DiscogsCollectionItemDto makeItem({
   thumbUrl: thumbUrl,
 );
 
+class _FakeDeletionRepository implements PendingDiscogsDeletionRepository {
+  _FakeDeletionRepository({Set<int>? pendingReleaseIds})
+    : _ids = pendingReleaseIds ?? {};
+  final Set<int> _ids;
+
+  @override
+  Future<bool> containsRelease(int id, DeletionEntityType type) async =>
+      type == DeletionEntityType.collection && _ids.contains(id);
+  @override
+  Future<void> add(PendingDiscogsDeletion deletion) async {}
+  @override
+  Future<List<PendingDiscogsDeletion>> getByType(
+    DeletionEntityType type,
+  ) async => [];
+  @override
+  Future<void> remove(String id) async {}
+  @override
+  Future<void> removeByRelease(int id, DeletionEntityType type) async {}
+}
+
 BuildCollectionImportPreviewUseCase makeUseCase(
-  FakeCollectionRepository repo,
-) => BuildCollectionImportPreviewUseCase(repo);
+  FakeCollectionRepository repo, {
+  PendingDiscogsDeletionRepository? deletionRepository,
+}) => BuildCollectionImportPreviewUseCase(
+  repo,
+  deletionRepository: deletionRepository,
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -116,6 +142,49 @@ void main() {
           repo,
         ).execute([makeItem(instanceId: 5551234)]);
         expect((preview.rows.first as NewCollectionRow).instanceId, 5551234);
+      });
+    });
+
+    group('pending-deletion conflicts (US-72)', () {
+      test(
+        'classifies a release with a pending deletion as a conflict',
+        () async {
+          final repo = FakeCollectionRepository();
+          final preview = await makeUseCase(
+            repo,
+            deletionRepository: _FakeDeletionRepository(
+              pendingReleaseIds: {249504},
+            ),
+          ).execute([makeItem(releaseId: 249504)]);
+
+          expect(preview.rows.first, isA<ConflictCollectionRow>());
+          expect(preview.conflictCount, 1);
+          expect(preview.newCount, 0);
+        },
+      );
+
+      test('a conflict takes precedence over a local duplicate', () async {
+        final repo = FakeCollectionRepository(existingReleaseIds: {249504});
+        final preview = await makeUseCase(
+          repo,
+          deletionRepository: _FakeDeletionRepository(
+            pendingReleaseIds: {249504},
+          ),
+        ).execute([makeItem(releaseId: 249504)]);
+
+        expect(preview.rows.first, isA<ConflictCollectionRow>());
+        expect(preview.duplicateCount, 0);
+      });
+
+      test('no conflict when the release has no pending deletion', () async {
+        final repo = FakeCollectionRepository();
+        final preview = await makeUseCase(
+          repo,
+          deletionRepository: _FakeDeletionRepository(),
+        ).execute([makeItem(releaseId: 249504)]);
+
+        expect(preview.conflictCount, 0);
+        expect(preview.rows.first, isA<NewCollectionRow>());
       });
 
       test('classifies multiple new items correctly', () async {

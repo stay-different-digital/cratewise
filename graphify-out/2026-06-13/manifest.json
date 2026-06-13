@@ -2378,5 +2378,15 @@
     "mtime": 1781382762.6298819,
     "ast_hash": "e2f662365d08727593e6f32f0278f822",
     "semantic_hash": ""
+  },
+  "lib/application/use_cases/execute_pending_deletions_use_case.dart": {
+    "mtime": 1781383045.5325124,
+    "ast_hash": "c71775be07869a5060cc22fa21bc9476",
+    "semantic_hash": ""
+  },
+  "test/application/use_cases/execute_pending_deletions_use_case_test.dart": {
+    "mtime": 1781383182.6685877,
+    "ast_hash": "5dde1830f00bb35d556a754100e8b581",
+    "semantic_hash": ""
   }
 }

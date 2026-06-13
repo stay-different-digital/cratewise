@@ -58,6 +58,21 @@ class InvalidCollectionRow extends CollectionImportRow {
   final String reason;
 }
 
+/// Item is still on Discogs but was deleted locally and is awaiting removal
+/// from Discogs (a pending-deletion tombstone exists, US-72). Re-importing it
+/// would undo the user's deletion, so it is surfaced as a conflict and never
+/// imported automatically.
+class ConflictCollectionRow extends CollectionImportRow {
+  const ConflictCollectionRow({
+    required super.releaseId,
+    required super.title,
+    required super.artist,
+    super.year,
+    super.thumbUrl,
+    super.instanceId,
+  });
+}
+
 class CollectionImportPreview {
   const CollectionImportPreview({required this.rows});
 
@@ -67,4 +82,5 @@ class CollectionImportPreview {
   int get newCount => rows.whereType<NewCollectionRow>().length;
   int get duplicateCount => rows.whereType<DuplicateCollectionRow>().length;
   int get invalidCount => rows.whereType<InvalidCollectionRow>().length;
+  int get conflictCount => rows.whereType<ConflictCollectionRow>().length;
 }

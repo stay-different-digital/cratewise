@@ -7,6 +7,7 @@ import '../../domain/models/collection_import_preview.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/database_transaction_runner.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
 import '../../infrastructure/local_database/local_import_export_job_repository.dart';
 import '../../infrastructure/local_database/local_import_export_row_result_repository.dart';
 import '../../shared/import_notifier.dart';
@@ -95,7 +96,10 @@ class _CollectionImportPreviewScreenState
       _ownedDb = db;
       final collectionRepo = LocalCollectionRepository(db);
       _useCase = FetchCollectionImportPreviewUseCase(
-        previewBuilder: BuildCollectionImportPreviewUseCase(collectionRepo),
+        previewBuilder: BuildCollectionImportPreviewUseCase(
+          collectionRepo,
+          deletionRepository: LocalPendingDiscogsDeletionRepository(db),
+        ),
       );
       _executeUseCase = ExecuteCollectionImportUseCase(
         collectionRepository: collectionRepo,
@@ -223,7 +227,9 @@ class _PreviewBody extends StatelessWidget {
       builder: (context, constraints) {
         final isWide = constraints.maxWidth >= _kWideBreakpoint;
         final hasWarnings =
-            preview.duplicateCount > 0 || preview.invalidCount > 0;
+            preview.duplicateCount > 0 ||
+            preview.invalidCount > 0 ||
+            preview.conflictCount > 0;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -303,6 +309,14 @@ class _SummaryCard extends StatelessWidget {
               value: '${preview.invalidCount}',
               color: preview.invalidCount > 0 ? theme.colorScheme.error : null,
             ),
+            if (preview.conflictCount > 0) ...[
+              const SizedBox(height: 10),
+              _CountRow(
+                label: 'Pending removal',
+                value: '${preview.conflictCount}',
+                color: theme.colorScheme.tertiary,
+              ),
+            ],
             if (preview.totalCount == 0) ...[
               const SizedBox(height: 12),
               Text(
@@ -368,6 +382,13 @@ class _WarningCard extends StatelessWidget {
       final n = preview.invalidCount;
       messages.add(
         '$n ${n == 1 ? 'item' : 'items'} cannot be imported due to missing information.',
+      );
+    }
+    if (preview.conflictCount > 0) {
+      final n = preview.conflictCount;
+      messages.add(
+        '$n ${n == 1 ? 'item was' : 'items were'} deleted locally and are '
+        'pending removal from Discogs; they will not be re-imported.',
       );
     }
 

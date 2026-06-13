@@ -161,6 +161,15 @@ class ExecuteCollectionImportUseCase {
                 );
                 skipped++;
               }
+            case ConflictCollectionRow():
+              await _rowResultRepository.addResult(
+                jobId,
+                SkippedRow(
+                  rowIndex: i,
+                  reason: 'Deleted locally — kept off Discogs',
+                ),
+              );
+              skipped++;
             case InvalidCollectionRow():
               await _rowResultRepository.addResult(
                 jobId,
@@ -211,6 +220,7 @@ class ExecuteCollectionImportUseCase {
   String _rowLabel(CollectionImportRow row) => switch (row) {
     NewCollectionRow(:final artist, :final title) => '$artist – $title',
     DuplicateCollectionRow(:final artist, :final title) => '$artist – $title',
+    ConflictCollectionRow(:final artist, :final title) => '$artist – $title',
     InvalidCollectionRow() => 'Skipped row',
   };
 

@@ -226,6 +226,26 @@ void main() {
 
         expect(collectionRepo.added.single.discogsInstanceId, 5551234);
       });
+
+      test('skips a conflict row instead of re-importing it', () async {
+        final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+            makeUseCase();
+        final preview = CollectionImportPreview(
+          rows: const [
+            ConflictCollectionRow(
+              releaseId: 100,
+              title: 'Album',
+              artist: 'Artist',
+            ),
+          ],
+        );
+
+        final result = await useCase.execute(preview) as ExecuteImportCompleted;
+
+        expect(collectionRepo.added, isEmpty);
+        expect(result.imported, 0);
+        expect(result.skipped, 1);
+      });
     });
 
     group('empty preview', () {
