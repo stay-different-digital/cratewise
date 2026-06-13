@@ -595,8 +595,8 @@
     "semantic_hash": "dbb11ec159b944b3d3618f5700994044"
   },
   "lib/presentation/screens/collection_detail_screen.dart": {
-    "mtime": 1781293707.3424382,
-    "ast_hash": "f371fdd8687569b7147d8e77fa624ead",
+    "mtime": 1781382571.0755563,
+    "ast_hash": "e977f18996d6032371d577670d0db432",
     "semantic_hash": ""
   },
   "lib/presentation/screens/collection_export_preview_screen.dart": {
@@ -660,8 +660,8 @@
     "semantic_hash": "7501b3d25bbf846f39aa94414c63eeb8"
   },
   "lib/presentation/screens/wishlist_detail_screen.dart": {
-    "mtime": 1781293707.3334086,
-    "ast_hash": "70f4f703f929b638a7f11ccd48d53e45",
+    "mtime": 1781382658.3824203,
+    "ast_hash": "77e4e97a0f7e3894c1d6126b44c57875",
     "semantic_hash": ""
   },
   "lib/presentation/screens/wishlist_export_preview_screen.dart": {
@@ -2372,6 +2372,11 @@
   "test/infrastructure/local_database/local_pending_discogs_deletion_repository_test.dart": {
     "mtime": 1781382375.0437622,
     "ast_hash": "cb9446aa7bb27453029cc4a1fca9d12e",
+    "semantic_hash": ""
+  },
+  "test/presentation/screens/detail_delete_tombstone_test.dart": {
+    "mtime": 1781382762.6298819,
+    "ast_hash": "e2f662365d08727593e6f32f0278f822",
     "semantic_hash": ""
   }
 }
