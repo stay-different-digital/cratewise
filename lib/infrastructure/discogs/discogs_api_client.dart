@@ -172,6 +172,35 @@ class DiscogsApiClient {
     await _put('/users/$username/wants/$releaseId', token);
   }
 
+  /// Removes a specific collection entry (by [instanceId]) from folder 1 of
+  /// the authenticated user's Discogs collection.
+  ///
+  /// Returns normally on success (HTTP 204); throws an [AppError] subtype on
+  /// failure.
+  Future<void> removeFromCollection(
+    String username,
+    int releaseId,
+    int instanceId,
+    String token,
+  ) async {
+    await _delete(
+      '/users/$username/collection/folders/1/releases/$releaseId/instances/$instanceId',
+      token,
+    );
+  }
+
+  /// Removes [releaseId] from the authenticated user's Discogs wantlist.
+  ///
+  /// Returns normally on success (HTTP 204); throws an [AppError] subtype on
+  /// failure.
+  Future<void> removeFromWantlist(
+    String username,
+    int releaseId,
+    String token,
+  ) async {
+    await _delete('/users/$username/wants/$releaseId', token);
+  }
+
   Future<http.Response> _get(
     String path,
     String token, {
@@ -208,11 +237,19 @@ class DiscogsApiClient {
   Future<http.Response> _put(String path, String token) =>
       _write((uri, headers) => _client.put(uri, headers: headers), path, token);
 
+  Future<http.Response> _delete(String path, String token) => _write(
+    (uri, headers) => _client.delete(uri, headers: headers),
+    path,
+    token,
+    expectedStatus: 204,
+  );
+
   Future<http.Response> _write(
     Future<http.Response> Function(Uri uri, Map<String, String> headers) send,
     String path,
-    String token,
-  ) async {
+    String token, {
+    int expectedStatus = 201,
+  }) async {
     await _waitIfNeeded();
     final uri = Uri.parse('$_baseUrl$path');
     final http.Response response;
@@ -225,7 +262,7 @@ class DiscogsApiClient {
     } on Exception {
       throw const NetworkError();
     }
-    _checkStatus(response, 201);
+    _checkStatus(response, expectedStatus);
     _updateRateLimitState(response);
     return response;
   }

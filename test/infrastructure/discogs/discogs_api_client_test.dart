@@ -2004,4 +2004,112 @@ void main() {
       }
     });
   });
+
+  group('DiscogsApiClient.removeFromCollection', () {
+    const fakeUsername = 'vinyl_fan';
+    const fakeReleaseId = 12345;
+    const fakeInstanceId = 9001;
+
+    test('completes normally on 204', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(204));
+      await expectLater(
+        client.removeFromCollection(
+          fakeUsername,
+          fakeReleaseId,
+          fakeInstanceId,
+          _fakeToken,
+        ),
+        completes,
+      );
+    });
+
+    test('sends DELETE to the instance URL', () async {
+      late http.Request captured;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response('', 204);
+        }),
+      );
+
+      await client.removeFromCollection(
+        fakeUsername,
+        fakeReleaseId,
+        fakeInstanceId,
+        _fakeToken,
+      );
+
+      expect(captured.method, 'DELETE');
+      expect(
+        captured.url.path,
+        '/users/$fakeUsername/collection/folders/1/releases/'
+        '$fakeReleaseId/instances/$fakeInstanceId',
+      );
+    });
+
+    test('throws RateLimitedError on 429', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(429));
+      expect(
+        () => client.removeFromCollection(
+          fakeUsername,
+          fakeReleaseId,
+          fakeInstanceId,
+          _fakeToken,
+        ),
+        throwsA(isA<RateLimitedError>()),
+      );
+    });
+
+    test('token is not present in thrown error messages', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(401));
+      try {
+        await client.removeFromCollection(
+          fakeUsername,
+          fakeReleaseId,
+          fakeInstanceId,
+          _fakeToken,
+        );
+        fail('expected InvalidTokenError');
+      } on InvalidTokenError {
+        // Pass — typed error carries no token.
+      }
+    });
+  });
+
+  group('DiscogsApiClient.removeFromWantlist', () {
+    const fakeUsername = 'vinyl_fan';
+    const fakeReleaseId = 12345;
+
+    test('completes normally on 204', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(204));
+      await expectLater(
+        client.removeFromWantlist(fakeUsername, fakeReleaseId, _fakeToken),
+        completes,
+      );
+    });
+
+    test('sends DELETE to the wants URL', () async {
+      late http.Request captured;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response('', 204);
+        }),
+      );
+
+      await client.removeFromWantlist(fakeUsername, fakeReleaseId, _fakeToken);
+
+      expect(captured.method, 'DELETE');
+      expect(captured.url.path, '/users/$fakeUsername/wants/$fakeReleaseId');
+    });
+
+    test('throws RateLimitedError on 429', () async {
+      final client = DiscogsApiClient(httpClient: _mockClient(429));
+      expect(
+        () =>
+            client.removeFromWantlist(fakeUsername, fakeReleaseId, _fakeToken),
+        throwsA(isA<RateLimitedError>()),
+      );
+    });
+  });
 }
