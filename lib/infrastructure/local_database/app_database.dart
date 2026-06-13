@@ -199,6 +199,7 @@ class CollectionItems extends Table {
   TextColumn get storageLocation => text().nullable()();
   TextColumn get syncStatus =>
       text().nullable().map(const SyncStatusConverter())();
+  IntColumn get discogsInstanceId => integer().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -323,7 +324,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -353,6 +354,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 8) {
         await m.addColumn(retryActions, retryActions.payload);
+      }
+      if (from < 9) {
+        await m.addColumn(collectionItems, collectionItems.discogsInstanceId);
       }
     },
   );

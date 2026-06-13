@@ -71,6 +71,7 @@ class LocalCollectionRepository implements CollectionRepository {
       tags: row.tags,
       storageLocation: row.storageLocation,
       syncStatus: row.syncStatus ?? SyncStatus.localOnly,
+      discogsInstanceId: row.discogsInstanceId,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     );
@@ -94,6 +95,7 @@ class LocalCollectionRepository implements CollectionRepository {
       tags: Value(item.tags),
       storageLocation: Value(item.storageLocation),
       syncStatus: Value(item.syncStatus),
+      discogsInstanceId: Value(item.discogsInstanceId),
       createdAt: Value(item.createdAt),
       updatedAt: Value(item.updatedAt),
     );

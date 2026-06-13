@@ -5,6 +5,7 @@ sealed class CollectionImportRow {
     required this.artist,
     this.year,
     this.thumbUrl,
+    this.instanceId,
   });
 
   final int releaseId;
@@ -12,6 +13,10 @@ sealed class CollectionImportRow {
   final String artist;
   final int? year;
   final String? thumbUrl;
+
+  /// Discogs collection instance id for this row (US-72), carried through so
+  /// imported and linked items can later be removed from Discogs.
+  final int? instanceId;
 }
 
 /// Item is not yet in the local collection and has valid metadata.
@@ -22,6 +27,7 @@ class NewCollectionRow extends CollectionImportRow {
     required super.artist,
     super.year,
     super.thumbUrl,
+    super.instanceId,
   });
 }
 
@@ -33,6 +39,7 @@ class DuplicateCollectionRow extends CollectionImportRow {
     required super.artist,
     super.year,
     super.thumbUrl,
+    super.instanceId,
   });
 }
 

@@ -207,6 +207,27 @@ makeUseCase({
 
 void main() {
   group('ExecuteCollectionImportUseCase', () {
+    group('instance id capture (US-72)', () {
+      test('saves the Discogs instance id on imported items', () async {
+        final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+            makeUseCase();
+        final preview = CollectionImportPreview(
+          rows: const [
+            NewCollectionRow(
+              releaseId: 100,
+              title: 'Album',
+              artist: 'Artist',
+              instanceId: 5551234,
+            ),
+          ],
+        );
+
+        await useCase.execute(preview);
+
+        expect(collectionRepo.added.single.discogsInstanceId, 5551234);
+      });
+    });
+
     group('empty preview', () {
       test('returns ExecuteImportCompleted for empty preview', () async {
         final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =

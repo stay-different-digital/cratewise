@@ -21,6 +21,7 @@ CollectionItem _makeItem({
   List<String> tags = const ['jazz'],
   String? storageLocation = 'Shelf A',
   SyncStatus syncStatus = SyncStatus.localOnly,
+  int? discogsInstanceId = 778899,
 }) {
   final now = DateTime(2026, 6, 1, 10, 0, 0);
   return CollectionItem(
@@ -40,6 +41,7 @@ CollectionItem _makeItem({
     tags: tags,
     storageLocation: storageLocation,
     syncStatus: syncStatus,
+    discogsInstanceId: discogsInstanceId,
     createdAt: now,
     updatedAt: now,
   );
@@ -66,6 +68,7 @@ void main() {
       expect(decoded.tags, item.tags);
       expect(decoded.storageLocation, item.storageLocation);
       expect(decoded.syncStatus, item.syncStatus);
+      expect(decoded.discogsInstanceId, item.discogsInstanceId);
       expect(decoded.createdAt, item.createdAt);
       expect(decoded.updatedAt, item.updatedAt);
     });
@@ -81,8 +84,10 @@ void main() {
         notes: null,
         storageLocation: null,
         tags: const [],
+        discogsInstanceId: null,
       );
       final decoded = CollectionItem.fromJson(item.toJson());
+      expect(decoded.discogsInstanceId, isNull);
       expect(decoded.label, isNull);
       expect(decoded.catno, isNull);
       expect(decoded.year, isNull);

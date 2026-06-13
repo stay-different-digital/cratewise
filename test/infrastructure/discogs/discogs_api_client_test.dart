@@ -1741,6 +1741,36 @@ void main() {
       );
     });
 
+    test('returns the instance_id from the 201 body', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient(
+          (_) async => http.Response('{"instance_id": 778899}', 201),
+        ),
+      );
+
+      final instanceId = await client.addToCollection(
+        fakeUsername,
+        fakeReleaseId,
+        _fakeToken,
+      );
+
+      expect(instanceId, 778899);
+    });
+
+    test('returns null when the 201 body has no instance_id', () async {
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async => http.Response('', 201)),
+      );
+
+      final instanceId = await client.addToCollection(
+        fakeUsername,
+        fakeReleaseId,
+        _fakeToken,
+      );
+
+      expect(instanceId, isNull);
+    });
+
     test('sends POST to correct URL', () async {
       late http.Request capturedRequest;
       final client = DiscogsApiClient(

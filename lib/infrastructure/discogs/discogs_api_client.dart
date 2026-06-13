@@ -139,17 +139,25 @@ class DiscogsApiClient {
 
   /// Adds [releaseId] to the authenticated user's Discogs collection folder 1.
   ///
-  /// Folder 1 is the default "Uncategorized" folder. Returns normally on
-  /// success (HTTP 201); throws an [AppError] subtype on failure.
-  Future<void> addToCollection(
+  /// Folder 1 is the default "Uncategorized" folder. Returns the new
+  /// collection *instance* id from the 201 response (needed to remove this
+  /// specific entry later), or null if the response had no parseable id.
+  /// Throws an [AppError] subtype on failure.
+  Future<int?> addToCollection(
     String username,
     int releaseId,
     String token,
   ) async {
-    await _post(
+    final response = await _post(
       '/users/$username/collection/folders/1/releases/$releaseId',
       token,
     );
+    try {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return body['instance_id'] as int?;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Adds [releaseId] to the authenticated user's Discogs wantlist.

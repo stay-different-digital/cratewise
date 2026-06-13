@@ -19,7 +19,59 @@
       "Bash(xargs -I{} git show {} --name-only)",
       "Bash(grep -v \"^$\")",
       "Bash(flutter devices *)",
-      "Bash(git commit -m 'Added Phase 10 device validation QA checklist *)"
+      "Bash(git commit -m 'Added Phase 10 device validation QA checklist *)",
+      "WebFetch(domain:www.discogs.com)",
+      "Bash(curl -s -A \"Cratewise/1.0\" https://www.discogs.com/developers)",
+      "Bash(curl -s -A \"Cratewise/1.0\" -o /tmp/discogs_dev.html -w \"%{http_code} %{size_download}\\\\n\" https://www.discogs.com/developers)",
+      "Read(//tmp/**)",
+      "Bash(git stash *)",
+      "Bash(git commit -m 'Resolved Discogs export failures: collection gate and wantlist PUT *)",
+      "Bash(flutter emulators *)",
+      "Bash(xcrun simctl *)",
+      "Bash(open -a Simulator)",
+      "Bash(osascript -e 'tell application \"Simulator\" to activate' -e 'delay 0.3' -e 'tell application \"System Events\" to tell process \"Simulator\" to get {position, size} of window 1')",
+      "Bash(flutter drive *)",
+      "Bash(flutter config *)",
+      "Read(//Users/fred/Library/Caches/org.swift.swiftpm/repositories/**)",
+      "Read(//Users/fred/Library/Developer/Xcode/DerivedData/**)",
+      "Bash(rm -rf ~/Library/Caches/org.swift.swiftpm/repositories/DKImagePickerController-fc207755 && echo cache-cleared)",
+      "Bash(git ls-remote *)",
+      "Bash(git config *)",
+      "Bash(GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.bareRepository GIT_CONFIG_VALUE_0=all git -C ~/Library/Caches/org.swift.swiftpm/repositories/DKImagePickerController-fc207755 cat-file -t 0bdfeacefa308545adde07bef86e349186335915)",
+      "Bash(env)",
+      "Bash(GIT_CONFIG_VALUE_0=all flutter drive --driver=test_driver/integration_test.dart --target=integration_test/qa_section_a_test.dart -d 0CD8F558-B444-4BA6-B4FE-AB2F8C50EA37 --no-pub)",
+      "Bash(grep -cv \"^$\")",
+      "Bash(git commit -q -m 'Resolved app icon showing default Flutter logo *)",
+      "Bash(git commit -q -m 'Added Section A QA drive and simulator pre-pass results *)",
+      "Bash(git commit -q -m 'Added US-53 for inconsistent cold-start tab from QA finding 2 *)",
+      "Bash(git commit -q -m 'Added US-54 for truncated token helper text from QA finding 3 *)"
+    ],
+    "additionalDirectories": [
+      "/tmp",
+      "/private/tmp",
+      "/Users/fred/Library/Caches/org.swift.swiftpm/repositories/DKImagePickerController-fc207755"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "CMD=$(python3 -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',d).get('command',''))\" 2>/dev/null || true); case \"$CMD\" in *grep*|*rg\\ *|*ripgrep*|*find\\ *|*fd\\ *|*ack\\ *|*ag\\ *)   [ -f graphify-out/graph.json ] &&   echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"MANDATORY: graphify-out/graph.json exists. You MUST run `graphify query \\\"<question>\\\"` before grepping raw files. Only grep after graphify has oriented you, or to modify/debug specific lines.\"}}'   || true ;; esac"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "HIT=$(python3 -c \"import json,sys;d=json.load(sys.stdin);t=d.get('tool_input',d);s=(str(t.get('file_path') or '')+' '+str(t.get('pattern') or '')+' '+str(t.get('path') or '')).lower().replace(chr(92),'/');exts=('.py','.js','.ts','.tsx','.jsx','.go','.rs','.java','.rb','.c','.h','.cpp','.hpp','.cc','.cs','.kt','.swift','.php','.scala','.lua','.sh','.md','.rst','.txt','.mdx');sys.stdout.write('1' if 'graphify-out/' not in s and any(e in s for e in exts) else '')\" 2>/dev/null || true); if [ \"$HIT\" = 1 ] && [ -f graphify-out/graph.json ]; then echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"MANDATORY: graphify-out/graph.json exists. You MUST run graphify before reading source files. Use: `graphify query \\\"<question>\\\"` (scoped subgraph), `graphify explain \\\"<concept>\\\"`, or `graphify path \\\"<A>\\\" \\\"<B>\\\"`. Only read raw files after graphify has oriented you, or to modify/debug specific lines. This rule applies to subagents too \u2014 include it in every subagent prompt involving code exploration.\"}}'; fi || true"
+          }
+        ]
+      }
     ]
   }
 }

@@ -45,6 +45,7 @@ class BuildCollectionImportPreviewUseCase {
         artist: item.artist,
         year: item.year,
         thumbUrl: item.thumbUrl,
+        instanceId: item.instanceId,
       );
     }
     return NewCollectionRow(
@@ -53,6 +54,7 @@ class BuildCollectionImportPreviewUseCase {
       artist: item.artist,
       year: item.year,
       thumbUrl: item.thumbUrl,
+      instanceId: item.instanceId,
     );
   }
 }

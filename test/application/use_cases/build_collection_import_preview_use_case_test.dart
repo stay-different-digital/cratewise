@@ -110,6 +110,14 @@ void main() {
         expect(preview.newCount, 1);
       });
 
+      test('carries the Discogs instance id onto the row (US-72)', () async {
+        final repo = FakeCollectionRepository();
+        final preview = await makeUseCase(
+          repo,
+        ).execute([makeItem(instanceId: 5551234)]);
+        expect((preview.rows.first as NewCollectionRow).instanceId, 5551234);
+      });
+
       test('classifies multiple new items correctly', () async {
         final repo = FakeCollectionRepository();
         final items = [

@@ -138,12 +138,17 @@ class ExecuteCollectionExportUseCase {
               '${row.artist} – ${row.title}',
             );
             try {
-              await _addToCollectionWithRetry(username, row.releaseId, token);
+              final instanceId = await _addToCollectionWithRetry(
+                username,
+                row.releaseId,
+                token,
+              );
               final item = await _collectionRepository.getById(row.itemId);
               if (item != null) {
                 await _collectionRepository.update(
                   item.copyWith(
                     syncStatus: SyncStatus.synced,
+                    discogsInstanceId: instanceId,
                     updatedAt: DateTime.now(),
                   ),
                 );
@@ -229,7 +234,7 @@ class ExecuteCollectionExportUseCase {
     }
   }
 
-  Future<void> _addToCollectionWithRetry(
+  Future<int?> _addToCollectionWithRetry(
     String username,
     int releaseId,
     String token,
@@ -237,8 +242,7 @@ class ExecuteCollectionExportUseCase {
     var attempts = 0;
     while (true) {
       try {
-        await _apiClient.addToCollection(username, releaseId, token);
-        return;
+        return await _apiClient.addToCollection(username, releaseId, token);
       } on RateLimitedError {
         if (attempts >= _maxItemRetries) rethrow;
         attempts++;

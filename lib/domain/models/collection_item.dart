@@ -58,10 +58,16 @@ class CollectionItem {
     this.notes,
     this.storageLocation,
     this.syncStatus = SyncStatus.localOnly,
+    this.discogsInstanceId,
   });
 
   final String id;
   final int discogsReleaseId;
+
+  /// The Discogs collection *instance* id, captured when the item is added to
+  /// or imported from a Discogs collection. Needed to remove this specific
+  /// collection entry from Discogs later (US-72). Null until linked.
+  final int? discogsInstanceId;
   final String artist;
   final String title;
   final String? label;
@@ -98,6 +104,7 @@ class CollectionItem {
     'syncStatus': syncStatus.name,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
+    'discogsInstanceId': discogsInstanceId,
   };
 
   static CollectionItem fromJson(Map<String, dynamic> json) => CollectionItem(
@@ -123,6 +130,7 @@ class CollectionItem {
     syncStatus: SyncStatus.values.byName(json['syncStatus'] as String),
     createdAt: DateTime.parse(json['createdAt'] as String),
     updatedAt: DateTime.parse(json['updatedAt'] as String),
+    discogsInstanceId: json['discogsInstanceId'] as int?,
   );
 
   static CollectionItem? tryFromJson(String encoded) {
@@ -152,6 +160,7 @@ class CollectionItem {
     SyncStatus? syncStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
+    int? discogsInstanceId,
   }) {
     return CollectionItem(
       id: id ?? this.id,
@@ -172,6 +181,7 @@ class CollectionItem {
       syncStatus: syncStatus ?? this.syncStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      discogsInstanceId: discogsInstanceId ?? this.discogsInstanceId,
     );
   }
 }

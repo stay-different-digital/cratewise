@@ -167,6 +167,17 @@ class $CollectionItemsTable extends CollectionItems
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       ).withConverter<SyncStatus?>($CollectionItemsTable.$convertersyncStatusn);
+  static const VerificationMeta _discogsInstanceIdMeta = const VerificationMeta(
+    'discogsInstanceId',
+  );
+  @override
+  late final GeneratedColumn<int> discogsInstanceId = GeneratedColumn<int>(
+    'discogs_instance_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -207,6 +218,7 @@ class $CollectionItemsTable extends CollectionItems
     tags,
     storageLocation,
     syncStatus,
+    discogsInstanceId,
     createdAt,
     updatedAt,
   ];
@@ -302,6 +314,15 @@ class $CollectionItemsTable extends CollectionItems
         storageLocation.isAcceptableOrUnknown(
           data['storage_location']!,
           _storageLocationMeta,
+        ),
+      );
+    }
+    if (data.containsKey('discogs_instance_id')) {
+      context.handle(
+        _discogsInstanceIdMeta,
+        discogsInstanceId.isAcceptableOrUnknown(
+          data['discogs_instance_id']!,
+          _discogsInstanceIdMeta,
         ),
       );
     }
@@ -402,6 +423,10 @@ class $CollectionItemsTable extends CollectionItems
           data['${effectivePrefix}sync_status'],
         ),
       ),
+      discogsInstanceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}discogs_instance_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -447,6 +472,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
   final List<String> tags;
   final String? storageLocation;
   final SyncStatus? syncStatus;
+  final int? discogsInstanceId;
   final DateTime createdAt;
   final DateTime updatedAt;
   const CollectionRow({
@@ -466,6 +492,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     required this.tags,
     this.storageLocation,
     this.syncStatus,
+    this.discogsInstanceId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -520,6 +547,9 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
         $CollectionItemsTable.$convertersyncStatusn.toSql(syncStatus),
       );
     }
+    if (!nullToAbsent || discogsInstanceId != null) {
+      map['discogs_instance_id'] = Variable<int>(discogsInstanceId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -559,6 +589,9 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       syncStatus: syncStatus == null && nullToAbsent
           ? const Value.absent()
           : Value(syncStatus),
+      discogsInstanceId: discogsInstanceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discogsInstanceId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -590,6 +623,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       tags: serializer.fromJson<List<String>>(json['tags']),
       storageLocation: serializer.fromJson<String?>(json['storageLocation']),
       syncStatus: serializer.fromJson<SyncStatus?>(json['syncStatus']),
+      discogsInstanceId: serializer.fromJson<int?>(json['discogsInstanceId']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -614,6 +648,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       'tags': serializer.toJson<List<String>>(tags),
       'storageLocation': serializer.toJson<String?>(storageLocation),
       'syncStatus': serializer.toJson<SyncStatus?>(syncStatus),
+      'discogsInstanceId': serializer.toJson<int?>(discogsInstanceId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -636,6 +671,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     List<String>? tags,
     Value<String?> storageLocation = const Value.absent(),
     Value<SyncStatus?> syncStatus = const Value.absent(),
+    Value<int?> discogsInstanceId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => CollectionRow(
@@ -657,6 +693,9 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
         ? storageLocation.value
         : this.storageLocation,
     syncStatus: syncStatus.present ? syncStatus.value : this.syncStatus,
+    discogsInstanceId: discogsInstanceId.present
+        ? discogsInstanceId.value
+        : this.discogsInstanceId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -688,6 +727,9 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       syncStatus: data.syncStatus.present
           ? data.syncStatus.value
           : this.syncStatus,
+      discogsInstanceId: data.discogsInstanceId.present
+          ? data.discogsInstanceId.value
+          : this.discogsInstanceId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -712,6 +754,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
           ..write('tags: $tags, ')
           ..write('storageLocation: $storageLocation, ')
           ..write('syncStatus: $syncStatus, ')
+          ..write('discogsInstanceId: $discogsInstanceId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -736,6 +779,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     tags,
     storageLocation,
     syncStatus,
+    discogsInstanceId,
     createdAt,
     updatedAt,
   );
@@ -759,6 +803,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
           other.tags == this.tags &&
           other.storageLocation == this.storageLocation &&
           other.syncStatus == this.syncStatus &&
+          other.discogsInstanceId == this.discogsInstanceId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -780,6 +825,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
   final Value<List<String>> tags;
   final Value<String?> storageLocation;
   final Value<SyncStatus?> syncStatus;
+  final Value<int?> discogsInstanceId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -800,6 +846,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     this.tags = const Value.absent(),
     this.storageLocation = const Value.absent(),
     this.syncStatus = const Value.absent(),
+    this.discogsInstanceId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -821,6 +868,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     required List<String> tags,
     this.storageLocation = const Value.absent(),
     this.syncStatus = const Value.absent(),
+    this.discogsInstanceId = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -850,6 +898,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     Expression<String>? tags,
     Expression<String>? storageLocation,
     Expression<String>? syncStatus,
+    Expression<int>? discogsInstanceId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -871,6 +920,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
       if (tags != null) 'tags': tags,
       if (storageLocation != null) 'storage_location': storageLocation,
       if (syncStatus != null) 'sync_status': syncStatus,
+      if (discogsInstanceId != null) 'discogs_instance_id': discogsInstanceId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -894,6 +944,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     Value<List<String>>? tags,
     Value<String?>? storageLocation,
     Value<SyncStatus?>? syncStatus,
+    Value<int?>? discogsInstanceId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -915,6 +966,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
       tags: tags ?? this.tags,
       storageLocation: storageLocation ?? this.storageLocation,
       syncStatus: syncStatus ?? this.syncStatus,
+      discogsInstanceId: discogsInstanceId ?? this.discogsInstanceId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -984,6 +1036,9 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
         $CollectionItemsTable.$convertersyncStatusn.toSql(syncStatus.value),
       );
     }
+    if (discogsInstanceId.present) {
+      map['discogs_instance_id'] = Variable<int>(discogsInstanceId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1015,6 +1070,7 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
           ..write('tags: $tags, ')
           ..write('storageLocation: $storageLocation, ')
           ..write('syncStatus: $syncStatus, ')
+          ..write('discogsInstanceId: $discogsInstanceId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -4763,6 +4819,7 @@ typedef $$CollectionItemsTableCreateCompanionBuilder =
       required List<String> tags,
       Value<String?> storageLocation,
       Value<SyncStatus?> syncStatus,
+      Value<int?> discogsInstanceId,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -4785,6 +4842,7 @@ typedef $$CollectionItemsTableUpdateCompanionBuilder =
       Value<List<String>> tags,
       Value<String?> storageLocation,
       Value<SyncStatus?> syncStatus,
+      Value<int?> discogsInstanceId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -4881,6 +4939,11 @@ class $$CollectionItemsTableFilterComposer
   get syncStatus => $composableBuilder(
     column: $table.syncStatus,
     builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<int> get discogsInstanceId => $composableBuilder(
+    column: $table.discogsInstanceId,
+    builder: (column) => ColumnFilters(column),
   );
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
@@ -4983,6 +5046,11 @@ class $$CollectionItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get discogsInstanceId => $composableBuilder(
+    column: $table.discogsInstanceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5064,6 +5132,11 @@ class $$CollectionItemsTableAnnotationComposer
         builder: (column) => column,
       );
 
+  GeneratedColumn<int> get discogsInstanceId => $composableBuilder(
+    column: $table.discogsInstanceId,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -5120,6 +5193,7 @@ class $$CollectionItemsTableTableManager
                 Value<List<String>> tags = const Value.absent(),
                 Value<String?> storageLocation = const Value.absent(),
                 Value<SyncStatus?> syncStatus = const Value.absent(),
+                Value<int?> discogsInstanceId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -5140,6 +5214,7 @@ class $$CollectionItemsTableTableManager
                 tags: tags,
                 storageLocation: storageLocation,
                 syncStatus: syncStatus,
+                discogsInstanceId: discogsInstanceId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -5162,6 +5237,7 @@ class $$CollectionItemsTableTableManager
                 required List<String> tags,
                 Value<String?> storageLocation = const Value.absent(),
                 Value<SyncStatus?> syncStatus = const Value.absent(),
+                Value<int?> discogsInstanceId = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -5182,6 +5258,7 @@ class $$CollectionItemsTableTableManager
                 tags: tags,
                 storageLocation: storageLocation,
                 syncStatus: syncStatus,
+                discogsInstanceId: discogsInstanceId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

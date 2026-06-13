@@ -457,6 +457,22 @@ void main() {
         expect(repo.updatedItems.first.syncStatus, SyncStatus.synced);
       });
 
+      test('saves the returned Discogs instance id (US-72)', () async {
+        final items = [makeItem(id: 'e-0', releaseId: 100)];
+        final repo = _FakeCollectionRepository(items);
+        final uc = makeUseCase(
+          items: items,
+          collectionRepository: repo,
+          apiClient: DiscogsApiClient(
+            httpClient: MockClient(
+              (_) async => http.Response('{"instance_id": 424242}', 201),
+            ),
+          ),
+        );
+        await uc.execute(makePreview(eligibleCount: 1));
+        expect(repo.updatedItems.first.discogsInstanceId, 424242);
+      });
+
       test('does not update sync status for skipped items', () async {
         final repo = _FakeCollectionRepository([]);
         final uc = makeUseCase(collectionRepository: repo);

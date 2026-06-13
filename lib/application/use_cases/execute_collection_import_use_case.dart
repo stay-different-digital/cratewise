@@ -132,6 +132,7 @@ class ExecuteCollectionImportUseCase {
                   await _collectionRepository.update(
                     existing.copyWith(
                       syncStatus: SyncStatus.synced,
+                      discogsInstanceId: row.instanceId,
                       updatedAt: DateTime.now(),
                     ),
                   );
@@ -226,6 +227,7 @@ class ExecuteCollectionImportUseCase {
       sleeveCondition: RecordCondition.notSet,
       tags: const [],
       syncStatus: SyncStatus.synced,
+      discogsInstanceId: row.instanceId,
       createdAt: now,
       updatedAt: now,
     );
