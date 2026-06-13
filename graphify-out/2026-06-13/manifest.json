@@ -490,8 +490,8 @@
     "semantic_hash": "9be6ead82bf2321e2dd63aeef91bca9e"
   },
   "lib/infrastructure/discogs/discogs_api_client.dart": {
-    "mtime": 1781381772.028918,
-    "ast_hash": "8cf8687c05315c66ea8fe37f45357975",
+    "mtime": 1781382867.7787685,
+    "ast_hash": "c6a94325892ec1d5b530b01454d6c00b",
     "semantic_hash": ""
   },
   "lib/infrastructure/discogs/dto/discogs_collection_item.dart": {
@@ -1020,8 +1020,8 @@
     "semantic_hash": "6818db2ddadcaadf83c65e93f6facf51"
   },
   "test/infrastructure/discogs/discogs_api_client_test.dart": {
-    "mtime": 1781381935.9158819,
-    "ast_hash": "92de9c9c0cac19cba3db44b9384dd0ea",
+    "mtime": 1781382934.495353,
+    "ast_hash": "49090b734a9a899af56f25e84eb9aba2",
     "semantic_hash": ""
   },
   "test/infrastructure/local_database/local_cached_release_metadata_repository_test.dart": {

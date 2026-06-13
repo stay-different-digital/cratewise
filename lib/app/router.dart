@@ -12,6 +12,7 @@ import '../presentation/screens/collection_screen.dart';
 import '../presentation/screens/failed_actions_screen.dart';
 import '../presentation/screens/home_shell_screen.dart';
 import '../presentation/screens/import_export_history_screen.dart';
+import '../presentation/screens/pending_deletions_screen.dart';
 import '../presentation/screens/import_export_screen.dart';
 import '../presentation/screens/release_detail_screen.dart';
 import '../presentation/screens/search_screen.dart';
@@ -36,6 +37,7 @@ abstract final class AppRoutes {
   static const settings = '/settings';
   static const importExport = '/settings/import-export';
   static const importExportHistory = '/settings/import-export/history';
+  static const pendingDeletions = '/settings/import-export/pending-deletions';
   static const importCollection = '/settings/import-export/collection-import';
   static const importWishlist = '/settings/import-export/wishlist-import';
   static const exportCollection = '/settings/import-export/collection-export';
@@ -163,6 +165,10 @@ GoRouter createAppRouter() => GoRouter(
                     GoRoute(
                       path: 'history',
                       builder: (_, _) => const ImportExportHistoryScreen(),
+                    ),
+                    GoRoute(
+                      path: 'pending-deletions',
+                      builder: (_, _) => const PendingDeletionsScreen(),
                     ),
                     GoRoute(
                       path: 'collection-import',

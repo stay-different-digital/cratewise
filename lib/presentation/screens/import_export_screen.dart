@@ -69,6 +69,8 @@ class ImportExportScreen extends StatelessWidget {
             onImportWishlistCsv: () =>
                 context.push(AppRoutes.importWishlistCsv),
             onViewHistory: () => context.push(AppRoutes.importExportHistory),
+            onViewPendingDeletions: () =>
+                context.push(AppRoutes.pendingDeletions),
           ),
         ),
       ),
@@ -110,6 +112,7 @@ class _ActionBody extends StatelessWidget {
     required this.onImportCollectionCsv,
     required this.onImportWishlistCsv,
     required this.onViewHistory,
+    required this.onViewPendingDeletions,
   });
 
   final bool isWide;
@@ -122,6 +125,7 @@ class _ActionBody extends StatelessWidget {
   final VoidCallback onImportCollectionCsv;
   final VoidCallback onImportWishlistCsv;
   final VoidCallback onViewHistory;
+  final VoidCallback onViewPendingDeletions;
 
   List<_ActionConfig> get _discogsActions => [
     _ActionConfig(
@@ -195,6 +199,12 @@ class _ActionBody extends StatelessWidget {
             title: 'View import & export history',
             badge: null,
             onTap: (_) => onViewHistory(),
+          ),
+          _ActionConfig(
+            icon: Icons.cloud_off_outlined,
+            title: 'Removals to sync to Discogs',
+            badge: null,
+            onTap: (_) => onViewPendingDeletions(),
           ),
         ]),
         const SliverToBoxAdapter(child: SizedBox(height: 16)),
