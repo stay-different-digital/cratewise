@@ -4773,6 +4773,488 @@ class ImportExportRowResultsCompanion
   }
 }
 
+class $PendingDiscogsDeletionsTable extends PendingDiscogsDeletions
+    with TableInfo<$PendingDiscogsDeletionsTable, PendingDiscogsDeletionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PendingDiscogsDeletionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityTypeMeta = const VerificationMeta(
+    'entityType',
+  );
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+    'entity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _discogsReleaseIdMeta = const VerificationMeta(
+    'discogsReleaseId',
+  );
+  @override
+  late final GeneratedColumn<int> discogsReleaseId = GeneratedColumn<int>(
+    'discogs_release_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _discogsInstanceIdMeta = const VerificationMeta(
+    'discogsInstanceId',
+  );
+  @override
+  late final GeneratedColumn<int> discogsInstanceId = GeneratedColumn<int>(
+    'discogs_instance_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _artistMeta = const VerificationMeta('artist');
+  @override
+  late final GeneratedColumn<String> artist = GeneratedColumn<String>(
+    'artist',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    entityType,
+    discogsReleaseId,
+    discogsInstanceId,
+    artist,
+    title,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pending_discogs_deletions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PendingDiscogsDeletionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+        _entityTypeMeta,
+        entityType.isAcceptableOrUnknown(data['entity_type']!, _entityTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('discogs_release_id')) {
+      context.handle(
+        _discogsReleaseIdMeta,
+        discogsReleaseId.isAcceptableOrUnknown(
+          data['discogs_release_id']!,
+          _discogsReleaseIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_discogsReleaseIdMeta);
+    }
+    if (data.containsKey('discogs_instance_id')) {
+      context.handle(
+        _discogsInstanceIdMeta,
+        discogsInstanceId.isAcceptableOrUnknown(
+          data['discogs_instance_id']!,
+          _discogsInstanceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('artist')) {
+      context.handle(
+        _artistMeta,
+        artist.isAcceptableOrUnknown(data['artist']!, _artistMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_artistMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PendingDiscogsDeletionRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PendingDiscogsDeletionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      entityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_type'],
+      )!,
+      discogsReleaseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}discogs_release_id'],
+      )!,
+      discogsInstanceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}discogs_instance_id'],
+      ),
+      artist: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}artist'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PendingDiscogsDeletionsTable createAlias(String alias) {
+    return $PendingDiscogsDeletionsTable(attachedDatabase, alias);
+  }
+}
+
+class PendingDiscogsDeletionRow extends DataClass
+    implements Insertable<PendingDiscogsDeletionRow> {
+  final String id;
+  final String entityType;
+  final int discogsReleaseId;
+  final int? discogsInstanceId;
+  final String artist;
+  final String title;
+  final DateTime createdAt;
+  const PendingDiscogsDeletionRow({
+    required this.id,
+    required this.entityType,
+    required this.discogsReleaseId,
+    this.discogsInstanceId,
+    required this.artist,
+    required this.title,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['entity_type'] = Variable<String>(entityType);
+    map['discogs_release_id'] = Variable<int>(discogsReleaseId);
+    if (!nullToAbsent || discogsInstanceId != null) {
+      map['discogs_instance_id'] = Variable<int>(discogsInstanceId);
+    }
+    map['artist'] = Variable<String>(artist);
+    map['title'] = Variable<String>(title);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PendingDiscogsDeletionsCompanion toCompanion(bool nullToAbsent) {
+    return PendingDiscogsDeletionsCompanion(
+      id: Value(id),
+      entityType: Value(entityType),
+      discogsReleaseId: Value(discogsReleaseId),
+      discogsInstanceId: discogsInstanceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(discogsInstanceId),
+      artist: Value(artist),
+      title: Value(title),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PendingDiscogsDeletionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PendingDiscogsDeletionRow(
+      id: serializer.fromJson<String>(json['id']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      discogsReleaseId: serializer.fromJson<int>(json['discogsReleaseId']),
+      discogsInstanceId: serializer.fromJson<int?>(json['discogsInstanceId']),
+      artist: serializer.fromJson<String>(json['artist']),
+      title: serializer.fromJson<String>(json['title']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'entityType': serializer.toJson<String>(entityType),
+      'discogsReleaseId': serializer.toJson<int>(discogsReleaseId),
+      'discogsInstanceId': serializer.toJson<int?>(discogsInstanceId),
+      'artist': serializer.toJson<String>(artist),
+      'title': serializer.toJson<String>(title),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PendingDiscogsDeletionRow copyWith({
+    String? id,
+    String? entityType,
+    int? discogsReleaseId,
+    Value<int?> discogsInstanceId = const Value.absent(),
+    String? artist,
+    String? title,
+    DateTime? createdAt,
+  }) => PendingDiscogsDeletionRow(
+    id: id ?? this.id,
+    entityType: entityType ?? this.entityType,
+    discogsReleaseId: discogsReleaseId ?? this.discogsReleaseId,
+    discogsInstanceId: discogsInstanceId.present
+        ? discogsInstanceId.value
+        : this.discogsInstanceId,
+    artist: artist ?? this.artist,
+    title: title ?? this.title,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PendingDiscogsDeletionRow copyWithCompanion(
+    PendingDiscogsDeletionsCompanion data,
+  ) {
+    return PendingDiscogsDeletionRow(
+      id: data.id.present ? data.id.value : this.id,
+      entityType: data.entityType.present
+          ? data.entityType.value
+          : this.entityType,
+      discogsReleaseId: data.discogsReleaseId.present
+          ? data.discogsReleaseId.value
+          : this.discogsReleaseId,
+      discogsInstanceId: data.discogsInstanceId.present
+          ? data.discogsInstanceId.value
+          : this.discogsInstanceId,
+      artist: data.artist.present ? data.artist.value : this.artist,
+      title: data.title.present ? data.title.value : this.title,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingDiscogsDeletionRow(')
+          ..write('id: $id, ')
+          ..write('entityType: $entityType, ')
+          ..write('discogsReleaseId: $discogsReleaseId, ')
+          ..write('discogsInstanceId: $discogsInstanceId, ')
+          ..write('artist: $artist, ')
+          ..write('title: $title, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    entityType,
+    discogsReleaseId,
+    discogsInstanceId,
+    artist,
+    title,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PendingDiscogsDeletionRow &&
+          other.id == this.id &&
+          other.entityType == this.entityType &&
+          other.discogsReleaseId == this.discogsReleaseId &&
+          other.discogsInstanceId == this.discogsInstanceId &&
+          other.artist == this.artist &&
+          other.title == this.title &&
+          other.createdAt == this.createdAt);
+}
+
+class PendingDiscogsDeletionsCompanion
+    extends UpdateCompanion<PendingDiscogsDeletionRow> {
+  final Value<String> id;
+  final Value<String> entityType;
+  final Value<int> discogsReleaseId;
+  final Value<int?> discogsInstanceId;
+  final Value<String> artist;
+  final Value<String> title;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const PendingDiscogsDeletionsCompanion({
+    this.id = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.discogsReleaseId = const Value.absent(),
+    this.discogsInstanceId = const Value.absent(),
+    this.artist = const Value.absent(),
+    this.title = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PendingDiscogsDeletionsCompanion.insert({
+    required String id,
+    required String entityType,
+    required int discogsReleaseId,
+    this.discogsInstanceId = const Value.absent(),
+    required String artist,
+    required String title,
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       entityType = Value(entityType),
+       discogsReleaseId = Value(discogsReleaseId),
+       artist = Value(artist),
+       title = Value(title),
+       createdAt = Value(createdAt);
+  static Insertable<PendingDiscogsDeletionRow> custom({
+    Expression<String>? id,
+    Expression<String>? entityType,
+    Expression<int>? discogsReleaseId,
+    Expression<int>? discogsInstanceId,
+    Expression<String>? artist,
+    Expression<String>? title,
+    Expression<DateTime>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (entityType != null) 'entity_type': entityType,
+      if (discogsReleaseId != null) 'discogs_release_id': discogsReleaseId,
+      if (discogsInstanceId != null) 'discogs_instance_id': discogsInstanceId,
+      if (artist != null) 'artist': artist,
+      if (title != null) 'title': title,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PendingDiscogsDeletionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? entityType,
+    Value<int>? discogsReleaseId,
+    Value<int?>? discogsInstanceId,
+    Value<String>? artist,
+    Value<String>? title,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return PendingDiscogsDeletionsCompanion(
+      id: id ?? this.id,
+      entityType: entityType ?? this.entityType,
+      discogsReleaseId: discogsReleaseId ?? this.discogsReleaseId,
+      discogsInstanceId: discogsInstanceId ?? this.discogsInstanceId,
+      artist: artist ?? this.artist,
+      title: title ?? this.title,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (discogsReleaseId.present) {
+      map['discogs_release_id'] = Variable<int>(discogsReleaseId.value);
+    }
+    if (discogsInstanceId.present) {
+      map['discogs_instance_id'] = Variable<int>(discogsInstanceId.value);
+    }
+    if (artist.present) {
+      map['artist'] = Variable<String>(artist.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingDiscogsDeletionsCompanion(')
+          ..write('id: $id, ')
+          ..write('entityType: $entityType, ')
+          ..write('discogsReleaseId: $discogsReleaseId, ')
+          ..write('discogsInstanceId: $discogsInstanceId, ')
+          ..write('artist: $artist, ')
+          ..write('title: $title, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4787,6 +5269,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final $ImportExportRowResultsTable importExportRowResults =
       $ImportExportRowResultsTable(this);
+  late final $PendingDiscogsDeletionsTable pendingDiscogsDeletions =
+      $PendingDiscogsDeletionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4798,6 +5282,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     retryActions,
     importExportJobs,
     importExportRowResults,
+    pendingDiscogsDeletions,
   ];
 }
 
@@ -7084,6 +7569,269 @@ typedef $$ImportExportRowResultsTableProcessedTableManager =
       ImportExportRowResultRow,
       PrefetchHooks Function()
     >;
+typedef $$PendingDiscogsDeletionsTableCreateCompanionBuilder =
+    PendingDiscogsDeletionsCompanion Function({
+      required String id,
+      required String entityType,
+      required int discogsReleaseId,
+      Value<int?> discogsInstanceId,
+      required String artist,
+      required String title,
+      required DateTime createdAt,
+      Value<int> rowid,
+    });
+typedef $$PendingDiscogsDeletionsTableUpdateCompanionBuilder =
+    PendingDiscogsDeletionsCompanion Function({
+      Value<String> id,
+      Value<String> entityType,
+      Value<int> discogsReleaseId,
+      Value<int?> discogsInstanceId,
+      Value<String> artist,
+      Value<String> title,
+      Value<DateTime> createdAt,
+      Value<int> rowid,
+    });
+
+class $$PendingDiscogsDeletionsTableFilterComposer
+    extends Composer<_$AppDatabase, $PendingDiscogsDeletionsTable> {
+  $$PendingDiscogsDeletionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get discogsReleaseId => $composableBuilder(
+    column: $table.discogsReleaseId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get discogsInstanceId => $composableBuilder(
+    column: $table.discogsInstanceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get artist => $composableBuilder(
+    column: $table.artist,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PendingDiscogsDeletionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PendingDiscogsDeletionsTable> {
+  $$PendingDiscogsDeletionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get discogsReleaseId => $composableBuilder(
+    column: $table.discogsReleaseId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get discogsInstanceId => $composableBuilder(
+    column: $table.discogsInstanceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get artist => $composableBuilder(
+    column: $table.artist,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PendingDiscogsDeletionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PendingDiscogsDeletionsTable> {
+  $$PendingDiscogsDeletionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get discogsReleaseId => $composableBuilder(
+    column: $table.discogsReleaseId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get discogsInstanceId => $composableBuilder(
+    column: $table.discogsInstanceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get artist =>
+      $composableBuilder(column: $table.artist, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$PendingDiscogsDeletionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PendingDiscogsDeletionsTable,
+          PendingDiscogsDeletionRow,
+          $$PendingDiscogsDeletionsTableFilterComposer,
+          $$PendingDiscogsDeletionsTableOrderingComposer,
+          $$PendingDiscogsDeletionsTableAnnotationComposer,
+          $$PendingDiscogsDeletionsTableCreateCompanionBuilder,
+          $$PendingDiscogsDeletionsTableUpdateCompanionBuilder,
+          (
+            PendingDiscogsDeletionRow,
+            BaseReferences<
+              _$AppDatabase,
+              $PendingDiscogsDeletionsTable,
+              PendingDiscogsDeletionRow
+            >,
+          ),
+          PendingDiscogsDeletionRow,
+          PrefetchHooks Function()
+        > {
+  $$PendingDiscogsDeletionsTableTableManager(
+    _$AppDatabase db,
+    $PendingDiscogsDeletionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PendingDiscogsDeletionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$PendingDiscogsDeletionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$PendingDiscogsDeletionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> entityType = const Value.absent(),
+                Value<int> discogsReleaseId = const Value.absent(),
+                Value<int?> discogsInstanceId = const Value.absent(),
+                Value<String> artist = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PendingDiscogsDeletionsCompanion(
+                id: id,
+                entityType: entityType,
+                discogsReleaseId: discogsReleaseId,
+                discogsInstanceId: discogsInstanceId,
+                artist: artist,
+                title: title,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String entityType,
+                required int discogsReleaseId,
+                Value<int?> discogsInstanceId = const Value.absent(),
+                required String artist,
+                required String title,
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => PendingDiscogsDeletionsCompanion.insert(
+                id: id,
+                entityType: entityType,
+                discogsReleaseId: discogsReleaseId,
+                discogsInstanceId: discogsInstanceId,
+                artist: artist,
+                title: title,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PendingDiscogsDeletionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PendingDiscogsDeletionsTable,
+      PendingDiscogsDeletionRow,
+      $$PendingDiscogsDeletionsTableFilterComposer,
+      $$PendingDiscogsDeletionsTableOrderingComposer,
+      $$PendingDiscogsDeletionsTableAnnotationComposer,
+      $$PendingDiscogsDeletionsTableCreateCompanionBuilder,
+      $$PendingDiscogsDeletionsTableUpdateCompanionBuilder,
+      (
+        PendingDiscogsDeletionRow,
+        BaseReferences<
+          _$AppDatabase,
+          $PendingDiscogsDeletionsTable,
+          PendingDiscogsDeletionRow
+        >,
+      ),
+      PendingDiscogsDeletionRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7102,5 +7850,10 @@ class $AppDatabaseManager {
       $$ImportExportRowResultsTableTableManager(
         _db,
         _db.importExportRowResults,
+      );
+  $$PendingDiscogsDeletionsTableTableManager get pendingDiscogsDeletions =>
+      $$PendingDiscogsDeletionsTableTableManager(
+        _db,
+        _db.pendingDiscogsDeletions,
       );
 }

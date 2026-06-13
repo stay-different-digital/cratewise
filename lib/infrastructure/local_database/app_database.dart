@@ -306,6 +306,20 @@ class ImportExportRowResults extends Table {
   TextColumn get safeErrorMessage => text().nullable()();
 }
 
+@DataClassName('PendingDiscogsDeletionRow')
+class PendingDiscogsDeletions extends Table {
+  TextColumn get id => text()();
+  TextColumn get entityType => text()();
+  IntColumn get discogsReleaseId => integer()();
+  IntColumn get discogsInstanceId => integer().nullable()();
+  TextColumn get artist => text()();
+  TextColumn get title => text()();
+  DateTimeColumn get createdAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 // ---------------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------------
@@ -318,13 +332,14 @@ class ImportExportRowResults extends Table {
     RetryActions,
     ImportExportJobs,
     ImportExportRowResults,
+    PendingDiscogsDeletions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -357,6 +372,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 9) {
         await m.addColumn(collectionItems, collectionItems.discogsInstanceId);
+      }
+      if (from < 10) {
+        await m.createTable(pendingDiscogsDeletions);
       }
     },
   );

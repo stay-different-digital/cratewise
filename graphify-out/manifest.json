@@ -195,9 +195,9 @@
     "semantic_hash": "7f9661dbea718afab8776d289f299053"
   },
   "lib/application/use_cases/build_collection_import_preview_use_case.dart": {
-    "mtime": 1780407171.3563259,
-    "ast_hash": "a6e6a4a51fe8bc17502481d8ef98c94f",
-    "semantic_hash": "a6e6a4a51fe8bc17502481d8ef98c94f"
+    "mtime": 1781381812.8909242,
+    "ast_hash": "fadb46864a920bd4e5fd0e1dec9cecfd",
+    "semantic_hash": ""
   },
   "lib/application/use_cases/build_wishlist_csv_export_preview_use_case.dart": {
     "mtime": 1780474477.5126307,
@@ -245,13 +245,13 @@
     "semantic_hash": "9efd5169b57487e76f1e4576e504a1b2"
   },
   "lib/application/use_cases/execute_collection_export_use_case.dart": {
-    "mtime": 1780994316.1928782,
-    "ast_hash": "a1136f474319ea454809b35c5a5a8140",
-    "semantic_hash": "a1136f474319ea454809b35c5a5a8140"
+    "mtime": 1781381867.569498,
+    "ast_hash": "c93ba525c6c223afaf23318aeaf7ca69",
+    "semantic_hash": ""
   },
   "lib/application/use_cases/execute_collection_import_use_case.dart": {
-    "mtime": 1781379561.094013,
-    "ast_hash": "f97ff963ff7b28b389298805d3890a81",
+    "mtime": 1781381836.0748088,
+    "ast_hash": "a39f7509a7ae801ed3ccaa1906dc1c25",
     "semantic_hash": ""
   },
   "lib/application/use_cases/execute_wishlist_csv_export_use_case.dart": {
@@ -320,14 +320,14 @@
     "semantic_hash": "b6dfccaf6d754e8ab9eccc7fa9d7b001"
   },
   "lib/domain/models/collection_import_preview.dart": {
-    "mtime": 1780407163.529428,
-    "ast_hash": "881eaa4144265e557c4bfc89f3b96184",
-    "semantic_hash": "881eaa4144265e557c4bfc89f3b96184"
+    "mtime": 1781381799.285491,
+    "ast_hash": "abdded66db8cb514283e20f99fddbac4",
+    "semantic_hash": ""
   },
   "lib/domain/models/collection_item.dart": {
-    "mtime": 1780597366.9556046,
-    "ast_hash": "850a17d5ba1593229df515d74366806e",
-    "semantic_hash": "850a17d5ba1593229df515d74366806e"
+    "mtime": 1781381663.2796314,
+    "ast_hash": "175d9ac458751daa4a277748c9e32a5e",
+    "semantic_hash": ""
   },
   "lib/domain/models/connection_status.dart": {
     "mtime": 1780230727.4939249,
@@ -490,9 +490,9 @@
     "semantic_hash": "9be6ead82bf2321e2dd63aeef91bca9e"
   },
   "lib/infrastructure/discogs/discogs_api_client.dart": {
-    "mtime": 1781174350.3642888,
-    "ast_hash": "73b2cf7a39de03542db737bab0bad503",
-    "semantic_hash": "73b2cf7a39de03542db737bab0bad503"
+    "mtime": 1781381772.028918,
+    "ast_hash": "8cf8687c05315c66ea8fe37f45357975",
+    "semantic_hash": ""
   },
   "lib/infrastructure/discogs/dto/discogs_collection_item.dart": {
     "mtime": 1780649389.101373,
@@ -520,14 +520,14 @@
     "semantic_hash": "bbb8d642d7af1212203cf8ce344e028e"
   },
   "lib/infrastructure/local_database/app_database.dart": {
-    "mtime": 1780597325.7729745,
-    "ast_hash": "d0cb72e0d40848eb91ba6eab45632a12",
-    "semantic_hash": "d0cb72e0d40848eb91ba6eab45632a12"
+    "mtime": 1781381877.4795551,
+    "ast_hash": "58f3374577a3069fdb8e272cacb3c3be",
+    "semantic_hash": ""
   },
   "lib/infrastructure/local_database/app_database.g.dart": {
-    "mtime": 1780597334.9807935,
-    "ast_hash": "d316885def10de4cdb6f258824fc260e",
-    "semantic_hash": "d316885def10de4cdb6f258824fc260e"
+    "mtime": 1781381752.9478981,
+    "ast_hash": "9745fee6e0faf46c55ef3df3188f9f66",
+    "semantic_hash": ""
   },
   "lib/infrastructure/local_database/local_cached_release_metadata_repository.dart": {
     "mtime": 1780577392.2525012,
@@ -535,9 +535,9 @@
     "semantic_hash": "9afbc5e0be2e9c9a13bbeceb167b3b9b"
   },
   "lib/infrastructure/local_database/local_collection_repository.dart": {
-    "mtime": 1780579509.5561442,
-    "ast_hash": "a60d4744c528ea9e0a2a101e75ab5134",
-    "semantic_hash": "a60d4744c528ea9e0a2a101e75ab5134"
+    "mtime": 1781381725.6632977,
+    "ast_hash": "4c8d3cc2a9c76dbd9c940de6619049d6",
+    "semantic_hash": ""
   },
   "lib/infrastructure/local_database/local_import_export_job_repository.dart": {
     "mtime": 1781015999.4229999,
@@ -800,9 +800,9 @@
     "semantic_hash": "4137ccc54b63c871eee91c0436828c7e"
   },
   "test/application/use_cases/build_collection_import_preview_use_case_test.dart": {
-    "mtime": 1780579509.752348,
-    "ast_hash": "8d6a19fc99cb45d7a127b72094c1b792",
-    "semantic_hash": "8d6a19fc99cb45d7a127b72094c1b792"
+    "mtime": 1781382035.6531565,
+    "ast_hash": "096e1b8ddd9519589e0034385f78ad7d",
+    "semantic_hash": ""
   },
   "test/application/use_cases/build_wishlist_csv_export_preview_use_case_test.dart": {
     "mtime": 1780579509.7538593,
@@ -850,14 +850,14 @@
     "semantic_hash": "9e83ae2fb0f839feb6f794afc4b9e167"
   },
   "test/application/use_cases/execute_collection_export_use_case_test.dart": {
-    "mtime": 1781010739.1239169,
-    "ast_hash": "0104256e19b5a3bad6c005e35178cc12",
-    "semantic_hash": "0104256e19b5a3bad6c005e35178cc12"
+    "mtime": 1781382158.884742,
+    "ast_hash": "e6051ff9715baa14b2596750d7cde6ad",
+    "semantic_hash": ""
   },
   "test/application/use_cases/execute_collection_import_use_case_test.dart": {
-    "mtime": 1781010739.1288223,
-    "ast_hash": "4b13a16314237d4dab2f4a661ce36c65",
-    "semantic_hash": "4b13a16314237d4dab2f4a661ce36c65"
+    "mtime": 1781382019.9458148,
+    "ast_hash": "34dce98610ad6546ae143f0da0350219",
+    "semantic_hash": ""
   },
   "test/application/use_cases/execute_wishlist_csv_export_use_case_test.dart": {
     "mtime": 1781010739.1301544,
@@ -915,9 +915,9 @@
     "semantic_hash": "3e5e515b3eec08c4afce776a9e54d20e"
   },
   "test/domain/models/collection_item_serialization_test.dart": {
-    "mtime": 1780597893.7074115,
-    "ast_hash": "ce6e7c62989756e6abe2fc19362a0f2a",
-    "semantic_hash": "ce6e7c62989756e6abe2fc19362a0f2a"
+    "mtime": 1781381995.1849456,
+    "ast_hash": "76ff903d66193eb903b17bbf45ef543f",
+    "semantic_hash": ""
   },
   "test/domain/models/collection_item_test.dart": {
     "mtime": 1780579509.802066,
@@ -1020,9 +1020,9 @@
     "semantic_hash": "6818db2ddadcaadf83c65e93f6facf51"
   },
   "test/infrastructure/discogs/discogs_api_client_test.dart": {
-    "mtime": 1781174350.365865,
-    "ast_hash": "d19dda4d48b8468ef9fb4d55327afa0d",
-    "semantic_hash": "d19dda4d48b8468ef9fb4d55327afa0d"
+    "mtime": 1781381935.9158819,
+    "ast_hash": "92de9c9c0cac19cba3db44b9384dd0ea",
+    "semantic_hash": ""
   },
   "test/infrastructure/local_database/local_cached_release_metadata_repository_test.dart": {
     "mtime": 1780577392.2710207,
