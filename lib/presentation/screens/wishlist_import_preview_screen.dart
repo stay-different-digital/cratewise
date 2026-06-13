@@ -5,6 +5,7 @@ import '../../application/use_cases/execute_wishlist_import_use_case.dart';
 import '../../application/use_cases/fetch_wishlist_import_preview_use_case.dart';
 import '../../domain/models/wishlist_import_preview.dart';
 import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/database_transaction_runner.dart';
 import '../../infrastructure/local_database/local_import_export_job_repository.dart';
 import '../../infrastructure/local_database/local_import_export_row_result_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
@@ -46,7 +47,10 @@ class _Error extends _PreviewState {
 }
 
 class _Importing extends _PreviewState {
-  const _Importing();
+  const _Importing({this.current = 0, this.total = 0, this.currentItem = ''});
+  final int current;
+  final int total;
+  final String currentItem;
 }
 
 class _ImportDone extends _PreviewState {
@@ -97,6 +101,7 @@ class _WishlistImportPreviewScreenState
         wishlistRepository: wishlistRepo,
         jobRepository: LocalImportExportJobRepository(db),
         rowResultRepository: LocalImportExportRowResultRepository(db),
+        transactionRunner: DatabaseTransactionRunner(db),
       );
     }
     _load();
@@ -121,7 +126,19 @@ class _WishlistImportPreviewScreenState
     final uc = _executeUseCase;
     if (uc == null) return;
     setState(() => _state = const _Importing());
-    final result = await uc.execute(preview);
+    final result = await uc.execute(
+      preview,
+      onProgress: (current, total, item) {
+        if (!mounted) return;
+        setState(
+          () => _state = _Importing(
+            current: current,
+            total: total,
+            currentItem: item,
+          ),
+        );
+      },
+    );
     if (!mounted) return;
     switch (result) {
       case ExecuteWishlistImportCompleted():
@@ -170,7 +187,12 @@ class _WishlistImportPreviewScreenState
           message: 'Something went wrong. Check your connection and try again.',
           onRetry: _load,
         ),
-        _Importing() => const _ImportingBody(),
+        _Importing(:final current, :final total, :final currentItem) =>
+          _ImportingBody(
+            current: current,
+            total: total,
+            currentItem: currentItem,
+          ),
         _ImportDone(:final result) => _ImportSummaryBody(
           result: result,
           onDone: () => Navigator.of(context).pop(),
@@ -433,21 +455,51 @@ class _ConfirmBar extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ImportingBody extends StatelessWidget {
-  const _ImportingBody();
+  const _ImportingBody({
+    this.current = 0,
+    this.total = 0,
+    this.currentItem = '',
+  });
+
+  final int current;
+  final int total;
+  final String currentItem;
 
   @override
   Widget build(BuildContext context) {
+    final hasProgress = total > 0;
+    final theme = Theme.of(context);
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 16),
-          Text(
-            'Saving your wishlist…',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasProgress)
+              LinearProgressIndicator(value: current / total)
+            else
+              const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            Text(
+              hasProgress
+                  ? 'Importing item $current of $total…'
+                  : 'Saving your wishlist…',
+              style: theme.textTheme.bodyMedium,
+            ),
+            if (hasProgress && currentItem.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                currentItem,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

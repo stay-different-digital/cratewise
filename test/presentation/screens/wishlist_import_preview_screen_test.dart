@@ -105,8 +105,9 @@ class _FakeExecuteUseCase extends ExecuteWishlistImportUseCase {
 
   @override
   Future<ExecuteWishlistImportResult> execute(
-    WishlistImportPreview preview,
-  ) async {
+    WishlistImportPreview preview, {
+    void Function(int current, int total, String description)? onProgress,
+  }) async {
     executeCalled = true;
     return _result;
   }
@@ -836,8 +837,9 @@ class _SlowFakeExecuteUseCase extends ExecuteWishlistImportUseCase {
 
   @override
   Future<ExecuteWishlistImportResult> execute(
-    WishlistImportPreview preview,
-  ) async {
+    WishlistImportPreview preview, {
+    void Function(int current, int total, String description)? onProgress,
+  }) async {
     onExecute();
     // Yield to the event loop once so the _Importing state can render.
     await Future<void>.delayed(Duration.zero);

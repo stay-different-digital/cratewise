@@ -105,8 +105,9 @@ class _FakeExecuteUseCase extends ExecuteCollectionImportUseCase {
 
   @override
   Future<ExecuteCollectionImportResult> execute(
-    CollectionImportPreview preview,
-  ) async {
+    CollectionImportPreview preview, {
+    void Function(int current, int total, String description)? onProgress,
+  }) async {
     executeCalled = true;
     return _result;
   }
@@ -881,8 +882,9 @@ class _SlowFakeExecuteUseCase extends ExecuteCollectionImportUseCase {
 
   @override
   Future<ExecuteCollectionImportResult> execute(
-    CollectionImportPreview preview,
-  ) async {
+    CollectionImportPreview preview, {
+    void Function(int current, int total, String description)? onProgress,
+  }) async {
     onExecute();
     // Yield to the event loop once so the _Importing state can render.
     await Future<void>.delayed(Duration.zero);
