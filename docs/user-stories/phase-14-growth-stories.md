@@ -10,6 +10,18 @@ Numbering continues from the Phase 13 stories (US-68 … US-71).
 
 **5 SP · S4 (feature request, post-1.0)**
 
+**Status (2026-06-13): implemented in 6 slices** (commits `US-72 slice 1…5`).
+Collection instance_id capture; PendingDiscogsDeletion tombstone model +
+Drift storage (schema v10); opt-in "also remove from Discogs" checkbox in
+the collection/wishlist delete dialogs; Discogs DELETE endpoints;
+ExecutePendingDeletionsUseCase (back-off, tombstone cleanup); a
+PendingDeletionsScreen with preview-and-confirm + per-item progress, reached
+from the Import & Export hub; and collection re-import classifies a
+tombstoned release as a conflict (kept off Discogs) instead of re-importing.
+**Remaining (symmetry follow-up):** the wishlist *import* preview does not yet
+surface re-import conflicts (only the collection import does); add a
+`ConflictWishlistRow` mirroring the collection path when picking this up.
+
 > As a user who curates my collection in Cratewise,
 > I want the option to remove a record from my Discogs collection when I delete it locally,
 > so that exporting keeps Discogs in step with my real collection instead of only ever growing it.
