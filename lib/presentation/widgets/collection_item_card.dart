@@ -152,16 +152,32 @@ class _LocalCoverThumbnail extends StatefulWidget {
 }
 
 class _LocalCoverThumbnailState extends State<_LocalCoverThumbnail> {
-  late final Future<String?> _pathFuture;
+  late Future<String?> _pathFuture;
 
   @override
   void initState() {
     super.initState();
-    _pathFuture =
-        widget.cacheService?.getOrFetch(widget.releaseId, widget.coverUrl) ??
-        widget.repository?.getLocalPath(widget.releaseId) ??
-        Future<String?>.value();
+    _pathFuture = _resolve();
   }
+
+  @override
+  void didUpdateWidget(_LocalCoverThumbnail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // List builders reuse this State for a different item when scrolling or
+    // filtering (cards have no per-item keys) — re-resolve so the cover
+    // never belongs to the previous item (US-78).
+    if (oldWidget.releaseId != widget.releaseId ||
+        oldWidget.coverUrl != widget.coverUrl) {
+      setState(() {
+        _pathFuture = _resolve();
+      });
+    }
+  }
+
+  Future<String?> _resolve() =>
+      widget.cacheService?.getOrFetch(widget.releaseId, widget.coverUrl) ??
+      widget.repository?.getLocalPath(widget.releaseId) ??
+      Future<String?>.value();
 
   Widget _placeholder() => Semantics(
     label: 'No cover image',

@@ -244,3 +244,30 @@ cached when the detail page was viewed). QA suggested lazy loading.
   back to the item's `coverUrl` — the same root cause as US-75, one layer up.
 - Thumbnail downloads hit the Discogs image CDN (uri150, small files), not
   the rate-limited API.
+
+---
+
+### US-78: List cards never show another record's thumbnail
+
+**S2 · 1 SP**
+
+> As a collector scrolling or filtering my wishlist or collection,
+> I want every card to show its own record's cover,
+> so that I never mistake one record for another.
+
+**Acceptance criteria:**
+- Scrolling and filtering the wishlist and collection lists (and iPad grids) never shows a thumbnail belonging to a different item.
+- The thumbnail widget re-resolves its cover whenever the card it sits in is rebuilt for a different item (different release ID or cover URL).
+- While re-resolving, the placeholder shows briefly rather than the previous item's stale cover.
+- A widget test rebuilds a card in place with a different item and asserts the new item's cover is requested and rendered.
+
+**Found during:** Beta QA (2026-06-12): wishlist list page shows the wrong
+thumbnail on some cards.
+
+**Investigation notes:**
+- `_LocalCoverThumbnail` (both cards) resolved its cover once in `initState`
+  into a `late final` future. The list builders create cards without
+  per-item keys, so Flutter reuses the State object for a different item
+  when filtering/scrolling — the future still held the old item's cover.
+- Same class of bug as the detail-screen cover, which already re-resolves in
+  `didUpdateWidget` (US-75); the cards lacked that.

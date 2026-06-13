@@ -1003,7 +1003,9 @@ class _CachedCoverImageState extends State<_CachedCoverImage> {
     // cover URL the local item lacks — re-resolve when that happens.
     if (oldWidget.coverUrl != widget.coverUrl ||
         oldWidget.releaseId != widget.releaseId) {
-      setState(() => _pathFuture = _resolve());
+      setState(() {
+        _pathFuture = _resolve();
+      });
     }
   }
 

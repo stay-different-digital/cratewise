@@ -145,6 +145,86 @@ void main() {
     });
   });
 
+  group('List cards — thumbnail follows the item on rebuild (US-78)', () {
+    testWidgets('rebuilding a wishlist card in place with a different item '
+        're-requests that item\'s cover', (tester) async {
+      final cache = _FakeThumbnailCacheService(pathToReturn: _writeTempPng());
+      await tester.pumpWidget(
+        _wrap(
+          WishlistItemCard(
+            item: _makeWishlistItem(),
+            thumbnailCacheService: cache,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(cache.calls, [(193467, _coverUrl)]);
+
+      // Same widget position, different item — simulates the list builder
+      // reusing the card's State while scrolling or filtering.
+      const otherUrl = 'https://i.discogs.com/other-150.jpg';
+      await tester.pumpWidget(
+        _wrap(
+          WishlistItemCard(
+            item: WishlistItem(
+              id: 'w-2',
+              discogsReleaseId: 555,
+              artist: 'Other Artist',
+              title: 'Other Album',
+              priority: WishlistPriority.medium,
+              coverUrl: otherUrl,
+              createdAt: DateTime(2026, 6, 1),
+              updatedAt: DateTime(2026, 6, 1),
+            ),
+            thumbnailCacheService: cache,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(cache.calls, [(193467, _coverUrl), (555, otherUrl)]);
+    });
+
+    testWidgets('rebuilding a collection card in place with a different item '
+        're-requests that item\'s cover', (tester) async {
+      final cache = _FakeThumbnailCacheService(pathToReturn: _writeTempPng());
+      await tester.pumpWidget(
+        _wrap(
+          CollectionItemCard(
+            item: _makeCollectionItem(),
+            thumbnailCacheService: cache,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      const otherUrl = 'https://i.discogs.com/other-150.jpg';
+      await tester.pumpWidget(
+        _wrap(
+          CollectionItemCard(
+            item: CollectionItem(
+              id: 'c-2',
+              discogsReleaseId: 555,
+              artist: 'Other Artist',
+              title: 'Other Album',
+              coverUrl: otherUrl,
+              mediaCondition: RecordCondition.notSet,
+              sleeveCondition: RecordCondition.notSet,
+              tags: const [],
+              syncStatus: SyncStatus.localOnly,
+              createdAt: DateTime(2026, 6, 1),
+              updatedAt: DateTime(2026, 6, 1),
+            ),
+            thumbnailCacheService: cache,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(cache.calls, [(193467, _coverUrl), (555, otherUrl)]);
+    });
+  });
+
   group('WishlistItemCard — lazy thumbnail (US-77)', () {
     testWidgets('requests the cover via getOrFetch with the item cover URL', (
       tester,

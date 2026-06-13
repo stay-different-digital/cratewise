@@ -815,7 +815,9 @@ class _CachedCoverImageState extends State<_CachedCoverImage> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.coverUrl != widget.coverUrl ||
         oldWidget.releaseId != widget.releaseId) {
-      setState(() => _pathFuture = _resolve());
+      setState(() {
+        _pathFuture = _resolve();
+      });
     }
   }
 
