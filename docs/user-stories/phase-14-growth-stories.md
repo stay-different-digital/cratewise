@@ -247,3 +247,39 @@ by US-72 — this story reuses it from a new entry point.
   (deletion-sync) are the direct precedents; US-80 established the membership
   refresh-on-return that makes the search list reflect the removal.
 - Roadmap fit: Phase 14 UX polish — symmetric add/remove in the discovery flow.
+
+**Status (2026-06-14): implemented.**
+
+- `ReleaseDetailScreen` now takes an optional `PendingDiscogsDeletionRepository`
+  (owned-db branch falls back to `LocalPendingDiscogsDeletionRepository`) and
+  exposes a `Remove from Collection` / `Remove from Wishlist` overflow menu
+  (`Key('detail-remove-menu')`) in the app bar whenever the release is saved
+  (`_inCollection` / `_onWishlist`, derived from `_AddState.added`/`duplicate`).
+  This reuses the app's established US-72 remove pattern (the Collection /
+  Wishlist detail screens put removal in an app-bar overflow menu) rather than
+  re-purposing the disabled "In Collection" / "In Wishlist" bottom-bar
+  indicator — keeping that indicator's behaviour (and its tests) unchanged while
+  making removal reachable from the same screen.
+- The local item id is resolved on demand via `getAll()` + a linear scan on
+  `discogsReleaseId` (the getAll-derived approach from US-80), avoiding a new
+  `getByReleaseId` method across the ~44 repository fakes. If the item is already
+  gone, the button silently resets to "Add"; if `getAll()` throws, a
+  non-destructive snackbar is shown and the saved state is preserved.
+- The confirm dialog is inlined per the existing precedent (each detail screen
+  inlines its own): collection uses the `instance_id` opt-in
+  (`DeletionEntityType.collection`, "Also remove from my Discogs collection",
+  else "Your Discogs collection is not affected."); wishlist uses the
+  synced-by-release-id opt-in (`DeletionEntityType.wishlist`, "Also remove from
+  my Discogs wantlist", else "Your Discogs account is not affected."). On success
+  the relevant `_AddState` resets to `idle` and a "Removed from your collection /
+  wishlist" snackbar appears; the other button is untouched.
+- Works in both the live `_Loaded` and offline `_CachedLoaded` states. Returning
+  to search re-resolves the US-80 membership icons via the existing
+  `RouteAware.didPopNext`.
+- Tests: 13 new widget tests in `release_detail_screen_test.dart` cover the menu
+  appearing only when saved (collection-only / both), reset-to-Add + snackbar on
+  removal, cancel preserving state, the opt-in collection (instance id) and
+  wishlist (release-id, no instance) tombstones, default removal recording no
+  tombstone, the unsynced-wishlist no-propagate case, the remove-failure and
+  resolve-failure non-destructive paths, and removal from the cached state.
+  Suite 2370 → 2383, all green; analyze introduces no new issues.

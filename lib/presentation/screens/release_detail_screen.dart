@@ -2,20 +2,27 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:uuid/uuid.dart';
+
 import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/services/thumbnail_cache_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/collection_item.dart';
 import '../../domain/models/cached_release_metadata.dart';
+import '../../domain/models/pending_discogs_deletion.dart';
 import '../../domain/models/release_detail.dart';
+import '../../domain/models/sync_status.dart';
+import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
+import '../../domain/repositories/pending_discogs_deletion_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
 import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
@@ -56,6 +63,12 @@ class _DetailError extends _DetailState {
 enum _AddState { idle, adding, added, duplicate }
 
 // ---------------------------------------------------------------------------
+// Remove actions (US-81)
+// ---------------------------------------------------------------------------
+
+enum _RemoveAction { collection, wishlist }
+
+// ---------------------------------------------------------------------------
 // Screen
 // ---------------------------------------------------------------------------
 
@@ -73,6 +86,7 @@ class ReleaseDetailScreen extends StatefulWidget {
     this.cacheRepository,
     this.thumbnailCacheService,
     this.thumbnailRepository,
+    this.deletionRepository,
   });
 
   final int releaseId;
@@ -86,6 +100,7 @@ class ReleaseDetailScreen extends StatefulWidget {
   final CachedReleaseMetadataRepository? cacheRepository;
   final ThumbnailCacheService? thumbnailCacheService;
   final ThumbnailRepository? thumbnailRepository;
+  final PendingDiscogsDeletionRepository? deletionRepository;
 
   @override
   State<ReleaseDetailScreen> createState() => _ReleaseDetailScreenState();
@@ -98,6 +113,7 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   late final CachedReleaseMetadataRepository? _cacheRepository;
   CollectionRepository? _collectionRepository;
   WishlistRepository? _wishlistRepository;
+  PendingDiscogsDeletionRepository? _deletionRepository;
   AppDatabase? _ownedDb;
 
   _DetailState _state = const _Loading();
@@ -115,6 +131,7 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
       _cacheRepository = widget.cacheRepository;
       _collectionRepository = widget.collectionRepository;
       _wishlistRepository = widget.wishlistRepository;
+      _deletionRepository = widget.deletionRepository;
       _service =
           widget.detailService ??
           DiscogsReleaseDetailService(
@@ -136,6 +153,9 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
           widget.addToWishlistUseCase ?? AddToWishlistUseCase(wishlistRepo);
       _cacheRepository =
           widget.cacheRepository ?? LocalCachedReleaseMetadataRepository(db);
+      _deletionRepository =
+          widget.deletionRepository ??
+          LocalPendingDiscogsDeletionRepository(db);
       _service =
           widget.detailService ??
           DiscogsReleaseDetailService(
@@ -332,6 +352,263 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     }
   }
 
+  // -------------------------------------------------------------------------
+  // Remove from collection / wishlist (US-81)
+  // -------------------------------------------------------------------------
+
+  bool get _inCollection =>
+      _addState == _AddState.added || _addState == _AddState.duplicate;
+
+  bool get _onWishlist =>
+      _addWishlistState == _AddState.added ||
+      _addWishlistState == _AddState.duplicate;
+
+  /// Resolves the local collection item for this release (the detail screen
+  /// only holds the Discogs release id, not the item id) and runs the remove
+  /// flow. Mirrors US-80's getAll-derived lookup to avoid a new repository
+  /// method across the test fakes.
+  Future<void> _handleRemoveFromCollection() async {
+    final repo = _collectionRepository;
+    if (repo == null) return;
+    CollectionItem? item;
+    try {
+      final all = await repo.getAll();
+      for (final i in all) {
+        if (i.discogsReleaseId == widget.releaseId) {
+          item = i;
+          break;
+        }
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not remove from collection. Please try again.'),
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
+    if (item == null) {
+      // Already gone — re-enable the button so the user can add again.
+      setState(() => _addState = _AddState.idle);
+      return;
+    }
+    await _confirmRemoveFromCollection(item);
+  }
+
+  Future<void> _confirmRemoveFromCollection(CollectionItem item) async {
+    // Only items we hold a Discogs instance id for can propagate the removal
+    // to Discogs; for those, offer opt-in propagation (US-72).
+    final canRemoveFromDiscogs =
+        _deletionRepository != null && item.discogsInstanceId != null;
+    var alsoFromDiscogs = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          title: const Text('Remove from Collection?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'This removes the item from your Cratewise collection.',
+              ),
+              if (canRemoveFromDiscogs)
+                CheckboxListTile(
+                  key: const Key('also-remove-from-discogs-checkbox'),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: alsoFromDiscogs,
+                  onChanged: (v) =>
+                      setLocalState(() => alsoFromDiscogs = v ?? false),
+                  title: const Text('Also remove from my Discogs collection'),
+                )
+              else
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('Your Discogs collection is not affected.'),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              key: const Key('cancel-remove-button'),
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              key: const Key('confirm-remove-button'),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(ctx).colorScheme.error,
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _removeFromCollection(item, alsoFromDiscogs: alsoFromDiscogs);
+    }
+  }
+
+  Future<void> _removeFromCollection(
+    CollectionItem item, {
+    bool alsoFromDiscogs = false,
+  }) async {
+    try {
+      if (alsoFromDiscogs && item.discogsInstanceId != null) {
+        await _deletionRepository?.add(
+          PendingDiscogsDeletion(
+            id: const Uuid().v4(),
+            entityType: DeletionEntityType.collection,
+            discogsReleaseId: item.discogsReleaseId,
+            discogsInstanceId: item.discogsInstanceId,
+            artist: item.artist,
+            title: item.title,
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
+      await _collectionRepository!.remove(item.id);
+      if (!mounted) return;
+      setState(() => _addState = _AddState.idle);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Removed from your collection')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not remove from collection. Please try again.'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleRemoveFromWishlist() async {
+    final repo = _wishlistRepository;
+    if (repo == null) return;
+    WishlistItem? item;
+    try {
+      final all = await repo.getAll();
+      for (final i in all) {
+        if (i.discogsReleaseId == widget.releaseId) {
+          item = i;
+          break;
+        }
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not remove from wishlist. Please try again.'),
+        ),
+      );
+      return;
+    }
+    if (!mounted) return;
+    if (item == null) {
+      setState(() => _addWishlistState = _AddState.idle);
+      return;
+    }
+    await _confirmRemoveFromWishlist(item);
+  }
+
+  Future<void> _confirmRemoveFromWishlist(WishlistItem item) async {
+    // A synced wantlist entry can be removed from Discogs by release id (no
+    // instance id needed); offer opt-in propagation (US-72).
+    final canRemoveFromDiscogs =
+        _deletionRepository != null && item.syncStatus == SyncStatus.synced;
+    var alsoFromDiscogs = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocalState) => AlertDialog(
+          title: const Text('Remove from Wishlist?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('This removes the item from your Cratewise wishlist.'),
+              if (canRemoveFromDiscogs)
+                CheckboxListTile(
+                  key: const Key('also-remove-from-discogs-checkbox'),
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: alsoFromDiscogs,
+                  onChanged: (v) =>
+                      setLocalState(() => alsoFromDiscogs = v ?? false),
+                  title: const Text('Also remove from my Discogs wantlist'),
+                )
+              else
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('Your Discogs account is not affected.'),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              key: const Key('cancel-remove-button'),
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              key: const Key('confirm-remove-button'),
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(ctx).colorScheme.error,
+              ),
+              child: const Text('Remove'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await _removeFromWishlist(item, alsoFromDiscogs: alsoFromDiscogs);
+    }
+  }
+
+  Future<void> _removeFromWishlist(
+    WishlistItem item, {
+    bool alsoFromDiscogs = false,
+  }) async {
+    try {
+      if (alsoFromDiscogs && item.syncStatus == SyncStatus.synced) {
+        await _deletionRepository?.add(
+          PendingDiscogsDeletion(
+            id: const Uuid().v4(),
+            entityType: DeletionEntityType.wishlist,
+            discogsReleaseId: item.discogsReleaseId,
+            artist: item.artist,
+            title: item.title,
+            createdAt: DateTime.now(),
+          ),
+        );
+      }
+      await _wishlistRepository!.remove(item.id);
+      if (!mounted) return;
+      setState(() => _addWishlistState = _AddState.idle);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Removed from your wishlist')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not remove from wishlist. Please try again.'),
+        ),
+      );
+    }
+  }
+
   static bool _isRetriable(AppError e) =>
       e is! NoTokenError && e is! InvalidTokenError;
 
@@ -360,9 +637,41 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final state = _state;
+    final canRemove =
+        (state is _Loaded || state is _CachedLoaded) &&
+        (_inCollection || _onWishlist);
     return Scaffold(
       appBar: AppBar(
         title: Text(_appBarTitle, overflow: TextOverflow.ellipsis, maxLines: 1),
+        actions: canRemove
+            ? [
+                PopupMenuButton<_RemoveAction>(
+                  key: const Key('detail-remove-menu'),
+                  onSelected: (action) {
+                    switch (action) {
+                      case _RemoveAction.collection:
+                        _handleRemoveFromCollection();
+                      case _RemoveAction.wishlist:
+                        _handleRemoveFromWishlist();
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    if (_inCollection)
+                      const PopupMenuItem(
+                        key: Key('remove-from-collection-item'),
+                        value: _RemoveAction.collection,
+                        child: Text('Remove from Collection'),
+                      ),
+                    if (_onWishlist)
+                      const PopupMenuItem(
+                        key: Key('remove-from-wishlist-item'),
+                        value: _RemoveAction.wishlist,
+                        child: Text('Remove from Wishlist'),
+                      ),
+                  ],
+                ),
+              ]
+            : null,
       ),
       body: switch (state) {
         _Loading() => _SkeletonBody(

@@ -5,11 +5,13 @@ import 'package:cratewise/application/use_cases/add_to_collection_use_case.dart'
 import 'package:cratewise/application/use_cases/add_to_wishlist_use_case.dart';
 import 'package:cratewise/domain/models/cached_release_metadata.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
+import 'package:cratewise/domain/models/pending_discogs_deletion.dart';
 import 'package:cratewise/domain/models/release_detail.dart';
 import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/pending_discogs_deletion_repository.dart';
 import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
@@ -228,6 +230,117 @@ class _FakeWishlistRepository implements WishlistRepository {
 AddToWishlistUseCase _newWishlistUseCase({bool alreadyContains = false}) =>
     AddToWishlistUseCase(
       _FakeWishlistRepository(alreadyContains: alreadyContains),
+    );
+
+// US-81 — repositories that hold real items so the detail screen can resolve
+// the local item id from the Discogs release id and remove it.
+
+class _RemovableCollectionRepository implements CollectionRepository {
+  _RemovableCollectionRepository(
+    this.items, {
+    this.throwOnGetAll = false,
+    this.throwOnRemove = false,
+  });
+
+  final List<CollectionItem> items;
+  final bool throwOnGetAll;
+  final bool throwOnRemove;
+  final List<String> removed = [];
+
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async =>
+      items.any((i) => i.discogsReleaseId == discogsReleaseId);
+
+  @override
+  Future<List<CollectionItem>> getAll() async {
+    if (throwOnGetAll) throw const StorageError();
+    return items;
+  }
+
+  @override
+  Future<void> remove(String id) async {
+    if (throwOnRemove) throw const StorageError();
+    removed.add(id);
+    items.removeWhere((i) => i.id == id);
+  }
+
+  @override
+  Future<CollectionItem?> getById(String id) async => null;
+  @override
+  Future<void> add(CollectionItem item) async {}
+  @override
+  Future<void> update(CollectionItem item) async {}
+}
+
+class _RemovableWishlistRepository implements WishlistRepository {
+  _RemovableWishlistRepository(this.items);
+
+  final List<WishlistItem> items;
+  final List<String> removed = [];
+
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async =>
+      items.any((i) => i.discogsReleaseId == discogsReleaseId);
+
+  @override
+  Future<List<WishlistItem>> getAll() async => items;
+
+  @override
+  Future<void> remove(String id) async {
+    removed.add(id);
+    items.removeWhere((i) => i.id == id);
+  }
+
+  @override
+  Future<WishlistItem?> getById(String id) async => null;
+  @override
+  Future<void> add(WishlistItem item) async {}
+  @override
+  Future<void> update(WishlistItem item) async {}
+}
+
+class _SpyDeletionRepository implements PendingDiscogsDeletionRepository {
+  final List<PendingDiscogsDeletion> added = [];
+
+  @override
+  Future<void> add(PendingDiscogsDeletion deletion) async =>
+      added.add(deletion);
+  @override
+  Future<List<PendingDiscogsDeletion>> getByType(
+    DeletionEntityType type,
+  ) async => [];
+  @override
+  Future<bool> containsRelease(int id, DeletionEntityType type) async => false;
+  @override
+  Future<void> remove(String id) async {}
+  @override
+  Future<void> removeByRelease(int id, DeletionEntityType type) async {}
+}
+
+CollectionItem _collectionItemFor({int? discogsInstanceId}) => CollectionItem(
+  id: 'c-1',
+  discogsReleaseId: 249504,
+  artist: 'Miles Davis',
+  title: 'Kind Of Blue',
+  mediaCondition: RecordCondition.notSet,
+  sleeveCondition: RecordCondition.notSet,
+  tags: const [],
+  syncStatus: SyncStatus.synced,
+  discogsInstanceId: discogsInstanceId,
+  createdAt: DateTime(2026, 6, 1),
+  updatedAt: DateTime(2026, 6, 1),
+);
+
+WishlistItem _wishlistItemFor({SyncStatus syncStatus = SyncStatus.synced}) =>
+    WishlistItem(
+      id: 'w-1',
+      discogsReleaseId: 249504,
+      artist: 'Miles Davis',
+      title: 'Kind Of Blue',
+      priority: WishlistPriority.medium,
+      syncStatus: syncStatus,
+      createdAt: DateTime(2026, 6, 1),
+      updatedAt: DateTime(2026, 6, 1),
     );
 
 final _cachedKindOfBlue = CachedReleaseMetadata(
@@ -2239,5 +2352,353 @@ void main() {
         expect(repo.updates.first.sleeveCondition, RecordCondition.veryGood);
       },
     );
+  });
+
+  group('ReleaseDetailScreen — remove from collection/wishlist (US-81)', () {
+    Widget buildScreen({
+      required CollectionRepository collectionRepo,
+      required WishlistRepository wishlistRepo,
+      PendingDiscogsDeletionRepository? deletionRepo,
+      DiscogsReleaseDetailService? service,
+      CachedReleaseMetadataRepository? cacheRepo,
+    }) {
+      return _wrap(
+        ReleaseDetailScreen(
+          releaseId: 249504,
+          detailService: service ?? _LoadedService(detail: _kindOfBlue),
+          addToCollectionUseCase: AddToCollectionUseCase(collectionRepo),
+          addToWishlistUseCase: AddToWishlistUseCase(wishlistRepo),
+          collectionRepository: collectionRepo,
+          wishlistRepository: wishlistRepo,
+          deletionRepository: deletionRepo,
+          cacheRepository: cacheRepo,
+        ),
+      );
+    }
+
+    Future<void> openMenu(WidgetTester tester) async {
+      await tester.tap(find.byKey(const Key('detail-remove-menu')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('no remove menu when the release is saved in neither', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildScreen(
+          collectionRepo: _RemovableCollectionRepository([]),
+          wishlistRepo: _RemovableWishlistRepository([]),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('detail-remove-menu')), findsNothing);
+    });
+
+    testWidgets('remove menu offers only Collection when in collection only', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildScreen(
+          collectionRepo: _RemovableCollectionRepository([
+            _collectionItemFor(),
+          ]),
+          wishlistRepo: _RemovableWishlistRepository([]),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await openMenu(tester);
+      expect(find.text('Remove from Collection'), findsOneWidget);
+      expect(find.text('Remove from Wishlist'), findsNothing);
+    });
+
+    testWidgets(
+      'remove menu offers both when saved in collection and wishlist',
+      (tester) async {
+        await tester.pumpWidget(
+          buildScreen(
+            collectionRepo: _RemovableCollectionRepository([
+              _collectionItemFor(),
+            ]),
+            wishlistRepo: _RemovableWishlistRepository([_wishlistItemFor()]),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await openMenu(tester);
+        expect(find.text('Remove from Collection'), findsOneWidget);
+        expect(find.text('Remove from Wishlist'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'removing from collection resets the button to Add + snackbar',
+      (tester) async {
+        final repo = _RemovableCollectionRepository([_collectionItemFor()]);
+        await tester.pumpWidget(
+          buildScreen(
+            collectionRepo: repo,
+            wishlistRepo: _RemovableWishlistRepository([]),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('In Collection'), findsOneWidget);
+
+        await openMenu(tester);
+        await tester.tap(find.text('Remove from Collection'));
+        await tester.pumpAndSettle();
+        // Default dialog does not touch Discogs.
+        expect(
+          find.text('Your Discogs collection is not affected.'),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(const Key('confirm-remove-button')));
+        await tester.pumpAndSettle();
+
+        expect(repo.removed, ['c-1']);
+        expect(find.text('Removed from your collection'), findsOneWidget);
+        expect(find.text('Add to Collection'), findsOneWidget);
+        expect(find.text('In Collection'), findsNothing);
+      },
+    );
+
+    testWidgets('cancelling the remove dialog leaves the saved state intact', (
+      tester,
+    ) async {
+      final repo = _RemovableCollectionRepository([_collectionItemFor()]);
+      await tester.pumpWidget(
+        buildScreen(
+          collectionRepo: repo,
+          wishlistRepo: _RemovableWishlistRepository([]),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await openMenu(tester);
+      await tester.tap(find.text('Remove from Collection'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('cancel-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(repo.removed, isEmpty);
+      expect(find.text('In Collection'), findsOneWidget);
+    });
+
+    testWidgets('opt-in records a collection tombstone with the instance id', (
+      tester,
+    ) async {
+      final repo = _RemovableCollectionRepository([
+        _collectionItemFor(discogsInstanceId: 555),
+      ]);
+      final deletions = _SpyDeletionRepository();
+      await tester.pumpWidget(
+        buildScreen(
+          collectionRepo: repo,
+          wishlistRepo: _RemovableWishlistRepository([]),
+          deletionRepo: deletions,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await openMenu(tester);
+      await tester.tap(find.text('Remove from Collection'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const Key('also-remove-from-discogs-checkbox')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(deletions.added, hasLength(1));
+      final tombstone = deletions.added.single;
+      expect(tombstone.entityType, DeletionEntityType.collection);
+      expect(tombstone.discogsReleaseId, 249504);
+      expect(tombstone.discogsInstanceId, 555);
+      expect(repo.removed, ['c-1']);
+    });
+
+    testWidgets('default removal records no tombstone', (tester) async {
+      final repo = _RemovableCollectionRepository([
+        _collectionItemFor(discogsInstanceId: 555),
+      ]);
+      final deletions = _SpyDeletionRepository();
+      await tester.pumpWidget(
+        buildScreen(
+          collectionRepo: repo,
+          wishlistRepo: _RemovableWishlistRepository([]),
+          deletionRepo: deletions,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await openMenu(tester);
+      await tester.tap(find.text('Remove from Collection'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(deletions.added, isEmpty);
+      expect(repo.removed, ['c-1']);
+    });
+
+    testWidgets('removing from wishlist resets the button to Add + snackbar', (
+      tester,
+    ) async {
+      final repo = _RemovableWishlistRepository([_wishlistItemFor()]);
+      await tester.pumpWidget(
+        buildScreen(
+          collectionRepo: _RemovableCollectionRepository([]),
+          wishlistRepo: repo,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('In Wishlist'), findsOneWidget);
+
+      await openMenu(tester);
+      await tester.tap(find.text('Remove from Wishlist'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(repo.removed, ['w-1']);
+      expect(find.text('Removed from your wishlist'), findsOneWidget);
+      expect(find.text('Add to Wishlist'), findsOneWidget);
+      expect(find.text('In Wishlist'), findsNothing);
+    });
+
+    testWidgets(
+      'opt-in records a wishlist tombstone by release id (no instance id)',
+      (tester) async {
+        final repo = _RemovableWishlistRepository([
+          _wishlistItemFor(syncStatus: SyncStatus.synced),
+        ]);
+        final deletions = _SpyDeletionRepository();
+        await tester.pumpWidget(
+          buildScreen(
+            collectionRepo: _RemovableCollectionRepository([]),
+            wishlistRepo: repo,
+            deletionRepo: deletions,
+          ),
+        );
+        await tester.pumpAndSettle();
+        await openMenu(tester);
+        await tester.tap(find.text('Remove from Wishlist'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const Key('also-remove-from-discogs-checkbox')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('confirm-remove-button')));
+        await tester.pumpAndSettle();
+
+        expect(deletions.added, hasLength(1));
+        final tombstone = deletions.added.single;
+        expect(tombstone.entityType, DeletionEntityType.wishlist);
+        expect(tombstone.discogsReleaseId, 249504);
+        expect(tombstone.discogsInstanceId, isNull);
+      },
+    );
+
+    testWidgets('unsynced wishlist item cannot propagate to Discogs', (
+      tester,
+    ) async {
+      final repo = _RemovableWishlistRepository([
+        _wishlistItemFor(syncStatus: SyncStatus.localOnly),
+      ]);
+      await tester.pumpWidget(
+        buildScreen(
+          collectionRepo: _RemovableCollectionRepository([]),
+          wishlistRepo: repo,
+          deletionRepo: _SpyDeletionRepository(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await openMenu(tester);
+      await tester.tap(find.text('Remove from Wishlist'));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('also-remove-from-discogs-checkbox')),
+        findsNothing,
+      );
+      expect(
+        find.text('Your Discogs account is not affected.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'storage error during removal is non-destructive (state unchanged)',
+      (tester) async {
+        final repo = _RemovableCollectionRepository([
+          _collectionItemFor(),
+        ], throwOnRemove: true);
+        await tester.pumpWidget(
+          buildScreen(
+            collectionRepo: repo,
+            wishlistRepo: _RemovableWishlistRepository([]),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await openMenu(tester);
+        await tester.tap(find.text('Remove from Collection'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('confirm-remove-button')));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Could not remove from collection. Please try again.'),
+          findsOneWidget,
+        );
+        expect(find.text('In Collection'), findsOneWidget);
+        expect(find.text('Add to Collection'), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'failure resolving the local item shows a non-destructive error',
+      (tester) async {
+        final repo = _RemovableCollectionRepository([
+          _collectionItemFor(),
+        ], throwOnGetAll: true);
+        await tester.pumpWidget(
+          buildScreen(
+            collectionRepo: repo,
+            wishlistRepo: _RemovableWishlistRepository([]),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await openMenu(tester);
+        await tester.tap(find.text('Remove from Collection'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Could not remove from collection. Please try again.'),
+          findsOneWidget,
+        );
+        expect(find.text('In Collection'), findsOneWidget);
+      },
+    );
+
+    testWidgets('removal works from the offline cached state', (tester) async {
+      final repo = _RemovableCollectionRepository([_collectionItemFor()]);
+      await tester.pumpWidget(
+        buildScreen(
+          collectionRepo: repo,
+          wishlistRepo: _RemovableWishlistRepository([]),
+          service: _ErrorService(error: const NetworkError()),
+          cacheRepo: _FakeCacheRepository(cachedMetadata: _cachedKindOfBlue),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // Confirm we are in the cached state.
+      expect(find.text('In Collection'), findsOneWidget);
+
+      await openMenu(tester);
+      await tester.tap(find.text('Remove from Collection'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('confirm-remove-button')));
+      await tester.pumpAndSettle();
+
+      expect(repo.removed, ['c-1']);
+      expect(find.text('Add to Collection'), findsOneWidget);
+    });
   });
 }
