@@ -173,3 +173,77 @@ refresh on return, storage-error degradation).
   US-12) establish the precedent and icon language to stay consistent with.
 - Roadmap fit: Phase 14 UX polish — surfacing local state in the discovery
   flow.
+
+---
+
+### US-81: Remove a release from collection / wishlist on the release detail screen
+
+**3 SP · S4 (feature request, post-1.0)**
+
+> As a user viewing a release I reached from search (or barcode),
+> I want to remove that release from my collection or wishlist right there on the
+> detail screen,
+> so that I can undo an add without hunting for the item in the Collection or
+> Wishlist tab.
+
+**Background:** The release detail screen already tells me when a release is
+already saved — the Add buttons flip to a disabled "In Collection" / "In
+Wishlist" state (US-08 / US-12). But that state is a dead end: the only way to
+remove the release is to leave the search flow, open the Collection or Wishlist
+tab, find the item, and delete it there. This story makes the detail screen's
+saved-state actionable so add and remove are symmetric in one place. The actual
+deletion (local, plus the optional propagate-to-Discogs path) is already solved
+by US-72 — this story reuses it from a new entry point.
+
+**Acceptance criteria:**
+- When a release is already in the collection, the detail screen offers a clear
+  "Remove from Collection" action; likewise "Remove from Wishlist" when it is on
+  the wishlist. The existing disabled "In Collection" / "In Wishlist" indicator
+  is no longer a dead end.
+- Removing asks for confirmation and reuses the **same delete dialog as the
+  Collection / Wishlist detail screens (US-72)**: the default keeps Discogs
+  untouched ("Your Discogs collection is not affected"), with the opt-in "also
+  remove from Discogs" choice that records a pending-deletion tombstone. Wording,
+  styling, and the collection-needs-`instance_id` / wishlist-needs-only-release-id
+  distinction stay consistent with US-72.
+- On success the detail screen returns the relevant button to its "Add" state
+  (idle) and shows a confirmation snackbar, so the user can immediately re-add if
+  they removed by mistake. The other button (collection vs wishlist) is
+  unaffected.
+- A storage failure during removal shows a non-destructive error (snackbar) and
+  leaves the saved state unchanged — nothing is silently lost.
+- Removal works from the live `_Loaded` state and the offline `_CachedLoaded`
+  state, matching how the Add buttons already behave in both.
+- Returning to the search results after removing re-resolves the membership
+  icons (US-80) so the collection/wishlist icon disappears — the existing
+  `RouteAware.didPopNext` refresh already covers this once removal is wired up.
+- Unit and widget tests cover: the remove action appearing only when saved, the
+  confirm dialog, successful removal resetting the button to "Add", the
+  opt-in-Discogs tombstone path, the storage-error case, and both the live and
+  cached states.
+
+**Investigation notes:**
+- `ReleaseDetailScreen`
+  (`lib/presentation/screens/release_detail_screen.dart`) already receives
+  `CollectionRepository` / `WishlistRepository` and tracks the saved state via
+  `_AddState.duplicate` (`_checkInitialCollectionStatus` /
+  `_checkInitialWishlistStatus`). The add handlers are `_handleAdd` /
+  `_handleAddToWishlist`; a remove path would sit alongside them.
+- Removal needs the **local item id**, not the Discogs release id:
+  `CollectionRepository.remove` / `WishlistRepository.remove` take the
+  `CollectionItem.id` / `WishlistItem.id` string, but the detail screen only has
+  `releaseId`. The interfaces expose `containsRelease(int)` and `getAll()` but no
+  lookup-by-release-id. Resolve the item via `getAll()` + firstWhere (mirroring
+  US-80's getAll-derived approach) or add a small `getByReleaseId(int)` —
+  prefer the former to avoid touching the ~44 repository test fakes.
+- The delete-with-optional-Discogs-propagation flow already exists on
+  `CollectionDetailScreen` / `WishlistDetailScreen` (US-72): the confirmation
+  dialog, the opt-in checkbox, the `PendingDiscogsDeletion` tombstone
+  (`DeletionEntityType.collection` needs the captured `instance_id`,
+  `wishlist` needs only the release id). Reuse that logic rather than
+  re-implementing it; consider extracting the shared dialog so the three entry
+  points stay in sync.
+- US-08 / US-12 (in-collection / in-wishlist indicator) and US-72
+  (deletion-sync) are the direct precedents; US-80 established the membership
+  refresh-on-return that makes the search list reflect the removal.
+- Roadmap fit: Phase 14 UX polish — symmetric add/remove in the discovery flow.
