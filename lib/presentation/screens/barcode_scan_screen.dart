@@ -7,6 +7,11 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../application/services/search_query_cache.dart';
 import '../../application/use_cases/barcode_lookup_use_case.dart';
 import '../../domain/models/release_search_result.dart';
+import '../../domain/repositories/collection_repository.dart';
+import '../../domain/repositories/wishlist_repository.dart';
+import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
 import '../widgets/release_search_result_card.dart';
 
@@ -100,10 +105,18 @@ enum _ScanAreaState { placeholder, scanning, permissionDenied }
 // ---------------------------------------------------------------------------
 
 class BarcodeScanScreen extends StatefulWidget {
-  const BarcodeScanScreen({super.key, this.useCase, this.barcodeCache});
+  const BarcodeScanScreen({
+    super.key,
+    this.useCase,
+    this.barcodeCache,
+    this.collectionRepository,
+    this.wishlistRepository,
+  });
 
   final BarcodeLookupUseCase? useCase;
   final SearchQueryCache? barcodeCache;
+  final CollectionRepository? collectionRepository;
+  final WishlistRepository? wishlistRepository;
 
   @override
   State<BarcodeScanScreen> createState() => _BarcodeScanScreenState();
@@ -113,12 +126,18 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   final _controller = TextEditingController();
   late final BarcodeLookupUseCase _useCase;
   late final SearchQueryCache _barcodeCache;
+  late final CollectionRepository _collectionRepository;
+  late final WishlistRepository _wishlistRepository;
+  AppDatabase? _ownedDb;
   _ScanState _state = const _Idle();
   _ScanAreaState _scanAreaState = _ScanAreaState.placeholder;
   String _lastBarcode = '';
   String? _validationError;
   bool _isWide = false;
   int _lookupGeneration = 0;
+  // Discogs release ids the user already has locally (US-80).
+  Set<int> _collectionIds = const {};
+  Set<int> _wishlistIds = const {};
 
   static bool get _supportsScanner =>
       !kIsWeb && (Platform.isAndroid || Platform.isIOS);
@@ -128,7 +147,40 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     super.initState();
     _useCase = widget.useCase ?? BarcodeLookupUseCase();
     _barcodeCache = widget.barcodeCache ?? SearchQueryCache();
+    if (widget.collectionRepository != null &&
+        widget.wishlistRepository != null) {
+      _collectionRepository = widget.collectionRepository!;
+      _wishlistRepository = widget.wishlistRepository!;
+    } else {
+      final db = AppDatabase(openAppDatabase());
+      _ownedDb = db;
+      _collectionRepository =
+          widget.collectionRepository ?? LocalCollectionRepository(db);
+      _wishlistRepository =
+          widget.wishlistRepository ?? LocalWishlistRepository(db);
+    }
     _controller.addListener(_onInputChanged);
+    _loadMembership();
+  }
+
+  /// Resolves which results are already in the collection / on the wishlist.
+  /// A storage failure degrades to "no icons" (US-80).
+  Future<void> _loadMembership() async {
+    try {
+      final collection = await _collectionRepository.getAll();
+      final wishlist = await _wishlistRepository.getAll();
+      if (!mounted) return;
+      setState(() {
+        _collectionIds = collection.map((i) => i.discogsReleaseId).toSet();
+        _wishlistIds = wishlist.map((i) => i.discogsReleaseId).toSet();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _collectionIds = const {};
+        _wishlistIds = const {};
+      });
+    }
   }
 
   void _onInputChanged() {
@@ -155,6 +207,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   void dispose() {
     _controller.removeListener(_onInputChanged);
     _controller.dispose();
+    _ownedDb?.close();
     super.dispose();
   }
 
@@ -319,6 +372,8 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
         onLoadMore: hasMore && !isLoadingMore ? _loadMore : null,
         onRetry: _loadMore,
         fromCache: fromCache,
+        collectionIds: _collectionIds,
+        wishlistIds: _wishlistIds,
       ),
     _NoResults() => const _NoResultsState(),
     _NoToken() => const _NoTokenState(),
@@ -753,6 +808,8 @@ class _ResultsList extends StatefulWidget {
     required this.onLoadMore,
     required this.onRetry,
     required this.fromCache,
+    required this.collectionIds,
+    required this.wishlistIds,
   });
 
   final List<ReleaseSearchResult> items;
@@ -762,6 +819,8 @@ class _ResultsList extends StatefulWidget {
   final VoidCallback? onLoadMore;
   final VoidCallback? onRetry;
   final bool fromCache;
+  final Set<int> collectionIds;
+  final Set<int> wishlistIds;
 
   @override
   State<_ResultsList> createState() => _ResultsListState();
@@ -860,7 +919,12 @@ class _ResultsListState extends State<_ResultsList> {
                 : const SizedBox.shrink(),
             itemBuilder: (context, index) {
               if (index == widget.items.length) return _buildFooter(context);
-              return ReleaseSearchResultCard(result: widget.items[index]);
+              final item = widget.items[index];
+              return ReleaseSearchResultCard(
+                result: item,
+                inCollection: widget.collectionIds.contains(item.id),
+                onWishlist: widget.wishlistIds.contains(item.id),
+              );
             },
           ),
         ),

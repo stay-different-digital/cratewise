@@ -81,6 +81,7 @@ GoRouter createAppRouter() => GoRouter(
       branches: [
         // ── Tab 0: Search ────────────────────────────────────────────────
         StatefulShellBranch(
+          observers: [searchRouteObserver],
           routes: [
             GoRoute(
               path: AppRoutes.search,

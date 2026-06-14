@@ -2,9 +2,13 @@ import 'dart:async';
 
 import 'package:cratewise/application/services/search_query_cache.dart';
 import 'package:cratewise/application/use_cases/barcode_lookup_use_case.dart';
+import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
 import 'package:cratewise/domain/models/search_result_page.dart';
+import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
+import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/presentation/screens/barcode_scan_screen.dart';
 import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
@@ -67,6 +71,84 @@ class _SequencedBlockingLookupUseCase extends BarcodeLookupUseCase {
   @override
   Future<BarcodeLookupResult> execute(String barcode, {int page = 1}) =>
       _completers[_callIndex++].future;
+}
+
+// Membership fakes (US-80)
+
+class _FakeCollectionRepository implements CollectionRepository {
+  _FakeCollectionRepository({this.ids = const {}, this.throwOnGetAll = false});
+
+  final Set<int> ids;
+  final bool throwOnGetAll;
+
+  @override
+  Future<List<CollectionItem>> getAll() async {
+    if (throwOnGetAll) throw const StorageError();
+    return ids
+        .map(
+          (id) => CollectionItem(
+            id: 'c$id',
+            discogsReleaseId: id,
+            artist: 'Artist',
+            title: 'Title',
+            mediaCondition: RecordCondition.notSet,
+            sleeveCondition: RecordCondition.notSet,
+            tags: const [],
+            createdAt: DateTime(2024, 1, 1),
+            updatedAt: DateTime(2024, 1, 1),
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async =>
+      ids.contains(discogsReleaseId);
+  @override
+  Future<CollectionItem?> getById(String id) async => null;
+  @override
+  Future<void> add(CollectionItem item) async {}
+  @override
+  Future<void> update(CollectionItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _FakeWishlistRepository implements WishlistRepository {
+  _FakeWishlistRepository({this.ids = const {}, this.throwOnGetAll = false});
+
+  final Set<int> ids;
+  final bool throwOnGetAll;
+
+  @override
+  Future<List<WishlistItem>> getAll() async {
+    if (throwOnGetAll) throw const StorageError();
+    return ids
+        .map(
+          (id) => WishlistItem(
+            id: 'w$id',
+            discogsReleaseId: id,
+            artist: 'Artist',
+            title: 'Title',
+            priority: WishlistPriority.medium,
+            createdAt: DateTime(2024, 1, 1),
+            updatedAt: DateTime(2024, 1, 1),
+          ),
+        )
+        .toList();
+  }
+
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async =>
+      ids.contains(discogsReleaseId);
+  @override
+  Future<WishlistItem?> getById(String id) async => null;
+  @override
+  Future<void> add(WishlistItem item) async {}
+  @override
+  Future<void> update(WishlistItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
 }
 
 // ---------------------------------------------------------------------------
@@ -725,5 +807,91 @@ void main() {
         expect(find.text('Something went wrong'), findsNothing);
       },
     );
+  });
+
+  group('BarcodeScanScreen — membership icons (US-80)', () {
+    Future<void> searchBarcode(WidgetTester tester) async {
+      await tester.enterText(
+        find.byKey(const Key('barcode-input')),
+        '5099706035422',
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('search-barcode-button')));
+      await tester.pump();
+    }
+
+    testWidgets('shows the collection icon for a collected release', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          BarcodeScanScreen(
+            useCase: _FakeLookupUseCase(_kSuccess),
+            collectionRepository: _FakeCollectionRepository(ids: {_kResult.id}),
+            wishlistRepository: _FakeWishlistRepository(),
+          ),
+        ),
+      );
+      await searchBarcode(tester);
+
+      expect(find.byKey(const Key('in-collection-icon')), findsOneWidget);
+      expect(find.byKey(const Key('on-wishlist-icon')), findsNothing);
+    });
+
+    testWidgets('shows both icons for a collected and wishlisted release', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          BarcodeScanScreen(
+            useCase: _FakeLookupUseCase(_kSuccess),
+            collectionRepository: _FakeCollectionRepository(ids: {_kResult.id}),
+            wishlistRepository: _FakeWishlistRepository(ids: {_kResult.id}),
+          ),
+        ),
+      );
+      await searchBarcode(tester);
+
+      expect(find.byKey(const Key('in-collection-icon')), findsOneWidget);
+      expect(find.byKey(const Key('on-wishlist-icon')), findsOneWidget);
+    });
+
+    testWidgets('shows no icons for an unknown release', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          BarcodeScanScreen(
+            useCase: _FakeLookupUseCase(_kSuccess),
+            collectionRepository: _FakeCollectionRepository(),
+            wishlistRepository: _FakeWishlistRepository(),
+          ),
+        ),
+      );
+      await searchBarcode(tester);
+
+      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+      expect(find.byKey(const Key('in-collection-icon')), findsNothing);
+      expect(find.byKey(const Key('on-wishlist-icon')), findsNothing);
+    });
+
+    testWidgets('degrades to no icons when membership storage fails', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _wrap(
+          BarcodeScanScreen(
+            useCase: _FakeLookupUseCase(_kSuccess),
+            collectionRepository: _FakeCollectionRepository(
+              throwOnGetAll: true,
+            ),
+            wishlistRepository: _FakeWishlistRepository(throwOnGetAll: true),
+          ),
+        ),
+      );
+      await searchBarcode(tester);
+
+      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+      expect(find.byKey(const Key('in-collection-icon')), findsNothing);
+      expect(find.byKey(const Key('on-wishlist-icon')), findsNothing);
+    });
   });
 }

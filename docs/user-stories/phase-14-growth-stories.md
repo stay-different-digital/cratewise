@@ -107,6 +107,19 @@ so deletion-sync is symmetric across collection and wantlist.
 
 **3 SP · S4 (feature request, post-1.0)**
 
+**Status (2026-06-14): implemented.** `ReleaseSearchResultCard` gained
+`inCollection`/`onWishlist` flags rendering trailing `library_music` (primary)
+and `favorite` (tertiary/accent) icons, each with a `Semantics` label and
+tooltip; neither flag renders nothing (no layout shift). `SearchScreen` and
+`BarcodeScanScreen` resolve membership once per refresh from local storage
+(`getAll()` → `Set<int>` of release ids, synchronous `.contains` per card —
+never a per-card async lookup) and degrade to "no icons" on a storage error.
+The Search branch gained a `searchRouteObserver`; `SearchScreen` re-resolves
+membership via `RouteAware.didPopNext` when returning from a release detail
+screen. Covered by widget tests for the card (all four icon combinations,
+semantics, tooltips) and both screens (membership, per-result-set lookup,
+refresh on return, storage-error degradation).
+
 > As a user browsing Discogs search results,
 > I want each result to show — with an icon on the right — whether that release
 > is already in my collection or on my wishlist,

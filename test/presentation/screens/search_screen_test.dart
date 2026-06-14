@@ -3,13 +3,18 @@ import 'dart:async';
 import 'package:cratewise/application/services/discogs_search_service.dart';
 import 'package:cratewise/application/services/search_query_cache.dart';
 import 'package:cratewise/presentation/screens/release_detail_screen.dart';
+import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
 import 'package:cratewise/domain/models/search_result_page.dart';
+import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
+import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/presentation/screens/search_screen.dart';
 import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
+import 'package:cratewise/shared/route_observer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -142,16 +147,111 @@ class _PaginatingSearchService extends DiscogsSearchService {
 }
 
 // ---------------------------------------------------------------------------
+// Membership fakes (US-80)
+// ---------------------------------------------------------------------------
+
+CollectionItem _collectionItem(int releaseId) => CollectionItem(
+  id: 'c$releaseId',
+  discogsReleaseId: releaseId,
+  artist: 'Artist',
+  title: 'Title',
+  mediaCondition: RecordCondition.notSet,
+  sleeveCondition: RecordCondition.notSet,
+  tags: const [],
+  createdAt: DateTime(2024, 1, 1),
+  updatedAt: DateTime(2024, 1, 1),
+);
+
+WishlistItem _wishlistItem(int releaseId) => WishlistItem(
+  id: 'w$releaseId',
+  discogsReleaseId: releaseId,
+  artist: 'Artist',
+  title: 'Title',
+  priority: WishlistPriority.medium,
+  createdAt: DateTime(2024, 1, 1),
+  updatedAt: DateTime(2024, 1, 1),
+);
+
+/// Fake collection repo whose membership ids can change between loads (to
+/// exercise the refresh-on-return path) and that counts getAll calls.
+class _FakeCollectionRepository implements CollectionRepository {
+  _FakeCollectionRepository({
+    Set<int> ids = const {},
+    this.throwOnGetAll = false,
+  }) : ids = {...ids};
+
+  Set<int> ids;
+  final bool throwOnGetAll;
+  int getAllCount = 0;
+
+  @override
+  Future<List<CollectionItem>> getAll() async {
+    getAllCount++;
+    if (throwOnGetAll) throw const StorageError();
+    return ids.map(_collectionItem).toList();
+  }
+
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async =>
+      ids.contains(discogsReleaseId);
+
+  @override
+  Future<CollectionItem?> getById(String id) async => null;
+  @override
+  Future<void> add(CollectionItem item) async {}
+  @override
+  Future<void> update(CollectionItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+class _FakeWishlistRepository implements WishlistRepository {
+  _FakeWishlistRepository({Set<int> ids = const {}, this.throwOnGetAll = false})
+    : ids = {...ids};
+
+  Set<int> ids;
+  final bool throwOnGetAll;
+  int getAllCount = 0;
+
+  @override
+  Future<List<WishlistItem>> getAll() async {
+    getAllCount++;
+    if (throwOnGetAll) throw const StorageError();
+    return ids.map(_wishlistItem).toList();
+  }
+
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async =>
+      ids.contains(discogsReleaseId);
+
+  @override
+  Future<WishlistItem?> getById(String id) async => null;
+  @override
+  Future<void> add(WishlistItem item) async {}
+  @override
+  Future<void> update(WishlistItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+}
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 Widget _buildScreen(
   DiscogsSearchService service, {
   SearchQueryCache? queryCache,
+  CollectionRepository? collectionRepository,
+  WishlistRepository? wishlistRepository,
 }) {
   return MaterialApp(
     home: Scaffold(
-      body: SearchScreen(searchService: service, queryCache: queryCache),
+      body: SearchScreen(
+        searchService: service,
+        queryCache: queryCache,
+        collectionRepository: collectionRepository,
+        wishlistRepository: wishlistRepository,
+      ),
     ),
   );
 }
@@ -978,6 +1078,169 @@ void main() {
 
       expect(_searchBarDecoration(tester).suffixIcon, isNotNull);
       expect(find.byIcon(Icons.clear), findsOneWidget);
+    });
+  });
+
+  group('SearchScreen membership icons (US-80)', () {
+    testWidgets('shows the collection icon for a release already collected', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildScreen(
+          _FakeSearchService(results: [_kindOfBlue, _abbeyRoad]),
+          collectionRepository: _FakeCollectionRepository(
+            ids: {_kindOfBlue.id},
+          ),
+          wishlistRepository: _FakeWishlistRepository(),
+        ),
+      );
+      await submitSearch(tester, 'vinyl');
+
+      expect(find.byKey(const Key('in-collection-icon')), findsOneWidget);
+      expect(find.byKey(const Key('on-wishlist-icon')), findsNothing);
+    });
+
+    testWidgets('shows the wishlist icon for a release already wishlisted', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildScreen(
+          _FakeSearchService(results: [_kindOfBlue]),
+          collectionRepository: _FakeCollectionRepository(),
+          wishlistRepository: _FakeWishlistRepository(ids: {_kindOfBlue.id}),
+        ),
+      );
+      await submitSearch(tester, 'vinyl');
+
+      expect(find.byKey(const Key('on-wishlist-icon')), findsOneWidget);
+      expect(find.byKey(const Key('in-collection-icon')), findsNothing);
+    });
+
+    testWidgets('shows both icons when a release is collected and wishlisted', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildScreen(
+          _FakeSearchService(results: [_kindOfBlue]),
+          collectionRepository: _FakeCollectionRepository(
+            ids: {_kindOfBlue.id},
+          ),
+          wishlistRepository: _FakeWishlistRepository(ids: {_kindOfBlue.id}),
+        ),
+      );
+      await submitSearch(tester, 'vinyl');
+
+      expect(find.byKey(const Key('in-collection-icon')), findsOneWidget);
+      expect(find.byKey(const Key('on-wishlist-icon')), findsOneWidget);
+    });
+
+    testWidgets('shows no membership icons for an unknown release', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildScreen(
+          _FakeSearchService(results: [_kindOfBlue]),
+          collectionRepository: _FakeCollectionRepository(),
+          wishlistRepository: _FakeWishlistRepository(),
+        ),
+      );
+      await submitSearch(tester, 'vinyl');
+
+      expect(find.byKey(const Key('in-collection-icon')), findsNothing);
+      expect(find.byKey(const Key('on-wishlist-icon')), findsNothing);
+    });
+
+    testWidgets('resolves membership once per result set, not per card', (
+      tester,
+    ) async {
+      final collection = _FakeCollectionRepository(ids: {_kindOfBlue.id});
+      final wishlist = _FakeWishlistRepository();
+      await tester.pumpWidget(
+        _buildScreen(
+          _FakeSearchService(results: [_kindOfBlue, _abbeyRoad, _nevermind]),
+          collectionRepository: collection,
+          wishlistRepository: wishlist,
+        ),
+      );
+      await submitSearch(tester, 'vinyl');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReleaseSearchResultCard), findsNWidgets(3));
+      // One load on init — not one per card, and the result set did not
+      // trigger additional loads.
+      expect(collection.getAllCount, 1);
+      expect(wishlist.getAllCount, 1);
+    });
+
+    testWidgets('degrades to no icons when membership storage fails', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        _buildScreen(
+          _FakeSearchService(results: [_kindOfBlue]),
+          collectionRepository: _FakeCollectionRepository(throwOnGetAll: true),
+          wishlistRepository: _FakeWishlistRepository(throwOnGetAll: true),
+        ),
+      );
+      await submitSearch(tester, 'vinyl');
+
+      expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
+      expect(find.byKey(const Key('in-collection-icon')), findsNothing);
+      expect(find.byKey(const Key('on-wishlist-icon')), findsNothing);
+    });
+
+    testWidgets('re-resolves membership when returning from a detail screen', (
+      tester,
+    ) async {
+      // Force the narrow layout so tapping a result pushes a detail route
+      // (the wide layout shows an inline detail pane and never pops).
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final collection = _FakeCollectionRepository();
+      final wishlist = _FakeWishlistRepository();
+      final router = GoRouter(
+        initialLocation: '/search',
+        observers: [searchRouteObserver],
+        routes: [
+          GoRoute(
+            path: '/search',
+            builder: (_, _) => Scaffold(
+              body: SearchScreen(
+                searchService: _FakeSearchService(results: [_kindOfBlue]),
+                collectionRepository: collection,
+                wishlistRepository: wishlist,
+              ),
+            ),
+            routes: [
+              GoRoute(
+                path: 'release/:releaseId',
+                builder: (context, _) => Scaffold(
+                  body: Center(
+                    child: TextButton(
+                      onPressed: () => context.pop(),
+                      child: const Text('back'),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await submitSearch(tester, 'vinyl');
+      expect(find.byKey(const Key('in-collection-icon')), findsNothing);
+
+      // Open the detail screen, "add" the release while away, then return.
+      await tester.tap(find.byType(ReleaseSearchResultCard));
+      await tester.pumpAndSettle();
+      collection.ids = {_kindOfBlue.id};
+      await tester.tap(find.text('back'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('in-collection-icon')), findsOneWidget);
     });
   });
 }

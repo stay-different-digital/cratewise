@@ -10,7 +10,13 @@ import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/release_search_result.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
+import '../../domain/repositories/collection_repository.dart';
+import '../../domain/repositories/wishlist_repository.dart';
+import '../../infrastructure/local_database/app_database.dart';
+import '../../infrastructure/local_database/local_collection_repository.dart';
+import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
+import '../../shared/route_observer.dart';
 import '../widgets/rate_limit_retry_button.dart';
 import '../widgets/release_search_result_card.dart';
 import 'release_detail_screen.dart';
@@ -98,6 +104,8 @@ class SearchScreen extends StatefulWidget {
     this.addToWishlistUseCase,
     this.cacheRepository,
     this.queryCache,
+    this.collectionRepository,
+    this.wishlistRepository,
   });
 
   final DiscogsSearchService? searchService;
@@ -105,27 +113,79 @@ class SearchScreen extends StatefulWidget {
   final AddToWishlistUseCase? addToWishlistUseCase;
   final CachedReleaseMetadataRepository? cacheRepository;
   final SearchQueryCache? queryCache;
+  final CollectionRepository? collectionRepository;
+  final WishlistRepository? wishlistRepository;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends State<SearchScreen> with RouteAware {
   late final DiscogsSearchService _service;
   late final SearchQueryCache _cache;
+  late final CollectionRepository _collectionRepository;
+  late final WishlistRepository _wishlistRepository;
+  AppDatabase? _ownedDb;
   final _controller = TextEditingController();
   _SearchState _state = const _Idle();
   Timer? _debounce;
   String _lastQuery = '';
   ReleaseSearchResult? _selectedResult;
   int _searchGeneration = 0;
+  // Discogs release ids the user already has locally. Loaded once and refreshed
+  // on return from a detail screen — never per card (US-80).
+  Set<int> _collectionIds = const {};
+  Set<int> _wishlistIds = const {};
 
   @override
   void initState() {
     super.initState();
     _service = widget.searchService ?? DiscogsSearchService();
     _cache = widget.queryCache ?? SearchQueryCache();
+    if (widget.collectionRepository != null &&
+        widget.wishlistRepository != null) {
+      _collectionRepository = widget.collectionRepository!;
+      _wishlistRepository = widget.wishlistRepository!;
+    } else {
+      final db = AppDatabase(openAppDatabase());
+      _ownedDb = db;
+      _collectionRepository =
+          widget.collectionRepository ?? LocalCollectionRepository(db);
+      _wishlistRepository =
+          widget.wishlistRepository ?? LocalWishlistRepository(db);
+    }
     _controller.addListener(_onQueryChanged);
+    _loadMembership();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) searchRouteObserver.subscribe(this, route);
+  }
+
+  @override
+  void didPopNext() => _loadMembership();
+
+  /// Resolves which results are already in the collection / on the wishlist.
+  /// A storage failure degrades to "no icons" rather than breaking search.
+  Future<void> _loadMembership() async {
+    try {
+      final collection = await _collectionRepository.getAll();
+      final wishlist = await _wishlistRepository.getAll();
+      if (!mounted) return;
+      setState(() {
+        _collectionIds = collection.map((i) => i.discogsReleaseId).toSet();
+        _wishlistIds = wishlist.map((i) => i.discogsReleaseId).toSet();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _collectionIds = const {};
+        _wishlistIds = const {};
+      });
+    }
   }
 
   void _onQueryChanged() {
@@ -262,8 +322,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
+    searchRouteObserver.unsubscribe(this);
     _debounce?.cancel();
     _controller.dispose();
+    _ownedDb?.close();
     super.dispose();
   }
 
@@ -357,6 +419,8 @@ class _SearchScreenState extends State<SearchScreen> {
           onLoadMore: hasMore && !isLoadingMore ? _loadMore : null,
           onRetry: _loadMore,
           fromCache: fromCache,
+          collectionIds: _collectionIds,
+          wishlistIds: _wishlistIds,
           onResultTap: (result) {
             if (isWide) {
               setState(() => _selectedResult = result);
@@ -560,6 +624,8 @@ class _ResultsList extends StatefulWidget {
     required this.onRetry,
     required this.onResultTap,
     required this.fromCache,
+    required this.collectionIds,
+    required this.wishlistIds,
   });
 
   final List<ReleaseSearchResult> items;
@@ -570,6 +636,8 @@ class _ResultsList extends StatefulWidget {
   final VoidCallback? onRetry;
   final ValueChanged<ReleaseSearchResult> onResultTap;
   final bool fromCache;
+  final Set<int> collectionIds;
+  final Set<int> wishlistIds;
 
   @override
   State<_ResultsList> createState() => _ResultsListState();
@@ -712,6 +780,8 @@ class _ResultsListState extends State<_ResultsList> {
               return ReleaseSearchResultCard(
                 result: item,
                 onTap: () => widget.onResultTap(item),
+                inCollection: widget.collectionIds.contains(item.id),
+                onWishlist: widget.wishlistIds.contains(item.id),
               );
             },
           ),
