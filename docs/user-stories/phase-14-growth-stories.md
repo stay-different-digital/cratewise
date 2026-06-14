@@ -100,3 +100,63 @@ only the re-import preview lacked the conflict category.
 **Found during:** Documented follow-up from US-72 (the collection/wishlist
 symmetry gap recorded in this file). No new QA report — closing the known gap
 so deletion-sync is symmetric across collection and wantlist.
+
+---
+
+### US-80: Search results show collection / wishlist membership at a glance
+
+**3 SP · S4 (feature request, post-1.0)**
+
+> As a user browsing Discogs search results,
+> I want each result to show — with an icon on the right — whether that release
+> is already in my collection or on my wishlist,
+> so that I can tell at a glance what I already have or want without opening
+> each release.
+
+**Acceptance criteria:**
+- Each `ReleaseSearchResultCard` shows a trailing status area, beside the
+  existing `#id`, with:
+  - a "in collection" icon (`Icons.library_music`, primary colour) when the
+    release's Discogs id is in the local collection, and
+  - a "on wishlist" icon (`Icons.favorite`, accent colour) when it is on the
+    local wishlist.
+- A release that is in **both** shows **both** icons side by side; a release in
+  neither shows **no** icon (no empty placeholder, no layout shift).
+- Each icon carries a `Semantics` label and tooltip ("In your collection" /
+  "On your wishlist") so the state is available to screen readers, not colour
+  alone.
+- Membership is resolved from local storage only — no extra Discogs calls — and
+  is loaded **once per result set**, not per card: the screen fetches the set of
+  collection release ids and the set of wishlist release ids and the card
+  receives two booleans. A 50-result page must not fire 100 async lookups.
+- The indicators update when the user returns to search after adding the
+  release elsewhere (e.g. from the release detail screen): membership is
+  re-resolved on the search route regaining focus (`RouteAware.didPopNext`,
+  the same mechanism as the collection list live-refresh, US-10), with no
+  full-screen spinner.
+- The same treatment applies to the barcode-scan results list, which reuses
+  `ReleaseSearchResultCard`.
+- Works in both the phone list layout and the iPad split-pane search layout.
+- Membership lookup is robust: a storage error while loading the sets degrades
+  gracefully to "no icons" rather than failing the search results.
+- Unit and widget tests cover: in-collection only, on-wishlist only, in both,
+  in neither, the per-result-set (not per-card) lookup, the refresh on return,
+  the barcode results variant, and the storage-error degradation.
+
+**Investigation notes:**
+- `ReleaseSearchResultCard`
+  (`lib/presentation/widgets/release_search_result_card.dart`) currently has no
+  trailing status zone; the right column ends at the `#id` row.
+- `SearchScreen` (`lib/presentation/screens/search_screen.dart`) does not yet
+  receive `CollectionRepository`/`WishlistRepository` directly (it has the add
+  use cases and the cache repository). They are available in `HomeShellScreen`,
+  which already constructs the Local repositories, so wiring them down matches
+  the existing pattern.
+- The membership check should reuse the established efficient pattern (one set
+  load, synchronous lookup) rather than per-item `containsRelease`, mirroring
+  the import-linking work in US-21. A lightweight `Set<int> releaseIds()` on
+  each repository (Drift `SELECT discogs_release_id`) is the cleanest source.
+- The "already in collection / wishlist" detail-screen indicators (US-08 /
+  US-12) establish the precedent and icon language to stay consistent with.
+- Roadmap fit: Phase 14 UX polish — surfacing local state in the discovery
+  flow.
