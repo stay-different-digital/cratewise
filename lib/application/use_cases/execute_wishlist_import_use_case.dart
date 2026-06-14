@@ -160,6 +160,15 @@ class ExecuteWishlistImportUseCase {
                 );
                 skipped++;
               }
+            case ConflictWishlistRow():
+              await _rowResultRepository.addResult(
+                jobId,
+                SkippedRow(
+                  rowIndex: i,
+                  reason: 'Deleted locally — kept off Discogs',
+                ),
+              );
+              skipped++;
             case InvalidWishlistRow():
               await _rowResultRepository.addResult(
                 jobId,
@@ -210,6 +219,7 @@ class ExecuteWishlistImportUseCase {
   String _rowLabel(WishlistImportRow row) => switch (row) {
     NewWishlistRow(:final artist, :final title) => '$artist – $title',
     DuplicateWishlistRow(:final artist, :final title) => '$artist – $title',
+    ConflictWishlistRow(:final artist, :final title) => '$artist – $title',
     InvalidWishlistRow() => 'Skipped row',
   };
 

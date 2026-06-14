@@ -121,6 +121,7 @@ WishlistImportPreview makePreview({
   int newCount = 0,
   int duplicateCount = 0,
   int invalidCount = 0,
+  int conflictCount = 0,
 }) {
   final rows = <WishlistImportRow>[
     for (int i = 0; i < newCount; i++)
@@ -141,6 +142,12 @@ WishlistImportPreview makePreview({
         title: '',
         artist: 'Artist',
         reason: 'Missing title',
+      ),
+    for (int i = 0; i < conflictCount; i++)
+      ConflictWishlistRow(
+        releaseId: 300 + i,
+        title: 'Pending $i',
+        artist: 'Artist',
       ),
   ];
   return WishlistImportPreview(rows: rows);
@@ -240,6 +247,43 @@ void main() {
         await tester.pump();
         expect(find.text('Cannot import'), findsOneWidget);
         expect(find.text('2'), findsOneWidget);
+      });
+
+      testWidgets('shows pending-removal conflict count (US-79)', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(conflictCount: 2, newCount: 1)),
+        );
+        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pump();
+        expect(find.text('Pending removal'), findsOneWidget);
+        expect(find.text('2'), findsOneWidget);
+      });
+
+      testWidgets('explains conflicts will not be re-imported (US-79)', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(conflictCount: 1, newCount: 1)),
+        );
+        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pump();
+        expect(
+          find.textContaining('pending removal from Discogs'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('hides pending-removal row when there are no conflicts', (
+        tester,
+      ) async {
+        final useCase = _FakeUseCase(
+          FetchWishlistPreviewReady(makePreview(newCount: 2)),
+        );
+        await tester.pumpWidget(buildSubject(useCase));
+        await tester.pump();
+        expect(find.text('Pending removal'), findsNothing);
       });
 
       testWidgets('shows zero for all counts on empty wantlist', (

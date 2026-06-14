@@ -1,6 +1,8 @@
 import 'package:cratewise/application/use_cases/build_wishlist_import_preview_use_case.dart';
+import 'package:cratewise/domain/models/pending_discogs_deletion.dart';
 import 'package:cratewise/domain/models/wishlist_import_preview.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/domain/repositories/pending_discogs_deletion_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_wantlist_item.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -60,8 +62,33 @@ DiscogsWantlistItemDto makeItem({
   notes: notes,
 );
 
-BuildWishlistImportPreviewUseCase makeUseCase(FakeWishlistRepository repo) =>
-    BuildWishlistImportPreviewUseCase(repo);
+class _FakeDeletionRepository implements PendingDiscogsDeletionRepository {
+  _FakeDeletionRepository({Set<int>? pendingReleaseIds})
+    : _ids = pendingReleaseIds ?? {};
+  final Set<int> _ids;
+
+  @override
+  Future<bool> containsRelease(int id, DeletionEntityType type) async =>
+      type == DeletionEntityType.wishlist && _ids.contains(id);
+  @override
+  Future<void> add(PendingDiscogsDeletion deletion) async {}
+  @override
+  Future<List<PendingDiscogsDeletion>> getByType(
+    DeletionEntityType type,
+  ) async => [];
+  @override
+  Future<void> remove(String id) async {}
+  @override
+  Future<void> removeByRelease(int id, DeletionEntityType type) async {}
+}
+
+BuildWishlistImportPreviewUseCase makeUseCase(
+  FakeWishlistRepository repo, {
+  PendingDiscogsDeletionRepository? deletionRepository,
+}) => BuildWishlistImportPreviewUseCase(
+  repo,
+  deletionRepository: deletionRepository,
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -209,6 +236,79 @@ void main() {
           final repo = FakeWishlistRepository();
           final noArtist = makeItem(artist: '');
           final preview = await makeUseCase(repo).execute([noArtist]);
+          expect(preview.rows.first, isA<NewWishlistRow>());
+        },
+      );
+    });
+
+    group('pending-deletion conflicts (US-79)', () {
+      test(
+        'classifies a release with a pending deletion as a conflict',
+        () async {
+          final repo = FakeWishlistRepository();
+          final preview = await makeUseCase(
+            repo,
+            deletionRepository: _FakeDeletionRepository(
+              pendingReleaseIds: {3003339},
+            ),
+          ).execute([makeItem(releaseId: 3003339)]);
+
+          expect(preview.rows.first, isA<ConflictWishlistRow>());
+          expect(preview.conflictCount, 1);
+          expect(preview.newCount, 0);
+        },
+      );
+
+      test('a conflict takes precedence over a local duplicate', () async {
+        final repo = FakeWishlistRepository(existingReleaseIds: {3003339});
+        final preview = await makeUseCase(
+          repo,
+          deletionRepository: _FakeDeletionRepository(
+            pendingReleaseIds: {3003339},
+          ),
+        ).execute([makeItem(releaseId: 3003339)]);
+
+        expect(preview.rows.first, isA<ConflictWishlistRow>());
+        expect(preview.duplicateCount, 0);
+      });
+
+      test('no conflict when the release has no pending deletion', () async {
+        final repo = FakeWishlistRepository();
+        final preview = await makeUseCase(
+          repo,
+          deletionRepository: _FakeDeletionRepository(),
+        ).execute([makeItem(releaseId: 3003339)]);
+
+        expect(preview.conflictCount, 0);
+        expect(preview.rows.first, isA<NewWishlistRow>());
+      });
+
+      test(
+        'classification is unchanged when no deletion repository is supplied',
+        () async {
+          final repo = FakeWishlistRepository();
+          final preview = await makeUseCase(
+            repo,
+          ).execute([makeItem(releaseId: 3003339)]);
+
+          expect(preview.conflictCount, 0);
+          expect(preview.rows.first, isA<NewWishlistRow>());
+        },
+      );
+
+      test(
+        'a wishlist conflict only matches wishlist-type tombstones',
+        () async {
+          // A collection-type tombstone for the same release must not turn the
+          // wishlist row into a conflict — entity types are independent.
+          final repo = FakeWishlistRepository();
+          final preview = await makeUseCase(
+            repo,
+            // _FakeDeletionRepository only reports wishlist-type matches, so a
+            // release the user did not tombstone on the wantlist stays new.
+            deletionRepository: _FakeDeletionRepository(),
+          ).execute([makeItem(releaseId: 3003339)]);
+
           expect(preview.rows.first, isA<NewWishlistRow>());
         },
       );

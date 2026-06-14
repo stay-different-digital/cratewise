@@ -147,6 +147,7 @@ WishlistImportPreview makePreview({
   int newCount = 0,
   int duplicateCount = 0,
   int invalidCount = 0,
+  int conflictCount = 0,
 }) {
   final rows = <WishlistImportRow>[
     for (int i = 0; i < newCount; i++)
@@ -168,6 +169,12 @@ WishlistImportPreview makePreview({
         title: '',
         artist: 'Artist',
         reason: 'Missing title',
+      ),
+    for (int i = 0; i < conflictCount; i++)
+      ConflictWishlistRow(
+        releaseId: 300 + i,
+        title: 'Pending $i',
+        artist: 'Artist',
       ),
   ];
   return WishlistImportPreview(rows: rows);
@@ -394,6 +401,28 @@ void main() {
                 as ExecuteWishlistImportCompleted;
         final rows = await rowResultRepo.getResults(result.jobId);
         expect(rows.whereType<SkippedRow>().length, 1);
+      });
+
+      test('conflict row is skipped instead of re-imported (US-79)', () async {
+        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
+            makeUseCase();
+        final result =
+            await useCase.execute(makePreview(conflictCount: 1))
+                as ExecuteWishlistImportCompleted;
+        expect(wishlistRepo.added, isEmpty);
+        expect(result.imported, 0);
+        expect(result.skipped, 1);
+      });
+
+      test('conflict row reason is the kept-off-Discogs message', () async {
+        final (:useCase, :wishlistRepo, :jobRepo, :rowResultRepo) =
+            makeUseCase();
+        final result =
+            await useCase.execute(makePreview(conflictCount: 1))
+                as ExecuteWishlistImportCompleted;
+        final rows = await rowResultRepo.getResults(result.jobId);
+        final skipped = rows.whereType<SkippedRow>().first;
+        expect(skipped.reason, 'Deleted locally — kept off Discogs');
       });
 
       test('skipped count = duplicates + invalids', () async {

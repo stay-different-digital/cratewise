@@ -51,6 +51,20 @@ class InvalidWishlistRow extends WishlistImportRow {
   final String reason;
 }
 
+/// Item is still on the user's Discogs wantlist but was deleted locally and is
+/// awaiting removal from Discogs (a pending-deletion tombstone exists, US-72).
+/// Re-importing it would undo the user's deletion, so it is surfaced as a
+/// conflict and never imported automatically (US-79).
+class ConflictWishlistRow extends WishlistImportRow {
+  const ConflictWishlistRow({
+    required super.releaseId,
+    required super.title,
+    required super.artist,
+    super.year,
+    super.thumbUrl,
+  });
+}
+
 class WishlistImportPreview {
   const WishlistImportPreview({required this.rows});
 
@@ -60,4 +74,5 @@ class WishlistImportPreview {
   int get newCount => rows.whereType<NewWishlistRow>().length;
   int get duplicateCount => rows.whereType<DuplicateWishlistRow>().length;
   int get invalidCount => rows.whereType<InvalidWishlistRow>().length;
+  int get conflictCount => rows.whereType<ConflictWishlistRow>().length;
 }
