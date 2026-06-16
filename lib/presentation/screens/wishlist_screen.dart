@@ -268,7 +268,8 @@ class _WishlistList extends StatelessWidget {
   Widget _buildList(BuildContext context) {
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      // Match the collection list's spacing (US/QA: equal density across tabs).
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) => WishlistItemCard(
@@ -282,7 +283,8 @@ class _WishlistList extends StatelessWidget {
   Widget _buildGrid(BuildContext context) {
     return GridView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      // Match the collection grid's spacing (US/QA: equal density across tabs).
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 12,
