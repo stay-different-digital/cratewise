@@ -283,3 +283,439 @@ by US-72 — this story reuses it from a new entry point.
   tombstone, the unsynced-wishlist no-propagate case, the remove-failure and
   resolve-failure non-destructive paths, and removal from the cached state.
   Suite 2370 → 2383, all green; analyze introduces no new issues.
+
+---
+
+### US-82: Clear local collection and wishlist from Settings
+
+**3 SP · S3 (feature request, post-1.0)**
+
+> As a user who has switched to a different Discogs account (or just wants a
+> clean slate),
+> I want a "Clear collection" and "Clear wishlist" option in Settings,
+> so that the records tied to my old token don't linger after I connect a
+> different account.
+
+**Background:** Cratewise stores the collection and wishlist locally and keeps
+them even when the Discogs token changes — connecting a new token only swaps the
+stored credentials (`DiscogsTokenStorage.saveCredentials` / `deleteCredentials`,
+US-15), it does not touch the local item tables. So after switching accounts the
+app still shows the previous account's records, which is confusing and arguably
+wrong: those items belong to a collection the user is no longer connected to.
+Today the only way to clear them is to remove items one at a time (US-72 /
+US-81). There is no bulk "start over" affordance. Settings already has a
+destructive-action precedent — the thumbnail-cache "Clear" tile
+(`_ThumbnailCacheSection`) — so a "Local data" section is a natural home for
+this.
+
+**Acceptance criteria:**
+- Settings has a clearly labelled section (e.g. "Local data") with separate
+  **"Clear collection"** and **"Clear wishlist"** actions, each showing how many
+  items will be removed (e.g. "Clear collection (42 items)") and disabled/hidden
+  when that list is already empty.
+- Each action requires an explicit confirmation dialog that states the count and
+  is unambiguous that it is **local-only and irreversible** ("This permanently
+  removes all N items from this device. Your Discogs account is not affected.").
+  Reuse the US-72 dialog wording/tone.
+- Clearing is **local-only by default and does NOT propagate to Discogs.** This
+  is deliberate and the key distinction from US-72/US-81: when a user is
+  switching accounts, the token may already point at a different account, so
+  recording `PendingDiscogsDeletion` tombstones could delete records from the
+  *wrong* account. Clearing must not create tombstones. (If we later want an
+  opt-in "also remove from Discogs" path it would be a separate story and only
+  while the original token is still connected.)
+- Any pending Discogs-deletion tombstones for the cleared entity are also
+  discarded as part of the clear (there is nothing left to propagate), so the
+  Pending Deletions screen (US-72) does not show orphaned entries.
+- On success the relevant list is empty everywhere it is shown (Collection /
+  Wishlist tabs live-refresh on return via the existing `RouteAware.didPopNext`,
+  US-10/US-35), and a confirmation snackbar reports how many items were removed.
+- A storage failure during the clear shows a non-destructive error and leaves the
+  data intact — partial/ambiguous state is avoided (prefer a single transactional
+  delete over a per-item loop).
+- The two actions are independent: clearing the collection leaves the wishlist
+  untouched and vice versa. Neither touches the stored Discogs token, cached
+  release metadata, thumbnails, or the import/export history.
+- Unit and widget tests cover: the count label, the confirm dialog, successful
+  clear emptying the list, the no-tombstone guarantee, tombstone cleanup, the
+  empty-list disabled state, the storage-error non-destructive case, and
+  collection/wishlist independence.
+
+**Investigation notes:**
+- `CollectionRepository` / `WishlistRepository`
+  (`lib/domain/repositories/`) expose only `remove(String id)` — there is **no
+  bulk `deleteAll()`**. Add one to each interface and its Drift implementation
+  (`delete(collectionItems).go()` in a transaction) rather than looping
+  `getAll()` + `remove`, so the clear is atomic and fast. `RetryActionRepository`
+  /`LocalRetryActionRepository.deleteAll()` (US-44) is the existing precedent for
+  a bulk-delete interface method — follow its shape, including adding the
+  `deleteAll()` stub to the repository test fakes (this is the main test-surface
+  cost; ~the same fakes touched by US-44/US-80).
+- For the tombstone cleanup, `PendingDiscogsDeletionRepository`
+  (US-72) needs a way to drop all tombstones for an entity type — check whether a
+  bulk delete already exists there or add one alongside `deleteAll()`.
+- Settings UI: mirror `_ThumbnailCacheSection` in
+  `lib/presentation/screens/settings_screen.dart` — a section that loads the
+  counts in `initState` (`getAll().length`, or a cheaper `count()` if added),
+  shows two `ListTile`s with a destructive-styled action, an `AlertDialog`
+  confirmation, a `_clearing` busy flag, and a snackbar. `HomeShellScreen` wires
+  the repositories down (it already constructs the shared `AppDatabase` and
+  passes repos to the tabs).
+- **Consider the account-switch trigger directly:** the originating pain is
+  switching tokens. A nice follow-up (separate story, note it) is to detect a
+  token change in `DiscogsConnectionService` / the token section and *offer*
+  "You've connected a different account — clear the previous collection and
+  wishlist?" rather than relying on the user to find the Settings action. Keep
+  US-82 scoped to the manual Settings action; the prompt-on-switch is US-83+.
+- Precedents: US-72 (deletion dialog + tombstones — and why we must NOT create
+  them here), US-44 (`deleteAll()` bulk-delete interface pattern), US-15 (token
+  swap leaves local data untouched — the root cause), US-19 (thumbnail-cache
+  "Clear" tile in Settings — the UI precedent).
+- Roadmap fit: Phase 14 UX polish / account hygiene — making account switching
+  leave a clean, correct local state.
+
+**Status: story only — not implemented.**
+
+---
+
+### US-83: Remove the static "Cratewise" header to reclaim screen space
+
+**2 SP · S4 (feature request, post-1.0)**
+
+> As a user on the main tabs (Search, Collection, Wishlist, Settings),
+> I want the app to stop showing a fixed "Cratewise" title bar at the top of
+> every screen,
+> so that the wasted band of chrome is given back to content — especially on
+> small phones where vertical space is scarce.
+
+**Background:** The four main tabs are rendered inside `HomeShellScreen`, whose
+`Scaffold` has a static `AppBar(title: const Text('Cratewise'))` (both the
+narrow and wide layouts). The title never changes and earns nothing — I already
+know which app I'm in — but it costs a full `kToolbarHeight` (~56dp) band on
+every tab. On a phone in the record shop that's a chunk of list or search
+results I can't see. This is purely a layout/real-estate fix: drop the header
+and reclaim the space.
+
+**Acceptance criteria:**
+- The persistent "Cratewise" title bar no longer appears on any of the main
+  tabs; the freed ~56dp goes to tab content.
+- Content that was below the app bar now respects the **status bar / notch** —
+  it must not render underneath it. Wrap the body in `SafeArea` (top: true) on
+  both the narrow and wide layouts so the first item isn't clipped by the system
+  status bar.
+- The wide (≥700dp) layout still works: removing the shell app bar must not break
+  the nav rail / divider / content `Row`, and the rail's own top alignment stays
+  correct under the status bar.
+- Per-screen contextual app bars are **unaffected**: the detail screens
+  (release / collection / wishlist detail), import/export, and CSV preview
+  screens keep their own app bars (they show context like "Artist — Title" and,
+  crucially, the back button). This story only removes the *shell's* static
+  header on the top-level tabs, not navigation chrome on pushed routes.
+- Non-visible "Cratewise" strings stay untouched: the `MaterialApp.title` in
+  `app.dart` (the OS task-switcher / accessibility app label) and the About
+  dialog's `applicationName` are not headers and must remain.
+- Each tab still reads correctly without the bar: Search has its own pill search
+  field, Collection and Wishlist have their search fields and content, Settings
+  is a titled list — confirm none of them depended on the shell title for
+  orientation. If a tab looks adrift without any heading, prefer a lightweight
+  in-body heading over re-introducing a full app bar (decide per tab; default is
+  no heading).
+- Widget tests: assert the "Cratewise" `AppBar` title is gone from
+  `HomeShellScreen` in both layouts, that tab content is wrapped in a `SafeArea`,
+  and that the existing nav rail / bottom nav behaviour is unchanged. Detail-screen
+  app-bar tests must stay green (they assert their own titles).
+
+**Investigation notes:**
+- The header lives only in `HomeShellScreen.build`
+  (`lib/presentation/screens/home_shell_screen.dart`): `AppBar(title: const
+  Text('Cratewise'))` at the wide-layout `Scaffold` (~line 27) and again at the
+  narrow-layout `Scaffold` (~line 42). Removing both `appBar:` arguments is the
+  core change.
+- The narrow layout's body is `navigationShell` directly and the wide layout
+  already wraps content in `SafeArea(top: false, child: navigationShell)` —
+  because the app bar previously handled the top inset. With the app bar gone,
+  the top inset is no longer handled, so the narrow body needs
+  `SafeArea(child: navigationShell)` and the wide layout's `SafeArea(top: false…)`
+  must become `SafeArea(…)` (top: true) so the status bar no longer overlaps
+  content.
+- Check each branch screen for an assumption that a parent `Scaffold`/`AppBar`
+  exists. The tab screens are branches of the `StatefulShellRoute.indexedStack`
+  (US-28); if any tab renders its own `Scaffold` without an app bar it already
+  handles its own insets and may need no change — verify Search / Collection /
+  Wishlist / Settings individually.
+- Confirm the only *visible* "Cratewise" header is the shell's: `grep` shows
+  `app.dart` (`MaterialApp.title`) and `about_section_tile.dart`
+  (`applicationName`) as the other occurrences — both intentionally kept.
+- Precedent: US-13 (wide-screen nav rail) and US-27 (safe-area correctness for
+  scrollable content) are the layout stories this touches; keep their behaviour
+  intact.
+- Roadmap fit: Phase 14 UX polish — reclaiming vertical space on the primary
+  screens.
+
+**Status: done.** Removed both `appBar:` arguments from `HomeShellScreen`
+(narrow and wide `Scaffold`s); the narrow body is now `SafeArea(child:
+navigationShell)` and the wide layout's `SafeArea(top: false, …)` became
+`SafeArea(child: navigationShell)` (top: true) so tab content claims the freed
+status-bar inset. The four tabs build no `Scaffold`/`AppBar` of their own, so
+nothing else needed changing; per-screen contextual app bars and the non-visible
+`MaterialApp.title` / About-dialog `applicationName` strings are untouched.
+Updated `widget_test.dart` to assert the "Cratewise" header is gone and the body
+is wrapped in a `SafeArea`. Full suite green (2383 tests).
+
+---
+
+### US-84: Search filter chips (Release / Artist / Label) below the search box
+
+**2 SP · S5 (feature request, post-1.0)**
+
+> As a user on the Search tab,
+> I want a row of filter buttons — Release, Artist, Label — under the search
+> box,
+> so that I can narrow what I'm searching for instead of always matching every
+> field at once.
+
+**Background:** The Search tab currently has a single pill text field that
+searches everything (the API call is hardwired to a general `q` query — see the
+follow-up US-85 for the behaviour). This story adds the **filter affordance**:
+a row of selectable chips directly under the search field offering **Release**,
+**Artist**, and **Label**. With nothing selected the app searches **"All"**,
+which is the **default** — so the feature is purely additive and the current
+behaviour is preserved until a chip is chosen. This story is scoped to the
+**UI + selected-filter state**; making the selection actually change the Discogs
+query is the explicit follow-up (US-85), so US-84 can ship and be reviewed on
+its own.
+
+**Acceptance criteria:**
+- A horizontal row of filter controls appears **between the search field and the
+  results body** in `SearchScreen` (the `Column` whose first child is the
+  `TextField` `Padding` and second is `Expanded(child: _buildBody(...))`). Use
+  Material `FilterChip`/`ChoiceChip` styling consistent with the app theme.
+- The choices are **Release**, **Artist**, **Label**, plus the implicit **All**
+  (no chip selected). All is the **default** on first open and after the field
+  is cleared. Selecting is single-choice (mutually exclusive); tapping the
+  active chip again deselects back to All.
+- The selected filter is held in screen state (e.g. an `enum SearchFilter { all,
+  release, artist, label }` defaulting to `all`) and the active chip is visibly
+  highlighted. Changing the selection updates the UI immediately.
+- The filter row is visible whenever the Search tab is shown, including the empty
+  / idle state (so the user can pick a filter before typing) and in both the
+  narrow and the wide (≥700dp) layouts — in the wide layout it sits in the 320dp
+  search pane, not the detail pane.
+- Selecting a filter in this story **does not yet change search results** — the
+  query still runs as it does today. The visible behaviour change (scoping the
+  query, re-running on filter change, cache correctness) is delivered by
+  **US-85**. (Implementer's choice: ship US-84 and US-85 together if convenient,
+  but keep the commits/AC separable.)
+- The chips don't crowd out content: on a small phone the search field + chip row
+  must still leave the results list usable; chips wrap or scroll rather than
+  overflow.
+- Widget tests: the three chips render under the search field; All is the default
+  (no chip selected) on open; selecting a chip highlights it and deselects the
+  others; tapping the active chip returns to All; the row shows in both layouts
+  and in the idle state.
+
+**Investigation notes:**
+- The insertion point is the `searchPane` `Column` in
+  `lib/presentation/screens/search_screen.dart` (build, ~line 338): add a third
+  child (a `Wrap`/`SingleChildScrollView` of `FilterChip`s) between the
+  `TextField` `Padding` and the `Expanded(child: _buildBody(...))`. Because
+  `searchPane` is reused for both narrow and wide layouts, the chips appear in
+  both for free.
+- Add a `SearchFilter _filter = SearchFilter.all;` field to `_SearchScreenState`
+  and a `setState` on chip tap. Keep this story's change inert w.r.t. searching —
+  do **not** thread `_filter` into `_onSubmit`/`_service.search` here; that is
+  US-85's job. (If shipping both at once, US-85's notes cover the plumbing.)
+- Define `SearchFilter` somewhere reusable (its own small file under
+  `domain/models/` or alongside the search service) since US-85 and the API layer
+  will also need it.
+- Consider the barcode-scan entry path: barcode lookups (US-…/`searchByBarcode`)
+  are release-only by nature; confirm the filter row is either hidden or
+  irrelevant for barcode-originated results and doesn't imply it filters a
+  barcode scan.
+- Precedents: the Collection/Wishlist tabs already use in-body filter/sort
+  controls — match their chip styling and placement conventions for consistency.
+- Roadmap fit: Phase 14 search UX — giving users control over match scope.
+
+**Status: story only — not implemented.**
+
+---
+
+### US-85: Scope the Discogs query to the selected search filter
+
+**3 SP · S5 (feature request, post-1.0 — follow-up to US-84)**
+
+> As a user who has selected a search filter (Release, Artist, or Label),
+> I want the search to match **only** that field,
+> so that filtering actually changes my results — e.g. selecting Artist returns
+> records by that artist rather than every release that merely mentions the text.
+
+**Background:** US-84 adds the Release / Artist / Label chips and the selected-
+filter state but deliberately leaves search behaviour unchanged. This follow-up
+makes the selection *do something*: the active filter scopes the Discogs query.
+Today `DiscogsApiClient.searchReleases` hardcodes `type: 'release'` and puts the
+text in the general `q` parameter, so every field is matched. Discogs'
+`/database/search` endpoint also accepts **field-scoped** parameters
+(`release_title`, `artist`, `label`) which narrow the match while still returning
+release-shaped results — so we can keep the existing `ReleaseSearchResult` cards
+and add-to-collection/wishlist flow unchanged. When the filter is **All** (the
+default), behaviour is exactly as it is today (general `q`).
+
+**Acceptance criteria:**
+- With **All** selected (default), search behaves exactly as before — general
+  `q` query, `type=release` — so there is no regression for users who never touch
+  the chips.
+- With **Release** selected, the query text is matched against the release title
+  (`release_title=<text>`); **Artist** matches the artist field (`artist=<text>`);
+  **Label** matches the label field (`label=<text>`). Results remain
+  release-shaped and the existing result cards/detail/add flows are unchanged.
+- Changing the active filter **re-runs the current search immediately** for the
+  text already in the box (it must not require editing the text). Clearing the
+  text resets to the idle/empty state and the filter back to All (per US-84).
+- Pagination ("load more") and the background cache-refresh continue to use the
+  **same filter** as the originating search — page 2 of an Artist search is still
+  an Artist search.
+- The search result cache is **keyed by filter as well as text**, so an "All"
+  search for "blue" and an "Artist" search for "blue" don't collide and don't
+  return each other's results. (The cache currently keys on the normalised query
+  string only.)
+- Errors, rate-limit handling, "no results", and the cached-results banner all
+  behave the same under a filter as under All.
+- Unit tests: the service/client send the correct Discogs parameter per filter
+  (`q` vs `release_title` / `artist` / `label`) with `type=release`; cache keys
+  differ by filter. Widget tests: changing the chip re-issues the search; load-
+  more preserves the filter; All matches today's behaviour.
+
+**Investigation notes:**
+- Plumb the filter through three layers:
+  1. `DiscogsApiClient.searchReleases` (`lib/infrastructure/discogs/discogs_api_client.dart`,
+     ~line 60) currently always sends `{'q': query, 'type': 'release', …}`. Add a
+     filter parameter and build `queryParameters` accordingly: All →
+     `q`; Release → `release_title`; Artist → `artist`; Label → `label`. Keep
+     `type: 'release'` in every case so the response shape stays
+     `DiscogsSearchPageDto` and `_toResult` is unchanged. **Verify against the
+     live Discogs API** that `release_title`/`artist`/`label` on
+     `/database/search` behave as expected (they are documented field filters; a
+     quick manual check during implementation avoids a surprise).
+  2. `DiscogsSearchService.search` (`lib/application/services/discogs_search_service.dart`,
+     ~line 22) forwards the filter to the client; signature gains an optional
+     `SearchFilter filter = SearchFilter.all`.
+  3. `SearchScreen` passes `_filter` (from US-84) into `_onSubmit`,
+     `_searchInBackground`, and `_loadMore`, and triggers a re-search in the chip
+     `onSelected` handler (re-run `_onSubmit(_controller.text.trim())` with the
+     new filter). Note `_onSubmit` currently early-returns when
+     `trimmed == _lastQuery` and results are fresh — that guard must also compare
+     the filter, or a filter change with identical text will be ignored. Track a
+     `_lastFilter` alongside `_lastQuery`.
+- **Cache correctness is the main trap.** `SearchQueryCache.normalizeKey(query)`
+  (`lib/application/services/search_query_cache.dart`) keys on the text only.
+  Fold the filter into the key (e.g. `'${filter.name}:${query.trim().toLowerCase()}'`)
+  so filtered and unfiltered searches for the same text don't overwrite or shadow
+  each other. The screen calls `SearchQueryCache.normalizeKey(trimmed)` directly,
+  so update both the helper signature and its call sites.
+- Reuse the `SearchFilter` enum defined in US-84; do not duplicate it.
+- Edge: an empty `q`/field value should behave as today (no search). Confirm
+  Discogs requires a non-empty value for the field params too.
+- Precedents: US-84 (the chip UI + filter state this consumes); the existing
+  `searchByBarcode` method shows the same `type: 'release'` + field-param pattern
+  (`barcode=…`) already in use, so field-scoped search is an established shape in
+  this client.
+- Roadmap fit: Phase 14 search UX — completing the filter feature so the chips
+  actually scope results.
+
+**Status: story only — not implemented.**
+
+---
+
+### US-86: Move a release from wishlist to collection ("Add to collection" on the wishlist detail screen)
+
+**3 SP · S5 (feature request, post-1.0)**
+
+> As a user viewing an item on the wishlist detail screen,
+> I want an "Add to collection" action right there,
+> so that when I finally buy a record I can move it into my collection in one
+> tap instead of removing it from the wishlist and re-finding it in search to
+> add it.
+
+**Background:** The wishlist detail screen (`WishlistDetailScreen`) lets me edit
+priority, target price, and notes, and remove the item — but there is **no way to
+add the item to my collection**. The natural lifecycle of a wantlist entry is
+"want it → bought it → own it", so the missing step is the most important one.
+Today the only path is: remove from wishlist, go to Search, find the release
+again, open it, and add to collection — tedious and error-prone. This story adds
+an **"Add to collection"** action on the wishlist detail screen that **moves**
+the item: it is added to the collection and, on success, removed from the
+wishlist (you don't want it any more — you have it). The add itself reuses the
+existing `AddToCollectionUseCase`, and the wishlist removal reuses the existing
+local-removal path.
+
+**Acceptance criteria:**
+- The wishlist detail screen shows a clear **"Add to collection"** action when an
+  item is loaded (a prominent button in the body and/or an app-bar action,
+  consistent with the screen's existing edit/remove affordances).
+- Tapping it adds the release to the collection using the same
+  `AddToCollectionUseCase` the search / release-detail flow uses, so the new
+  collection item carries the release's artist/title/label/catno/format/country/
+  year/cover and the standard `localOnly` sync status, default conditions, and
+  retry-on-storage-error behaviour.
+- **On a successful add, the item is removed from the wishlist** and the screen
+  pops back, with a confirmation snackbar (e.g. "Moved to your collection"). The
+  Collection and Wishlist tabs reflect the change on return (they already refresh
+  via the existing `RouteAware.didPopNext`, US-80/US-35).
+- **Order and atomicity:** add to the collection **first**; only remove from the
+  wishlist if the add succeeded. If the add fails (`AddToCollectionStorageError`),
+  the wishlist item is **left intact** and a non-destructive error is shown — the
+  user never loses the wantlist entry to a failed move.
+- **Already-in-collection case:** if the release is already in the collection
+  (`AddToCollectionDuplicate`), treat the move as effectively done — the wishlist
+  entry is redundant, so still remove it from the wishlist and report it clearly
+  (e.g. "Already in your collection — removed from wishlist"). Do not create a
+  duplicate collection item.
+- **Discogs propagation is local-only by default** and mirrors the *default* of
+  the existing wishlist remove flow (US-72): moving does **not** automatically
+  record a Discogs wantlist deletion tombstone, and the collection add is
+  local-first like every other add. (An opt-in "also remove from my Discogs
+  wantlist" during the move could be a later follow-up; keep US-86 scoped to the
+  local move so it is safe and predictable.)
+- If a wishlist remove fails *after* a successful add, surface it without losing
+  state: the item is in the collection and a message explains it could not be
+  removed from the wishlist (so the user can remove it manually) — avoid a silent
+  inconsistent state.
+- Unit/widget tests cover: the button appears on a loaded item; a successful add
+  removes the wishlist item, pops, and shows the snackbar; the add-failure path
+  leaves the wishlist item intact; the already-in-collection path removes from
+  wishlist without a duplicate; and no Discogs tombstone is created by default.
+
+**Investigation notes:**
+- `WishlistDetailScreen`
+  (`lib/presentation/screens/wishlist_detail_screen.dart`) does not currently
+  receive an `AddToCollectionUseCase` or a `CollectionRepository`. Add an
+  `AddToCollectionUseCase? addToCollectionUseCase` constructor param (and the
+  collection repo wiring for the non-injected path) following the pattern in
+  `release_detail_screen.dart`, which already constructs the use case from the
+  shared `AppDatabase`. `HomeShellScreen` wires repos/use-cases down to the tabs.
+- `AddToCollectionUseCase.execute` takes a **`ReleaseDetail`**
+  (`lib/application/use_cases/add_to_collection_use_case.dart`). The screen
+  already loads a nullable `_releaseDetail` via
+  `DiscogsReleaseDetailService.getCachedOrFetch` (US-76), but it can be null
+  offline / uncached. The use case reads only `id`, `artist`, `title`, `label`,
+  `catno`, `format`, `country`, `year`, `coverUrl` — **all of which the
+  `WishlistItem` already has** — so build a minimal `ReleaseDetail` from the item
+  (preferring the richer `_releaseDetail` when present) rather than blocking the
+  move on a network fetch. (Alternatively, add an `execute`-from-item overload to
+  the use case; prefer the local-build approach to avoid changing the use-case
+  contract.)
+- For the wishlist removal, reuse the existing local path: `_repository.remove(
+  item.id)` then `Navigator.pop()` — the same call `_removeItem` already makes
+  (`wishlist_detail_screen.dart:269`). Do **not** route the move through
+  `_confirmRemove`'s opt-in tombstone branch; the default move is local-only.
+- The duplicate guard already exists in the use case
+  (`containsRelease` → `AddToCollectionDuplicate`); map that result to the
+  "already in collection — removed from wishlist" branch.
+- Precedents: US-08/US-12 (add-to-collection / add-to-wishlist flows and the
+  `AddToCollectionUseCase`), US-72/US-81 (wishlist removal path and the
+  local-only-vs-Discogs distinction), US-80 (tabs refresh on return). This story
+  is the inverse-direction sibling of US-81 (which removes a saved item from the
+  detail screen) — here we *promote* a wishlist item into the collection.
+- Roadmap fit: Phase 14 UX polish — completing the wantlist→collection lifecycle.
+
+**Status: story only — not implemented.**

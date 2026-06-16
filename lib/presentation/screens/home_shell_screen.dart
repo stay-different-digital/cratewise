@@ -24,7 +24,9 @@ class HomeShellScreen extends StatelessWidget {
 
     if (isWide) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Cratewise')),
+        // No static title bar (US-83): the freed ~56dp goes to tab content.
+        // With the AppBar gone the top inset is no longer handled for us, so
+        // the content must claim the status-bar area via SafeArea(top: true).
         body: Row(
           children: [
             AppNavRail(
@@ -32,15 +34,16 @@ class HomeShellScreen extends StatelessWidget {
               onDestinationSelected: _onTabSelected,
             ),
             const VerticalDivider(width: 1, thickness: 1),
-            Expanded(child: SafeArea(top: false, child: navigationShell)),
+            Expanded(child: SafeArea(child: navigationShell)),
           ],
         ),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Cratewise')),
-      body: navigationShell,
+      // No static title bar (US-83); SafeArea now handles the top inset that
+      // the removed AppBar used to cover.
+      body: SafeArea(child: navigationShell),
       bottomNavigationBar: AppBottomNav(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: _onTabSelected,

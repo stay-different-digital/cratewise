@@ -5,9 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('app bar shows Cratewise title', (tester) async {
+  testWidgets('no static Cratewise header; content claims the top inset', (
+    tester,
+  ) async {
     await tester.pumpWidget(const CratewiseApp());
-    expect(find.text('Cratewise'), findsOneWidget);
+    // US-83: the persistent "Cratewise" title bar is removed from the shell.
+    expect(find.text('Cratewise'), findsNothing);
+    // The freed space is reclaimed, but the body must still respect the status
+    // bar — the shell wraps the tab content in a SafeArea.
+    expect(find.byType(SafeArea), findsWidgets);
   });
 
   testWidgets('wide layout shows NavigationRail and no NavigationBar', (
