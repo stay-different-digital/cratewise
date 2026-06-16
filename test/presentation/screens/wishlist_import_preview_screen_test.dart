@@ -19,6 +19,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeWishlistRepository implements WishlistRepository {
   @override
+  Future<void> deleteAll() async {}
+  @override
   Future<bool> containsRelease(int discogsReleaseId) async => false;
   @override
   Future<List<WishlistItem>> getAll() async => [];

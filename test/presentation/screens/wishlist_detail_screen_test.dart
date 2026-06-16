@@ -32,6 +32,8 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
 }
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeWishlistRepository({
     this.item,
     this.throwsOnLoad = false,
@@ -79,6 +81,8 @@ class _FakeWishlistRepository implements WishlistRepository {
 }
 
 class _FlippingWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FlippingWishlistRepository({required this.successItem});
 
   final WishlistItem successItem;
@@ -104,6 +108,8 @@ class _FlippingWishlistRepository implements WishlistRepository {
 }
 
 class _UpdatingWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _UpdatingWishlistRepository({required this.first, required this.second});
 
   final WishlistItem first;
@@ -129,6 +135,8 @@ class _UpdatingWishlistRepository implements WishlistRepository {
 }
 
 class _SuccessThenErrorWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _SuccessThenErrorWishlistRepository({required this.successItem});
 
   final WishlistItem successItem;

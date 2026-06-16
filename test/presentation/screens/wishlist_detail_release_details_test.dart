@@ -15,6 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeWishlistRepository({this.item});
   final WishlistItem? item;
 

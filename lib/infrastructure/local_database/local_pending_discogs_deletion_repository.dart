@@ -66,6 +66,13 @@ class LocalPendingDiscogsDeletionRepository
         .go();
   }
 
+  @override
+  Future<void> deleteAllByType(DeletionEntityType entityType) async {
+    await (_db.delete(
+      _db.pendingDiscogsDeletions,
+    )..where((t) => t.entityType.equals(entityType.name))).go();
+  }
+
   PendingDiscogsDeletion _toModel(PendingDiscogsDeletionRow row) {
     return PendingDiscogsDeletion(
       id: row.id,

@@ -719,6 +719,8 @@ class _FakeUseCase extends BuildCollectionCsvImportPreviewUseCase {
 
 class _NoOpCollectionRepo implements CollectionRepository {
   @override
+  Future<void> deleteAll() async {}
+  @override
   Future<void> add(CollectionItem item) async {}
   @override
   Future<bool> containsRelease(int id) async => false;

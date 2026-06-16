@@ -13,6 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeCollectionRepository({
     this.item,
     this.throwsOnLoad = false,
@@ -77,6 +79,8 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
 }
 
 class _FlippingCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FlippingCollectionRepository({required this.successItem});
 
   final CollectionItem successItem;
@@ -102,6 +106,8 @@ class _FlippingCollectionRepository implements CollectionRepository {
 }
 
 class _UpdatingCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _UpdatingCollectionRepository({required this.first, required this.second});
 
   final CollectionItem first;
@@ -127,6 +133,8 @@ class _UpdatingCollectionRepository implements CollectionRepository {
 }
 
 class _SuccessThenErrorCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _SuccessThenErrorCollectionRepository({required this.successItem});
 
   final CollectionItem successItem;
@@ -152,6 +160,8 @@ class _SuccessThenErrorCollectionRepository implements CollectionRepository {
 }
 
 class _ThenRemovedCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _ThenRemovedCollectionRepository({required this.firstItem});
 
   final CollectionItem firstItem;

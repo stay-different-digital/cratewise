@@ -76,6 +76,8 @@ class _SequencedBlockingLookupUseCase extends BarcodeLookupUseCase {
 // Membership fakes (US-80)
 
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeCollectionRepository({this.ids = const {}, this.throwOnGetAll = false});
 
   final Set<int> ids;
@@ -115,6 +117,8 @@ class _FakeCollectionRepository implements CollectionRepository {
 }
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeWishlistRepository({this.ids = const {}, this.throwOnGetAll = false});
 
   final Set<int> ids;

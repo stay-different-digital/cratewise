@@ -11,6 +11,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeWishlistRepository(this._items);
 
   final List<WishlistItem> _items;
@@ -35,6 +37,8 @@ class _FakeWishlistRepository implements WishlistRepository {
 }
 
 class _ThrowingWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   @override
   Future<List<WishlistItem>> getAll() async => throw Exception('DB error');
 
@@ -412,6 +416,8 @@ void main() {
 // ---------------------------------------------------------------------------
 
 class _SpyWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _SpyWishlistRepository(this._delegate, {required this.onGetAll});
 
   final WishlistRepository _delegate;

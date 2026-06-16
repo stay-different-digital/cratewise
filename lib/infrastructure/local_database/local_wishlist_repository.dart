@@ -53,6 +53,11 @@ class LocalWishlistRepository implements WishlistRepository {
     await (_db.delete(_db.wishlistItems)..where((t) => t.id.equals(id))).go();
   }
 
+  @override
+  Future<void> deleteAll() async {
+    await _db.delete(_db.wishlistItems).go();
+  }
+
   WishlistItem _rowToItem(WishlistRow row) {
     return WishlistItem(
       id: row.id,

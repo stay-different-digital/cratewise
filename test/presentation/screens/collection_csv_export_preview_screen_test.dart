@@ -20,6 +20,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeCollectionRepository implements CollectionRepository {
   @override
+  Future<void> deleteAll() async {}
+  @override
   Future<List<CollectionItem>> getAll() async => [];
   @override
   Future<CollectionItem?> getById(String id) async => null;

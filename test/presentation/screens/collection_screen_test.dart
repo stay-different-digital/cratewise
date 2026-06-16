@@ -15,6 +15,8 @@ import 'package:go_router/go_router.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeCollectionRepository({this.items = const [], this.throwsOnLoad = false});
 
   final List<CollectionItem> items;
@@ -66,6 +68,8 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
 }
 
 class _FlippingCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FlippingCollectionRepository({required this.successItems});
 
   final List<CollectionItem> successItems;
@@ -91,6 +95,8 @@ class _FlippingCollectionRepository implements CollectionRepository {
 }
 
 class _UpdatingCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _UpdatingCollectionRepository({required this.first, required this.second});
 
   final List<CollectionItem> first;
@@ -116,6 +122,8 @@ class _UpdatingCollectionRepository implements CollectionRepository {
 }
 
 class _SuccessThenErrorCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _SuccessThenErrorCollectionRepository({required this.successItems});
 
   final List<CollectionItem> successItems;

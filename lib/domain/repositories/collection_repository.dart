@@ -7,4 +7,7 @@ abstract interface class CollectionRepository {
   Future<void> add(CollectionItem item);
   Future<void> update(CollectionItem item);
   Future<void> remove(String id);
+
+  /// Removes every collection item in a single transactional delete (US-82).
+  Future<void> deleteAll();
 }

@@ -23,4 +23,8 @@ abstract interface class PendingDiscogsDeletionRepository {
     int discogsReleaseId,
     DeletionEntityType entityType,
   );
+
+  /// Drops every pending deletion for [entityType] — used when the local list
+  /// is cleared wholesale (US-82), so no orphaned tombstones remain.
+  Future<void> deleteAllByType(DeletionEntityType entityType);
 }

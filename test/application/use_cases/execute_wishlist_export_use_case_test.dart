@@ -114,6 +114,8 @@ class _SpyTokenStorage implements TokenStorage {
 // ---------------------------------------------------------------------------
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeWishlistRepository(this._items);
 
   final List<WishlistItem> _items;

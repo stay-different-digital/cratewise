@@ -10,6 +10,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 class _FakeDeletionRepository implements PendingDiscogsDeletionRepository {
+  @override
+  Future<void> deleteAllByType(DeletionEntityType entityType) async {}
   _FakeDeletionRepository(this._byType);
   final Map<DeletionEntityType, List<PendingDiscogsDeletion>> _byType;
   final List<String> removedIds = [];

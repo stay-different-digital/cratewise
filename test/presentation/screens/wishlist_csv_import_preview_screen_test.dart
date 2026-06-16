@@ -537,6 +537,8 @@ class _FakeUseCase extends BuildWishlistCsvImportPreviewUseCase {
 
 class _NoOpWishlistRepo implements WishlistRepository {
   @override
+  Future<void> deleteAll() async {}
+  @override
   Future<void> add(WishlistItem item) async {}
   @override
   Future<bool> containsRelease(int id) async => false;

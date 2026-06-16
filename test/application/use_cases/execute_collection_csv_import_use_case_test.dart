@@ -15,6 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   final List<CollectionItem> added = [];
   final Set<int> existingReleaseIds;
 
@@ -41,6 +43,8 @@ class _FakeCollectionRepository implements CollectionRepository {
 }
 
 class _ThrowingCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   @override
   Future<void> add(CollectionItem item) async =>
       throw Exception('DB write failed');

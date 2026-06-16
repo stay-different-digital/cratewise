@@ -12,6 +12,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   FakeWishlistRepository({Set<int>? existingReleaseIds})
     : _ids = existingReleaseIds ?? {};
 
@@ -63,6 +65,8 @@ DiscogsWantlistItemDto makeItem({
 );
 
 class _FakeDeletionRepository implements PendingDiscogsDeletionRepository {
+  @override
+  Future<void> deleteAllByType(DeletionEntityType entityType) async {}
   _FakeDeletionRepository({Set<int>? pendingReleaseIds})
     : _ids = pendingReleaseIds ?? {};
   final Set<int> _ids;

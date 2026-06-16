@@ -120,6 +120,8 @@ class _PartialThrowApiClient extends DiscogsApiClient {
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeCollectionRepository({Set<int>? existingIds}) : _ids = existingIds ?? {};
 
   final Set<int> _ids;

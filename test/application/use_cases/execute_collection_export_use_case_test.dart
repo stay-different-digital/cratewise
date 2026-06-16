@@ -115,6 +115,8 @@ class _ThrowingTokenStorage implements TokenStorage {
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeCollectionRepository(this._items);
 
   final List<CollectionItem> _items;

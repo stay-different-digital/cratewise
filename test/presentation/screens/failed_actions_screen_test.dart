@@ -176,6 +176,8 @@ class _FlippingRepo implements RetryActionRepository {
 // Null collection/wishlist repos for use case constructors.
 class _NullCollectionRepo implements CollectionRepository {
   @override
+  Future<void> deleteAll() async {}
+  @override
   Future<List<CollectionItem>> getAll() async => [];
   @override
   Future<CollectionItem?> getById(String id) async => null;
@@ -190,6 +192,8 @@ class _NullCollectionRepo implements CollectionRepository {
 }
 
 class _NullWishlistRepo implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   @override
   Future<List<WishlistItem>> getAll() async => [];
   @override

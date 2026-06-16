@@ -20,6 +20,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeWishlistRepository implements WishlistRepository {
   @override
+  Future<void> deleteAll() async {}
+  @override
   Future<List<WishlistItem>> getAll() async => [];
   @override
   Future<WishlistItem?> getById(String id) async => null;

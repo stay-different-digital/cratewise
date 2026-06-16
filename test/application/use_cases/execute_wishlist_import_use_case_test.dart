@@ -15,6 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   final List<WishlistItem> added = [];
 
   @override
@@ -37,6 +39,8 @@ class _FakeWishlistRepository implements WishlistRepository {
 }
 
 class _SpyWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _SpyWishlistRepository({required this.existing});
 
   final List<WishlistItem> existing;
@@ -77,6 +81,8 @@ WishlistItem _makeWishlistItem(int releaseId, SyncStatus status) {
 }
 
 class _ThrowingWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   @override
   Future<void> add(WishlistItem item) async =>
       throw Exception('DB write failed');

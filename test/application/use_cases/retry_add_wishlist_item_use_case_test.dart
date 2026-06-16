@@ -13,6 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _SpyWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   final List<WishlistItem> _items = [];
   bool throwOnAdd = false;
 

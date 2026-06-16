@@ -53,6 +53,8 @@ class _FailingTransactionRunner implements TransactionRunner {
 // ---------------------------------------------------------------------------
 
 class _SpyCollectionRepo implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _SpyCollectionRepo(this.spy);
   final _TransactionSpy spy;
   final List<CollectionItem> added = [];
@@ -76,6 +78,8 @@ class _SpyCollectionRepo implements CollectionRepository {
 }
 
 class _SpyWishlistRepo implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _SpyWishlistRepo(this.spy);
   final _TransactionSpy spy;
   final List<WishlistItem> added = [];

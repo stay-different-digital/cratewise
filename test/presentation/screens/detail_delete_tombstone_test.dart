@@ -15,6 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeCollectionRepository(this.item);
   final CollectionItem item;
   bool removed = false;
@@ -34,6 +36,8 @@ class _FakeCollectionRepository implements CollectionRepository {
 }
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeWishlistRepository(this.item);
   final WishlistItem item;
   bool removed = false;
@@ -53,6 +57,8 @@ class _FakeWishlistRepository implements WishlistRepository {
 }
 
 class _SpyDeletionRepository implements PendingDiscogsDeletionRepository {
+  @override
+  Future<void> deleteAllByType(DeletionEntityType entityType) async {}
   final List<PendingDiscogsDeletion> added = [];
 
   @override

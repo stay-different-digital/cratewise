@@ -175,6 +175,8 @@ WishlistItem _wishlistItem(int releaseId) => WishlistItem(
 /// Fake collection repo whose membership ids can change between loads (to
 /// exercise the refresh-on-return path) and that counts getAll calls.
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeCollectionRepository({
     Set<int> ids = const {},
     this.throwOnGetAll = false,
@@ -206,6 +208,8 @@ class _FakeCollectionRepository implements CollectionRepository {
 }
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeWishlistRepository({Set<int> ids = const {}, this.throwOnGetAll = false})
     : ids = {...ids};
 

@@ -12,6 +12,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   FakeCollectionRepository({Set<int>? existingReleaseIds})
     : _ids = existingReleaseIds ?? {};
 
@@ -64,6 +66,8 @@ DiscogsCollectionItemDto makeItem({
 );
 
 class _FakeDeletionRepository implements PendingDiscogsDeletionRepository {
+  @override
+  Future<void> deleteAllByType(DeletionEntityType entityType) async {}
   _FakeDeletionRepository({Set<int>? pendingReleaseIds})
     : _ids = pendingReleaseIds ?? {};
   final Set<int> _ids;

@@ -10,6 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeCollectionRepository(this._items);
 
   final List<CollectionItem> _items;
@@ -34,6 +36,8 @@ class _FakeCollectionRepository implements CollectionRepository {
 }
 
 class _ThrowingCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   @override
   Future<List<CollectionItem>> getAll() => Future.error(Exception('DB error'));
 

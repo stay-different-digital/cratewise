@@ -36,6 +36,8 @@ import 'package:go_router/go_router.dart';
 
 class _FakeCollectionRepository implements CollectionRepository {
   @override
+  Future<void> deleteAll() async {}
+  @override
   Future<bool> containsRelease(int id) async => false;
   @override
   Future<List<CollectionItem>> getAll() async => [];
@@ -50,6 +52,8 @@ class _FakeCollectionRepository implements CollectionRepository {
 }
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   @override
   Future<bool> containsRelease(int id) async => false;
   @override

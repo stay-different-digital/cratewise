@@ -31,6 +31,8 @@ class _FakeTokenStorage implements TokenStorage {
 }
 
 class _SpyDeletionRepository implements PendingDiscogsDeletionRepository {
+  @override
+  Future<void> deleteAllByType(DeletionEntityType entityType) async {}
   _SpyDeletionRepository(this._byType);
   final Map<DeletionEntityType, List<PendingDiscogsDeletion>> _byType;
   final List<String> removedIds = [];

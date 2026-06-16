@@ -51,6 +51,8 @@ class _FakeThumbnailCacheService extends ThumbnailCacheService {
 }
 
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeCollectionRepository({this.item});
   final CollectionItem? item;
 
@@ -69,6 +71,8 @@ class _FakeCollectionRepository implements CollectionRepository {
 }
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeWishlistRepository({this.item});
   final WishlistItem? item;
 

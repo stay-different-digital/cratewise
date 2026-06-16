@@ -13,6 +13,8 @@ import 'package:flutter_test/flutter_test.dart';
 // ---------------------------------------------------------------------------
 
 class _SpyCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   final List<CollectionItem> _items = [];
   bool throwOnAdd = false;
 

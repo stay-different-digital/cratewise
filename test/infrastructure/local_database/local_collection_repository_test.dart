@@ -126,6 +126,20 @@ void main() {
       });
     });
 
+    group('deleteAll (US-82)', () {
+      test('empties the collection', () async {
+        await repo.add(makeItem(id: 'a', discogsReleaseId: 1));
+        await repo.add(makeItem(id: 'b', discogsReleaseId: 2));
+        await repo.deleteAll();
+        expect(await repo.getAll(), isEmpty);
+      });
+
+      test('is a no-op on an already-empty collection', () async {
+        await repo.deleteAll();
+        expect(await repo.getAll(), isEmpty);
+      });
+    });
+
     group('field round-trip', () {
       test('preserves all optional fields through add and getById', () async {
         final item = CollectionItem(

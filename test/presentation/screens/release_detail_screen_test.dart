@@ -166,6 +166,8 @@ const _kindOfBlue = ReleaseDetail(
 );
 
 class _FakeCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   const _FakeCollectionRepository({this.alreadyContains = false});
 
   final bool alreadyContains;
@@ -204,6 +206,8 @@ AddToCollectionUseCase _newUseCase({bool alreadyContains = false}) =>
     );
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   const _FakeWishlistRepository({this.alreadyContains = false});
 
   final bool alreadyContains;
@@ -236,6 +240,8 @@ AddToWishlistUseCase _newWishlistUseCase({bool alreadyContains = false}) =>
 // the local item id from the Discogs release id and remove it.
 
 class _RemovableCollectionRepository implements CollectionRepository {
+  @override
+  Future<void> deleteAll() async {}
   _RemovableCollectionRepository(
     this.items, {
     this.throwOnGetAll = false,
@@ -273,6 +279,8 @@ class _RemovableCollectionRepository implements CollectionRepository {
 }
 
 class _RemovableWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _RemovableWishlistRepository(this.items);
 
   final List<WishlistItem> items;
@@ -300,6 +308,8 @@ class _RemovableWishlistRepository implements WishlistRepository {
 }
 
 class _SpyDeletionRepository implements PendingDiscogsDeletionRepository {
+  @override
+  Future<void> deleteAllByType(DeletionEntityType entityType) async {}
   final List<PendingDiscogsDeletion> added = [];
 
   @override

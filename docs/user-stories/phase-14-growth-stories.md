@@ -374,7 +374,19 @@ this.
 - Roadmap fit: Phase 14 UX polish / account hygiene — making account switching
   leave a clean, correct local state.
 
-**Status: story only — not implemented.**
+**Status (2026-06-16): implemented.** Added a "Local data" section to
+`SettingsScreen` with "Clear collection" / "Clear wishlist" tiles that show the
+item count and disable when empty. Each clear asks for confirmation (reusing the
+US-72 "Discogs account is not affected" wording) and is **local-only** — it
+discards any pending tombstones for that entity (`deleteAllByType`) and never
+creates new ones, so switching accounts can't delete from the wrong Discogs
+account. Bulk `deleteAll()` was added to `CollectionRepository` /
+`WishlistRepository` (single transactional delete, following the US-44
+`RetryActionRepository.deleteAll()` precedent) and `deleteAllByType()` to
+`PendingDiscogsDeletionRepository`; the `deleteAll()` stub was added to all
+repository test fakes. Storage failures are non-destructive (count unchanged,
+error snackbar). 12 new tests (suite 2383 → 2395, all green). Follow-up noted in
+the investigation notes — prompt-on-account-switch — remains unscoped.
 
 ---
 

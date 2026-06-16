@@ -53,6 +53,11 @@ class LocalCollectionRepository implements CollectionRepository {
     await (_db.delete(_db.collectionItems)..where((t) => t.id.equals(id))).go();
   }
 
+  @override
+  Future<void> deleteAll() async {
+    await _db.delete(_db.collectionItems).go();
+  }
+
   CollectionItem _rowToItem(CollectionRow row) {
     return CollectionItem(
       id: row.id,

@@ -115,6 +115,26 @@ void main() {
     );
   });
 
+  test('deleteAllByType drops only the matching entity type (US-82)', () async {
+    await repo.add(_makeDeletion(id: 'c-1'));
+    await repo.add(_makeDeletion(id: 'c-2', discogsReleaseId: 101));
+    await repo.add(
+      _makeDeletion(
+        id: 'w-1',
+        entityType: DeletionEntityType.wishlist,
+        discogsInstanceId: null,
+      ),
+    );
+
+    await repo.deleteAllByType(DeletionEntityType.collection);
+
+    expect(await repo.getByType(DeletionEntityType.collection), isEmpty);
+    expect(
+      (await repo.getByType(DeletionEntityType.wishlist)).map((d) => d.id),
+      ['w-1'],
+    );
+  });
+
   test('add replaces an existing tombstone with the same id', () async {
     await repo.add(_makeDeletion(id: 'd-1', title: 'First'));
     await repo.add(_makeDeletion(id: 'd-1', title: 'Second'));

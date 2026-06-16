@@ -14,6 +14,8 @@ import 'package:go_router/go_router.dart';
 // ---------------------------------------------------------------------------
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeWishlistRepository({this.items = const [], this.throwsOnLoad = false});
 
   final List<WishlistItem> items;
@@ -65,6 +67,8 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
 }
 
 class _FlippingWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FlippingWishlistRepository({required this.successItems});
 
   final List<WishlistItem> successItems;
@@ -90,6 +94,8 @@ class _FlippingWishlistRepository implements WishlistRepository {
 }
 
 class _UpdatingWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _UpdatingWishlistRepository({required this.first, required this.second});
 
   final List<WishlistItem> first;
@@ -115,6 +121,8 @@ class _UpdatingWishlistRepository implements WishlistRepository {
 }
 
 class _SuccessThenErrorWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _SuccessThenErrorWishlistRepository({required this.successItems});
 
   final List<WishlistItem> successItems;

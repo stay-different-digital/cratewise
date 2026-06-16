@@ -120,6 +120,8 @@ class _PartialThrowApiClient extends DiscogsApiClient {
 // ---------------------------------------------------------------------------
 
 class _FakeWishlistRepository implements WishlistRepository {
+  @override
+  Future<void> deleteAll() async {}
   _FakeWishlistRepository({Set<int>? existingIds}) : _ids = existingIds ?? {};
 
   final Set<int> _ids;
