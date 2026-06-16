@@ -730,4 +730,21 @@ local-removal path.
   detail screen) — here we *promote* a wishlist item into the collection.
 - Roadmap fit: Phase 14 UX polish — completing the wantlist→collection lifecycle.
 
-**Status: story only — not implemented.**
+**Status (2026-06-16): implemented.** `WishlistDetailScreen` gained an optional
+`AddToCollectionUseCase` (self-constructed from the shared `AppDatabase` via
+`LocalCollectionRepository` in the non-injected path) and an "Add to collection"
+app-bar action (`Key('add-to-collection-button')`, leftmost/most prominent).
+Tapping it builds a minimal `ReleaseDetail` from the item — preferring the
+loaded Discogs `_releaseDetail` when present, so the move never blocks on a
+fetch — and runs the existing `AddToCollectionUseCase`. **Add-first/remove-on-
+success:** on `AddToCollectionSuccess` or `AddToCollectionDuplicate` the wishlist
+item is removed and the screen pops with a snackbar ("Moved to your collection."
+/ "Already in your collection — removed from wishlist."); on
+`AddToCollectionStorageError` the wishlist entry is left intact with a
+non-destructive message. A wishlist-remove failure *after* a successful add is
+surfaced ("…could not remove it from the wishlist. Please remove it manually.")
+rather than left silent. The move is local-only — it never records a Discogs
+wantlist tombstone. 6 new widget tests (button present, success move, fields
+carried, add-failure intact, duplicate-no-dupe, no-tombstone); suite 2395 → 2401,
+all green. Opt-in "also remove from my Discogs wantlist" during the move remains
+a possible later follow-up.

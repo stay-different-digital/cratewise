@@ -1,6 +1,11 @@
+import 'package:cratewise/application/use_cases/add_to_collection_use_case.dart';
+import 'package:cratewise/domain/models/collection_item.dart';
+import 'package:cratewise/domain/models/pending_discogs_deletion.dart';
 import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/models/thumbnail_entry.dart';
+import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:cratewise/domain/repositories/pending_discogs_deletion_repository.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/wishlist_detail_screen.dart';
@@ -161,6 +166,67 @@ class _SuccessThenErrorWishlistRepository implements WishlistRepository {
   Future<void> remove(String id) async {}
 }
 
+class _FakeCollectionRepository implements CollectionRepository {
+  _FakeCollectionRepository({
+    this.alreadyContains = false,
+    this.throwOnAdd = false,
+  });
+
+  final bool alreadyContains;
+  final bool throwOnAdd;
+  int addCallCount = 0;
+  CollectionItem? addedItem;
+
+  @override
+  Future<bool> containsRelease(int discogsReleaseId) async => alreadyContains;
+
+  @override
+  Future<void> add(CollectionItem item) async {
+    addCallCount++;
+    if (throwOnAdd) throw Exception('add error');
+    addedItem = item;
+  }
+
+  @override
+  Future<List<CollectionItem>> getAll() async => [];
+  @override
+  Future<CollectionItem?> getById(String id) async => null;
+  @override
+  Future<void> update(CollectionItem item) async {}
+  @override
+  Future<void> remove(String id) async {}
+  @override
+  Future<void> deleteAll() async {}
+}
+
+class _RecordingDeletionRepository implements PendingDiscogsDeletionRepository {
+  int addCallCount = 0;
+
+  @override
+  Future<void> add(PendingDiscogsDeletion deletion) async {
+    addCallCount++;
+  }
+
+  @override
+  Future<List<PendingDiscogsDeletion>> getByType(
+    DeletionEntityType entityType,
+  ) async => [];
+  @override
+  Future<bool> containsRelease(
+    int discogsReleaseId,
+    DeletionEntityType entityType,
+  ) async => false;
+  @override
+  Future<void> remove(String id) async {}
+  @override
+  Future<void> removeByRelease(
+    int discogsReleaseId,
+    DeletionEntityType entityType,
+  ) async {}
+  @override
+  Future<void> deleteAllByType(DeletionEntityType entityType) async {}
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -199,6 +265,42 @@ WishlistItem _makeItem({
 );
 
 Widget _wrap(Widget child) => MaterialApp(home: child);
+
+// Pushes the detail screen on top of a home route so Navigator.pop() returns
+// to a real previous route (mirrors the existing remove-flow tests).
+Future<void> _pumpPushedDetail(
+  WidgetTester tester,
+  WishlistRepository repo, {
+  AddToCollectionUseCase? addToCollectionUseCase,
+  PendingDiscogsDeletionRepository? deletionRepository,
+}) async {
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: TextButton(
+              key: const Key('go-to-detail'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => WishlistDetailScreen(
+                    itemId: 'w-1',
+                    repository: repo,
+                    addToCollectionUseCase: addToCollectionUseCase,
+                    deletionRepository: deletionRepository,
+                  ),
+                ),
+              ),
+              child: const Text('Go to detail'),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.byKey(const Key('go-to-detail')));
+  await tester.pumpAndSettle();
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -1163,6 +1265,151 @@ void main() {
       await tester.pumpAndSettle();
       final safeAreas = tester.widgetList<SafeArea>(find.byType(SafeArea));
       expect(safeAreas.any((sa) => !sa.top), isTrue);
+    });
+  });
+
+  group('WishlistDetailScreen — move to collection (US-86)', () {
+    testWidgets('shows the Add to collection button on a loaded item', (
+      tester,
+    ) async {
+      final repo = _FakeWishlistRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(
+          WishlistDetailScreen(
+            itemId: 'w-1',
+            repository: repo,
+            addToCollectionUseCase: AddToCollectionUseCase(
+              _FakeCollectionRepository(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('add-to-collection-button')), findsOneWidget);
+    });
+
+    testWidgets(
+      'successful add removes the wishlist item, pops, and shows a snackbar',
+      (tester) async {
+        final wishlistRepo = _FakeWishlistRepository(item: _makeItem());
+        final collRepo = _FakeCollectionRepository();
+        await _pumpPushedDetail(
+          tester,
+          wishlistRepo,
+          addToCollectionUseCase: AddToCollectionUseCase(collRepo),
+        );
+
+        await tester.tap(find.byKey(const Key('add-to-collection-button')));
+        await tester.pumpAndSettle();
+
+        expect(collRepo.addCallCount, 1);
+        expect(wishlistRepo.removeCallCount, 1);
+        expect(find.byType(WishlistDetailScreen), findsNothing);
+        expect(find.text('Moved to your collection.'), findsOneWidget);
+      },
+    );
+
+    testWidgets('the added collection item carries the release fields', (
+      tester,
+    ) async {
+      final wishlistRepo = _FakeWishlistRepository(
+        item: _makeItem(
+          artist: 'Aphex Twin',
+          title: 'Selected Ambient Works',
+          label: 'Apollo',
+          catno: 'AMB 3922',
+        ),
+      );
+      final collRepo = _FakeCollectionRepository();
+      await _pumpPushedDetail(
+        tester,
+        wishlistRepo,
+        addToCollectionUseCase: AddToCollectionUseCase(collRepo),
+      );
+
+      await tester.tap(find.byKey(const Key('add-to-collection-button')));
+      await tester.pumpAndSettle();
+
+      expect(collRepo.addedItem?.artist, 'Aphex Twin');
+      expect(collRepo.addedItem?.title, 'Selected Ambient Works');
+      expect(collRepo.addedItem?.label, 'Apollo');
+      expect(collRepo.addedItem?.catno, 'AMB 3922');
+      expect(collRepo.addedItem?.syncStatus, SyncStatus.localOnly);
+    });
+
+    testWidgets('add failure leaves the wishlist item intact (no pop)', (
+      tester,
+    ) async {
+      final wishlistRepo = _FakeWishlistRepository(item: _makeItem());
+      final collRepo = _FakeCollectionRepository(throwOnAdd: true);
+      await _pumpPushedDetail(
+        tester,
+        wishlistRepo,
+        addToCollectionUseCase: AddToCollectionUseCase(collRepo),
+      );
+
+      await tester.tap(find.byKey(const Key('add-to-collection-button')));
+      await tester.pumpAndSettle();
+
+      expect(wishlistRepo.removeCallCount, 0);
+      expect(find.byType(WishlistDetailScreen), findsOneWidget);
+      expect(find.textContaining('Your wishlist is unchanged'), findsOneWidget);
+    });
+
+    testWidgets(
+      'already-in-collection removes from wishlist without a duplicate add',
+      (tester) async {
+        final wishlistRepo = _FakeWishlistRepository(item: _makeItem());
+        final collRepo = _FakeCollectionRepository(alreadyContains: true);
+        await _pumpPushedDetail(
+          tester,
+          wishlistRepo,
+          addToCollectionUseCase: AddToCollectionUseCase(collRepo),
+        );
+
+        await tester.tap(find.byKey(const Key('add-to-collection-button')));
+        await tester.pumpAndSettle();
+
+        expect(collRepo.addCallCount, 0);
+        expect(wishlistRepo.removeCallCount, 1);
+        expect(find.byType(WishlistDetailScreen), findsNothing);
+        expect(
+          find.text('Already in your collection — removed from wishlist.'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('the move creates no Discogs tombstone by default', (
+      tester,
+    ) async {
+      final wishlistRepo = _FakeWishlistRepository(
+        item: WishlistItem(
+          id: 'w-1',
+          discogsReleaseId: 1,
+          artist: 'Test Artist',
+          title: 'Test Album',
+          priority: WishlistPriority.medium,
+          createdAt: DateTime(2026, 1, 15),
+          updatedAt: DateTime(2026, 3, 20),
+          syncStatus: SyncStatus.synced,
+        ),
+      );
+      final deletionRepo = _RecordingDeletionRepository();
+      await _pumpPushedDetail(
+        tester,
+        wishlistRepo,
+        addToCollectionUseCase: AddToCollectionUseCase(
+          _FakeCollectionRepository(),
+        ),
+        deletionRepository: deletionRepo,
+      );
+
+      await tester.tap(find.byKey(const Key('add-to-collection-button')));
+      await tester.pumpAndSettle();
+
+      expect(deletionRepo.addCallCount, 0);
+      expect(wishlistRepo.removeCallCount, 1);
     });
   });
 }

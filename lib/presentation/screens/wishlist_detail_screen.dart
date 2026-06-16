@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/services/thumbnail_cache_service.dart';
+import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../domain/models/pending_discogs_deletion.dart';
 import '../../domain/models/release_detail.dart';
 import '../../domain/models/sync_status.dart';
@@ -16,6 +17,7 @@ import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
+import '../../infrastructure/local_database/local_collection_repository.dart';
 import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_wishlist_repository.dart';
@@ -63,6 +65,7 @@ class WishlistDetailScreen extends StatefulWidget {
     this.releaseDetailService,
     this.cacheRepository,
     this.deletionRepository,
+    this.addToCollectionUseCase,
   });
 
   final String itemId;
@@ -72,6 +75,7 @@ class WishlistDetailScreen extends StatefulWidget {
   final DiscogsReleaseDetailService? releaseDetailService;
   final CachedReleaseMetadataRepository? cacheRepository;
   final PendingDiscogsDeletionRepository? deletionRepository;
+  final AddToCollectionUseCase? addToCollectionUseCase;
 
   @override
   State<WishlistDetailScreen> createState() => _WishlistDetailScreenState();
@@ -83,6 +87,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   late final ThumbnailCacheService _thumbnailCacheService;
   DiscogsReleaseDetailService? _detailService;
   PendingDiscogsDeletionRepository? _deletionRepository;
+  AddToCollectionUseCase? _addToCollectionUseCase;
   AppDatabase? _ownedDb;
   _DetailState _state = const _Loading();
   ReleaseDetail? _releaseDetail;
@@ -99,6 +104,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
       _repository = widget.repository!;
       _detailService = widget.releaseDetailService;
       _deletionRepository = widget.deletionRepository;
+      _addToCollectionUseCase = widget.addToCollectionUseCase;
     } else {
       final db = AppDatabase(openAppDatabase());
       _ownedDb = db;
@@ -113,6 +119,9 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
       _deletionRepository =
           widget.deletionRepository ??
           LocalPendingDiscogsDeletionRepository(db);
+      _addToCollectionUseCase =
+          widget.addToCollectionUseCase ??
+          AddToCollectionUseCase(LocalCollectionRepository(db));
     }
     _load();
   }
@@ -296,6 +305,86 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     }
   }
 
+  /// Builds the [ReleaseDetail] the add-to-collection use case needs. Prefers
+  /// the richer Discogs detail when it is loaded for this release; otherwise
+  /// falls back to the wishlist item's own fields so the move never has to wait
+  /// on a network fetch (the use case reads only id/artist/title/label/catno/
+  /// format/country/year/coverUrl).
+  ReleaseDetail _releaseForMove(WishlistItem item) {
+    final detail = _releaseDetail;
+    if (detail != null && detail.id == item.discogsReleaseId) return detail;
+    return ReleaseDetail(
+      id: item.discogsReleaseId,
+      title: item.title,
+      artist: item.artist,
+      label: item.label ?? '',
+      catno: item.catno ?? '',
+      format: item.format ?? '',
+      country: item.country ?? '',
+      genres: const [],
+      styles: const [],
+      tracklist: const [],
+      identifiers: const [],
+      year: item.year,
+      coverUrl: item.coverUrl,
+    );
+  }
+
+  /// Moves the item into the collection (US-86): add first, and only remove it
+  /// from the wishlist if the add succeeded (or it was already in the
+  /// collection). The move is local-only — it never records a Discogs wantlist
+  /// tombstone, mirroring the default of the remove flow.
+  Future<void> _moveToCollection(WishlistItem item) async {
+    final useCase = _addToCollectionUseCase;
+    if (useCase == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    final result = await useCase.execute(_releaseForMove(item));
+    if (!mounted) return;
+
+    switch (result) {
+      case AddToCollectionStorageError():
+        // The add failed: leave the wishlist entry intact so it is never lost.
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not add to your collection. Your wishlist is unchanged.',
+            ),
+          ),
+        );
+      case AddToCollectionSuccess():
+      case AddToCollectionDuplicate():
+        final alreadyOwned = result is AddToCollectionDuplicate;
+        try {
+          await _repository.remove(item.id);
+          if (!mounted) return;
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                alreadyOwned
+                    ? 'Already in your collection — removed from wishlist.'
+                    : 'Moved to your collection.',
+              ),
+            ),
+          );
+          navigator.pop();
+        } catch (_) {
+          if (!mounted) return;
+          // The add succeeded but the wishlist removal failed — surface it
+          // rather than leaving a silent inconsistent state.
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Added to your collection, but could not remove it from the '
+                'wishlist. Please remove it manually.',
+              ),
+            ),
+          );
+        }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = _state;
@@ -304,6 +393,12 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
         title: Text(state is _Loaded ? state.item.title : 'Wishlist Item'),
         actions: state is _Loaded
             ? [
+                IconButton(
+                  key: const Key('add-to-collection-button'),
+                  icon: const Icon(Icons.library_add_outlined),
+                  tooltip: 'Add to collection',
+                  onPressed: () => _moveToCollection(state.item),
+                ),
                 IconButton(
                   key: const Key('edit-priority-button'),
                   icon: const Icon(Icons.tune),
