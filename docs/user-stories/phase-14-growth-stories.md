@@ -1033,7 +1033,25 @@ lives at the repo root, so the build must pull it in.
   consolidated root `CHANGELOG.md` this consumes).
 - Roadmap fit: Phase 14 — release communication on the public site.
 
-**Status: story only — not implemented.**
+**Status: implemented.** Added a `/changelog/` page generated from the repo-root
+`CHANGELOG.md` (single source of truth). Mechanism: an Eleventy global-data file
+`site/src/_data/changelog.js` reads `../../../CHANGELOG.md` and rewrites
+repo-relative Markdown links (e.g. `docs/archive/CHANGELOG_DEV_HISTORY.md`) to
+absolute `https://github.com/itris/Crate/blob/master/...` URLs so they don't 404
+under the Pages path prefix; `site/src/changelog.njk` (layout `base.njk`,
+`permalink: /changelog/`) renders that string through a new `markdown` filter
+(markdown-it, added to `eleventy.config.js` + declared in `package.json`).
+**Note — the originally-recommended prebuild-copy / `eleventy.before` approach
+was rejected:** Eleventy scans the input dir *before* the `eleventy.before`
+event, so a file written then is absent from the same build, and CI runs
+`npx @11ty/eleventy` directly (not `npm run build`) on a clean checkout, so it
+would never appear. The global-data + filter approach renders in one pipeline
+pass with no generated file (nothing to git-ignore). Added the Changelog link to
+the header + footer nav in `base.njk`, an `addWatchTarget("../CHANGELOG.md")`
+for `--serve`, and `CHANGELOG.md` to the deploy workflow's `on.push.paths` so
+changelog edits redeploy. Verified a clean `npx @11ty/eleventy --pathprefix=/Crate/`
+writes `_site/changelog/index.html` with rendered headings, the rewritten
+dev-history link, and `/Crate/changelog/`-prefixed nav.
 
 ---
 
