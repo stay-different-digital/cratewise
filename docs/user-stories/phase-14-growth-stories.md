@@ -548,7 +548,21 @@ its own.
   controls — match their chip styling and placement conventions for consistency.
 - Roadmap fit: Phase 14 search UX — giving users control over match scope.
 
-**Status: story only — not implemented.**
+**Status (2026-06-17): implemented (UI + state only).** Added a reusable
+`SearchFilter { all, release, artist, label }` enum
+(`lib/domain/models/search_filter.dart`, with a `chipLabel` getter) for US-85 to
+reuse. `SearchScreen` holds `SearchFilter _filter = SearchFilter.all` and renders
+a `_SearchFilterChips` `Wrap` of three `FilterChip`s
+(`Key('search-filter-chip-{release,artist,label}')`) between the search
+`TextField` and the results body in the shared `searchPane`, so the row shows in
+both the narrow and the wide (320dp pane) layouts and in the idle state. Single-
+choice: selecting one deselects the others; tapping the active chip returns to
+All (no chip selected). **Deliberately inert** — the filter is not threaded into
+`_onSubmit`/`_service.search`, so results are unchanged; query scoping, re-run-
+on-change, and filter-keyed cache are US-85. Barcode scanning is unaffected (the
+chips live only on `SearchScreen`, not `BarcodeScanScreen`). 6 new widget tests
+(chips render, All default, single-select, deselect-to-All, narrow layout, no
+re-search on chip tap); suite 2401 → 2407, all green.
 
 ---
 

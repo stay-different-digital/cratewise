@@ -9,6 +9,7 @@ import '../../application/services/search_query_cache.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/release_search_result.dart';
+import '../../domain/models/search_filter.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
@@ -130,6 +131,9 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   _SearchState _state = const _Idle();
   Timer? _debounce;
   String _lastQuery = '';
+  // Selected search-scope filter (US-84). All = no chip selected = search every
+  // field. US-84 only holds the state; US-85 will scope the query to it.
+  SearchFilter _filter = SearchFilter.all;
   ReleaseSearchResult? _selectedResult;
   int _searchGeneration = 0;
   // Discogs release ids the user already has locally. Loaded once and refreshed
@@ -369,6 +373,10 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
             ),
           ),
         ),
+        _SearchFilterChips(
+          selected: _filter,
+          onChanged: (f) => setState(() => _filter = f),
+        ),
         Expanded(child: _buildBody(isWide: isWide)),
       ],
     );
@@ -442,6 +450,48 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
             : () => _onSubmit(_lastQuery),
       ),
     };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Filter chips (US-84)
+// ---------------------------------------------------------------------------
+
+/// Release / Artist / Label scope chips shown under the search field. Single-
+/// choice: selecting one deselects the others; tapping the active chip returns
+/// to "All" (no chip selected). The row wraps rather than overflowing on a
+/// narrow phone or in the 320dp wide-layout search pane.
+class _SearchFilterChips extends StatelessWidget {
+  const _SearchFilterChips({required this.selected, required this.onChanged});
+
+  final SearchFilter selected;
+  final ValueChanged<SearchFilter> onChanged;
+
+  static const _choices = [
+    SearchFilter.release,
+    SearchFilter.artist,
+    SearchFilter.label,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        children: [
+          for (final filter in _choices)
+            FilterChip(
+              key: Key('search-filter-chip-${filter.name}'),
+              label: Text(filter.chipLabel),
+              selected: selected == filter,
+              onSelected: (isSelected) =>
+                  onChanged(isSelected ? filter : SearchFilter.all),
+            ),
+        ],
+      ),
+    );
   }
 }
 

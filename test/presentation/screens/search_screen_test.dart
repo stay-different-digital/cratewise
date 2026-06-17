@@ -1247,6 +1247,101 @@ void main() {
       expect(find.byKey(const Key('in-collection-icon')), findsOneWidget);
     });
   });
+
+  group('SearchScreen — filter chips (US-84)', () {
+    Finder chip(String name) => find.byKey(Key('search-filter-chip-$name'));
+    bool isSelected(WidgetTester tester, String name) =>
+        tester.widget<FilterChip>(chip(name)).selected;
+
+    testWidgets('renders Release / Artist / Label chips in the idle state', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
+      await tester.pump();
+
+      expect(chip('release'), findsOneWidget);
+      expect(chip('artist'), findsOneWidget);
+      expect(chip('label'), findsOneWidget);
+      expect(find.text('Release'), findsOneWidget);
+      expect(find.text('Artist'), findsOneWidget);
+      expect(find.text('Label'), findsOneWidget);
+    });
+
+    testWidgets('All is the default — no chip selected on open', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
+      await tester.pump();
+
+      expect(isSelected(tester, 'release'), isFalse);
+      expect(isSelected(tester, 'artist'), isFalse);
+      expect(isSelected(tester, 'label'), isFalse);
+    });
+
+    testWidgets('selecting a chip highlights it and deselects the others', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
+      await tester.pump();
+
+      await tester.tap(chip('artist'));
+      await tester.pump();
+
+      expect(isSelected(tester, 'artist'), isTrue);
+      expect(isSelected(tester, 'release'), isFalse);
+      expect(isSelected(tester, 'label'), isFalse);
+
+      // Switching to another chip moves the single selection.
+      await tester.tap(chip('label'));
+      await tester.pump();
+
+      expect(isSelected(tester, 'label'), isTrue);
+      expect(isSelected(tester, 'artist'), isFalse);
+    });
+
+    testWidgets('tapping the active chip returns to All', (tester) async {
+      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
+      await tester.pump();
+
+      await tester.tap(chip('release'));
+      await tester.pump();
+      expect(isSelected(tester, 'release'), isTrue);
+
+      await tester.tap(chip('release'));
+      await tester.pump();
+      expect(isSelected(tester, 'release'), isFalse);
+    });
+
+    testWidgets('chips are shown in the narrow layout too', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
+      await tester.pump();
+
+      expect(chip('release'), findsOneWidget);
+      expect(chip('artist'), findsOneWidget);
+      expect(chip('label'), findsOneWidget);
+    });
+
+    testWidgets('selecting a chip does not (yet) trigger a search (US-84)', (
+      tester,
+    ) async {
+      final service = _CountingSearchService(results: [_kindOfBlue]);
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'blue');
+      expect(service.callCount, 1);
+
+      // US-84 is UI-only: changing the filter must not re-issue the query.
+      // (Re-running on filter change is delivered by US-85.)
+      await tester.tap(chip('artist'));
+      await tester.pump();
+
+      expect(service.callCount, 1);
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------

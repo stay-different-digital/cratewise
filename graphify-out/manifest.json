@@ -65,7 +65,7 @@
     "semantic_hash": "8848359372bf82b824bc7e798c268da4"
   },
   "ios/Flutter/flutter_export_environment.sh": {
-    "mtime": 1781639104.1872644,
+    "mtime": 1781678482.811881,
     "ast_hash": "4021115e2838b25dbf9ce707fabe6283",
     "semantic_hash": ""
   },
@@ -640,8 +640,8 @@
     "semantic_hash": ""
   },
   "lib/presentation/screens/search_screen.dart": {
-    "mtime": 1781463527.1321764,
-    "ast_hash": "0ad1cf409810e2db8ca254813e9a16d3",
+    "mtime": 1781680153.2119603,
+    "ast_hash": "6bf8590551099957cb0a8bd28a6e3379",
     "semantic_hash": ""
   },
   "lib/presentation/screens/settings_screen.dart": {
@@ -1120,8 +1120,8 @@
     "semantic_hash": ""
   },
   "test/presentation/screens/search_screen_test.dart": {
-    "mtime": 1781640469.285423,
-    "ast_hash": "39ce55a514b8da30475ab05871fda0d2",
+    "mtime": 1781680227.7973094,
+    "ast_hash": "c50621a8a9e0b60579d9e822c3e8270d",
     "semantic_hash": ""
   },
   "test/presentation/screens/settings_screen_test.dart": {
@@ -2310,8 +2310,8 @@
     "semantic_hash": ""
   },
   "docs/user-stories/phase-14-growth-stories.md": {
-    "mtime": 1781640968.6663537,
-    "ast_hash": "6eb434b4946da3489fb6a2d090b5774d",
+    "mtime": 1781641510.676343,
+    "ast_hash": "09e591a3a65213656e52fcb8d9922a2e",
     "semantic_hash": ""
   },
   "test/presentation/screens/collection_detail_release_details_test.dart": {
@@ -2407,6 +2407,11 @@
   "docs/store/STORE_COPY_OPTIONS.md": {
     "mtime": 1781518677.2892363,
     "ast_hash": "61c754fd65c9551529d80147b305b4f8",
+    "semantic_hash": ""
+  },
+  "lib/domain/models/search_filter.dart": {
+    "mtime": 1781680121.713958,
+    "ast_hash": "bb91cb748c4c7e16196ba2bcebfd9a67",
     "semantic_hash": ""
   }
 }

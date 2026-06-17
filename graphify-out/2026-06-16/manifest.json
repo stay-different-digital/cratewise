@@ -660,8 +660,8 @@
     "semantic_hash": "7501b3d25bbf846f39aa94414c63eeb8"
   },
   "lib/presentation/screens/wishlist_detail_screen.dart": {
-    "mtime": 1781382658.3824203,
-    "ast_hash": "77e4e97a0f7e3894c1d6126b44c57875",
+    "mtime": 1781641341.0628428,
+    "ast_hash": "2b72da5f5b45b274e61a3c521ad3b7e5",
     "semantic_hash": ""
   },
   "lib/presentation/screens/wishlist_export_preview_screen.dart": {
@@ -1140,8 +1140,8 @@
     "semantic_hash": ""
   },
   "test/presentation/screens/wishlist_detail_screen_test.dart": {
-    "mtime": 1781640469.2739687,
-    "ast_hash": "0fc78bcae19ed75f101fa06f36a4b759",
+    "mtime": 1781641445.2460334,
+    "ast_hash": "6fed3fc9dedba99974f02f71038032d8",
     "semantic_hash": ""
   },
   "test/presentation/screens/wishlist_export_preview_screen_test.dart": {
