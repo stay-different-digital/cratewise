@@ -1232,7 +1232,19 @@ no behaviour change.
   warning is gone from both workflows.
 - Roadmap fit: Phase 11/14 — keep CI/CD green and future-proof ahead of release.
 
-**Status: story only — not implemented.**
+**Status (2026-06-17): implemented.** Bumped every first-party action pinned to
+a Node-20 major to its Node-24 major, verified against each action's releases /
+`action.yml` `runs.using`:
+- `deploy-pages.yml`: `actions/checkout@v4→v5`, `actions/setup-node@v4→v5`,
+  `actions/upload-pages-artifact@v3→v5` (composite; v5 bundles upload-artifact v7
+  on Node 24), `actions/deploy-pages@v4→v5` (`runs.using: node24` confirmed).
+- `flutter-ci.yml`: `actions/checkout@v4→v5` (both jobs).
+`subosito/flutter-action@v2` was **left as-is**: it is a composite action (runs
+shell, not a Node runtime), which is why the deprecation warning never named it.
+No first-party `@v4`/`@v3` Node-20 pins remain. No app code or tests touched;
+verify the warning is gone in the next run logs. Out-of-scope note discovered:
+`flutter-ci.yml` triggers on `main`/`develop` but the repo's default branch is
+`master`, so that workflow may not run on pushes — worth a separate fix.
 
 ---
 
