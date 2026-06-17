@@ -1154,3 +1154,70 @@ workflow and to harden the repo so a stray Jekyll build can't run.
   launch.
 
 **Status: story only — not implemented.**
+
+---
+
+### US-92: Upgrade GitHub Actions off the deprecated Node.js 20 runtime
+
+**1 SP · S5 (CI maintenance)**
+
+> As the maintainer of the CI/CD pipelines,
+> I want the GitHub Actions we depend on bumped to versions that run on Node.js
+> 24,
+> so that the builds stop emitting the Node 20 deprecation warning and don't
+> break when GitHub removes the Node 20 runtime.
+
+**Background:** Both workflows currently log a deprecation warning, e.g.:
+
+```
+Node.js 20 is deprecated. The following actions target Node.js 20 but are being
+forced to run on Node.js 24: actions/checkout@v4.
+```
+
+GitHub is removing the Node 20 runtime from Actions runners (see
+`https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/`).
+Actions are currently being *force-run* on Node 24, which works for now but will
+break once Node 20 support is dropped. The pinned actions just need bumping to a
+major version whose JS runtime is Node 24. This is pure CI hygiene — no app code,
+no behaviour change.
+
+**Acceptance criteria:**
+- No workflow run emits the "Node.js 20 is deprecated" warning anymore.
+- Every first-party action pinned to a Node-20 major is bumped to the current
+  major that runs on Node 24. Known usages to review/bump:
+  - `.github/workflows/deploy-pages.yml`: `actions/checkout@v4`,
+    `actions/setup-node@v4`, `actions/upload-pages-artifact@v3`,
+    `actions/deploy-pages@v4`.
+  - `.github/workflows/flutter-ci.yml`: `actions/checkout@v4` (two jobs),
+    `subosito/flutter-action@v2`.
+- For each action, the chosen tag is the latest stable major (e.g.
+  `actions/checkout@v5`, `actions/setup-node@v5`) verified to use Node 24 — don't
+  guess version numbers; check each action's releases. Third-party actions
+  (`subosito/flutter-action`) are bumped only if they actually trigger the
+  warning / are on Node 20; otherwise note that they're fine.
+- Both workflows still pass end-to-end after the bump: the Flutter CI
+  (format/analyze/test/build jobs) and the Pages deploy run green, with no
+  behavioural change to what they do.
+- No unrelated changes (don't restructure the workflows; just version bumps and,
+  if a bumped action renamed inputs, the minimal input fixes its changelog
+  requires).
+
+**Investigation notes:**
+- The warning currently names `actions/checkout@v4`, but the same Node-20 issue
+  applies to the other first-party actions on older majors — bump them together so
+  the warning doesn't simply reappear from a different action next run.
+- `actions/checkout` and `actions/setup-node` moved to Node 24 at v5; the Pages
+  actions (`upload-pages-artifact`, `deploy-pages`) and `upload-artifact` have
+  newer majors too — confirm the current major per action's release notes rather
+  than assuming.
+- Check `subosito/flutter-action`'s latest release notes; if v2 still targets
+  Node 20, bump to the version that doesn't (or pin a newer ref). If it's already
+  fine, record that so a reviewer doesn't chase it.
+- This is independent of US-91 (which is about the Pages *source*/Jekyll problem);
+  the two can land separately, but both touch `deploy-pages.yml`, so coordinate to
+  avoid a conflict.
+- Verify by opening the run logs after the change and confirming the deprecation
+  warning is gone from both workflows.
+- Roadmap fit: Phase 11/14 — keep CI/CD green and future-proof ahead of release.
+
+**Status: story only — not implemented.**
