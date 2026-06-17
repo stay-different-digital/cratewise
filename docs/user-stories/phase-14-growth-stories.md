@@ -850,4 +850,19 @@ string — no behaviour change beyond the destination of a `mailto:`.
 - Roadmap fit: Phase 11/13 release readiness — replacing a personal address with
   a project mailbox before going public.
 
-**Status: story only — not implemented.**
+**Status (2026-06-17): implemented.** Replaced `hellowerecratewise@gmail.com` with
+`hellowerecratewise@gmail.com` across all 8 live files: the
+`feedbackEmailAddress` constant (`send_feedback_tile.dart`), the privacy policy
+(`docs/store/PRIVACY_POLICY.md` + `site/src/privacy.md`), the store listings
+(`docs/store/STORE_LISTINGS.md`, two places), the store-review note
+(`docs/release/STORE_REVIEW.md`), the beta triage doc
+(`docs/beta/FEEDBACK_TRIAGE.md`), and the marketing site
+(`site/src/index.njk` contact line + `site/src/_layouts/base.njk` footer
+`mailto:`). The Send feedback button now opens a `mailto:` to the new address
+with subject/body unchanged; the snackbar fallback names the new address. The
+only code reference was the constant, and `send_feedback_tile_test.dart` asserts
+against the constant symbol, so no test change was needed — full suite green
+(2414). The old address now remains only in immutable history (git/CHANGELOG)
+and in this story's own description of the migration. **[Fred]** before going
+public: confirm the new mailbox receives mail, and re-deploy the marketing site
+alongside the privacy-policy hosting (Phase 11).

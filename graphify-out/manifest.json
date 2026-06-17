@@ -2100,13 +2100,13 @@
     "semantic_hash": ""
   },
   "docs/store/PRIVACY_POLICY.md": {
-    "mtime": 1781253413.7414284,
-    "ast_hash": "dceba8e9432a9df509f080f6b28de5b8",
+    "mtime": 1781682712.8571987,
+    "ast_hash": "882d774cc776d9ed4e83d2c19221e3de",
     "semantic_hash": ""
   },
   "docs/store/STORE_LISTINGS.md": {
-    "mtime": 1781288536.5588038,
-    "ast_hash": "fea8960cdfdf4bdad32e91297d28c6fa",
+    "mtime": 1781682712.8581567,
+    "ast_hash": "132082c70f9758db1d24ae444673a7d7",
     "semantic_hash": ""
   },
   "docs/user-stories/phase-11-release-readiness-stories.md": {
@@ -2220,8 +2220,8 @@
     "semantic_hash": ""
   },
   "lib/presentation/widgets/send_feedback_tile.dart": {
-    "mtime": 1781257757.6032715,
-    "ast_hash": "fc02ec4bdd0fa247dfefe5b1b99c9c57",
+    "mtime": 1781682712.8589354,
+    "ast_hash": "d3faf496881865348324a734f710decc",
     "semantic_hash": ""
   },
   "test/presentation/widgets/send_feedback_tile_test.dart": {
@@ -2240,8 +2240,8 @@
     "semantic_hash": ""
   },
   "docs/beta/FEEDBACK_TRIAGE.md": {
-    "mtime": 1781257825.2101855,
-    "ast_hash": "7f69d6b58a46e4e9b7f5fee945dae0b5",
+    "mtime": 1781682712.8556807,
+    "ast_hash": "6fac8efe6c8c48423029be9b3e89f418",
     "semantic_hash": ""
   },
   "docs/user-stories/phase-12-beta-stories.md": {
@@ -2265,8 +2265,8 @@
     "semantic_hash": ""
   },
   "docs/release/STORE_REVIEW.md": {
-    "mtime": 1781288063.4136763,
-    "ast_hash": "49722588d1a4a6cac23ab54bad36c9ec",
+    "mtime": 1781682712.8564744,
+    "ast_hash": "f84b33aae3391413f53da92faeeb4810",
     "semantic_hash": ""
   },
   "docs/user-stories/phase-13-v1-stories.md": {
@@ -2305,13 +2305,13 @@
     "semantic_hash": ""
   },
   "site/src/privacy.md": {
-    "mtime": 1781288481.2627697,
-    "ast_hash": "474602760b5a9fcd746fc25c23e6bd65",
+    "mtime": 1781682712.861418,
+    "ast_hash": "27b21670b98e3bd1ab33c410d25bdeaa",
     "semantic_hash": ""
   },
   "docs/user-stories/phase-14-growth-stories.md": {
-    "mtime": 1781681080.6136775,
-    "ast_hash": "0b38c2f3e95df7d7e47cfcd67ded2ccc",
+    "mtime": 1781682230.0358322,
+    "ast_hash": "191a74d08152351744f781e69b92d2b0",
     "semantic_hash": ""
   },
   "test/presentation/screens/collection_detail_release_details_test.dart": {
