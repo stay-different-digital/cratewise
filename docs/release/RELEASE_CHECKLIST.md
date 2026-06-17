@@ -10,6 +10,7 @@ details live in `RELEASE_BUILD.md`; store copy lives in
 - [ ] `flutter analyze` — zero issues.
 - [ ] `flutter test` — full suite green.
 - [ ] No secrets in the diff since the last release: `git log -p <last-tag>..HEAD | grep -iE "token|secret|password"` returns nothing real.
+- [ ] **Platform dependency warnings** — check build output for new warnings beyond those documented in `docs/archive/known_limitations.md § Platform dependency warnings`. If a documented warning has disappeared (upstream fixed), remove its entry from known_limitations.md. If a new warning appears, add it before shipping.
 
 ## 2. Version & changelog
 

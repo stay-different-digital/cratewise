@@ -280,3 +280,29 @@ These limitations span multiple phases or were never assigned to a specific slic
 - **No localized date formatting.** Dates throughout the app are displayed as `YYYY-MM-DD` with no `intl` package integration. — **Beta: S · 3 SP**
 - **No GoRouter / deep linking.** All navigation uses `Navigator.push` with constructor params; named routes and deep links are not supported. — **Beta: S · 8 SP**
 - **iOS Keychain bug (open).** `SaveCredentials` on iOS can fail silently with a StorageError. A debug log was added to `DiscogsTokenStorage.saveCredentials` to surface the Keychain error code; the fix is pending a confirmed error code from user reproduction. — **Beta: XL · 3 SP**
+
+---
+
+## Platform dependency warnings
+
+Warnings produced at build time that are not a current blocker but must be monitored before each release. See the release checklist for the standing check.
+
+### Android — Kotlin Gradle Plugin (KGP) legacy API
+
+**Warning:** Several Flutter plugins use the older Kotlin Gradle Plugin apply-style API instead of the `plugins {}` block required by AGP 8+. The warning reads: *"The following Kotlin source sets were configured but not matched by any Kotlin compilation"*.
+
+- **Impact:** Build warning only; no runtime effect. Will become a build error when AGP drops compatibility for the legacy API.
+- **Root cause:** Upstream Flutter plugins (e.g. `flutter_secure_storage`, `sqflite`) have not yet migrated their Gradle configuration.
+- **Workaround:** None needed today. The warning can be suppressed per-module if it becomes noisy, but that hides future errors.
+- **Upstream tracking:** Monitor each affected plugin's GitHub releases. When the plugin ships a KGP-migrated version, bump the dependency.
+- **Expected fix:** When upstream plugins publish KGP-compatible releases (anticipated with their next major version bumps).
+
+### iOS — `flutter_secure_storage` does not support Swift Package Manager (SPM)
+
+**Warning:** Xcode 15+ prefers SPM-based dependencies. `flutter_secure_storage` still uses CocoaPods only.
+
+- **Impact:** Build warning; CocoaPods integration continues to work. Will become a blocker if Apple enforces SPM-only distribution or if Flutter removes CocoaPods support.
+- **Root cause:** `flutter_secure_storage` upstream has an open issue for SPM support.
+- **Workaround:** Continue using CocoaPods (`pod install` is part of the build pipeline).
+- **Upstream tracking:** https://github.com/mogol/flutter_secure_storage/issues — watch for an SPM-compatible release.
+- **Expected fix:** When `flutter_secure_storage` publishes an SPM-compatible release.
