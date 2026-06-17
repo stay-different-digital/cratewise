@@ -6,10 +6,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../application/use_cases/build_collection_csv_export_preview_use_case.dart';
 import '../../application/use_cases/execute_collection_csv_export_use_case.dart';
 import '../../domain/models/csv_collection_export_preview.dart';
+import '../../app/app_repositories.dart';
 import '../../infrastructure/csv/csv_file_writer.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
-import '../../infrastructure/local_database/local_import_export_job_repository.dart';
 
 const _kWideBreakpoint = 700.0;
 const _kMaxSampleRows = 3;
@@ -74,7 +72,6 @@ class _CollectionCsvExportPreviewScreenState
     extends State<CollectionCsvExportPreviewScreen> {
   late final BuildCollectionCsvExportPreviewUseCase _previewUseCase;
   ExecuteCollectionCsvExportUseCase? _executeUseCase;
-  AppDatabase? _ownedDb;
   _State _state = const _Loading();
 
   @override
@@ -84,14 +81,12 @@ class _CollectionCsvExportPreviewScreenState
       _previewUseCase = widget.previewUseCase!;
       _executeUseCase = widget.executeUseCase;
     } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      final collectionRepo = LocalCollectionRepository(db);
+      final repos = AppRepositoriesScope.of(context);
       _previewUseCase = BuildCollectionCsvExportPreviewUseCase(
-        repository: collectionRepo,
+        repository: repos.collection,
       );
       _executeUseCase = ExecuteCollectionCsvExportUseCase(
-        jobRepository: LocalImportExportJobRepository(db),
+        jobRepository: repos.importExportJob,
         fileWriter: const TempCsvFileWriter(),
       );
     }
@@ -147,7 +142,6 @@ class _CollectionCsvExportPreviewScreenState
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

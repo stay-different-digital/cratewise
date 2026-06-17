@@ -4,11 +4,8 @@ import '../../application/use_cases/build_wishlist_export_preview_use_case.dart'
 import '../../application/use_cases/check_wishlist_export_capability_use_case.dart';
 import '../../application/use_cases/execute_wishlist_export_use_case.dart';
 import '../../domain/models/wishlist_export_preview.dart';
+import '../../app/app_repositories.dart';
 import '../../infrastructure/discogs/discogs_api_client.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_import_export_job_repository.dart';
-import '../../infrastructure/local_database/local_import_export_row_result_repository.dart';
-import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../infrastructure/secure_storage/discogs_token_storage.dart';
 
 const _kWideBreakpoint = 700.0;
@@ -81,7 +78,6 @@ class _WishlistExportPreviewScreenState
     extends State<WishlistExportPreviewScreen> {
   late final BuildWishlistExportPreviewUseCase _useCase;
   ExecuteWishlistExportUseCase? _executeUseCase;
-  AppDatabase? _ownedDb;
   _PreviewState _state = const _Loading();
 
   @override
@@ -91,20 +87,18 @@ class _WishlistExportPreviewScreenState
       _useCase = widget.useCase!;
       _executeUseCase = widget.executeUseCase;
     } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      final wishlistRepo = LocalWishlistRepository(db);
+      final repos = AppRepositoriesScope.of(context);
       _useCase = BuildWishlistExportPreviewUseCase(
-        repository: wishlistRepo,
+        repository: repos.wishlist,
         capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
       );
       _executeUseCase = ExecuteWishlistExportUseCase(
         capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
         tokenStorage: DiscogsTokenStorage(),
         apiClient: DiscogsApiClient(),
-        wishlistRepository: wishlistRepo,
-        jobRepository: LocalImportExportJobRepository(db),
-        rowResultRepository: LocalImportExportRowResultRepository(db),
+        wishlistRepository: repos.wishlist,
+        jobRepository: repos.importExportJob,
+        rowResultRepository: repos.importExportRowResult,
       );
     }
     _load();
@@ -160,7 +154,6 @@ class _WishlistExportPreviewScreenState
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

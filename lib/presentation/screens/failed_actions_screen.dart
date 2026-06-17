@@ -5,9 +5,8 @@ import '../../application/use_cases/retry_add_wishlist_item_use_case.dart';
 import '../../application/use_cases/retry_metadata_refresh_use_case.dart';
 import '../../application/use_cases/retry_thumbnail_use_case.dart';
 import '../../domain/models/retry_action.dart';
+import '../../app/app_repositories.dart';
 import '../../domain/repositories/retry_action_repository.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_retry_action_repository.dart';
 import '../../shared/utils/date_format_utils.dart';
 
 // ---------------------------------------------------------------------------
@@ -57,19 +56,13 @@ class FailedActionsScreen extends StatefulWidget {
 
 class _FailedActionsScreenState extends State<FailedActionsScreen> {
   late final RetryActionRepository _repository;
-  AppDatabase? _ownedDb;
   _FailedActionsState _state = const _Loading();
 
   @override
   void initState() {
     super.initState();
-    if (widget.repository != null) {
-      _repository = widget.repository!;
-    } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _repository = LocalRetryActionRepository(db);
-    }
+    _repository =
+        widget.repository ?? AppRepositoriesScope.of(context).retryAction;
     _load();
   }
 
@@ -118,7 +111,6 @@ class _FailedActionsScreenState extends State<FailedActionsScreen> {
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

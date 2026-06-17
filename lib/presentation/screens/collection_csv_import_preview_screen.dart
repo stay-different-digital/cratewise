@@ -4,11 +4,8 @@ import '../../application/use_cases/build_collection_csv_import_preview_use_case
 import '../../application/use_cases/execute_collection_csv_import_use_case.dart';
 import '../../domain/models/csv_collection_import_preview.dart';
 import '../../domain/models/import_export_row_result.dart';
+import '../../app/app_repositories.dart';
 import '../../infrastructure/csv/csv_file_picker_service.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
-import '../../infrastructure/local_database/local_import_export_job_repository.dart';
-import '../../infrastructure/local_database/local_import_export_row_result_repository.dart';
 import '../../shared/import_notifier.dart';
 
 const _kWideBreakpoint = 700.0;
@@ -81,7 +78,6 @@ class _CollectionCsvImportPreviewScreenState
   late final BuildCollectionCsvImportPreviewUseCase _previewUseCase;
   late final Future<CsvPickedFile?> Function() _picker;
   ExecuteCollectionCsvImportUseCase? _executeUseCase;
-  AppDatabase? _ownedDb;
   _State _state = const _Idle();
 
   @override
@@ -95,20 +91,19 @@ class _CollectionCsvImportPreviewScreenState
       // Test mode — use injected execute use case (may be null = confirm disabled)
       _executeUseCase = widget.executeUseCase;
     } else {
-      // Production mode — create execute use case from local DB
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _executeUseCase = ExecuteCollectionCsvImportUseCase(
-        collectionRepository: LocalCollectionRepository(db),
-        jobRepository: LocalImportExportJobRepository(db),
-        rowResultRepository: LocalImportExportRowResultRepository(db),
-      );
+      final repos = AppRepositoriesScope.maybeOf(context);
+      if (repos != null) {
+        _executeUseCase = ExecuteCollectionCsvImportUseCase(
+          collectionRepository: repos.collection,
+          jobRepository: repos.importExportJob,
+          rowResultRepository: repos.importExportRowResult,
+        );
+      }
     }
   }
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

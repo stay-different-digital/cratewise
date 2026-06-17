@@ -3,14 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_repositories.dart';
 import '../../app/router.dart';
 import '../../application/services/thumbnail_cache_service.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
-import '../../infrastructure/local_database/app_database.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
-import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/import_notifier.dart';
 import '../../shared/route_observer.dart';
 import '../widgets/wishlist_item_card.dart';
@@ -60,7 +59,6 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   late final WishlistRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
   late final ThumbnailCacheService _thumbnailCacheService;
-  AppDatabase? _ownedDb;
   _WishlistState _state = const _Loading();
   final _searchController = TextEditingController();
   Timer? _debounce;
@@ -74,13 +72,8 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
     _thumbnailCacheService =
         widget.thumbnailCacheService ??
         ThumbnailCacheService(repository: _thumbnailRepository);
-    if (widget.repository != null) {
-      _repository = widget.repository!;
-    } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _repository = LocalWishlistRepository(db);
-    }
+    _repository =
+        widget.repository ?? AppRepositoriesScope.of(context).wishlist;
     _load();
     wishlistImportNotifier.addListener(_onImportNotification);
   }
@@ -135,7 +128,6 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
     wishlistRouteObserver.unsubscribe(this);
     wishlistImportNotifier.removeListener(_onImportNotification);
     _debounce?.cancel();
-    _ownedDb?.close();
     _searchController.dispose();
     super.dispose();
   }

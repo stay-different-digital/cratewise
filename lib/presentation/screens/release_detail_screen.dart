@@ -19,12 +19,8 @@ import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/pending_discogs_deletion_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
-import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
+import '../../app/app_repositories.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
-import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
 import '../../shared/utils/date_format_utils.dart';
 import '../widgets/rate_limit_retry_button.dart';
@@ -108,14 +104,12 @@ class ReleaseDetailScreen extends StatefulWidget {
 
 class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   late final DiscogsReleaseDetailService _service;
-  late final AddToCollectionUseCase _addUseCase;
-  late final AddToWishlistUseCase _addWishlistUseCase;
+  AddToCollectionUseCase? _addUseCase;
+  AddToWishlistUseCase? _addWishlistUseCase;
   late final CachedReleaseMetadataRepository? _cacheRepository;
   CollectionRepository? _collectionRepository;
   WishlistRepository? _wishlistRepository;
   PendingDiscogsDeletionRepository? _deletionRepository;
-  AppDatabase? _ownedDb;
-
   _DetailState _state = const _Loading();
   _AddState _addState = _AddState.idle;
   _AddState _addWishlistState = _AddState.idle;
@@ -123,48 +117,29 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   @override
   void initState() {
     super.initState();
-    final collectionProvided = widget.addToCollectionUseCase != null;
-    final wishlistProvided = widget.addToWishlistUseCase != null;
-    if (collectionProvided && wishlistProvided) {
-      _addUseCase = widget.addToCollectionUseCase!;
-      _addWishlistUseCase = widget.addToWishlistUseCase!;
-      _cacheRepository = widget.cacheRepository;
-      _collectionRepository = widget.collectionRepository;
-      _wishlistRepository = widget.wishlistRepository;
-      _deletionRepository = widget.deletionRepository;
-      _service =
-          widget.detailService ??
-          DiscogsReleaseDetailService(
-            cacheRepository: _cacheRepository,
-            thumbnailCacheService:
-                widget.thumbnailCacheService ??
-                ThumbnailCacheService(repository: LocalThumbnailRepository()),
-          );
-    } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      final collRepo = LocalCollectionRepository(db);
-      _collectionRepository = collRepo;
-      _addUseCase =
-          widget.addToCollectionUseCase ?? AddToCollectionUseCase(collRepo);
-      final wishlistRepo = LocalWishlistRepository(db);
-      _wishlistRepository = wishlistRepo;
-      _addWishlistUseCase =
-          widget.addToWishlistUseCase ?? AddToWishlistUseCase(wishlistRepo);
-      _cacheRepository =
-          widget.cacheRepository ?? LocalCachedReleaseMetadataRepository(db);
-      _deletionRepository =
-          widget.deletionRepository ??
-          LocalPendingDiscogsDeletionRepository(db);
-      _service =
-          widget.detailService ??
-          DiscogsReleaseDetailService(
-            cacheRepository: _cacheRepository,
-            thumbnailCacheService:
-                widget.thumbnailCacheService ??
-                ThumbnailCacheService(repository: LocalThumbnailRepository()),
-          );
-    }
+    final repos = AppRepositoriesScope.maybeOf(context);
+    _collectionRepository = widget.collectionRepository ?? repos?.collection;
+    _addUseCase =
+        widget.addToCollectionUseCase ??
+        (_collectionRepository != null
+            ? AddToCollectionUseCase(_collectionRepository!)
+            : null);
+    _wishlistRepository = widget.wishlistRepository ?? repos?.wishlist;
+    _addWishlistUseCase =
+        widget.addToWishlistUseCase ??
+        (_wishlistRepository != null
+            ? AddToWishlistUseCase(_wishlistRepository!)
+            : null);
+    _cacheRepository = widget.cacheRepository ?? repos?.cachedRelease;
+    _deletionRepository = widget.deletionRepository ?? repos?.pendingDeletion;
+    _service =
+        widget.detailService ??
+        DiscogsReleaseDetailService(
+          cacheRepository: _cacheRepository,
+          thumbnailCacheService:
+              widget.thumbnailCacheService ??
+              ThumbnailCacheService(repository: LocalThumbnailRepository()),
+        );
     _fetch();
     _checkInitialCollectionStatus();
     _checkInitialWishlistStatus();
@@ -172,7 +147,6 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 
@@ -270,9 +244,9 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
 
   Future<void> _handleAdd() async {
     final detail = _currentDetail();
-    if (detail == null) return;
+    if (detail == null || _addUseCase == null) return;
     setState(() => _addState = _AddState.adding);
-    final result = await _addUseCase.execute(detail);
+    final result = await _addUseCase!.execute(detail);
     if (!mounted) return;
     switch (result) {
       case AddToCollectionSuccess(:final item):
@@ -327,9 +301,9 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
 
   Future<void> _handleAddToWishlist() async {
     final detail = _currentDetail();
-    if (detail == null) return;
+    if (detail == null || _addWishlistUseCase == null) return;
     setState(() => _addWishlistState = _AddState.adding);
-    final result = await _addWishlistUseCase.execute(detail);
+    final result = await _addWishlistUseCase!.execute(detail);
     if (!mounted) return;
     switch (result) {
       case AddToWishlistSuccess():

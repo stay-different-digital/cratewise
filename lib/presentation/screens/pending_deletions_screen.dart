@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../application/use_cases/execute_pending_deletions_use_case.dart';
 import '../../domain/models/pending_discogs_deletion.dart';
+import '../../app/app_repositories.dart';
 import '../../domain/repositories/pending_discogs_deletion_repository.dart';
 import '../../infrastructure/discogs/discogs_api_client.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
 import '../../infrastructure/secure_storage/discogs_token_storage.dart';
 
 // ---------------------------------------------------------------------------
@@ -66,39 +65,26 @@ class PendingDeletionsScreen extends StatefulWidget {
 class _PendingDeletionsScreenState extends State<PendingDeletionsScreen> {
   late final PendingDiscogsDeletionRepository _repository;
   late final ExecutePendingDeletionsUseCase _executeUseCase;
-  AppDatabase? _ownedDb;
   _State _state = const _Loading();
 
   @override
   void initState() {
     super.initState();
-    if (widget.deletionRepository != null) {
-      _repository = widget.deletionRepository!;
-      _executeUseCase =
-          widget.executeUseCase ??
-          ExecutePendingDeletionsUseCase(
-            tokenStorage: DiscogsTokenStorage(),
-            apiClient: DiscogsApiClient(),
-            deletionRepository: _repository,
-          );
-    } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _repository = LocalPendingDiscogsDeletionRepository(db);
-      _executeUseCase =
-          widget.executeUseCase ??
-          ExecutePendingDeletionsUseCase(
-            tokenStorage: DiscogsTokenStorage(),
-            apiClient: DiscogsApiClient(),
-            deletionRepository: _repository,
-          );
-    }
+    _repository =
+        widget.deletionRepository ??
+        AppRepositoriesScope.of(context).pendingDeletion;
+    _executeUseCase =
+        widget.executeUseCase ??
+        ExecutePendingDeletionsUseCase(
+          tokenStorage: DiscogsTokenStorage(),
+          apiClient: DiscogsApiClient(),
+          deletionRepository: _repository,
+        );
     _load();
   }
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import '../../domain/models/import_export_job.dart';
 import '../../domain/models/import_export_job_type.dart';
 import '../../domain/models/import_export_status.dart';
+import '../../app/app_repositories.dart';
 import '../../domain/repositories/import_export_job_repository.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_import_export_job_repository.dart';
 import '../../shared/utils/date_format_utils.dart';
 
 // ---------------------------------------------------------------------------
@@ -63,19 +62,13 @@ class ImportExportHistoryScreen extends StatefulWidget {
 
 class _ImportExportHistoryScreenState extends State<ImportExportHistoryScreen> {
   late final ImportExportJobRepository _repository;
-  AppDatabase? _ownedDb;
   _HistoryState _state = const _Loading();
 
   @override
   void initState() {
     super.initState();
-    if (widget.repository != null) {
-      _repository = widget.repository!;
-    } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _repository = LocalImportExportJobRepository(db);
-    }
+    _repository =
+        widget.repository ?? AppRepositoriesScope.of(context).importExportJob;
     _load();
   }
 
@@ -158,7 +151,6 @@ class _ImportExportHistoryScreenState extends State<ImportExportHistoryScreen> {
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

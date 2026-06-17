@@ -14,10 +14,7 @@ import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/pending_discogs_deletion_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
-import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
+import '../../app/app_repositories.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../shared/route_observer.dart';
 import '../../shared/utils/date_format_utils.dart';
@@ -90,7 +87,6 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   CachedReleaseMetadataRepository? _cacheRepository;
   DiscogsReleaseDetailService? _detailService;
   PendingDiscogsDeletionRepository? _deletionRepository;
-  AppDatabase? _ownedDb;
   _DetailState _state = const _Loading();
   ReleaseDetail? _releaseDetail;
 
@@ -108,17 +104,13 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
       _detailService = widget.releaseDetailService;
       _deletionRepository = widget.deletionRepository;
     } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _repository = LocalCollectionRepository(db);
-      _cacheRepository =
-          widget.cacheRepository ?? LocalCachedReleaseMetadataRepository(db);
+      final repos = AppRepositoriesScope.of(context);
+      _repository = repos.collection;
+      _cacheRepository = widget.cacheRepository ?? repos.cachedRelease;
       _detailService =
           widget.releaseDetailService ??
           DiscogsReleaseDetailService(cacheRepository: _cacheRepository);
-      _deletionRepository =
-          widget.deletionRepository ??
-          LocalPendingDiscogsDeletionRepository(db);
+      _deletionRepository = widget.deletionRepository ?? repos.pendingDeletion;
     }
     _load();
   }
@@ -177,7 +169,6 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   @override
   void dispose() {
     appRouteObserver.unsubscribe(this);
-    _ownedDb?.close();
     super.dispose();
   }
 

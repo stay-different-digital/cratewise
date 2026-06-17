@@ -4,12 +4,7 @@ import '../../application/use_cases/build_collection_import_preview_use_case.dar
 import '../../application/use_cases/execute_collection_import_use_case.dart';
 import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
 import '../../domain/models/collection_import_preview.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/database_transaction_runner.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
-import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
-import '../../infrastructure/local_database/local_import_export_job_repository.dart';
-import '../../infrastructure/local_database/local_import_export_row_result_repository.dart';
+import '../../app/app_repositories.dart';
 import '../../shared/import_notifier.dart';
 
 const _kWideBreakpoint = 700.0;
@@ -82,7 +77,6 @@ class _CollectionImportPreviewScreenState
     extends State<CollectionImportPreviewScreen> {
   late final FetchCollectionImportPreviewUseCase _useCase;
   ExecuteCollectionImportUseCase? _executeUseCase;
-  AppDatabase? _ownedDb;
   _PreviewState _state = const _Loading();
 
   @override
@@ -92,20 +86,18 @@ class _CollectionImportPreviewScreenState
       _useCase = widget.useCase!;
       _executeUseCase = widget.executeUseCase;
     } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      final collectionRepo = LocalCollectionRepository(db);
+      final repos = AppRepositoriesScope.of(context);
       _useCase = FetchCollectionImportPreviewUseCase(
         previewBuilder: BuildCollectionImportPreviewUseCase(
-          collectionRepo,
-          deletionRepository: LocalPendingDiscogsDeletionRepository(db),
+          repos.collection,
+          deletionRepository: repos.pendingDeletion,
         ),
       );
       _executeUseCase = ExecuteCollectionImportUseCase(
-        collectionRepository: collectionRepo,
-        jobRepository: LocalImportExportJobRepository(db),
-        rowResultRepository: LocalImportExportRowResultRepository(db),
-        transactionRunner: DatabaseTransactionRunner(db),
+        collectionRepository: repos.collection,
+        jobRepository: repos.importExportJob,
+        rowResultRepository: repos.importExportRowResult,
+        transactionRunner: repos.transactionRunner,
       );
     }
     _load();
@@ -158,7 +150,6 @@ class _CollectionImportPreviewScreenState
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

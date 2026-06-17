@@ -15,12 +15,8 @@ import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/pending_discogs_deletion_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_cached_release_metadata_repository.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
-import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
+import '../../app/app_repositories.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
-import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/utils/date_format_utils.dart';
 import '../widgets/release_details_sections.dart';
 
@@ -88,7 +84,6 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   DiscogsReleaseDetailService? _detailService;
   PendingDiscogsDeletionRepository? _deletionRepository;
   AddToCollectionUseCase? _addToCollectionUseCase;
-  AppDatabase? _ownedDb;
   _DetailState _state = const _Loading();
   ReleaseDetail? _releaseDetail;
 
@@ -106,22 +101,17 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
       _deletionRepository = widget.deletionRepository;
       _addToCollectionUseCase = widget.addToCollectionUseCase;
     } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _repository = LocalWishlistRepository(db);
+      final repos = AppRepositoriesScope.of(context);
+      _repository = repos.wishlist;
       _detailService =
           widget.releaseDetailService ??
           DiscogsReleaseDetailService(
-            cacheRepository:
-                widget.cacheRepository ??
-                LocalCachedReleaseMetadataRepository(db),
+            cacheRepository: widget.cacheRepository ?? repos.cachedRelease,
           );
-      _deletionRepository =
-          widget.deletionRepository ??
-          LocalPendingDiscogsDeletionRepository(db);
+      _deletionRepository = widget.deletionRepository ?? repos.pendingDeletion;
       _addToCollectionUseCase =
           widget.addToCollectionUseCase ??
-          AddToCollectionUseCase(LocalCollectionRepository(db));
+          AddToCollectionUseCase(repos.collection);
     }
     _load();
   }
@@ -168,7 +158,6 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

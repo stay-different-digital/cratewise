@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_repositories.dart';
 import '../../app/router.dart';
 import '../../application/services/thumbnail_eviction_service.dart';
 import '../../domain/models/pending_discogs_deletion.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/pending_discogs_deletion_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
-import '../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
-import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../widgets/about_section_tile.dart';
 import '../widgets/discogs_token_section.dart';
 import '../widgets/send_feedback_tile.dart';
@@ -165,7 +162,6 @@ class _LocalDataSectionState extends State<_LocalDataSection> {
   late final CollectionRepository _collection;
   late final WishlistRepository _wishlist;
   late final PendingDiscogsDeletionRepository _deletions;
-  AppDatabase? _ownedDb;
 
   int? _collectionCount;
   int? _wishlistCount;
@@ -181,21 +177,16 @@ class _LocalDataSectionState extends State<_LocalDataSection> {
       _wishlist = widget.wishlistRepository!;
       _deletions = widget.deletionRepository!;
     } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _collection =
-          widget.collectionRepository ?? LocalCollectionRepository(db);
-      _wishlist = widget.wishlistRepository ?? LocalWishlistRepository(db);
-      _deletions =
-          widget.deletionRepository ??
-          LocalPendingDiscogsDeletionRepository(db);
+      final repos = AppRepositoriesScope.of(context);
+      _collection = widget.collectionRepository ?? repos.collection;
+      _wishlist = widget.wishlistRepository ?? repos.wishlist;
+      _deletions = widget.deletionRepository ?? repos.pendingDeletion;
     }
     _loadCounts();
   }
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

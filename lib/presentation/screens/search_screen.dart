@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_repositories.dart';
 import '../../app/router.dart';
 import '../../application/services/discogs_search_service.dart';
 import '../../application/services/search_query_cache.dart';
@@ -13,9 +14,6 @@ import '../../domain/models/search_filter.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
-import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
 import '../../shared/route_observer.dart';
 import '../widgets/rate_limit_retry_button.dart';
@@ -124,9 +122,8 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> with RouteAware {
   late final DiscogsSearchService _service;
   late final SearchQueryCache _cache;
-  late final CollectionRepository _collectionRepository;
-  late final WishlistRepository _wishlistRepository;
-  AppDatabase? _ownedDb;
+  CollectionRepository? _collectionRepository;
+  WishlistRepository? _wishlistRepository;
   final _controller = TextEditingController();
   _SearchState _state = const _Idle();
   Timer? _debounce;
@@ -149,18 +146,9 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     super.initState();
     _service = widget.searchService ?? DiscogsSearchService();
     _cache = widget.queryCache ?? SearchQueryCache();
-    if (widget.collectionRepository != null &&
-        widget.wishlistRepository != null) {
-      _collectionRepository = widget.collectionRepository!;
-      _wishlistRepository = widget.wishlistRepository!;
-    } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _collectionRepository =
-          widget.collectionRepository ?? LocalCollectionRepository(db);
-      _wishlistRepository =
-          widget.wishlistRepository ?? LocalWishlistRepository(db);
-    }
+    final repos = AppRepositoriesScope.maybeOf(context);
+    _collectionRepository = widget.collectionRepository ?? repos?.collection;
+    _wishlistRepository = widget.wishlistRepository ?? repos?.wishlist;
     _controller.addListener(_onQueryChanged);
     _loadMembership();
   }
@@ -178,9 +166,10 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   /// Resolves which results are already in the collection / on the wishlist.
   /// A storage failure degrades to "no icons" rather than breaking search.
   Future<void> _loadMembership() async {
+    if (_collectionRepository == null || _wishlistRepository == null) return;
     try {
-      final collection = await _collectionRepository.getAll();
-      final wishlist = await _wishlistRepository.getAll();
+      final collection = await _collectionRepository!.getAll();
+      final wishlist = await _wishlistRepository!.getAll();
       if (!mounted) return;
       setState(() {
         _collectionIds = collection.map((i) => i.discogsReleaseId).toSet();
@@ -342,7 +331,6 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     searchRouteObserver.unsubscribe(this);
     _debounce?.cancel();
     _controller.dispose();
-    _ownedDb?.close();
     super.dispose();
   }
 

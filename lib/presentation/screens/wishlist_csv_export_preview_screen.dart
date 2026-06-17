@@ -6,10 +6,8 @@ import 'package:share_plus/share_plus.dart';
 import '../../application/use_cases/build_wishlist_csv_export_preview_use_case.dart';
 import '../../application/use_cases/execute_wishlist_csv_export_use_case.dart';
 import '../../domain/models/csv_wishlist_export_preview.dart';
+import '../../app/app_repositories.dart';
 import '../../infrastructure/csv/csv_file_writer.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_import_export_job_repository.dart';
-import '../../infrastructure/local_database/local_wishlist_repository.dart';
 
 const _kWideBreakpoint = 700.0;
 const _kMaxSampleRows = 3;
@@ -74,7 +72,6 @@ class _WishlistCsvExportPreviewScreenState
     extends State<WishlistCsvExportPreviewScreen> {
   late final BuildWishlistCsvExportPreviewUseCase _previewUseCase;
   ExecuteWishlistCsvExportUseCase? _executeUseCase;
-  AppDatabase? _ownedDb;
   _State _state = const _Loading();
 
   @override
@@ -84,14 +81,12 @@ class _WishlistCsvExportPreviewScreenState
       _previewUseCase = widget.previewUseCase!;
       _executeUseCase = widget.executeUseCase;
     } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      final wishlistRepo = LocalWishlistRepository(db);
+      final repos = AppRepositoriesScope.of(context);
       _previewUseCase = BuildWishlistCsvExportPreviewUseCase(
-        repository: wishlistRepo,
+        repository: repos.wishlist,
       );
       _executeUseCase = ExecuteWishlistCsvExportUseCase(
-        jobRepository: LocalImportExportJobRepository(db),
+        jobRepository: repos.importExportJob,
         fileWriter: const TempCsvFileWriter(),
       );
     }
@@ -147,7 +142,6 @@ class _WishlistCsvExportPreviewScreenState
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

@@ -1,16 +1,16 @@
-# Graph Report - Crate  (2026-06-17)
+# Graph Report - Cratewise  (2026-06-17)
 
 ## Corpus Check
-- 420 files · ~624,127 words
+- 424 files · ~632,676 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 6359 nodes · 9181 edges · 425 communities (353 shown, 72 thin omitted)
-- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 69 edges (avg confidence: 0.87)
+- 6459 nodes · 9433 edges · 424 communities (356 shown, 68 thin omitted)
+- Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 63 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `1acac88e`
+- Built from commit: `1d99da10`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -347,6 +347,7 @@
 - [[_COMMUNITY_Community 334|Community 334]]
 - [[_COMMUNITY_Community 335|Community 335]]
 - [[_COMMUNITY_Community 336|Community 336]]
+- [[_COMMUNITY_Community 337|Community 337]]
 - [[_COMMUNITY_Community 338|Community 338]]
 - [[_COMMUNITY_Community 339|Community 339]]
 - [[_COMMUNITY_Community 340|Community 340]]
@@ -432,7 +433,6 @@
 - [[_COMMUNITY_Community 421|Community 421]]
 - [[_COMMUNITY_Community 422|Community 422]]
 - [[_COMMUNITY_Community 423|Community 423]]
-- [[_COMMUNITY_Community 424|Community 424]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `_` - 148 edges
@@ -443,25 +443,25 @@
 6. `ImportExportJobRepository` - 35 edges
 7. `AppDatabase` - 31 edges
 8. `Beta User Stories — S (Defer post-beta)` - 26 edges
-9. `RetryActionRepository` - 23 edges
-10. `ImportExportRowResultRepository` - 22 edges
+9. `wishlistRepository` - 25 edges
+10. `RetryActionRepository` - 23 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Security Invariants (AGENTS.md)` --semantically_similar_to--> `Token handling`  [INFERRED] [semantically similar]
   primer.md → docs/security/SECURITY.md
-- `Automatic Commit Rules (commit after format/analyze/test pass; US-XX message format)` --conceptually_related_to--> `Flutter CI Workflow`  [INFERRED]
-  AGENTS.md → .github/workflows/flutter-ci.yml
 - `Cloudflare Worker Proxy (for secrets and signed Discogs calls)` --semantically_similar_to--> `Backend Proxy for Production OAuth Secrets. Rationale: production consumer secrets must never ship inside the Flutter client`  [INFERRED] [semantically similar]
   CONTRIBUTING.md → docs/api/DISCOGS_API.md
 - `FakeImportExportJobRepository` --implements--> `ImportExportJobRepository`  [EXTRACTED]
   test/domain/repositories/import_export_job_repository_test.dart → lib/domain/repositories/import_export_job_repository.dart
-- `_FakeJobRepository` --implements--> `ImportExportJobRepository`  [EXTRACTED]
-  test/presentation/screens/wishlist_csv_export_preview_screen_test.dart → lib/domain/repositories/import_export_job_repository.dart
+- `_FakeJobRepo` --implements--> `ImportExportJobRepository`  [EXTRACTED]
+  test/application/use_cases/import_transaction_and_progress_test.dart → lib/domain/repositories/import_export_job_repository.dart
+- `FakeImportExportRowResultRepository` --implements--> `ImportExportRowResultRepository`  [EXTRACTED]
+  test/domain/repositories/import_export_row_result_repository_test.dart → lib/domain/repositories/import_export_row_result_repository.dart
 
 ## Import Cycles
 - None detected.
 
-## Communities (425 total, 72 thin omitted)
+## Communities (424 total, 68 thin omitted)
 
 ### Community 0 - "Database Row Models"
 Cohesion: 0.02
@@ -469,35 +469,35 @@ Nodes (114): class CachedReleaseRow extends, class ImportExportJobRow extends, c
 
 ### Community 1 - "Release Detail & Thumbnail Cache"
 Cohesion: 0.02
-Nodes (98): _DetailState, _DetailError, _DetailState, _Loaded, _Loading, _NotFound, _AddState, addToCollectionUseCase (+90 more)
+Nodes (89): RecordCondition, ReleaseTrack, _AddState, addToCollectionUseCase, addToWishlistUseCase, _addUseCase, _addWishlistState, _addWishlistUseCase (+81 more)
 
 ### Community 2 - "CSV Import & Collection Edit"
 Cohesion: 0.03
-Nodes (87): _CachedCoverImage, _EditNotesSheet, _ResultsList, _addTag, borderRadius, build, _buildNarrow, _buildWide (+79 more)
+Nodes (66): ../../application/services/discogs_release_detail_service.dart, _addTag, borderRadius, build, _buildNarrow, _buildWide, cacheRepository, _CollectionDetailBody (+58 more)
 
 ### Community 3 - "Barcode Scanner"
 Cohesion: 0.03
-Nodes (77): ../../application/services/search_query_cache.dart, ../../application/use_cases/barcode_lookup_use_case.dart, MobileScannerController, package:mobile_scanner/mobile_scanner.dart, barcodeCache, _bracketLength, build, _buildFooter (+69 more)
+Nodes (75): ../../application/use_cases/barcode_lookup_use_case.dart, MobileScannerController, package:mobile_scanner/mobile_scanner.dart, barcodeCache, _bracketLength, build, _buildFooter, _buildNarrow (+67 more)
 
 ### Community 4 - "Discogs Collection Import"
 Cohesion: 0.03
-Nodes (67): @DataClassName, DateTimeColumn get, IntColumn get, actionType, artist, attemptCount, cacheSource, catno (+59 more)
+Nodes (58): DateTimeColumn get, IntColumn get, actionType, artist, attemptCount, cacheSource, catno, country (+50 more)
 
 ### Community 5 - "Search & Add to Collection/Wishlist"
 Cohesion: 0.03
-Nodes (77): ../../application/services/discogs_release_detail_service.dart, BorderRadius, ../../infrastructure/local_database/local_cached_release_metadata_repository.dart, _OverflowAction, addToCollectionUseCase, borderRadius, build, _buildNarrow (+69 more)
+Nodes (75): BorderRadius, ../../infrastructure/local_database/local_cached_release_metadata_repository.dart, _OverflowAction, addToCollectionUseCase, borderRadius, build, _buildNarrow, _buildWide (+67 more)
 
 ### Community 6 - "CSV Import & Release Detail UI"
 Cohesion: 0.05
-Nodes (40): ../../application/use_cases/execute_collection_csv_export_use_case.dart, build, CollectionCsvExportPreviewScreen, _CollectionCsvExportPreviewScreenState, _ColumnChip, _ConfirmBar, createState, _defaultShareFile (+32 more)
+Nodes (38): ../../application/use_cases/execute_collection_csv_export_use_case.dart, build, CollectionCsvExportPreviewScreen, _CollectionCsvExportPreviewScreenState, _ColumnChip, _ConfirmBar, createState, _defaultShareFile (+30 more)
 
 ### Community 7 - "App Database Schema"
 Cohesion: 0.03
-Nodes (73): AddToCollectionUseCase?, AddToWishlistUseCase?, AppDatabase?, ../../application/services/discogs_search_service.dart, ../../application/use_cases/add_to_collection_use_case.dart, ../../application/use_cases/add_to_wishlist_use_case.dart, CachedReleaseMetadataRepository?, release_detail_screen.dart (+65 more)
+Nodes (71): AddToCollectionUseCase?, AddToWishlistUseCase?, ../../application/services/discogs_search_service.dart, ../../application/services/search_query_cache.dart, ../../application/use_cases/add_to_collection_use_case.dart, ../../application/use_cases/add_to_wishlist_use_case.dart, release_detail_screen.dart, addToCollectionUseCase (+63 more)
 
 ### Community 8 - "Collection Detail Screen"
 Cohesion: 0.08
-Nodes (24): package:cratewise/presentation/screens/wishlist_detail_screen.dart, add, added, _collectionItem, containsRelease, deleteAll, deleteAllByType, _FakeCollectionRepository (+16 more)
+Nodes (25): package:cratewise/presentation/screens/wishlist_detail_screen.dart, add, added, _collectionItem, containsRelease, deleteAll, deleteAllByType, _FakeCollectionRepository (+17 more)
 
 ### Community 9 - "Wishlist Detail Screen"
 Cohesion: 0.22
@@ -505,44 +505,44 @@ Nodes (11): Confirm Discogs Wishlist Import, Discogs Wishlist Import API Method,
 
 ### Community 10 - "API Client & Import Tests"
 Cohesion: 0.04
-Nodes (45): ImportExportRowResultRepository? rowResultRepository,
-  List, add, added, addResult, alreadySyncedCount, _apiClientReturning, _apiClientThrowing, artist (+37 more)
+Nodes (49): ExecuteWishlistExportCompleted, ExecuteWishlistExportFailed, ExecuteWishlistExportNoToken, ExecuteWishlistExportNotSupported, ImportExportRowResultRepository? rowResultRepository,
+  List, add, added, addResult (+41 more)
 
 ### Community 11 - "Retry Actions"
 Cohesion: 0.05
 Nodes (43): ../../application/use_cases/build_collection_csv_import_preview_use_case.dart, ../../application/use_cases/execute_collection_csv_import_use_case.dart, ../../infrastructure/csv/csv_file_picker_service.dart, build, CollectionCsvImportPreviewScreen, _CollectionCsvImportPreviewScreenState, color, _ConfirmBar (+35 more)
 
 ### Community 12 - "Metadata Refresh & Cache"
-Cohesion: 0.05
-Nodes (44): Completer, package:cratewise/presentation/screens/failed_actions_screen.dart, actions, actionType, add, attemptCount, build, callCount (+36 more)
+Cohesion: 0.04
+Nodes (45): Completer, package:cratewise/presentation/screens/failed_actions_screen.dart, actions, actionType, add, attemptCount, build, callCount (+37 more)
 
 ### Community 13 - "Import/Export Capability Gate"
 Cohesion: 0.04
-Nodes (46): package:cratewise/application/use_cases/check_collection_export_capability_use_case.dart, main, add, added, addResult, alreadySyncedCount, _apiClientReturning, _apiClientThrowing (+38 more)
+Nodes (48): ExecuteExportCompleted, ExecuteExportFailed, ExecuteExportNoToken, ExecuteExportNotSupported, add, added, addResult, alreadySyncedCount (+40 more)
 
 ### Community 14 - "Export Preview Use Cases"
 Cohesion: 0.05
 Nodes (43): AppRoutes, barcode, collection, collectionDetail, createAppRouter, exportCollection, exportCollectionCsv, exportWishlist (+35 more)
 
 ### Community 15 - "Wishlist Export Tests"
-Cohesion: 0.03
-Nodes (69): ../../application/use_cases/build_wishlist_csv_import_preview_use_case.dart, ../../application/use_cases/execute_wishlist_csv_import_use_case.dart, ../../domain/models/release_detail.dart, _AddActionsBar, _CachedBanner, _CachedDetailBody, _ConditionDropdown, _CoverImage (+61 more)
+Cohesion: 0.04
+Nodes (60): ../../application/use_cases/build_wishlist_csv_import_preview_use_case.dart, ../../application/use_cases/execute_wishlist_csv_import_use_case.dart, _AddActionsBar, _CachedBanner, _CachedDetailBody, _ConditionDropdown, _CoverImage, _DetailBody (+52 more)
 
 ### Community 16 - "Failed Actions Screen"
 Cohesion: 0.05
-Nodes (42): _CollectionState, AppRoutes.collectionDetail, RouteAware, build, _buildBody, _buildGrid, _buildList, _buildLoadedList (+34 more)
+Nodes (43): _CollectionState, AppRoutes.collectionDetail, RouteAware, build, _buildBody, _buildGrid, _buildList, _buildLoadedList (+35 more)
 
 ### Community 17 - "Collection Export Tests"
 Cohesion: 0.04
-Nodes (57): _FakeDetailService, add, added, alreadyContains, _BlockingService, _cachedKindOfBlue, cachedMetadata, callCount (+49 more)
+Nodes (50): CachedReleaseMetadata?, CachedReleaseMetadataRepository, add, added, alreadyContains, _cachedKindOfBlue, cachedMetadata, callCount (+42 more)
 
 ### Community 18 - "App Router"
-Cohesion: 0.05
-Nodes (41): ../../application/use_cases/retry_add_collection_item_use_case.dart, ../../application/use_cases/retry_add_wishlist_item_use_case.dart, ../../application/use_cases/retry_metadata_refresh_use_case.dart, ../../application/use_cases/retry_thumbnail_use_case.dart, action, actions, _addCollectionSnackbarMessage, addCollectionUseCase (+33 more)
+Cohesion: 0.04
+Nodes (51): _ActionCard, ../../application/use_cases/retry_add_collection_item_use_case.dart, ../../application/use_cases/retry_add_wishlist_item_use_case.dart, ../../application/use_cases/retry_metadata_refresh_use_case.dart, ../../application/use_cases/retry_thumbnail_use_case.dart, action, _ActionCardState, _ActionList (+43 more)
 
 ### Community 19 - "Collection List Screen"
-Cohesion: 0.06
-Nodes (42): ../../app/router.dart, AppRoutes.wishlistDetail, build, _buildBody, _buildGrid, _buildList, _buildLoadedList, createState (+34 more)
+Cohesion: 0.05
+Nodes (43): AppDatabase?, ../../infrastructure/local_database/local_wishlist_repository.dart, AppRoutes.wishlistDetail, build, _buildBody, _buildGrid, _buildList, _buildLoadedList (+35 more)
 
 ### Community 20 - "Community 20"
 Cohesion: 0.05
@@ -558,11 +558,11 @@ Nodes (48): ../../application/use_cases/build_collection_import_preview_use_case
 
 ### Community 23 - "Community 23"
 Cohesion: 0.04
-Nodes (60): AppError?, FilterChip, package:cratewise/presentation/screens/release_detail_screen.dart, collectionRepository, _abbeyRoad, add, _BlockingPaginationService, _buildScreen (+52 more)
+Nodes (56): DiscogsSearchService, FilterChip, package:cratewise/presentation/screens/release_detail_screen.dart, _abbeyRoad, add, _BlockingPaginationService, _buildScreen, _buildScreenWithRouter (+48 more)
 
 ### Community 24 - "Community 24"
 Cohesion: 0.05
-Nodes (40): package:cratewise/application/use_cases/execute_wishlist_export_use_case.dart, _FakeWishlistExportUseCase, add, addResult, alreadySyncedCount, buildSubject, _calls, containsRelease (+32 more)
+Nodes (44): BuildWishlistExportPreviewResult, BuildWishlistExportPreviewUseCase, ExecuteWishlistExportResult, ExecuteWishlistExportUseCase, package:cratewise/application/use_cases/execute_wishlist_export_use_case.dart, _FakeWishlistExportUseCase, add, addResult (+36 more)
 
 ### Community 25 - "Community 25"
 Cohesion: 0.17
@@ -570,11 +570,11 @@ Nodes (9): phase4 - Prompt 4C: Wishlist list UI only, Wishlist List Screen, Loca
 
 ### Community 26 - "Community 26"
 Cohesion: 0.06
-Nodes (39): _, @DriftDatabase, ../../infrastructure/local_database/local_import_export_job_repository.dart, AppDatabase, build, copyWith, createState, _DeleteBackground (+31 more)
+Nodes (36): ../../infrastructure/local_database/local_import_export_job_repository.dart, build, copyWith, createState, _DeleteBackground, dispose, _EmptyState, _ErrorState (+28 more)
 
 ### Community 27 - "Community 27"
 Cohesion: 0.05
-Nodes (38): ../../application/use_cases/build_collection_csv_export_preview_use_case.dart, ../../application/use_cases/build_collection_export_preview_use_case.dart, ../../application/use_cases/build_wishlist_csv_export_preview_use_case.dart, ../../application/use_cases/build_wishlist_export_preview_use_case.dart, ../../application/use_cases/fetch_collection_import_preview_use_case.dart, ../../application/use_cases/fetch_wishlist_import_preview_use_case.dart, IconData, action (+30 more)
+Nodes (38): ../../app/router.dart, ../../application/use_cases/build_collection_csv_export_preview_use_case.dart, ../../application/use_cases/build_collection_export_preview_use_case.dart, ../../application/use_cases/build_wishlist_csv_export_preview_use_case.dart, ../../application/use_cases/build_wishlist_export_preview_use_case.dart, ../../application/use_cases/fetch_collection_import_preview_use_case.dart, ../../application/use_cases/fetch_wishlist_import_preview_use_case.dart, action (+30 more)
 
 ### Community 28 - "Community 28"
 Cohesion: 0.03
@@ -586,8 +586,7 @@ Nodes (39): ../../application/use_cases/execute_wishlist_csv_export_use_case.dar
 
 ### Community 30 - "Community 30"
 Cohesion: 0.06
-Nodes (39): package:cratewise/application/use_cases/retry_add_collection_item_use_case.dart, _FakeAddCollectionUseCase, String? payload,
-  int, collectionRepo, execute, _recordAttempt, RetryAddCollectionItemAlreadyExists, RetryAddCollectionItemInvalidPayload (+31 more)
+Nodes (38): package:cratewise/application/use_cases/retry_add_collection_item_use_case.dart, _FakeAddCollectionUseCase, collectionRepo, execute, _recordAttempt, RetryAddCollectionItemAlreadyExists, RetryAddCollectionItemInvalidPayload, RetryAddCollectionItemResult (+30 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.10
@@ -595,15 +594,15 @@ Nodes (36): Add To Collection Use Case, Clean Architecture Layering, Collection 
 
 ### Community 32 - "Community 32"
 Cohesion: 0.07
-Nodes (27): package:cratewise/presentation/screens/collection_detail_screen.dart, add, containsRelease, _coverUrl, deleteAll, exists, _FakeCollectionRepository, _FakeWishlistRepository (+19 more)
+Nodes (26): add, containsRelease, _coverUrl, deleteAll, exists, _FakeCollectionRepository, _FakeWishlistRepository, file (+18 more)
 
 ### Community 33 - "Community 33"
-Cohesion: 0.05
-Nodes (40): package:cratewise/application/use_cases/execute_collection_export_use_case.dart, add, addResult, alreadySyncedCount, buildSubject, _calls, containsRelease, count (+32 more)
+Cohesion: 0.06
+Nodes (39): BuildCollectionExportPreviewResult, ExecuteCollectionExportResult, ExecuteCollectionExportUseCase, package:cratewise/application/use_cases/execute_collection_export_use_case.dart, add, addResult, alreadySyncedCount, buildSubject (+31 more)
 
 ### Community 34 - "Community 34"
-Cohesion: 0.07
-Nodes (29): add, addResult, buildSubject, _calls, conflictCount, containsRelease, count, deleteAll (+21 more)
+Cohesion: 0.06
+Nodes (31): ExecuteWishlistImportResult, FetchWishlistImportPreviewResult, add, addResult, buildSubject, _calls, conflictCount, containsRelease (+23 more)
 
 ### Community 35 - "Community 35"
 Cohesion: 0.07
@@ -615,12 +614,12 @@ Nodes (33): package:cratewise/application/use_cases/retry_metadata_refresh_use_c
   String?, _actions, add, attemptCount, deleteAll, deleteCredentials, deleteFailedBefore (+25 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.06
-Nodes (34): package:cratewise/application/use_cases/retry_thumbnail_use_case.dart, _actions, add, attemptCount, _data, deleteAll, deleteFailedBefore, entityId (+26 more)
+Cohesion: 0.05
+Nodes (47): Client, ../../infrastructure/local_database/local_thumbnail_repository.dart, package:cratewise/application/use_cases/retry_thumbnail_use_case.dart, cacheRepo, execute, _httpClient, _recordAttempt, retryRepo (+39 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.06
-Nodes (33): add, added, addResult, _CapturingJobRepository, collectionRepo, containsRelease, count, deleteAll (+25 more)
+Nodes (35): ExecuteImportCompleted, _FakeJobRepository, add, added, addResult, _CapturingJobRepository, collectionRepo, containsRelease (+27 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.22
@@ -628,7 +627,7 @@ Nodes (8): [0.0.1] — 2026-05-31, [0.0.2] — 2026-05-31, [1.0.0] — Unrelease
 
 ### Community 40 - "Community 40"
 Cohesion: 0.06
-Nodes (32): FilledButton, package:cratewise/application/use_cases/execute_collection_csv_import_use_case.dart, package:cratewise/presentation/screens/collection_csv_import_preview_screen.dart, package:cratewise/presentation/widgets/rate_limit_retry_button.dart, add, addResult, _buildSubject, _cancelledPicker (+24 more)
+Nodes (33): BuildCollectionCsvImportPreviewResult, ExecuteCollectionCsvImportResult, ExecuteCollectionCsvImportUseCase, FilledButton, package:cratewise/application/use_cases/execute_collection_csv_import_use_case.dart, package:cratewise/presentation/widgets/rate_limit_retry_button.dart, add, addResult (+25 more)
 
 ### Community 41 - "Community 41"
 Cohesion: 0.06
@@ -636,19 +635,19 @@ Nodes (31): _actions, add, _bytes, deleteAll, deleteCallCount, deleteCredentials
 
 ### Community 42 - "Community 42"
 Cohesion: 0.06
-Nodes (36): package:cratewise/presentation/screens/collection_import_preview_screen.dart, add, addResult, buildSubject, _calls, containsRelease, count, _CountingFakeUseCase (+28 more)
+Nodes (39): ExecuteCollectionImportResult, ExecuteCollectionImportUseCase, FetchCollectionImportPreviewResult, FetchCollectionImportPreviewUseCase, add, addResult, buildSubject, _calls (+31 more)
 
 ### Community 43 - "Community 43"
 Cohesion: 0.06
-Nodes (33): package:cratewise/presentation/screens/collection_screen.dart, package:cratewise/shared/route_observer.dart, RefreshIndicator, Route /collection/1, Route /collection/test-id, _, add, _callCount (+25 more)
+Nodes (37): package:cratewise/presentation/screens/collection_screen.dart, package:cratewise/shared/route_observer.dart, RefreshIndicator, Route /collection/1, Route /collection/test-id, _, add, _callCount (+29 more)
 
 ### Community 44 - "Community 44"
 Cohesion: 0.08
 Nodes (26): Beta User Stories — S (Defer post-beta), US-28: App supports deep linking and named routes, US-29: Discogs token setup screen has a tappable help link, US-30: Token input field shows format guidance, US-31: Artist name parsed correctly for releases with " – " in the title, US-32: ANV (credited artist name) shown on release detail, US-33: Multi-format releases show all format entries, US-34: Retry button uses back-off delay after rate-limit errors (+18 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.13
-Nodes (14): package:cratewise/application/use_cases/build_collection_csv_export_preview_use_case.dart, package:cratewise/domain/repositories/collection_repository.dart, add, containsRelease, deleteAll, _FakeCollectionRepository, getAll, getById (+6 more)
+Cohesion: 0.15
+Nodes (25): CollectionRepository, _FakeCollectionRepository, _FakeCollectionRepository, _NoOpCollectionRepo, _FakeCollectionRepository, _FakeCollectionRepository, _FakeCollectionRepository, _NullCollectionRepo (+17 more)
 
 ### Community 46 - "Community 46"
 Cohesion: 0.06
@@ -659,72 +658,73 @@ Cohesion: 0.05
 Nodes (41): add, addCallCount, addedItem, alreadyContains, _callCount, _calls, containsRelease, deleteAll (+33 more)
 
 ### Community 48 - "Community 48"
-Cohesion: 0.06
-Nodes (31): add, _callCount, _calls, containsRelease, deleteAll, exists, first, firstItem (+23 more)
+Cohesion: 0.05
+Nodes (38): add, _callCount, _calls, containsRelease, deleteAll, exists, _FakeCollectionRepository, _FakeThumbnailRepository (+30 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.05
-Nodes (36): _FakeJobRepository, add, added, addResult, _CapturingJobRepository, conflictCount, containsRelease, count (+28 more)
+Cohesion: 0.06
+Nodes (33): ExecuteWishlistImportCompleted, add, added, addResult, conflictCount, containsRelease, count, deleteAll (+25 more)
 
 ### Community 50 - "Community 50"
 Cohesion: 0.06
-Nodes (31): Container, package:cratewise/presentation/screens/import_export_history_screen.dart, SafeArea, add, _buildSubject, _callIndex, count, failedItems (+23 more)
+Nodes (31): Container, ImportExportJobType, ImportExportStatus, add, _buildSubject, _callIndex, count, failedItems (+23 more)
 
 ### Community 51 - "Community 51"
 Cohesion: 0.04
-Nodes (59): CratewiseApp, _CratewiseAppState, ../../application/use_cases/execute_pending_deletions_use_case.dart, ../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart, _Exporting, _Loading, _Ready, _Done (+51 more)
+Nodes (59): ../../application/use_cases/execute_pending_deletions_use_case.dart, ../../infrastructure/local_database/local_pending_discogs_deletion_repository.dart, _Done, _Error, _Exporting, _Loading, _Ready, _Done (+51 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.06
-Nodes (38): main, makeItem, openTestDb, main, makeJob, openTestDb, main, makeItem (+30 more)
+Cohesion: 0.08
+Nodes (25): _FakeThumbnailCacheService, ThumbnailCacheService?, _FakeThumbnailCacheService, _background, build, cacheService, coverUrl, createState (+17 more)
 
 ### Community 53 - "Community 53"
-Cohesion: 0.10
-Nodes (19): ../../domain/models/collection_import_preview.dart, ../../domain/models/pending_discogs_deletion.dart, ../../domain/repositories/pending_discogs_deletion_repository.dart, ../../infrastructure/discogs/dto/discogs_collection_item.dart, add, containsRelease, _db, deleteAllByType (+11 more)
+Cohesion: 0.09
+Nodes (26): build_collection_import_preview_use_case.dart, ../../domain/models/collection_import_preview.dart, ../../domain/repositories/pending_discogs_deletion_repository.dart, ../../infrastructure/discogs/dto/discogs_collection_item.dart, BuildCollectionImportPreviewUseCase, _classify, _deletionRepository, execute (+18 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.07
-Nodes (29): package:cratewise/presentation/screens/wishlist_screen.dart, _, add, _callCount, _calls, containsRelease, deleteAll, exists (+21 more)
+Cohesion: 0.06
+Nodes (33): package:cratewise/presentation/screens/wishlist_screen.dart, _, add, _callCount, _calls, containsRelease, deleteAll, exists (+25 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.06
-Nodes (37): ../../domain/models/retry_action.dart, package:cratewise/application/use_cases/retry_add_wishlist_item_use_case.dart, execute, _recordAttempt, RetryAddWishlistItemAlreadyExists, RetryAddWishlistItemInvalidPayload, RetryAddWishlistItemResult, RetryAddWishlistItemStorageError (+29 more)
+Nodes (39): package:cratewise/application/use_cases/retry_add_wishlist_item_use_case.dart, _FakeAddWishlistUseCase, String? payload,
+  int, execute, _recordAttempt, RetryAddWishlistItemAlreadyExists, RetryAddWishlistItemInvalidPayload, RetryAddWishlistItemResult (+31 more)
 
 ### Community 56 - "Community 56"
 Cohesion: 0.07
-Nodes (28): _FakeWishlistCsvExportUseCase, add, _buildSubject, _calls, containsRelease, count, _CountingPreviewUseCase, deleteAll (+20 more)
+Nodes (32): BuildWishlistCsvExportPreviewResult, BuildWishlistCsvExportPreviewUseCase, ExecuteWishlistCsvExportResult, ExecuteWishlistCsvExportUseCase, package:cratewise/presentation/screens/wishlist_csv_export_preview_screen.dart, _FakeWishlistCsvExportUseCase, add, _buildSubject (+24 more)
 
 ### Community 57 - "Community 57"
 Cohesion: 0.06
-Nodes (30): package:cratewise/application/use_cases/fetch_collection_import_preview_use_case.dart, add, _callIndex, containsRelease, deleteAll, deleteCallCount, deleteCredentials, _error (+22 more)
+Nodes (35): AppError?, FetchPreviewError, FetchPreviewNetworkError, FetchPreviewNoToken, FetchPreviewRateLimitExhausted, FetchPreviewReady, add, _callIndex (+27 more)
 
 ### Community 58 - "Community 58"
 Cohesion: 0.06
-Nodes (30): add, _callIndex, containsRelease, deleteAll, deleteCallCount, deleteCredentials, _error, _FakeWishlistRepository (+22 more)
+Nodes (34): FetchWishlistPreviewError, FetchWishlistPreviewNetworkError, FetchWishlistPreviewNoToken, FetchWishlistPreviewRateLimitExhausted, FetchWishlistPreviewReady, add, _callIndex, containsRelease (+26 more)
 
 ### Community 59 - "Community 59"
 Cohesion: 0.08
 Nodes (26): ../../application/services/discogs_connection_service.dart, TextEditingValue, build, _clearToken, _connect, _ConnectedTokenDisplay, _connectedUsername, connectionService (+18 more)
 
 ### Community 60 - "Community 60"
-Cohesion: 0.06
-Nodes (38): check_wishlist_export_capability_use_case.dart, ../../domain/models/wishlist_export_preview.dart, WishlistExportPreview, package:cratewise/domain/models/wishlist_export_preview.dart, BuildWishlistExportPreviewResult, _capabilityUseCase, execute, preview (+30 more)
+Cohesion: 0.05
+Nodes (43): check_wishlist_export_capability_use_case.dart, CheckWishlistExportCapabilityUseCase, ../../domain/models/wishlist_export_preview.dart, WishlistExportPreview, package:cratewise/application/use_cases/build_wishlist_export_preview_use_case.dart, package:cratewise/domain/models/wishlist_export_preview.dart, BuildWishlistExportPreviewResult, _capabilityUseCase (+35 more)
 
 ### Community 61 - "Community 61"
 Cohesion: 0.07
-Nodes (29): package:cratewise/application/use_cases/execute_wishlist_csv_import_use_case.dart, package:cratewise/infrastructure/csv/csv_file_picker_service.dart, package:cratewise/presentation/screens/wishlist_csv_import_preview_screen.dart, add, addResult, _buildSubject, _cancelledPicker, containsRelease (+21 more)
+Nodes (27): BuildWishlistCsvImportPreviewResult, ExecuteWishlistCsvImportResult, package:cratewise/application/use_cases/execute_wishlist_csv_import_use_case.dart, package:cratewise/infrastructure/csv/csv_file_picker_service.dart, package:cratewise/presentation/screens/wishlist_csv_import_preview_screen.dart, add, addResult, _buildSubject (+19 more)
 
 ### Community 62 - "Community 62"
-Cohesion: 0.14
-Nodes (11): main, binding, main, shoot, package:cratewise/app/app.dart, package:cratewise/presentation/screens/search_screen.dart, package:cratewise/presentation/widgets/app_bottom_nav.dart, package:cratewise/presentation/widgets/app_nav_rail.dart (+3 more)
+Cohesion: 0.18
+Nodes (14): ../../infrastructure/discogs/dto/discogs_release.dart, _apiClient, cacheRepo, execute, _recordAttempt, RetryMetadataFailed, RetryMetadataNetworkError, RetryMetadataNoToken (+6 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.06
-Nodes (34): _fullItem, main, mapper, _minimalItem, _item, main, main, base (+26 more)
+Cohesion: 0.09
+Nodes (18): base, createdAt, main, updatedAt, _item, main, main, _row (+10 more)
 
 ### Community 64 - "Community 64"
-Cohesion: 0.12
-Nodes (15): cache_retry_recorder.dart, CacheRetryRecorder?, _apiClient, _cacheRepository, _cacheRetryRecorder, fetchDetail, getCachedOrFetch, releaseDetailFromCachedMetadata (+7 more)
+Cohesion: 0.06
+Nodes (35): _fullItem, main, mapper, _minimalItem, ExecuteWishlistCsvExportCompleted, ExecuteWishlistCsvExportFailed, _item, main (+27 more)
 
 ### Community 65 - "Community 65"
 Cohesion: 0.07
@@ -735,47 +735,47 @@ Nodes (26): goodPlus,
 
 ### Community 66 - "Community 66"
 Cohesion: 0.09
-Nodes (23): CsvWishlistExportPreview, headers, items, rowCount, sampleRows, alreadySyncedCount, AlreadySyncedWishlistExportRow, artist (+15 more)
+Nodes (24): int get, CsvWishlistExportPreview, headers, items, rowCount, sampleRows, alreadySyncedCount, AlreadySyncedWishlistExportRow (+16 more)
 
 ### Community 67 - "Community 67"
-Cohesion: 0.08
-Nodes (23): package:cratewise/application/use_cases/build_wishlist_export_preview_use_case.dart, package:cratewise/application/use_cases/fetch_wishlist_import_preview_use_case.dart, package:cratewise/presentation/screens/collection_export_preview_screen.dart, package:cratewise/presentation/screens/import_export_screen.dart, package:cratewise/presentation/screens/wishlist_csv_export_preview_screen.dart, package:cratewise/presentation/screens/wishlist_export_preview_screen.dart, package:cratewise/presentation/screens/wishlist_import_preview_screen.dart, add (+15 more)
+Cohesion: 0.06
+Nodes (29): package:cratewise/application/use_cases/check_collection_export_capability_use_case.dart, package:cratewise/application/use_cases/check_wishlist_export_capability_use_case.dart, package:cratewise/application/use_cases/fetch_collection_import_preview_use_case.dart, package:cratewise/application/use_cases/fetch_wishlist_import_preview_use_case.dart, package:cratewise/presentation/screens/collection_csv_import_preview_screen.dart, package:cratewise/presentation/screens/collection_export_preview_screen.dart, package:cratewise/presentation/screens/collection_import_preview_screen.dart, package:cratewise/presentation/screens/import_export_history_screen.dart (+21 more)
 
 ### Community 68 - "Community 68"
 Cohesion: 0.06
-Nodes (33): package:cratewise/presentation/screens/settings_screen.dart, add, addCount, _clearIn, _collectionItem, containsRelease, deleteAll, deleteAllByType (+25 more)
+Nodes (31): package:cratewise/presentation/screens/settings_screen.dart, add, addCount, _clearIn, _collectionItem, containsRelease, deleteAll, deleteAllByType (+23 more)
 
 ### Community 69 - "Community 69"
 Cohesion: 0.08
 Nodes (24): artist, catno, country, coverUrl, DiscogsIdentifierDto, DiscogsReleaseDto, DiscogsTrackDto, displayArtist (+16 more)
 
 ### Community 70 - "Community 70"
-Cohesion: 0.22
-Nodes (8): LocalPendingDiscogsDeletionRepository, db, main, _makeDeletion, _openTestDb, repo, package:cratewise/domain/models/pending_discogs_deletion.dart, package:cratewise/infrastructure/local_database/local_pending_discogs_deletion_repository.dart
+Cohesion: 0.08
+Nodes (24): package:cratewise/application/services/discogs_release_detail_service.dart, package:cratewise/domain/repositories/cached_release_metadata_repository.dart, add, containsRelease, deleteAll, detail, error, _expectFullDetails (+16 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.07
-Nodes (28): package:cratewise/application/use_cases/build_collection_export_preview_use_case.dart, package:cratewise/domain/models/collection_export_preview.dart, add, artist, containsRelease, _delegate, deleteAll, execute (+20 more)
+Nodes (31): CheckCollectionExportCapabilityUseCase, package:cratewise/application/use_cases/build_collection_export_preview_use_case.dart, package:cratewise/domain/models/collection_export_preview.dart, add, artist, containsRelease, _delegate, deleteAll (+23 more)
 
 ### Community 72 - "Community 72"
 Cohesion: 0.10
-Nodes (25): CollectionRepository, _FakeCollectionRepository, _FlippingCollectionRepository, _SuccessThenErrorCollectionRepository, _ThenRemovedCollectionRepository, _UpdatingCollectionRepository, _FakeCollectionRepository, _FakeCollectionRepository (+17 more)
+Nodes (20): package:cratewise/application/use_cases/build_collection_import_preview_use_case.dart, package:cratewise/domain/models/collection_import_preview.dart, package:cratewise/domain/repositories/pending_discogs_deletion_repository.dart, package:cratewise/infrastructure/discogs/dto/discogs_collection_item.dart, Set, add, containsRelease, containsReleaseCallCount (+12 more)
 
 ### Community 73 - "Community 73"
-Cohesion: 0.05
-Nodes (39): BarcodeLookupSuccess get, Icon, package:cratewise/presentation/screens/barcode_scan_screen.dart, package:cratewise/presentation/widgets/release_search_result_card.dart, add, _BlockingLookupUseCase, _callIndex, complete (+31 more)
+Cohesion: 0.06
+Nodes (32): BarcodeLookupSuccess get, package:cratewise/presentation/screens/barcode_scan_screen.dart, add, _BlockingLookupUseCase, _callIndex, complete, _completer, _completers (+24 more)
 
 ### Community 74 - "Community 74"
-Cohesion: 0.08
-Nodes (25): app_database.dart, ../../domain/repositories/transaction_runner.dart, DatabaseTransactionRunner, _db, TransactionRunner, T, TransactionRunner, _buildItem (+17 more)
+Cohesion: 0.10
+Nodes (20): DatabaseTransactionRunner, TransactionRunner, _buildItem, execute, ExecuteCollectionImportResult, ExecuteImportCompleted, ExecuteImportFailed, failed (+12 more)
 
 ### Community 75 - "Community 75"
 Cohesion: 0.07
-Nodes (28): package:cratewise/application/use_cases/execute_collection_import_use_case.dart, package:cratewise/application/use_cases/execute_wishlist_import_use_case.dart, package:cratewise/domain/repositories/transaction_runner.dart, active, add, added, addResult, _collectionPreview (+20 more)
+Nodes (29): package:cratewise/application/use_cases/execute_collection_import_use_case.dart, package:cratewise/application/use_cases/execute_wishlist_import_use_case.dart, package:cratewise/domain/repositories/transaction_runner.dart, active, add, added, addResult, _collectionPreview (+21 more)
 
 ### Community 76 - "Community 76"
-Cohesion: 0.14
-Nodes (15): ../../domain/models/import_export_job_type.dart, _defaultShare, execute, ExecuteCollectionCsvExportCompleted, ExecuteCollectionCsvExportFailed, ExecuteCollectionCsvExportResult, filename, filePath (+7 more)
+Cohesion: 0.12
+Nodes (17): package:cratewise/application/use_cases/build_wishlist_csv_export_preview_use_case.dart, package:cratewise/domain/repositories/wishlist_repository.dart, BuildWishlistCsvExportPreviewResult, add, containsRelease, deleteAll, _FakeWishlistRepository, getAll (+9 more)
 
 ### Community 77 - "Community 77"
 Cohesion: 0.10
@@ -786,16 +786,16 @@ Cohesion: 0.10
 Nodes (23): _addToWantlistWithRetry, _apiClient, _capabilityUseCase, execute, ExecuteWishlistExportCompleted, ExecuteWishlistExportFailed, ExecuteWishlistExportNoToken, ExecuteWishlistExportNotSupported (+15 more)
 
 ### Community 79 - "Community 79"
-Cohesion: 0.07
-Nodes (29): List, IdentifierListConverter, ImportExportStatusConverter, RecordConditionConverter, RetryActionEntityTypeConverter, RetryActionStatusConverter, RetryActionTypeConverter, StringListConverter (+21 more)
+Cohesion: 0.11
+Nodes (18): RetryActionEntityTypeConverter, RetryActionStatusConverter, RetryActionTypeConverter, actionType, attemptCount, copyWith, createdAt, entityId (+10 more)
 
 ### Community 80 - "Community 80"
 Cohesion: 0.07
-Nodes (32): CollectionItem?, CollectionItem, package:cratewise/application/use_cases/add_to_collection_use_case.dart, AddToCollectionDuplicate, AddToCollectionResult, AddToCollectionStorageError, AddToCollectionSuccess, AddToCollectionUseCase (+24 more)
+Nodes (32): CollectionItem, CollectionItem, package:cratewise/application/use_cases/add_to_collection_use_case.dart, AddToCollectionDuplicate, AddToCollectionResult, AddToCollectionStorageError, AddToCollectionSuccess, AddToCollectionUseCase (+24 more)
 
 ### Community 81 - "Community 81"
-Cohesion: 0.09
-Nodes (22): SyncStatusConverter, artist, CachedReleaseMetadata, cacheSource, catno, copyWith, country, coverUrl (+14 more)
+Cohesion: 0.10
+Nodes (20): artist, CachedReleaseMetadata, cacheSource, catno, copyWith, country, coverUrl, discogsReleaseId (+12 more)
 
 ### Community 82 - "Community 82"
 Cohesion: 0.09
@@ -816,16 +816,16 @@ Cohesion: 0.09
 Nodes (24): US-28: Deep linking and named routes (GoRouter), US-29: Tappable help link on token setup screen, US-30: Token input field shows format guidance, US-31: Artist name parsed correctly with dashes, US-32: ANV (credited artist name) on release detail, US-33: Multi-format releases show all formats, US-34: Retry button back-off countdown after 429, US-35: Collection detail live-reloads on change (+16 more)
 
 ### Community 86 - "Community 86"
-Cohesion: 0.12
-Nodes (17): ../../domain/models/connection_status.dart, ../../domain/models/release_search_result.dart, ../../domain/repositories/token_storage.dart, ../../infrastructure/discogs/dto/discogs_search_result.dart, ../../infrastructure/secure_storage/discogs_token_storage.dart, connect, DiscogsConnectionService, disconnect (+9 more)
+Cohesion: 0.07
+Nodes (36): ../../domain/models/connection_status.dart, ../../domain/models/release_search_result.dart, ../../domain/models/search_result_page.dart, ../../domain/repositories/token_storage.dart, ../../infrastructure/discogs/discogs_api_client.dart, ../../infrastructure/discogs/dto/discogs_identity.dart, ../../infrastructure/discogs/dto/discogs_search_result.dart, ../../infrastructure/secure_storage/discogs_token_storage.dart (+28 more)
 
 ### Community 87 - "Community 87"
-Cohesion: 0.07
-Nodes (26): content, CsvFilePickerService, CsvPickedFile, filename, pick, dart:convert, double?, artist (+18 more)
+Cohesion: 0.09
+Nodes (21): double?, WishlistPriorityConverter, artist, catno, country, coverUrl, discogsReleaseId, format (+13 more)
 
 ### Community 88 - "Community 88"
-Cohesion: 0.18
-Nodes (10): description, devDependencies, @11ty/eleventy, name, private, scripts, build, serve (+2 more)
+Cohesion: 0.15
+Nodes (12): description, devDependencies, @11ty/eleventy, markdown-it, markdown-it-anchor, name, private, scripts (+4 more)
 
 ### Community 89 - "Community 89"
 Cohesion: 0.09
@@ -840,131 +840,131 @@ Cohesion: 0.10
 Nodes (20): artist, catno, dateAdded, DiscogsCollectionItemDto, DiscogsCollectionPageDto, folderId, format, fromJson (+12 more)
 
 ### Community 92 - "Community 92"
-Cohesion: 0.09
-Nodes (21): artist, catno, country, coverUrl, discogsInstanceId, discogsReleaseId, format, id (+13 more)
+Cohesion: 0.08
+Nodes (23): RecordConditionConverter, RecordCondition, artist, catno, country, coverUrl, discogsInstanceId, discogsReleaseId (+15 more)
 
 ### Community 93 - "Community 93"
-Cohesion: 0.09
-Nodes (22): _background, build, cacheService, coverUrl, createState, didUpdateWidget, _foreground, initState (+14 more)
+Cohesion: 0.08
+Nodes (23): ../../application/services/thumbnail_cache_service.dart, Future, _LocalCoverThumbnail, build, cacheService, CollectionItemCard, coverUrl, createState (+15 more)
 
 ### Community 94 - "Community 94"
-Cohesion: 0.07
-Nodes (28): main, _row, package:cratewise/domain/models/csv_wishlist_import_preview.dart, add, added, addResult, containsRelease, count (+20 more)
+Cohesion: 0.06
+Nodes (30): ExecuteWishlistCsvImportCompleted, FailedRow, main, _row, package:cratewise/domain/models/csv_wishlist_import_preview.dart, package:cratewise/domain/models/import_export_row_result.dart, SkippedRow, add (+22 more)
 
 ### Community 95 - "Community 95"
-Cohesion: 0.08
-Nodes (20): buildCratewiseTheme, colorScheme, seedColor, ModalRoute, package:cratewise/presentation/widgets/send_feedback_tile.dart, package:flutter/material.dart, appRouteObserver, searchRouteObserver (+12 more)
+Cohesion: 0.07
+Nodes (25): app/app.dart, buildCratewiseTheme, colorScheme, seedColor, application/use_cases/clean_up_stale_csv_exports_use_case.dart, application/use_cases/purge_stale_failed_actions_use_case.dart, ../../infrastructure/local_database/app_database.dart, ../../infrastructure/local_database/local_retry_action_repository.dart (+17 more)
 
 ### Community 96 - "Community 96"
-Cohesion: 0.11
-Nodes (18): collectionCsvHeaders, CollectionCsvMapper, toRow, ../../domain/models/collection_item.dart, _buildItem, _collectionRepository, execute, ExecuteCollectionCsvImportCompleted (+10 more)
+Cohesion: 0.15
+Nodes (14): _buildItem, _collectionRepository, execute, ExecuteCollectionCsvImportCompleted, ExecuteCollectionCsvImportFailed, ExecuteCollectionCsvImportResult, failed, imported (+6 more)
 
 ### Community 97 - "Community 97"
 Cohesion: 0.08
-Nodes (24): package:cratewise/application/services/discogs_release_detail_service.dart, ReleaseDetail?, add, containsRelease, deleteAll, detail, error, _expectFullDetails (+16 more)
+Nodes (25): package:cratewise/presentation/screens/collection_detail_screen.dart, ReleaseDetail, add, containsRelease, deleteAll, detail, error, _expectFullDetails (+17 more)
 
 ### Community 98 - "Community 98"
-Cohesion: 0.11
-Nodes (15): Discogs Export Capability Check, Export/Import Job Result, Import and Export Screen, NotSupported Capability State, Token Safety Rules, phase6 - Prompt 6N: Collection export preview to Discogs, phase6 - Prompt 6O: Collection export preview UI, Prompt 6P: Execute collection export to Discogs only if supported (+7 more)
+Cohesion: 0.09
+Nodes (18): Discogs Export Capability Check, Export/Import Job Result, Import and Export Screen, NotSupported Capability State, Phase 6: Import and export, Token Safety Rules, phase6 - Prompt 6N: Collection export preview to Discogs, phase6 - Prompt 6O: Collection export preview UI (+10 more)
 
 ### Community 99 - "Community 99"
 Cohesion: 0.10
 Nodes (19): artist, catno, dateAdded, DiscogsWantlistItemDto, DiscogsWantlistPageDto, format, fromJson, genres (+11 more)
 
 ### Community 100 - "Community 100"
-Cohesion: 0.08
-Nodes (22): exportWishlistToDiscogs,
+Cohesion: 0.07
+Nodes (24): exportWishlistToDiscogs,
   csvCollectionExport,
   csvWishlistExport,
-  csvCollectionImport,, import_export_job_type.dart, import_export_status.dart, ImportExportJobTypeConverter, copyWith, createdAt, failedItems, id (+14 more)
+  csvCollectionImport,, import_export_job_type.dart, import_export_status.dart, ImportExportJobTypeConverter, ImportExportStatusConverter, copyWith, createdAt, failedItems (+16 more)
 
 ### Community 101 - "Community 101"
-Cohesion: 0.08
-Nodes (23): package:cratewise/presentation/screens/collection_csv_export_preview_screen.dart, add, _buildSubject, _calls, containsRelease, count, deleteAll, execute (+15 more)
+Cohesion: 0.04
+Nodes (55): BuildCollectionCsvExportPreviewResult, BuildCollectionCsvExportPreviewUseCase, _fullItem, main, mapper, _minimalItem, ExecuteCollectionCsvExportResult, ExecuteCollectionCsvExportUseCase (+47 more)
 
 ### Community 102 - "Community 102"
-Cohesion: 0.10
-Nodes (20): package:cratewise/domain/repositories/token_storage.dart, add, _byType, cleared, _collectionDeletion, containsRelease, deleteAllByType, deleteCredentials (+12 more)
+Cohesion: 0.09
+Nodes (22): package:cratewise/domain/repositories/token_storage.dart, add, _byType, cleared, _collectionDeletion, containsRelease, deleteAllByType, deleteCredentials (+14 more)
 
 ### Community 103 - "Community 103"
-Cohesion: 0.10
-Nodes (22): _FakeStorage, _FakeTokenStorage, _FakeTokenStorage, _FakeTokenStorage, _FakeTokenStorage, _FakeStorage, _SpyStorage, _FakeStorage (+14 more)
+Cohesion: 0.09
+Nodes (23): _FakeStorage, _FakeTokenStorage, _FakeTokenStorage, _FakeTokenStorage, _FakeTokenStorage, _FakeStorage, _SpyStorage, _FakeStorage (+15 more)
 
 ### Community 104 - "Community 104"
-Cohesion: 0.08
-Nodes (25): dart:developer, FlutterSecureStorage, package:flutter_secure_storage/flutter_secure_storage.dart, package:flutter/services.dart, secure_key_value_store.dart, delete, deleteCredentials, DiscogsTokenStorage (+17 more)
+Cohesion: 0.11
+Nodes (18): dart:developer, FlutterSecureStorage, package:flutter_secure_storage/flutter_secure_storage.dart, package:flutter/services.dart, secure_key_value_store.dart, delete, deleteCredentials, DiscogsTokenStorage (+10 more)
 
 ### Community 105 - "Community 105"
-Cohesion: 0.11
-Nodes (18): package:cratewise/application/use_cases/build_collection_import_preview_use_case.dart, package:cratewise/domain/models/collection_import_preview.dart, Set, add, containsRelease, containsReleaseCallCount, deleteAll, deleteAllByType (+10 more)
+Cohesion: 0.29
+Nodes (11): _DetailState, _DetailError, _DetailState, _Loaded, _Loading, _NotFound, _DetailError, _DetailState (+3 more)
 
 ### Community 106 - "Community 106"
 Cohesion: 0.11
-Nodes (19): ImportExportJobRepository, _FakeJobRepository, _NoOpJobRepo, _FakeImportExportJobRepository, _FakeJobRepository, _FakeJobRepository, _PagedFakeJobRepository, _FakeJobRepository (+11 more)
+Nodes (30): ImportExportJobRepository, ../models/import_export_job.dart, add, count, getById, getRecent, ImportExportJobRepository, remove (+22 more)
 
 ### Community 107 - "Community 107"
 Cohesion: 0.20
 Nodes (7): Failed Actions Screen, Offline Mode, Thumbnail Cache Service, Prompt 5J: Use cached thumbnails in local collection and wishlist, Prompt 5O: Add retry failed actions screen, Prompt 5Q: Retry failed thumbnail cache action, Prompt 5R: Offline mode final polish
 
 ### Community 108 - "Community 108"
-Cohesion: 0.19
-Nodes (12): check_collection_export_capability_use_case.dart, ../../domain/models/collection_export_preview.dart, CollectionExportPreview, BuildCollectionExportPreviewResult, _capabilityUseCase, CollectionExportPreviewError, CollectionExportPreviewNotSupported, CollectionExportPreviewReady (+4 more)
+Cohesion: 0.09
+Nodes (23): ExecuteCollectionCsvExportCompleted, ExecuteCollectionCsvExportFailed, package:cratewise/application/use_cases/execute_collection_csv_export_use_case.dart, String?, ExecuteCollectionCsvExportCompleted, ExecuteCollectionCsvExportFailed, ExecuteCollectionCsvExportResult, add (+15 more)
 
 ### Community 109 - "Community 109"
 Cohesion: 0.15
-Nodes (9): Discogs API Client Responsibilities (base URL api.discogs.com, User-Agent, auth headers, search/release/collection/wishlist lookups, pagination, rate limits), DiscogsTokenStorage (secure token/username storage abstraction), iOS Keychain Save Bug (SaveCredentials fails silently with StorageError; open XL item), No HTTP Request Timeout on Discogs Calls (XL cross-cutting limitation), phase2 - Prompt 2: Discogs API client, phase2 - Prompt 3: Token validation, phase2 - Prompt 4: Secure token storage, phase2 - Prompt 5A: Search UI only (+1 more)
+Nodes (6): phase1, phase2 - Prompt 2: Discogs API client, phase2 - Prompt 3: Token validation, phase2 - Prompt 4: Secure token storage, phase2 - Prompt 5A: Search UI only, Phase 2 Prompt 5B: Discogs Release Search API Method
 
 ### Community 110 - "Community 110"
 Cohesion: 0.05
-Nodes (44): ../../application/services/thumbnail_eviction_service.dart, ../../infrastructure/local_database/local_collection_repository.dart, ../../infrastructure/local_database/local_wishlist_repository.dart, AppRoutes.failedActions, AppRoutes.importExport, build, buttonStyle, _clear (+36 more)
+Nodes (44): ../../application/services/thumbnail_eviction_service.dart, IconData, ../../infrastructure/local_database/local_collection_repository.dart, AppRoutes.failedActions, AppRoutes.importExport, build, buttonStyle, _clear (+36 more)
 
 ### Community 111 - "Community 111"
-Cohesion: 0.11
-Nodes (16): DateTime?, int?, artist, copyWith, createdAt, DeletionEntityType, discogsInstanceId, discogsReleaseId (+8 more)
+Cohesion: 0.12
+Nodes (15): DateTime, artist, copyWith, createdAt, DeletionEntityType, discogsInstanceId, discogsReleaseId, entityType (+7 more)
 
 ### Community 112 - "Community 112"
 Cohesion: 0.11
-Nodes (22): ../../domain/models/cached_release_metadata.dart, ../../domain/repositories/cached_release_metadata_repository.dart, ../../infrastructure/discogs/dto/discogs_release.dart, _db, getByReleaseId, _modelToCompanion, remove, _rowToModel (+14 more)
+Nodes (24): _CachedCoverImage, _EditNotesSheet, _ResultsList, _CachedCoverImage, _CachedCoverImageState, CollectionDetailScreen, _CollectionDetailScreenState, _EditConditionsSheet (+16 more)
 
 ### Community 113 - "Community 113"
-Cohesion: 0.14
-Nodes (16): CollectionCsvValidator, ../../domain/models/csv_collection_import_preview.dart, ../../infrastructure/csv/collection_csv_validator.dart, CsvCollectionImportPreview, _FakeUseCase, BuildCollectionCsvImportPreviewResult, BuildCollectionCsvImportPreviewUseCase, CollectionCsvImportPreviewError (+8 more)
+Cohesion: 0.13
+Nodes (17): BuildCollectionCsvImportPreviewUseCase, CollectionCsvValidator, ../../domain/models/csv_collection_import_preview.dart, ../../infrastructure/csv/collection_csv_validator.dart, CsvCollectionImportPreview, _FakeUseCase, BuildCollectionCsvImportPreviewResult, BuildCollectionCsvImportPreviewUseCase (+9 more)
 
 ### Community 114 - "Community 114"
 Cohesion: 0.11
 Nodes (17): Done criteria, Flutter Testing Skill, Manual QA checklist, Procedure, Test targets, Always follow these rules, Architecture, Copilot Instructions for Cratewise (+9 more)
 
 ### Community 115 - "Community 115"
-Cohesion: 0.09
-Nodes (25): collection_item.dart, int get, alreadySyncedCount, AlreadySyncedExportRow, artist, classifyForExport, CollectionExportRow, coverUrl (+17 more)
+Cohesion: 0.12
+Nodes (18): alreadySyncedCount, AlreadySyncedExportRow, artist, classifyForExport, CollectionExportRow, coverUrl, eligibleCount, EligibleExportRow (+10 more)
 
 ### Community 116 - "Community 116"
 Cohesion: 0.09
 Nodes (22): artist, catno, country, coverUrl, displayArtist, duration, format, genres (+14 more)
 
 ### Community 117 - "Community 117"
-Cohesion: 0.11
-Nodes (18): ../models/import_export_row_result.dart, addResult, getResults, ImportExportRowResultRepository, removeAllForJob, _NoOpRowResultRepo, _FakeRowResultRepository, _FakeRowResultRepository (+10 more)
+Cohesion: 0.16
+Nodes (19): ImportExportRowResultRepository, ../models/import_export_row_result.dart, addResult, getResults, ImportExportRowResultRepository, removeAllForJob, _NoOpRowResultRepo, _FakeRowResultRepository (+11 more)
 
 ### Community 118 - "Community 118"
-Cohesion: 0.06
-Nodes (33): package:cratewise/application/services/thumbnail_cache_service.dart, package:cratewise/application/services/thumbnail_eviction_service.dart, package:cratewise/domain/models/thumbnail_entry.dart, package:cratewise/domain/repositories/thumbnail_repository.dart, package:http/testing.dart, _bytes, evictCallCount, evictIfNeeded (+25 more)
+Cohesion: 0.11
+Nodes (17): package:cratewise/application/services/thumbnail_cache_service.dart, _bytes, evictCallCount, evictIfNeeded, exists, getLocalPath, listEntries, main (+9 more)
 
 ### Community 119 - "Community 119"
 Cohesion: 0.12
 Nodes (15): artist, country, currentPage, DiscogsSearchPageDto, DiscogsSearchResultDto, format, fromJson, id (+7 more)
 
 ### Community 120 - "Community 120"
-Cohesion: 0.12
-Nodes (16): Dart Analyzer Configuration (flutter_lints), Architecture, Data model, Dependency rule, Error handling, Folder structure, Goal, Layered Architecture (presentation / application / domain / infrastructure / shared) (+8 more)
+Cohesion: 0.18
+Nodes (11): Architecture, Data model, Dependency rule, Error handling, Folder structure, Goal, Layered Architecture (presentation / application / domain / infrastructure / shared), Layers (+3 more)
 
 ### Community 121 - "Community 121"
-Cohesion: 0.13
-Nodes (17): WishlistCsvValidator, ../../domain/models/csv_wishlist_import_preview.dart, ../../infrastructure/csv/csv_parser.dart, ../../infrastructure/csv/wishlist_csv_validator.dart, CsvWishlistImportPreview, _FakeUseCase, BuildWishlistCsvImportPreviewResult, BuildWishlistCsvImportPreviewUseCase (+9 more)
+Cohesion: 0.12
+Nodes (18): BuildWishlistCsvImportPreviewUseCase, WishlistCsvValidator, ../../domain/models/csv_wishlist_import_preview.dart, ../../infrastructure/csv/csv_parser.dart, ../../infrastructure/csv/wishlist_csv_validator.dart, CsvWishlistImportPreview, _FakeUseCase, BuildWishlistCsvImportPreviewResult (+10 more)
 
 ### Community 122 - "Community 122"
-Cohesion: 0.10
-Nodes (26): _fakeToken, main, _mockClient, DiscogsCollectionItemDto, DiscogsCollectionPageDto, DiscogsIdentity, DiscogsReleaseDto, DiscogsSearchPageDto (+18 more)
+Cohesion: 0.08
+Nodes (31): _fakeToken, main, _mockClient, DiscogsCollectionItemDto, DiscogsCollectionPageDto, DiscogsIdentity, DiscogsReleaseDto, DiscogsSearchPageDto (+23 more)
 
 ### Community 123 - "Community 123"
 Cohesion: 0.12
@@ -980,47 +980,47 @@ Nodes (18): artist, conflictCount, ConflictWishlistRow, duplicateCount, Duplicat
 
 ### Community 126 - "Community 126"
 Cohesion: 0.05
-Nodes (45): main, openTestDb, description, FailedRow, ImportExportRowResult, reason, rowIndex, safeErrorMessage (+37 more)
+Nodes (42): ExecuteCollectionCsvImportCompleted, Map, description, FailedRow, ImportExportRowResult, reason, rowIndex, safeErrorMessage (+34 more)
 
 ### Community 127 - "Community 127"
-Cohesion: 0.10
-Nodes (20): ../../domain/repositories/thumbnail_repository.dart, _FakeThumbnailRepository, _StubThumbnailRepository, _NullThumbnailRepo, _FakeThumbnailRepository, _FakeThumbnailRepository, thumbnailRepository, _FakeThumbnailRepository (+12 more)
+Cohesion: 0.17
+Nodes (12): _FakeThumbnailRepository, _StubThumbnailRepository, _NullThumbnailRepo, _FakeThumbnailRepository, _FakeThumbnailRepository, _SpyThumbnailRepository, _FakeRepo, _FakeThumbnailRepository (+4 more)
 
 ### Community 128 - "Community 128"
 Cohesion: 0.10
 Nodes (19): 1.1 Developer accounts, 1.2 Host the privacy policy, 1.3 Android signing key (once, keep forever), 1.4 Screenshots, 2.1 Create the app, 2.2 Complete the "Set up your app" tasks, 2.3 Build and upload, 2.4 Beta → production (+11 more)
 
 ### Community 129 - "Community 129"
-Cohesion: 0.14
-Nodes (15): ../../domain/models/import_export_status.dart, _buildItem, execute, ExecuteWishlistCsvImportCompleted, ExecuteWishlistCsvImportFailed, ExecuteWishlistCsvImportResult, failed, imported (+7 more)
+Cohesion: 0.09
+Nodes (23): ../../domain/models/import_export_row_result.dart, ../../domain/repositories/import_export_row_result_repository.dart, addResult, _db, getResults, LocalImportExportRowResultRepository, removeAllForJob, _resultToCompanion (+15 more)
 
 ### Community 130 - "Community 130"
 Cohesion: 0.15
 Nodes (12): Phase 12 Beta — User Stories, US-63: Beta builds are live on the Play internal track and TestFlight, US-64: Testers can send feedback from inside the app, US-65: Beta feedback has a defined channel and triage process, US-66: Beta testers have a test plan and reporting guide, US-67: Crash reports can be symbolicated and turned into stories, US-73: Large Discogs imports complete quickly and show progress, US-74: Collection detail shows the full release details (+4 more)
 
 ### Community 131 - "Community 131"
-Cohesion: 0.13
-Nodes (16): _buildItem, execute, ExecuteWishlistImportCompleted, ExecuteWishlistImportFailed, ExecuteWishlistImportResult, failed, imported, jobId (+8 more)
+Cohesion: 0.11
+Nodes (18): TransactionRunner, T, _buildItem, execute, ExecuteWishlistImportCompleted, ExecuteWishlistImportFailed, ExecuteWishlistImportResult, failed (+10 more)
 
 ### Community 132 - "Community 132"
-Cohesion: 0.12
-Nodes (16): dart:async, build, _cancelTimer, countdownSeconds, createState, didUpdateWidget, dispose, initState (+8 more)
+Cohesion: 0.06
+Nodes (30): ReleaseSearchResult, ThemeData, VoidCallback, build, _cancelTimer, countdownSeconds, createState, didUpdateWidget (+22 more)
 
 ### Community 133 - "Community 133"
-Cohesion: 0.20
-Nodes (7): Cratewise Commit Rules, Pull Request Template, AGENTS.md Agent Guide, Multi-Agent Workflow Roles (Product Planner, Flutter Architect, Implementer, QA, Security, UI Designer), Automatic Commit Rules (commit after format/analyze/test pass; US-XX message format), Cratewise App, Airbnb UI Kit Figma Reference
+Cohesion: 0.18
+Nodes (8): Cratewise Commit Rules, Pull Request Template, AGENTS.md Agent Guide, Multi-Agent Workflow Roles (Product Planner, Flutter Architect, Implementer, QA, Security, UI Designer), Automatic Commit Rules (commit after format/analyze/test pass; US-XX message format), Cratewise App, Airbnb UI Kit Figma Reference, Discogs Current Token Mode
 
 ### Community 134 - "Community 134"
 Cohesion: 0.22
 Nodes (8): Camera, Changes to this policy, Children, Contact, Cratewise Privacy Policy, Data stored on your device, Data we collect, Network connections
 
 ### Community 135 - "Community 135"
-Cohesion: 0.08
-Nodes (24): package:cratewise/domain/repositories/cached_release_metadata_repository.dart, add, containsRelease, deleteAll, detail, error, _expectFullDetails, fetchCallCount (+16 more)
+Cohesion: 0.12
+Nodes (15): package:cratewise/application/services/thumbnail_eviction_service.dart, package:cratewise/domain/models/thumbnail_entry.dart, package:cratewise/domain/repositories/thumbnail_repository.dart, add, _data, exists, getLocalPath, listEntries (+7 more)
 
 ### Community 136 - "Community 136"
-Cohesion: 0.08
-Nodes (24): ../../application/services/thumbnail_cache_service.dart, Future, _LocalCoverThumbnail, ThemeData, build, cacheService, CollectionItemCard, coverUrl (+16 more)
+Cohesion: 0.06
+Nodes (31): main, makeJob, openTestDb, base, createdAt, main, updatedAt, main (+23 more)
 
 ### Community 137 - "Community 137"
 Cohesion: 0.12
@@ -1035,40 +1035,40 @@ Cohesion: 0.14
 Nodes (14): US-13: Wide-screen nav rail stays visible, US-16: Proactive back-off using rate-limit headers, US-17: Condition prompt after adding to collection, US-18: Cached offline release detail shows complete data, US-19: Thumbnail cache storage limit and LRU eviction, US-20: Failed cache writes silently retried, US-21: Locally-added items promoted to Discogs-linked, US-22: Failed collection/wishlist writes queued for retry (+6 more)
 
 ### Community 140 - "Community 140"
-Cohesion: 0.12
-Nodes (17): package:cratewise/application/use_cases/build_wishlist_csv_export_preview_use_case.dart, package:cratewise/domain/repositories/wishlist_repository.dart, BuildWishlistCsvExportPreviewResult, add, containsRelease, deleteAll, _FakeWishlistRepository, getAll (+9 more)
+Cohesion: 0.14
+Nodes (12): Independent Branding Principles (never pretend to be Discogs; no Discogs/Airbnb brand identity), Cratewise App (independent Discogs companion for vinyl collectors and DJs), ADR-0001: Use Flutter for Android, iPhone, and iPad, Consequences, Context, Decision, Follow-up, Status (+4 more)
 
 ### Community 141 - "Community 141"
-Cohesion: 0.10
-Nodes (19): ../../domain/models/search_filter.dart, ../../domain/models/search_result_page.dart, currentPage, hasMore, items, SearchResultPage, totalPages, totalResults (+11 more)
+Cohesion: 0.14
+Nodes (17): BuildCollectionExportPreviewUseCase, check_collection_export_capability_use_case.dart, ../../domain/models/collection_export_preview.dart, CollectionExportPreview, _CountingFakeUseCase, _FakeUseCase, _FakeCollectionExportUseCase, BuildCollectionExportPreviewResult (+9 more)
 
 ### Community 142 - "Community 142"
-Cohesion: 0.11
-Nodes (19): _buildIndex, _FailedOutcome, _kMaxTagLength, _kMaxTextLength, _kMaxYear, _kMinYear, _kRequiredColumns, _parseCondition (+11 more)
+Cohesion: 0.08
+Nodes (29): build_wishlist_import_preview_use_case.dart, ../../domain/models/pending_discogs_deletion.dart, ../../domain/models/wishlist_import_preview.dart, Exception, ../../infrastructure/discogs/dto/discogs_wantlist_item.dart, BuildWishlistImportPreviewUseCase, _classify, _deletionRepository (+21 more)
 
 ### Community 143 - "Community 143"
 Cohesion: 0.13
 Nodes (15): Beta User Stories, L — Should fix before beta, US-01: HTTP request timeout, US-02: iOS token save reliability (Keychain bug), US-03: Search results pagination, US-04: Pull-to-refresh on key screens, US-05: Release detail app bar shows album title, US-06: Release detail shows artist and title from search context (+7 more)
 
 ### Community 144 - "Community 144"
-Cohesion: 0.15
-Nodes (12): ../../domain/models/import_export_job.dart, ../../domain/repositories/import_export_job_repository.dart, add, count, _db, getById, getRecent, _jobToCompanion (+4 more)
+Cohesion: 0.09
+Nodes (21): ../../domain/models/retry_action.dart, _actionToCompanion, add, _db, deleteAll, deleteFailedBefore, getAll, getById (+13 more)
 
 ### Community 145 - "Community 145"
-Cohesion: 0.10
-Nodes (18): main, makeAction, openTestDb, package:cratewise/application/use_cases/purge_stale_failed_actions_use_case.dart, package:cratewise/domain/models/retry_action.dart, package:cratewise/domain/repositories/retry_action_repository.dart, package:cratewise/infrastructure/local_database/local_retry_action_repository.dart, add (+10 more)
+Cohesion: 0.14
+Nodes (13): package:cratewise/application/use_cases/purge_stale_failed_actions_use_case.dart, package:cratewise/domain/repositories/retry_action_repository.dart, add, deleteAll, deletedBefore, deleteFailedBefore, getAll, getById (+5 more)
 
 ### Community 146 - "Community 146"
-Cohesion: 0.15
-Nodes (13): 2A — Token input UI, 2B — Discogs API client, 2C — Token validation UI, 2D — Secure token storage, 2E — Search screen (static), 2F — Search API method, 2G — Search screen (live API), 2H — Debounce & dedup (+5 more)
+Cohesion: 0.10
+Nodes (21): 2A — Token input UI, 2B — Discogs API client, 2C — Token validation UI, 2D — Secure token storage, 2E — Search screen (static), 2F — Search API method, 2G — Search screen (live API), 2H — Debounce & dedup (+13 more)
 
 ### Community 147 - "Community 147"
-Cohesion: 0.15
-Nodes (13): 4 — Barcode scanner, 4 — Wishlist, 5 — Cached release metadata, 5 — Failed action queue, 5 — Sync status, 5 — Thumbnail cache, Cross-cutting / Open items, Known Limitations — Phases 1 through 6 (+5 more)
+Cohesion: 0.40
+Nodes (5): 5 — Cached release metadata, 5 — Failed action queue, 5 — Sync status, 5 — Thumbnail cache, Phase 5 — Offline & Sync
 
 ### Community 148 - "Community 148"
-Cohesion: 0.13
-Nodes (16): _apiClient, _delete, _deleteWithRetry, _deletionRepository, execute, ExecutePendingDeletionsResult, ExecutePendingDeletionsUseCase, failed (+8 more)
+Cohesion: 0.15
+Nodes (14): _apiClient, _delete, _deleteWithRetry, _deletionRepository, execute, ExecutePendingDeletionsResult, ExecutePendingDeletionsUseCase, failed (+6 more)
 
 ### Community 149 - "Community 149"
 Cohesion: 0.15
@@ -1076,32 +1076,31 @@ Nodes (13): 6 — CSV export mappers, 6 — CSV export to file, 6 — CSV import
 
 ### Community 150 - "Community 150"
 Cohesion: 0.09
-Nodes (28): package:cratewise/application/use_cases/barcode_lookup_use_case.dart, String? token,
-  bool, _apiClient, BarcodeLookupEmptyInput, BarcodeLookupError, BarcodeLookupNoResults, BarcodeLookupNoToken, BarcodeLookupRateLimited (+20 more)
+Nodes (21): BarcodeLookupEmptyInput, BarcodeLookupError, BarcodeLookupNoResults, BarcodeLookupNoToken, BarcodeLookupRateLimited, BarcodeLookupSuccess, package:cratewise/application/use_cases/barcode_lookup_use_case.dart, StorageError (+13 more)
 
 ### Community 151 - "Community 151"
 Cohesion: 0.25
 Nodes (7): Android — short description (80 chars), App title / name, iOS — promotional text (170 chars), iOS — subtitle (30 chars), Notes, Play — promotional text equivalent, Store Copy — Title & Promotional Text Options
 
 ### Community 152 - "Community 152"
-Cohesion: 0.11
-Nodes (18): package:cratewise/application/use_cases/execute_collection_csv_export_use_case.dart, add, added, callCount, count, _FakeJobRepository, getById, getRecent (+10 more)
+Cohesion: 0.08
+Nodes (22): content, CsvFilePickerService, CsvPickedFile, filename, pick, dart:convert, NetworkError, package:file_picker/file_picker.dart (+14 more)
 
 ### Community 153 - "Community 153"
-Cohesion: 0.10
-Nodes (19): package:cratewise/application/use_cases/build_wishlist_import_preview_use_case.dart, package:cratewise/domain/models/wishlist_import_preview.dart, package:cratewise/infrastructure/discogs/dto/discogs_wantlist_item.dart, add, containsRelease, containsReleaseCallCount, deleteAll, deleteAllByType (+11 more)
+Cohesion: 0.11
+Nodes (18): package:cratewise/application/use_cases/build_wishlist_import_preview_use_case.dart, package:cratewise/domain/models/wishlist_import_preview.dart, add, containsRelease, containsReleaseCallCount, deleteAll, deleteAllByType, FakeWishlistRepository (+10 more)
 
 ### Community 154 - "Community 154"
 Cohesion: 0.18
 Nodes (10): package:cratewise/shared/utils/date_format_utils.dart, package:flutter/widgets.dart, package:intl/intl.dart, datePart, formatDate, formatDateTime, local, enUs (+2 more)
 
 ### Community 155 - "Community 155"
-Cohesion: 0.17
-Nodes (11): _indexOf, _kHeaders, _kValidRow, main, row, _rowWith, _success, _successFrom (+3 more)
+Cohesion: 0.29
+Nodes (6): ../../domain/repositories/thumbnail_repository.dart, clearAll, currentSizeBytes, evictIfNeeded, kDefaultThumbnailCacheLimitBytes, _repository
 
 ### Community 156 - "Community 156"
-Cohesion: 0.12
-Nodes (15): Token Security Principles (never hardcode/log/show tokens; secure storage only), Backend Proxy for Production OAuth Secrets. Rationale: production consumer secrets must never ship inside the Flutter client, Discogs Current Token Mode (paste personal token; validate, store securely, mask, removable). Rationale: simplest MVP auth, avoids embedding OAuth consumer secrets in the Flutter app, ADR-0002: Use Discogs current token mode first, Consequences, Context, Decision, Follow-up (+7 more)
+Cohesion: 0.20
+Nodes (9): Token Security Principles (never hardcode/log/show tokens; secure storage only), Backend Proxy for Production OAuth Secrets. Rationale: production consumer secrets must never ship inside the Flutter client, Discogs Current Token Mode (paste personal token; validate, store securely, mask, removable). Rationale: simplest MVP auth, avoids embedding OAuth consumer secrets in the Flutter app, Cloudflare Worker Proxy (for secrets and signed Discogs calls), Done criteria, Procedure, Required app states, Secure Token Storage Skill (+1 more)
 
 ### Community 157 - "Community 157"
 Cohesion: 0.17
@@ -1116,30 +1115,28 @@ Cohesion: 0.25
 Nodes (7): Airbnb-Inspired Design Direction Without Airbnb Branding, Airbnb-Inspired Flutter UI Skill, Design direction, Do not use, Done criteria, Flutter rules, Use inspiration from
 
 ### Community 160 - "Community 160"
-Cohesion: 0.40
-Nodes (4): all,
-  release,
-  artist,, chipLabel, label, SearchFilter
+Cohesion: 0.08
+Nodes (26): ../../domain/models/import_export_job_type.dart, ../../domain/models/import_export_status.dart, ../../infrastructure/csv/csv_file_writer.dart, package:share_plus/share_plus.dart, _defaultShare, execute, filename, filePath (+18 more)
 
 ### Community 161 - "Community 161"
-Cohesion: 0.09
-Nodes (22): package:cratewise/presentation/widgets/collection_item_card.dart, package:cratewise/presentation/widgets/wishlist_item_card.dart, _FakeThumbnailCacheService, ThumbnailCacheService, _coverUrl, exists, _FakeThumbnailCacheService, file (+14 more)
+Cohesion: 0.10
+Nodes (19): package:cratewise/presentation/widgets/collection_item_card.dart, package:cratewise/presentation/widgets/wishlist_item_card.dart, _coverUrl, exists, file, getLocalPath, getOrFetch, _kTransparentPng (+11 more)
 
 ### Community 162 - "Community 162"
 Cohesion: 0.20
 Nodes (7): Any, Bool, FlutterAppDelegate, FlutterImplicitEngineBridge, FlutterImplicitEngineDelegate, AppDelegate, UIApplication
 
 ### Community 163 - "Community 163"
-Cohesion: 0.14
-Nodes (12): Independent Branding Principles (never pretend to be Discogs; no Discogs/Airbnb brand identity), Cratewise App (independent Discogs companion for vinyl collectors and DJs), ADR-0001: Use Flutter for Android, iPhone, and iPad, Consequences, Context, Decision, Follow-up, Status (+4 more)
+Cohesion: 0.38
+Nodes (6): class, CheckCollectionExportCapabilityResult, CollectionExportNotSupported, CollectionExportSupported, execute, reason
 
 ### Community 164 - "Community 164"
-Cohesion: 0.28
-Nodes (8): CsvParseFailure, CsvParser, CsvParseResult, CsvParseSuccess, headers, parse, reason, rows
+Cohesion: 0.10
+Nodes (19): package:cratewise/application/use_cases/execute_pending_deletions_use_case.dart, package:cratewise/infrastructure/discogs/discogs_api_client.dart, package:cratewise/presentation/screens/pending_deletions_screen.dart, add, _byType, _collectionDeletion, containsRelease, deleteAllByType (+11 more)
 
 ### Community 165 - "Community 165"
 Cohesion: 0.11
-Nodes (16): build, createState, dispose, _router, GoRouter, package:go_router/go_router.dart, router.dart, build (+8 more)
+Nodes (18): build, CratewiseApp, _CratewiseAppState, createState, dispose, _router, GoRouter, package:go_router/go_router.dart (+10 more)
 
 ### Community 166 - "Community 166"
 Cohesion: 0.09
@@ -1151,19 +1148,19 @@ Nodes (9): ../models/thumbnail_entry.dart, exists, getLocalPath, listEntries, re
 
 ### Community 168 - "Community 168"
 Cohesion: 0.08
-Nodes (24): toRow, wishlistCsvHeaders, WishlistCsvMapper, ../../domain/models/csv_wishlist_export_preview.dart, ../../domain/models/wishlist_item.dart, ../../domain/repositories/wishlist_repository.dart, ../../infrastructure/csv/csv_file_writer.dart, ../../infrastructure/csv/wishlist_csv_mapper.dart (+16 more)
+Nodes (23): toRow, wishlistCsvHeaders, WishlistCsvMapper, ../../domain/models/csv_wishlist_export_preview.dart, ../../domain/models/sync_status.dart, ../../domain/models/wishlist_item.dart, ../../domain/repositories/wishlist_repository.dart, ../../infrastructure/csv/wishlist_csv_mapper.dart (+15 more)
 
 ### Community 169 - "Community 169"
-Cohesion: 0.40
-Nodes (3): Local Collection Repository, Prompt 5B: Make collection list explicitly local-first, Prompt 5C: Make collection detail explicitly local-first
+Cohesion: 0.18
+Nodes (11): AppRoutes.exportCollection, AppRoutes.exportCollectionCsv, AppRoutes.exportWishlist, AppRoutes.exportWishlistCsv, AppRoutes.importCollection, AppRoutes.importCollectionCsv, AppRoutes.importExportHistory, AppRoutes.importWishlist (+3 more)
 
 ### Community 170 - "Community 170"
-Cohesion: 0.06
-Nodes (35): EditableText, NetworkError, OutlinedButton, package:cratewise/application/services/discogs_connection_service.dart, package:cratewise/application/services/token_validation_service.dart, package:cratewise/infrastructure/discogs/discogs_api_client.dart, package:cratewise/presentation/widgets/discogs_token_section.dart, Response (+27 more)
+Cohesion: 0.07
+Nodes (27): dart:async, EditableText, OutlinedButton, package:cratewise/application/services/discogs_connection_service.dart, package:cratewise/application/services/token_validation_service.dart, package:cratewise/presentation/widgets/discogs_token_section.dart, package:http/http.dart, Response (+19 more)
 
 ### Community 171 - "Community 171"
-Cohesion: 0.11
-Nodes (20): Client, ../../infrastructure/local_database/local_thumbnail_repository.dart, package:http/http.dart, _evictionService, getOrFetch, _httpClient, _repository, ThumbnailCacheService (+12 more)
+Cohesion: 0.10
+Nodes (20): Phase 10: Device Validation, Converting findings to user stories, Findings log, How to use this checklist, Phase 10: Device Validation Checklist, Prerequisites, Section A: First launch and setup (all devices), Section B: Search and release detail (all devices) (+12 more)
 
 ### Community 172 - "Community 172"
 Cohesion: 0.17
@@ -1178,12 +1175,12 @@ Cohesion: 0.20
 Nodes (9): ../models/wishlist_item.dart, add, containsRelease, deleteAll, getAll, getById, remove, update (+1 more)
 
 ### Community 175 - "Community 175"
-Cohesion: 0.28
-Nodes (7): package:cratewise/application/use_cases/check_wishlist_export_capability_use_case.dart, CheckWishlistExportCapabilityResult, execute, reason, main, WishlistExportNotSupported, WishlistExportSupported
+Cohesion: 0.47
+Nodes (5): CheckWishlistExportCapabilityResult, execute, reason, WishlistExportNotSupported, WishlistExportSupported
 
 ### Community 176 - "Community 176"
-Cohesion: 0.15
-Nodes (12): _actionToCompanion, add, _db, deleteAll, deleteFailedBefore, getAll, getById, getPending (+4 more)
+Cohesion: 0.07
+Nodes (28): _, @DriftDatabase, app_database.dart, ../../domain/models/import_export_job.dart, ../../domain/repositories/import_export_job_repository.dart, ../../domain/repositories/transaction_runner.dart, AppDatabase, _db (+20 more)
 
 ### Community 177 - "Community 177"
 Cohesion: 0.18
@@ -1202,48 +1199,48 @@ Cohesion: 0.18
 Nodes (10): Checklist, Notes, Pull Request, Related issue or task, Scope, Screenshots or recordings, Summary, Test evidence (+2 more)
 
 ### Community 181 - "Community 181"
-Cohesion: 0.10
-Nodes (26): _FakeWishlistRepository, _NullWishlistRepo, _FakeWishlistRepository, _FakeWishlistRepository, _RemovableWishlistRepository, wishlistRepository, _FakeWishlistRepository, _FakeWishlistRepository (+18 more)
+Cohesion: 0.14
+Nodes (26): _FakeWishlistRepository, _FakeWishlistRepository, _RemovableWishlistRepository, wishlistRepository, _FakeWishlistRepository, wishlistRepository, _FakeWishlistRepo, _FakeWishlistRepository (+18 more)
 
 ### Community 182 - "Community 182"
-Cohesion: 0.09
-Nodes (25): build_wishlist_import_preview_use_case.dart, ../../domain/models/wishlist_import_preview.dart, ../../infrastructure/discogs/dto/discogs_wantlist_item.dart, BuildWishlistImportPreviewUseCase, _classify, _deletionRepository, execute, _hasPendingDeletion (+17 more)
+Cohesion: 0.11
+Nodes (19): _FailedOutcome, _SkippedOutcome, _ValidOutcome, csv_parser.dart, _buildIndex, _FailedOutcome, _kMaxTextLength, _kMaxYear (+11 more)
 
 ### Community 183 - "Community 183"
-Cohesion: 0.12
-Nodes (14): Phase 0: Product foundation, Phase 1: Technical foundation, Phase 2: Discogs MVP, Phase 3: Collection MVP, Phase 4: Wishlist and barcode, Phase 5: Offline and sync, Phase 6: Import and export, Phase 7: Beta (+6 more)
+Cohesion: 0.18
+Nodes (11): Phase 0: Product foundation, Phase 1: Technical foundation, Phase 2: Discogs MVP, Phase 3: Collection MVP, Phase 4: Wishlist and barcode, Phase 5: Offline and sync, Phase 7: Beta, Phase 8: Version 1.0 (+3 more)
 
 ### Community 184 - "Community 184"
-Cohesion: 0.10
-Nodes (19): package:cratewise/application/use_cases/execute_pending_deletions_use_case.dart, package:cratewise/domain/repositories/pending_discogs_deletion_repository.dart, package:cratewise/presentation/screens/pending_deletions_screen.dart, add, _byType, _collectionDeletion, containsRelease, deleteAllByType (+11 more)
+Cohesion: 0.29
+Nodes (11): DiscogsReleaseDetailService, _FakeDetailService, _BlockingService, _CountingService, _ErrorService, _FailThenSucceedService, _LoadedService, _SuccessThenErrorService (+3 more)
 
 ### Community 185 - "Community 185"
-Cohesion: 0.14
-Nodes (13): VoidCallback?, build, _CoverThumbnail, coverUrl, _formatLabel, inCollection, _MembershipBadges, onTap (+5 more)
+Cohesion: 0.12
+Nodes (15): cache_retry_recorder.dart, CacheRetryRecorder?, _apiClient, _cacheRepository, _cacheRetryRecorder, fetchDetail, getCachedOrFetch, releaseDetailFromCachedMetadata (+7 more)
 
 ### Community 186 - "Community 186"
 Cohesion: 0.18
 Nodes (10): Clean Architecture Layers (presentation/application/domain/infrastructure/shared), Architecture rules, Done criteria, Flutter Feature Skill, Procedure, Done criteria, Local data should include, Local-First Data Skill (+2 more)
 
 ### Community 187 - "Community 187"
-Cohesion: 0.12
-Nodes (17): Discogs API, Phase 10: Device Validation, Phase 10: Device validation, Phase 11: Release readiness, Phase 12: Beta, Phase 13: Version 1.0, Phase 14: Growth (post-1.0), Phase 9: Workspace and docs consistency (+9 more)
+Cohesion: 0.20
+Nodes (10): Discogs API, Phase 10: Device validation, Phase 11: Release readiness, Phase 12: Beta, Phase 13: Version 1.0, Phase 14: Growth (post-1.0), Phase 9: Workspace and docs consistency, Platform scope (+2 more)
 
 ### Community 188 - "Community 188"
 Cohesion: 0.19
 Nodes (10): Import/Export Job Domain Models, Local Import/Export Job Storage, Import/Export Repository Contracts, Collection/Wishlist Item Sync Status, Prompt 6A: Import-export domain model, Prompt 6B: Import-export repository contracts, Prompt 6C: Local import-export job storage, phase6 - Prompt 6ZA: Collection import-export sync status (+2 more)
 
 ### Community 189 - "Community 189"
-Cohesion: 0.12
-Nodes (20): build_collection_import_preview_use_case.dart, Exception, _apiClient, error, execute, FetchCollectionImportPreviewResult, _fetchPageWithRetry, FetchPreviewError (+12 more)
+Cohesion: 0.39
+Nodes (9): @DataClassName, CachedReleases, CollectionItems, ImportExportJobs, ImportExportRowResults, PendingDiscogsDeletions, RetryActions, WishlistItems (+1 more)
 
 ### Community 190 - "Community 190"
 Cohesion: 0.29
 Nodes (5): Local CollectionItem, Sync Status Model, Prompt 5K: Add sync status to local items, Prompt 5L: Show sync status in Collection and Wishlist details, Local WishlistItem
 
 ### Community 191 - "Community 191"
-Cohesion: 0.15
-Nodes (13): Converting findings to user stories, Findings log, How to use this checklist, Phase 10: Device Validation Checklist, Prerequisites, Section A: First launch and setup (all devices), Section B: Search and release detail (all devices), Section C: Collection and wishlist (all devices) (+5 more)
+Cohesion: 0.22
+Nodes (10): PendingDiscogsDeletionRepository, PendingDiscogsDeletionRepository, _SpyDeletionRepository, _FakeDeletionRepository, _SpyDeletionRepository, _FakeDeletionRepo, _RecordingDeletionRepository, _FakeDeletionRepository (+2 more)
 
 ### Community 192 - "Community 192"
 Cohesion: 0.18
@@ -1254,12 +1251,12 @@ Cohesion: 0.18
 Nodes (10): App overview, Cratewise — Session Primer, Current working-tree state, How to continue, Key architecture points, Phase summary (all complete, all tests green), Remaining user stories (US-36 onwards), US-37 implementation notes (+2 more)
 
 ### Community 195 - "Community 195"
-Cohesion: 0.18
-Nodes (11): CsvFileWriter, TempCsvFileWriter, write, package:csv/csv.dart, package:path_provider/path_provider.dart, _FakeCsvFileWriter, _FakeCsvFileWriter, _FakeCsvFileWriter (+3 more)
+Cohesion: 0.50
+Nodes (4): _FakeCollectionRepository, _FakeCollectionRepository, _TrackingCollectionRepository, _ThrowingCollectionRepository
 
 ### Community 196 - "Community 196"
-Cohesion: 0.20
-Nodes (9): ../../domain/models/import_export_row_result.dart, ../../domain/repositories/import_export_row_result_repository.dart, addResult, _db, getResults, LocalImportExportRowResultRepository, removeAllForJob, _resultToCompanion (+1 more)
+Cohesion: 0.25
+Nodes (7): ../models/pending_discogs_deletion.dart, add, containsRelease, deleteAllByType, getByType, remove, removeByRelease
 
 ### Community 197 - "Community 197"
 Cohesion: 0.18
@@ -1282,8 +1279,8 @@ Cohesion: 0.25
 Nodes (5): Cratewise QA Reviewer, Output format, Rules, Severity levels, Your job
 
 ### Community 205 - "Community 205"
-Cohesion: 0.08
-Nodes (24): ../../domain/models/sync_status.dart, add, containsRelease, _db, deleteAll, getAll, getById, _itemToCompanion (+16 more)
+Cohesion: 0.29
+Nodes (6): main, _makeMeta, _openTestDb, package:cratewise/domain/models/cached_release_metadata.dart, package:cratewise/domain/models/release_detail.dart, package:cratewise/infrastructure/local_database/local_cached_release_metadata_repository.dart
 
 ### Community 207 - "Community 207"
 Cohesion: 1.00
@@ -1294,12 +1291,12 @@ Cohesion: 0.20
 Nodes (9): Android — Play Console, Data safety form (answers match `PRIVACY_POLICY.md`), Export compliance, iOS — App Store Connect, Privacy nutrition labels (App Privacy section), Screenshot shot-list (Android), Screenshot shot-list (iOS), Shared description (long) (+1 more)
 
 ### Community 210 - "Community 210"
-Cohesion: 0.29
-Nodes (6): main, _makeMeta, _openTestDb, package:cratewise/domain/models/cached_release_metadata.dart, package:cratewise/domain/models/release_detail.dart, package:cratewise/infrastructure/local_database/local_cached_release_metadata_repository.dart
+Cohesion: 0.15
+Nodes (12): LocalCachedReleaseMetadataRepository, ../models/cached_release_metadata.dart, CachedReleaseMetadataRepository, getByReleaseId, remove, save, _FakeCacheRepository, _NullCacheRepo (+4 more)
 
 ### Community 211 - "Community 211"
-Cohesion: 0.22
-Nodes (8): app/app.dart, application/use_cases/clean_up_stale_csv_exports_use_case.dart, application/use_cases/purge_stale_failed_actions_use_case.dart, ../../infrastructure/local_database/app_database.dart, ../../infrastructure/local_database/local_retry_action_repository.dart, db, main, _purgeStaleFailedActions
+Cohesion: 0.16
+Nodes (13): collection_item.dart, List, IdentifierListConverter, StringListConverter, SyncStatusConverter, TrackListConverter, CsvCollectionExportPreview, headers (+5 more)
 
 ### Community 214 - "Community 214"
 Cohesion: 0.22
@@ -1330,16 +1327,16 @@ Cohesion: 0.18
 Nodes (10): Actual behavior, Bug report, Device, Expected behavior, Impact, Logs, Screenshots or recordings, Steps to reproduce (+2 more)
 
 ### Community 227 - "Community 227"
-Cohesion: 0.15
-Nodes (12): DiscogsApiClient, ../../infrastructure/discogs/discogs_api_client.dart, ../../infrastructure/discogs/dto/discogs_identity.dart, _client, TokenValidationService, validateToken, _FakeApiClient, _PartialThrowApiClient (+4 more)
+Cohesion: 0.22
+Nodes (8): ../../domain/models/cached_release_metadata.dart, ../../domain/repositories/cached_release_metadata_repository.dart, _db, getByReleaseId, _modelToCompanion, remove, _rowToModel, save
 
 ### Community 228 - "Community 228"
-Cohesion: 0.25
-Nodes (8): API client responsibilities, Discogs API Notes, Do not, Future authentication, Goal, MVP authentication, Rate limiting, Typed App Errors (InvalidToken, NoInternet, RateLimited, DiscogsUnavailable, EmptyResult, LocalDatabaseError, ExportFailed, ImportFailed)
+Cohesion: 0.15
+Nodes (12): API client responsibilities, Discogs API Client Responsibilities (base URL api.discogs.com, User-Agent, auth headers, search/release/collection/wishlist lookups, pagination, rate limits), Discogs API Notes, Do not, Future authentication, Goal, MVP authentication, Rate limiting (+4 more)
 
 ### Community 229 - "Community 229"
-Cohesion: 0.25
-Nodes (7): ../models/import_export_job.dart, add, count, getById, getRecent, remove, update
+Cohesion: 0.10
+Nodes (18): main, makeItem, openTestDb, main, openTestDb, main, makeAction, openTestDb (+10 more)
 
 ### Community 230 - "Community 230"
 Cohesion: 0.25
@@ -1354,12 +1351,12 @@ Cohesion: 0.29
 Nodes (6): Add To Wishlist Use Case, phase4 - Prompt 4E: Add to wishlist use case, WishlistItem Model, Barcode Lookup Use Case, phase4 - Prompt 4J: Barcode lookup use case, Secure Token Storage
 
 ### Community 233 - "Community 233"
-Cohesion: 0.29
-Nodes (6): Discogs Current Token Mode, Discogs API Skill, Done criteria, Error rules, Procedure, Token mode
+Cohesion: 0.40
+Nodes (5): Discogs API Skill, Done criteria, Error rules, Procedure, Token mode
 
 ### Community 234 - "Community 234"
-Cohesion: 0.29
-Nodes (6): Cratewise, Getting Started, Platforms, Project Structure, Security, Test the project
+Cohesion: 0.15
+Nodes (12): Contents, Contributing & conventions, Cratewise, Discogs setup, Features, Getting started, Knowledge graph (graphify), License & status (+4 more)
 
 ### Community 235 - "Community 235"
 Cohesion: 0.33
@@ -1367,63 +1364,65 @@ Nodes (6): Context files, Cratewise Flutter Implementer, Implementation order, O
 
 ### Community 236 - "Community 236"
 Cohesion: 0.40
-Nodes (6): bool get, _, ConnectionStatus, disconnected, isConnected, username
+Nodes (5): _ResultsList, _ResultsListState, SearchScreen, _SearchScreenState, _state
 
 ### Community 237 - "Community 237"
 Cohesion: 0.08
-Nodes (25): InvalidTokenError, _item, main, NoTokenError, package:cratewise/application/services/discogs_search_service.dart, package:cratewise/application/services/search_query_cache.dart, package:cratewise/domain/models/release_search_result.dart, package:cratewise/domain/models/search_filter.dart (+17 more)
+Nodes (24): InvalidTokenError, _item, main, NoTokenError, package:cratewise/application/services/discogs_search_service.dart, package:cratewise/application/services/search_query_cache.dart, package:cratewise/domain/models/release_search_result.dart, package:cratewise/domain/models/search_filter.dart (+16 more)
 
 ### Community 238 - "Community 238"
-Cohesion: 0.13
-Nodes (13): main, parser, _indexOf, _kHeaders, _kValidRow, main, row, _rowWith (+5 more)
+Cohesion: 0.05
+Nodes (44): _indexOf, _kHeaders, _kValidRow, main, row, _rowWith, _success, _successFrom (+36 more)
 
 ### Community 239 - "Community 239"
-Cohesion: 0.14
-Nodes (13): LocalCachedReleaseMetadataRepository, ../models/cached_release_metadata.dart, CachedReleaseMetadataRepository, getByReleaseId, remove, save, _FakeCacheRepository, _NullCacheRepo (+5 more)
+Cohesion: 0.20
+Nodes (9): int?, artist, country, coverUrl, format, id, label, title (+1 more)
 
 ### Community 240 - "Community 240"
 Cohesion: 0.40
 Nodes (5): Context files, Cratewise Flutter Architect, Output format, Rules, Your job
 
 ### Community 241 - "Community 241"
-Cohesion: 0.33
-Nodes (5): _fullItem, main, mapper, _minimalItem, package:cratewise/infrastructure/csv/collection_csv_mapper.dart
+Cohesion: 0.40
+Nodes (4): all,
+  release,
+  artist,, chipLabel, label, SearchFilter
 
 ### Community 242 - "Community 242"
-Cohesion: 0.25
-Nodes (8): String, AboutSectionTile, _AboutSectionTileState, build, createState, initState, _loadVersion, _version
+Cohesion: 0.20
+Nodes (9): package:package_info_plus/package_info_plus.dart, package:url_launcher/url_launcher.dart, build, _encodeQuery, feedbackEmailAddress, _loadVersion, _platformDescription, _sendFeedback (+1 more)
 
 ### Community 243 - "Community 243"
-Cohesion: 0.40
-Nodes (4): DiscogsIdentity, fromJson, resourceUrl, username
+Cohesion: 0.50
+Nodes (4): MaterialPageRoute, main, main, main
 
 ### Community 244 - "Community 244"
 Cohesion: 0.29
 Nodes (6): Beta Feedback — Channels and Triage, From report to user story, Intake channels, Report template, Severity scale, Triage routine
 
 ### Community 245 - "Community 245"
-Cohesion: 0.40
-Nodes (5): _Idle, _Loading, _Results, _SearchError, _SearchState
+Cohesion: 0.22
+Nodes (8): Directory, package:cratewise/application/use_cases/clean_up_stale_csv_exports_use_case.dart, buildSubject, daysAgo, fakeDir, main, testDir, writeFile
 
 ### Community 246 - "Community 246"
 Cohesion: 0.29
 Nodes (6): App Review notes (paste into App Store Connect), App Store specifics, Both stores, Google Play specifics, If rejected, Store Review — Pre-submission Checklist
 
 ### Community 247 - "Community 247"
-Cohesion: 0.17
-Nodes (11): Phase 14 Growth — User Stories, US-72: Local deletions can be propagated to Discogs, US-79: Wishlist re-import surfaces pending-removal conflicts, US-80: Search results show collection / wishlist membership at a glance, US-81: Remove a release from collection / wishlist on the release detail screen, US-82: Clear local collection and wishlist from Settings, US-83: Remove the static "Cratewise" header to reclaim screen space, US-84: Search filter chips (Release / Artist / Label) below the search box (+3 more)
+Cohesion: 0.11
+Nodes (17): Phase 14 Growth — User Stories, US-72: Local deletions can be propagated to Discogs, US-79: Wishlist re-import surfaces pending-removal conflicts, US-80: Search results show collection / wishlist membership at a glance, US-81: Remove a release from collection / wishlist on the release detail screen, US-82: Clear local collection and wishlist from Settings, US-83: Remove the static "Cratewise" header to reclaim screen space, US-84: Search filter chips (Release / Artist / Label) below the search box (+9 more)
 
 ### Community 248 - "Community 248"
-Cohesion: 0.22
-Nodes (8): package:uuid/uuid.dart, CacheRetryRecorder, _isRetryable, _recordIfNoDuplicate, recordMetadataCacheWriteFailure, recordMetadataFailure, recordThumbnailFailure, _repo
+Cohesion: 0.11
+Nodes (17): ../../domain/models/search_filter.dart, Duration, SearchResultPage, _CacheEntry, expiresAt, _maxEntries, normalizeKey, page (+9 more)
 
 ### Community 249 - "Community 249"
-Cohesion: 0.06
-Nodes (29): dart:io, dart:typed_data, Directory, ../../domain/models/thumbnail_entry.dart, _dir, exists, _file, getLocalPath (+21 more)
+Cohesion: 0.09
+Nodes (21): dart:io, dart:typed_data, ../../domain/models/thumbnail_entry.dart, _dir, exists, _file, getLocalPath, _injectedDir (+13 more)
 
 ### Community 250 - "Community 250"
-Cohesion: 0.09
-Nodes (18): base, createdAt, main, updatedAt, _item, main, main, _row (+10 more)
+Cohesion: 0.14
+Nodes (11): main, binding, main, shoot, package:cratewise/app/app.dart, package:cratewise/presentation/screens/search_screen.dart, package:cratewise/presentation/widgets/app_bottom_nav.dart, package:cratewise/presentation/widgets/app_nav_rail.dart (+3 more)
 
 ### Community 251 - "Community 251"
 Cohesion: 0.40
@@ -1491,7 +1490,7 @@ Nodes (4): Added, Changed, Security, [Unreleased — Phase 7B: iOS token save re
 
 ### Community 267 - "Community 267"
 Cohesion: 0.15
-Nodes (12): csv_parser.dart, _buildIndex, _kMaxTextLength, _kMaxYear, _kMinYear, _kRequiredColumns, _parsePriority, row (+4 more)
+Nodes (12): _buildIndex, _kMaxTagLength, _kMaxTextLength, _kMaxYear, _kMinYear, _kRequiredColumns, _parseCondition, row (+4 more)
 
 ### Community 268 - "Community 268"
 Cohesion: 0.14
@@ -1769,6 +1768,10 @@ Nodes (3): Fixed, Tests, [Unreleased — Fix: Discogs export did not work] — 2
 Cohesion: 0.67
 Nodes (3): Fixed, Tests, [Unreleased — Phase 8D: Artist name parsed correctly for releases with " – " in the title (US-31)] — 2026-06-05
 
+### Community 337 - "Community 337"
+Cohesion: 0.31
+Nodes (5): here, here, githubSlug(), rewriteRepoLinks(), md
+
 ### Community 390 - "Community 390"
 Cohesion: 0.33
 Nodes (5): Cratewise Beta — Tester Guide, Getting set up, Known limitations in this beta, Reporting problems, What to try
@@ -1778,108 +1781,120 @@ Cohesion: 0.33
 Nodes (5): Crash and Issue Follow-up, Crash follow-up story template, Symbolicating an obfuscated stack trace, Where crash reports arrive, Why there is no crash-reporting SDK
 
 ### Community 392 - "Community 392"
-Cohesion: 0.40
-Nodes (5): Context files, Cratewise UI Designer, Output format, Rules, Your job
+Cohesion: 0.25
+Nodes (8): String, AboutSectionTile, _AboutSectionTileState, build, createState, initState, _loadVersion, _version
 
 ### Community 394 - "Community 394"
-Cohesion: 0.40
-Nodes (5): _ResultsList, _ResultsListState, SearchScreen, _SearchScreenState, _state
+Cohesion: 0.25
+Nodes (8): AppDatabase (Drift, schema v8), appRouteObserver (Collection branch), Cratewise App, GoRouter StatefulShellRoute Architecture, Security Invariants (AGENTS.md), Cratewise Session Primer, Token handling, US-14: Revoked Discogs token detected and cleared
 
 ### Community 397 - "Community 397"
 Cohesion: 0.25
 Nodes (8): _HasResults, _Idle, _Loading, _LookupError, _NoResults, _NoToken, _RateLimited, _ScanState
 
 ### Community 398 - "Community 398"
-Cohesion: 0.14
-Nodes (12): package:flutter/foundation.dart, package:package_info_plus/package_info_plus.dart, package:url_launcher/url_launcher.dart, collectionImportNotifier, wishlistImportNotifier, build, _encodeQuery, feedbackEmailAddress (+4 more)
+Cohesion: 0.22
+Nodes (8): ../../domain/models/release_detail.dart, build, notes, ReleaseNotesSection, ReleaseSectionHeader, ReleaseTracklistSection, title, tracks
 
 ### Community 399 - "Community 399"
-Cohesion: 0.18
-Nodes (11): AppRoutes.exportCollection, AppRoutes.exportCollectionCsv, AppRoutes.exportWishlist, AppRoutes.exportWishlistCsv, AppRoutes.importCollection, AppRoutes.importCollectionCsv, AppRoutes.importExportHistory, AppRoutes.importWishlist (+3 more)
+Cohesion: 0.22
+Nodes (8): LocalPendingDiscogsDeletionRepository, db, main, _makeDeletion, _openTestDb, repo, package:cratewise/domain/models/pending_discogs_deletion.dart, package:cratewise/infrastructure/local_database/local_pending_discogs_deletion_repository.dart
 
 ### Community 400 - "Community 400"
 Cohesion: 0.33
 Nodes (5): Phase 13 Version 1.0 — User Stories, US-68: Final branding pass with an About section, US-69: CHANGELOG consolidated into a 1.0.0 release entry, US-70: Store review submissions are prepared against the review guidelines, US-71: Cratewise 1.0.0 is tagged and live in both stores
 
 ### Community 401 - "Community 401"
-Cohesion: 0.50
-Nodes (4): _CountingPreviewUseCase, _FakePreviewUseCase, _FakeCollectionCsvExportUseCase, BuildCollectionCsvExportPreviewUseCase
+Cohesion: 0.40
+Nodes (5): _Idle, _Loading, _Results, _SearchError, _SearchState
 
 ### Community 402 - "Community 402"
+Cohesion: 0.40
+Nodes (5): Context files, Cratewise UI Designer, Output format, Rules, Your job
+
+### Community 403 - "Community 403"
 Cohesion: 0.25
 Nodes (7): package:cratewise/application/use_cases/build_wishlist_csv_import_preview_use_case.dart, _kDuplicateCsv, _kMissingColumnCsv, _kValidCsv, _kValidCsvTwoRows, main, useCase
 
-### Community 403 - "Community 403"
-Cohesion: 0.15
-Nodes (11): ../../domain/repositories/retry_action_repository.dart, Duration, static final, CleanUpStaleCsvExportsUseCase, execute, _filePattern, _ttl, execute (+3 more)
-
 ### Community 404 - "Community 404"
-Cohesion: 0.50
-Nodes (4): _FakeWishlistImportUseCase, _CountingFakeUseCase, _FakeUseCase, FetchWishlistImportPreviewUseCase
+Cohesion: 0.40
+Nodes (3): Local Collection Repository, Prompt 5B: Make collection list explicitly local-first, Prompt 5C: Make collection detail explicitly local-first
 
 ### Community 406 - "Community 406"
 Cohesion: 0.25
-Nodes (8): AppDatabase (Drift, schema v8), appRouteObserver (Collection branch), Cratewise App, GoRouter StatefulShellRoute Architecture, Security Invariants (AGENTS.md), Cratewise Session Primer, Token handling, US-14: Revoked Discogs token detected and cleared
+Nodes (7): _FlutterSecureStorageAdapter, _FakeStore, _PartialWriteStore, delete, read, SecureKeyValueStore, write
 
 ### Community 407 - "Community 407"
-Cohesion: 0.67
-Nodes (3): _FakeExecuteUseCase, _SlowFakeExecuteUseCase, ExecuteWishlistImportUseCase
+Cohesion: 0.43
+Nodes (8): DiscogsApiClient, DiscogsApiClient, _FakeApiClient, _PartialThrowApiClient, _ThrowingApiClient, _FakeApiClient, _PartialThrowApiClient, _ThrowingApiClient
 
 ### Community 408 - "Community 408"
 Cohesion: 0.40
 Nodes (5): Context files, Cratewise Security Reviewer, Output format, Rules, Your job
 
-### Community 409 - "Community 409"
-Cohesion: 0.50
-Nodes (4): _FailedActionsState, _Loaded, _LoadError, _Loading
-
 ### Community 410 - "Community 410"
-Cohesion: 0.14
-Nodes (16): class, ../../domain/models/csv_collection_export_preview.dart, ../../domain/repositories/collection_repository.dart, ../../infrastructure/csv/collection_csv_mapper.dart, BuildCollectionCsvExportPreviewResult, CollectionCsvExportPreviewError, CollectionCsvExportPreviewReady, execute (+8 more)
+Cohesion: 0.08
+Nodes (22): collectionCsvHeaders, CollectionCsvMapper, toRow, ../../domain/models/collection_item.dart, ../../domain/models/csv_collection_export_preview.dart, ../../domain/repositories/collection_repository.dart, ../../infrastructure/csv/collection_csv_mapper.dart, add (+14 more)
 
 ### Community 411 - "Community 411"
-Cohesion: 0.12
-Nodes (16): ../models/pending_discogs_deletion.dart, add, containsRelease, deleteAllByType, getByType, PendingDiscogsDeletionRepository, remove, removeByRelease (+8 more)
+Cohesion: 0.40
+Nodes (6): bool get, _, ConnectionStatus, disconnected, isConnected, username
 
 ### Community 412 - "Community 412"
-Cohesion: 0.20
-Nodes (9): artist, country, coverUrl, format, id, label, ReleaseSearchResult, title (+1 more)
-
-### Community 413 - "Community 413"
-Cohesion: 0.67
-Nodes (3): _FakeExecuteUseCase, _PausingExecuteUseCase, ExecuteCollectionCsvExportUseCase
-
-### Community 414 - "Community 414"
-Cohesion: 0.29
-Nodes (7): _FakeCollectionRepository, _FakeCollectionRepository, collectionRepository, _FakeCollectionRepository, _RemovableCollectionRepository, _TrackingCollectionRepository, _ThrowingCollectionRepository
+Cohesion: 0.33
+Nodes (6): ADR-0002: Use Discogs current token mode first, Consequences, Context, Decision, Follow-up, Status
 
 ### Community 415 - "Community 415"
 Cohesion: 0.33
 Nodes (5): Cached Metadata Repository, Collection Export Capability Check Use Case, Discogs API Client, Prompt 5P: Retry failed metadata refresh action, Prompt 6M: Discogs collection export capability check
 
-### Community 418 - "Community 418"
+### Community 416 - "Community 416"
+Cohesion: 0.60
+Nodes (5): FetchWishlistImportPreviewUseCase, _FakeWishlistImportUseCase, _CountingFakeUseCase, _FakeUseCase, FetchWishlistImportPreviewUseCase
+
+### Community 417 - "Community 417"
 Cohesion: 0.50
-Nodes (4): MaterialPageRoute, main, main, main
+Nodes (3): package:flutter/foundation.dart, collectionImportNotifier, wishlistImportNotifier
+
+### Community 418 - "Community 418"
+Cohesion: 0.25
+Nodes (7): currentPage, hasMore, items, SearchResultPage, totalPages, totalResults, release_search_result.dart
+
+### Community 419 - "Community 419"
+Cohesion: 0.29
+Nodes (6): ../../domain/repositories/retry_action_repository.dart, RetryActionRepository, execute, PurgeStaleFailedActionsUseCase, _retryRepo, _ttl
+
+### Community 420 - "Community 420"
+Cohesion: 0.29
+Nodes (6): Icon, package:cratewise/presentation/widgets/release_search_result_card.dart, icon, _kindOfBlue, main, _wrap
+
+### Community 422 - "Community 422"
+Cohesion: 0.67
+Nodes (4): ExecuteWishlistCsvImportUseCase, _FakeExecuteUseCase, _HangingFakeExecuteUseCase, ExecuteWishlistCsvImportUseCase
+
+### Community 423 - "Community 423"
+Cohesion: 0.67
+Nodes (4): ExecuteWishlistImportUseCase, _FakeExecuteUseCase, _SlowFakeExecuteUseCase, ExecuteWishlistImportUseCase
 
 ## Knowledge Gaps
-- **4141 isolated node(s):** `US-72: Local deletions can be propagated to Discogs`, `US-79: Wishlist re-import surfaces pending-removal conflicts`, `US-80: Search results show collection / wishlist membership at a glance`, `US-81: Remove a release from collection / wishlist on the release detail screen`, `US-82: Clear local collection and wishlist from Settings` (+4136 more)
+- **4158 isolated node(s):** `binding`, `main`, `shoot`, `_CacheEntry`, `_maxEntries` (+4153 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **72 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **68 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `String` connect `Community 242` to `Database Row Models`, `Release Detail & Thumbnail Cache`, `CSV Import & Collection Edit`, `Barcode Scanner`, `Search & Add to Collection/Wishlist`, `Community 136`, `API Client & Import Tests`, `Import/Export Capability Gate`, `Community 150`, `Community 152`, `Community 27`, `Community 412`, `Community 32`, `Community 161`, `Community 36`, `Community 41`, `Community 170`, `Community 43`, `Community 47`, `Community 48`, `Community 54`, `Community 57`, `Community 58`, `Community 59`, `Community 185`, `Community 65`, `Community 66`, `Community 69`, `Community 73`, `Community 79`, `Community 81`, `Community 82`, `Community 83`, `Community 87`, `Community 89`, `Community 91`, `Community 92`, `Community 93`, `Community 99`, `Community 100`, `Community 102`, `Community 236`, `Community 237`, `Community 115`, `Community 116`, `Community 119`, `Community 124`, `Community 125`?**
+- **Why does `String` connect `Community 392` to `Database Row Models`, `Release Detail & Thumbnail Cache`, `CSV Import & Collection Edit`, `Barcode Scanner`, `Community 132`, `Search & Add to Collection/Wishlist`, `API Client & Import Tests`, `Import/Export Capability Gate`, `Community 150`, `Community 152`, `Community 411`, `Community 27`, `Community 32`, `Community 161`, `Community 36`, `Community 41`, `Community 170`, `Community 43`, `Community 47`, `Community 48`, `Community 52`, `Community 54`, `Community 57`, `Community 58`, `Community 59`, `Community 65`, `Community 66`, `Community 69`, `Community 73`, `Community 79`, `Community 81`, `Community 82`, `Community 83`, `Community 87`, `Community 89`, `Community 91`, `Community 92`, `Community 93`, `Community 99`, `Community 100`, `Community 102`, `Community 108`, `Community 237`, `Community 239`, `Community 115`, `Community 116`, `Community 119`, `Community 124`, `Community 125`?**
   _High betweenness centrality (0.055) - this node is a cross-community bridge._
-- **Why does `_` connect `Database Row Models` to `Community 100`, `Community 138`, `Community 46`, `Community 111`, `Community 79`, `Community 81`, `Community 242`, `Community 115`, `Community 87`, `Community 410`, `Community 123`?**
+- **Why does `_` connect `Database Row Models` to `Community 66`, `Community 163`, `Community 100`, `Community 392`, `Community 138`, `Community 46`, `Community 239`, `Community 111`, `Community 79`, `Community 211`, `Community 87`, `Community 123`, `Community 92`?**
   _High betweenness centrality (0.032) - this node is a cross-community bridge._
-- **Why does `AppDatabase` connect `Community 26` to `Release Detail & Thumbnail Cache`, `CSV Import & Collection Edit`, `Barcode Scanner`, `Discogs Collection Import`, `Search & Add to Collection/Wishlist`, `CSV Import & Release Detail UI`, `App Database Schema`, `Retry Actions`, `Wishlist Export Tests`, `Community 144`, `Failed Actions Screen`, `App Router`, `Collection List Screen`, `Community 20`, `Community 21`, `Community 22`, `Community 29`, `Community 176`, `Community 51`, `Community 53`, `Community 196`, `Community 70`, `Community 74`, `Community 205`, `Community 84`, `Community 110`, `Community 112`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
-- **What connects `US-72: Local deletions can be propagated to Discogs`, `US-79: Wishlist re-import surfaces pending-removal conflicts`, `US-80: Search results show collection / wishlist membership at a glance` to the rest of the system?**
-  _4144 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `_` connect `Community 43` to `Community 97`, `Community 161`, `Community 101`, `Community 165`, `Community 135`, `Community 392`, `Community 136`, `Community 211`, `Community 127`, `Community 95`, `Community 63`?**
+  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+- **What connects `binding`, `main`, `shoot` to the rest of the system?**
+  _4161 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Database Row Models` be split into smaller, more focused modules?**
   _Cohesion score 0.017699115044247787 - nodes in this community are weakly interconnected._
 - **Should `Release Detail & Thumbnail Cache` be split into smaller, more focused modules?**
-  _Cohesion score 0.02391259534116677 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.02421972534332085 - nodes in this community are weakly interconnected._
 - **Should `CSV Import & Collection Edit` be split into smaller, more focused modules?**
-  _Cohesion score 0.027168234064785787 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.029850746268656716 - nodes in this community are weakly interconnected._

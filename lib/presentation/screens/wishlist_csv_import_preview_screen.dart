@@ -4,11 +4,8 @@ import '../../application/use_cases/build_wishlist_csv_import_preview_use_case.d
 import '../../application/use_cases/execute_wishlist_csv_import_use_case.dart';
 import '../../domain/models/csv_wishlist_import_preview.dart';
 import '../../domain/models/import_export_row_result.dart';
+import '../../app/app_repositories.dart';
 import '../../infrastructure/csv/csv_file_picker_service.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_import_export_job_repository.dart';
-import '../../infrastructure/local_database/local_import_export_row_result_repository.dart';
-import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/import_notifier.dart';
 
 const _kWideBreakpoint = 700.0;
@@ -81,7 +78,6 @@ class _WishlistCsvImportPreviewScreenState
   late final BuildWishlistCsvImportPreviewUseCase _previewUseCase;
   late final Future<CsvPickedFile?> Function() _picker;
   ExecuteWishlistCsvImportUseCase? _executeUseCase;
-  AppDatabase? _ownedDb;
   _State _state = const _Idle();
 
   @override
@@ -95,20 +91,19 @@ class _WishlistCsvImportPreviewScreenState
       // Test mode — use injected execute use case (may be null = confirm disabled)
       _executeUseCase = widget.executeUseCase;
     } else {
-      // Production mode — create execute use case from local DB
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _executeUseCase = ExecuteWishlistCsvImportUseCase(
-        wishlistRepository: LocalWishlistRepository(db),
-        jobRepository: LocalImportExportJobRepository(db),
-        rowResultRepository: LocalImportExportRowResultRepository(db),
-      );
+      final repos = AppRepositoriesScope.maybeOf(context);
+      if (repos != null) {
+        _executeUseCase = ExecuteWishlistCsvImportUseCase(
+          wishlistRepository: repos.wishlist,
+          jobRepository: repos.importExportJob,
+          rowResultRepository: repos.importExportRowResult,
+        );
+      }
     }
   }
 
   @override
   void dispose() {
-    _ownedDb?.close();
     super.dispose();
   }
 

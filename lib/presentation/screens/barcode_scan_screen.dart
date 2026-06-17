@@ -7,11 +7,9 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../application/services/search_query_cache.dart';
 import '../../application/use_cases/barcode_lookup_use_case.dart';
 import '../../domain/models/release_search_result.dart';
+import '../../app/app_repositories.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
-import '../../infrastructure/local_database/app_database.dart';
-import '../../infrastructure/local_database/local_collection_repository.dart';
-import '../../infrastructure/local_database/local_wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
 import '../widgets/release_search_result_card.dart';
 
@@ -126,9 +124,8 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   final _controller = TextEditingController();
   late final BarcodeLookupUseCase _useCase;
   late final SearchQueryCache _barcodeCache;
-  late final CollectionRepository _collectionRepository;
-  late final WishlistRepository _wishlistRepository;
-  AppDatabase? _ownedDb;
+  CollectionRepository? _collectionRepository;
+  WishlistRepository? _wishlistRepository;
   _ScanState _state = const _Idle();
   _ScanAreaState _scanAreaState = _ScanAreaState.placeholder;
   String _lastBarcode = '';
@@ -147,18 +144,9 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     super.initState();
     _useCase = widget.useCase ?? BarcodeLookupUseCase();
     _barcodeCache = widget.barcodeCache ?? SearchQueryCache();
-    if (widget.collectionRepository != null &&
-        widget.wishlistRepository != null) {
-      _collectionRepository = widget.collectionRepository!;
-      _wishlistRepository = widget.wishlistRepository!;
-    } else {
-      final db = AppDatabase(openAppDatabase());
-      _ownedDb = db;
-      _collectionRepository =
-          widget.collectionRepository ?? LocalCollectionRepository(db);
-      _wishlistRepository =
-          widget.wishlistRepository ?? LocalWishlistRepository(db);
-    }
+    final repos = AppRepositoriesScope.maybeOf(context);
+    _collectionRepository = widget.collectionRepository ?? repos?.collection;
+    _wishlistRepository = widget.wishlistRepository ?? repos?.wishlist;
     _controller.addListener(_onInputChanged);
     _loadMembership();
   }
@@ -166,9 +154,10 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   /// Resolves which results are already in the collection / on the wishlist.
   /// A storage failure degrades to "no icons" (US-80).
   Future<void> _loadMembership() async {
+    if (_collectionRepository == null || _wishlistRepository == null) return;
     try {
-      final collection = await _collectionRepository.getAll();
-      final wishlist = await _wishlistRepository.getAll();
+      final collection = await _collectionRepository!.getAll();
+      final wishlist = await _wishlistRepository!.getAll();
       if (!mounted) return;
       setState(() {
         _collectionIds = collection.map((i) => i.discogsReleaseId).toSet();
@@ -207,7 +196,6 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
   void dispose() {
     _controller.removeListener(_onInputChanged);
     _controller.dispose();
-    _ownedDb?.close();
     super.dispose();
   }
 
