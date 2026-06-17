@@ -49,7 +49,7 @@ policy) and a deploy workflow (`.github/workflows/deploy-pages.yml`).
 1. GitHub → repo **Settings → Pages → Source: "GitHub Actions"**.
 2. Push `master` (or run the "Deploy site to GitHub Pages" workflow
    manually); it builds `site/` and publishes it.
-3. Verify `https://itris.github.io/Crate/privacy/` loads.
+3. Verify `https://itris.github.io/cratewise/privacy/` loads.
 4. The URL is already recorded in `docs/store/STORE_LISTINGS.md`.
 
 Note: Pages on a **private** repo requires a paid GitHub plan; if the repo

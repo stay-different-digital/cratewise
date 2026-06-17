@@ -1371,4 +1371,25 @@ will 404 the site if it doesn't match the new repo name.
   listings carrying the privacy URL).
 - Roadmap fit: Phase 11/14 — brand/repo alignment before going public.
 
-**Status: story only — not implemented.**
+**Status: code-side implemented (GitHub rename itself is [Fred]).** Casing
+`cratewise` (lowercase, as requested). Updated every live hard-coded reference
+from `Crate` → `cratewise`: Pages path prefix + comment in
+`deploy-pages.yml` (`--pathprefix=/cratewise/`), the comment in
+`site/eleventy.config.js`, `REPO_BLOB_BASE` in `site/lib/repo-markdown.js`
+(`github.com/itris/cratewise/blob/master/` — the single rename point introduced
+by US-90, so both the changelog and about pages' rewritten links follow), the
+privacy-policy URL in `docs/store/STORE_LISTINGS.md` and the verify-step URL in
+`docs/release/STORE_PUBLISHING_GUIDE.md` (`https://itris.github.io/cratewise/privacy/`),
+the triage repo in `docs/beta/FEEDBACK_TRIAGE.md` (`itris/cratewise`), and the
+`.github/ISSUE_TEMPLATE/{bug_report,feature_request}.md` "about" lines (now
+"…in Cratewise" / "…for Cratewise"). `technical_task.md` had no repo-name
+reference; the prose "Record Crate" in `STORE_COPY_OPTIONS.md` is intentionally
+left. Verified: zero live `/Crate/` or `itris/Crate` occurrences remain (git
+history / graphify artifacts / this stories doc excepted), and a clean
+`npx @11ty/eleventy --pathprefix=/cratewise/` rebuilds all 4 pages with
+`/cratewise/`-prefixed nav and `itris/cratewise` rewritten links.
+**[Fred] sequencing:** the actual GitHub repo rename (Settings → rename) and the
+Pages Source switch (US-91) must happen for this to go live — until the repo is
+renamed, deploying the `/cratewise/` prefix would 404 the still-`Crate` site, so
+rename first (or together), then push. Optional tidy: `git remote set-url origin
+git@github.com:itris/cratewise.git` (GitHub redirects regardless).

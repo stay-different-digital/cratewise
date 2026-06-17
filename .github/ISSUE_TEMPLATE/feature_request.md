@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Request a new feature for Crate
+about: Request a new feature for Cratewise
 title: "[Feature]: "
 labels: ["feature"]
 assignees: ""

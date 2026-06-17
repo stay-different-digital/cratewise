@@ -4,7 +4,7 @@
 
 // The repo the rewritten links resolve to. Single place to update if the repo
 // is renamed (see US-93).
-export const REPO_BLOB_BASE = "https://github.com/itris/Crate/blob/master/";
+export const REPO_BLOB_BASE = "https://github.com/itris/cratewise/blob/master/";
 
 // Rewrite repo-relative Markdown links (e.g. docs/...) to absolute GitHub URLs.
 // Absolute (http/mailto), root-relative (/) and in-page anchor (#) links are

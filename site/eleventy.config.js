@@ -11,7 +11,7 @@ const md = new MarkdownIt({ html: true, linkify: true }).use(markdownItAnchor, {
 
 export default function (eleventyConfig) {
   // Rewrites absolute URLs when the site is served from a path prefix,
-  // e.g. GitHub Pages project sites at https://<user>.github.io/Crate/.
+  // e.g. GitHub Pages project sites at https://<user>.github.io/cratewise/.
   eleventyConfig.addPlugin(HtmlBasePlugin);
 
   eleventyConfig.addPassthroughCopy("src/css");

@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a bug in Crate
+about: Report a bug in Cratewise
 title: "[Bug]: "
 labels: ["bug"]
 assignees: ""

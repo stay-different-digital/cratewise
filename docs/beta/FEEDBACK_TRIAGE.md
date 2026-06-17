@@ -12,7 +12,7 @@ How beta feedback comes in, and what happens to every report.
 | Direct messages from testers | Whatever channel they used |
 
 Everything, regardless of channel, is normalised into a **GitHub issue on
-`itris/Crate`** during triage. The issue is the single source of truth; the
+`itris/cratewise`** during triage. The issue is the single source of truth; the
 original email/report is quoted or summarised in it.
 
 ## Severity scale

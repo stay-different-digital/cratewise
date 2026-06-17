@@ -3,7 +3,7 @@
 Draft content for the Play Console and App Store Connect. Copy-paste into the
 consoles; keep this file as the source of truth.
 
-**Privacy policy URL:** `https://itris.github.io/Crate/privacy/` — served by
+**Privacy policy URL:** `https://itris.github.io/cratewise/privacy/` — served by
 the 11ty site in `site/`, deployed by `.github/workflows/deploy-pages.yml`.
 _Goes live once GitHub Pages is enabled (repo Settings → Pages → Source:
 "GitHub Actions") and the workflow has run; verify the URL before filing
