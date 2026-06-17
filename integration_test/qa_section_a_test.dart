@@ -53,7 +53,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Search'));
     await tester.pumpAndSettle();
-    expect(find.text('Aphex Twin'), findsOneWidget);
+    final searchField = tester.widget<TextField>(find.byType(TextField).first);
+    expect(searchField.controller?.text, equals('Aphex Twin'));
     await shoot(tester, 'a4_search_state_retained');
 
     // A6 — token field masks input by default; show/hide toggle works.
