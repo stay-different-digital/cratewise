@@ -951,7 +951,19 @@ changes.
 - Roadmap fit: Phase 14 polish / project presentation — a strong front door for
   the repo ahead of open-sourcing or sharing.
 
-**Status: story only — not implemented.**
+**Status: implemented.** Rewrote the root `README.md` (79 → ~210 lines) with all
+required sections: features, platforms, tech stack & clean-architecture overview
+(linking `docs/architecture/`), `lib/` layer map + a one-line-per-area `docs/`
+tree, getting started (Flutter SDK + CocoaPods prereqs, run flow), tests/checks
+(`dart format`/`analyze`/`test`, ~2400+ suite, build commands), Discogs in-app
+token setup (link `docs/api/DISCOGS_API.md`, no secrets), the graphify workflow,
+contributing/commit conventions, and license/status (`1.0.0+1`,
+proprietary/all-rights-reserved — no `LICENSE` file exists). Facts verified
+against `pubspec.yaml` (name `cratewise`, version `1.0.0+1`, `sdk: ^3.12.0`),
+the live `docs/` dirs, and the test suite; the empty `lib/core/` & `lib/features/`
+scaffold dirs were deliberately omitted in favour of the real layers per
+`ARCHITECTURE.md`. Contact uses `hellowerecratewise@gmail.com` (US-87); all
+internal links are repo-relative and resolve. Docs-only — no code/tests touched.
 
 ---
 
