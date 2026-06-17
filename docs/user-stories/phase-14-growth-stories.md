@@ -866,3 +866,89 @@ against the constant symbol, so no test change was needed — full suite green
 and in this story's own description of the migration. **[Fred]** before going
 public: confirm the new mailbox receives mail, and re-deploy the marketing site
 alongside the privacy-policy hosting (Phase 11).
+
+---
+
+### US-88: Flesh out the project README with complete project information
+
+**2 SP · S5 (docs / contributor onboarding)**
+
+> As a developer (or a recruiter, contributor, or future me) opening the repo,
+> I want the root `README.md` to give a complete, accurate picture of what
+> Cratewise is, how it's built, and how to run/test/build it,
+> so that anyone can understand and work on the project without spelunking
+> through `docs/` or the source first.
+
+**Background:** The root `README.md` is currently a thin 79-line file: a one-line
+description, the platform list, a Getting Started block, and run/test commands.
+The project itself is far richer — a clean-architecture Flutter 3.44 / Dart 3.12
+app with a Discogs integration, Drift (SQLite) local storage, ~2414 tests, a
+graphify knowledge graph, and an extensive `docs/` tree (architecture, api,
+product/roadmap, security, qa, release, store, user-stories). None of that is
+discoverable from the README. This story brings the README up to the standard of
+a good open-source/portfolio project README so it stands on its own as the
+front door to the repo. It is **documentation only** — no code or behaviour
+changes.
+
+**Acceptance criteria:**
+- The README opens with the project name, a concise one–two sentence description,
+  and the existing Discogs trademark disclaimer ("uses the Discogs API but is not
+  affiliated with / endorsed by Discogs") kept verbatim.
+- It covers, at minimum, these sections (order/styling at the implementer's
+  discretion, but all present):
+  - **What it is / features** — a short feature list (search, barcode scan,
+    collection + wishlist, Discogs import/export, CSV import/export, offline-first
+    local storage, thumbnail caching, sync-status, failed-action retry).
+  - **Platforms** — Android phones, iPhone, iPad (desktop/web out of scope) — keep
+    the existing note.
+  - **Tech stack & architecture** — Flutter 3.44 / Dart 3.12, clean architecture
+    (domain / application / infrastructure / presentation), Drift/SQLite,
+    GoRouter; link to `docs/architecture/` rather than duplicating it.
+  - **Project structure** — a brief `lib/` layer overview and a pointer to the
+    `docs/` tree (one line per top-level docs area).
+  - **Getting started** — prerequisites (Flutter SDK ≥ the pinned version,
+    CocoaPods for iOS) and the existing `flutter pub get` / `flutter run` flow.
+  - **Running tests & checks** — `dart format .`, `flutter analyze`,
+    `flutter test` (note the ~2414-test suite), plus the iOS/Android build
+    commands already in the file.
+  - **Discogs setup** — that a personal access token is entered in-app under
+    Settings (link `docs/api/DISCOGS_API.md` if useful); **never** include a real
+    token.
+  - **Knowledge graph (graphify)** — a short note that `graphify-out/` holds a
+    queryable graph and how to use it (mirrors `CLAUDE.md`).
+  - **Contributing / conventions** — branch + commit conventions, "run format +
+    analyze + test before committing", and the `graphify update .` step after
+    code changes.
+  - **License / status** — the project's license (or "proprietary / all rights
+    reserved" if none) and current version (`1.0.0+1` from `pubspec.yaml`) /
+    release status; link the privacy policy and store listings under `docs/`.
+- All facts are **accurate and verified against the repo** at write time — the
+  Flutter/Dart versions match `pubspec.yaml`/CI, the test count is current (or
+  phrased approximately, e.g. "2400+ tests"), and every referenced `docs/` path
+  actually exists.
+- The README contains **no secrets** — no Discogs token, API keys, or `.env`
+  contents — and uses the team contact address `hellowerecratewise@gmail.com`
+  (US-87) if a contact line is included, never the old personal address.
+- Internal links use repo-relative paths and resolve (no dead links); commands
+  shown are copy-pasteable and correct.
+- Markdown renders cleanly on GitHub (headings, fenced code blocks, lists); a
+  short table of contents is optional but nice for a long README.
+
+**Investigation notes:**
+- Source of truth for facts: `pubspec.yaml` (name `cratewise`, description, version
+  `1.0.0+1`, `sdk: ^3.12.0`), the `docs/` subdirectories listed above, the
+  environment notes (Flutter 3.44; CocoaPods via Homebrew; iOS builds need
+  `GIT_CONFIG_VALUE_0=all` from a bare shell — decide whether that belongs in the
+  README or stays a local note), and `CLAUDE.md` for the graphify workflow.
+- Keep the existing run/test/build command blocks — they are already correct;
+  reorganise rather than rewrite.
+- Don't duplicate large docs into the README; **link** to `docs/architecture/`,
+  `docs/product/ROADMAP_V2.md`, `docs/store/PRIVACY_POLICY.md`, etc.
+- A screenshot/hero image is a nice-to-have but optional and out of scope unless
+  assets already exist under `docs/design/` or `site/`.
+- Precedents: US-58/US-59/US-60/US-61 (release + store docs the README should
+  link to), US-87 (use the team contact address), `CLAUDE.md` (graphify section).
+- Roadmap fit: Phase 14 polish / project presentation — a strong front door for
+  the repo ahead of open-sourcing or sharing.
+
+**Status: story only — not implemented.**
