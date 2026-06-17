@@ -762,3 +762,76 @@ wantlist tombstone. 6 new widget tests (button present, success move, fields
 carried, add-failure intact, duplicate-no-dupe, no-tombstone); suite 2395 → 2401,
 all green. Opt-in "also remove from my Discogs wantlist" during the move remains
 a possible later follow-up.
+
+---
+
+### US-87: Replace the personal contact email with the Cratewise team address
+
+**1 SP · S5 (release hygiene, pre-launch)**
+
+> As the maintainer preparing Cratewise for the stores,
+> I want every contact/feedback reference to use the dedicated
+> **hellowerecratewise@gmail.com** address instead of my personal
+> **hellowerecratewise@gmail.com**,
+> so that user feedback, privacy enquiries, and store-review correspondence go to
+> a project mailbox rather than a personal inbox, and nothing personal is shipped
+> in the public listing or the app.
+
+**Background:** The app and its release/store docs currently point users at the
+personal address `hellowerecratewise@gmail.com` — in the in-app **Send feedback** button
+(`send_feedback_tile.dart`), the hosted privacy policy and the privacy doc, the
+store listing contact field, the store-review notes, the beta triage doc, and the
+marketing site footer/contact. A dedicated team address
+(`hellowerecratewise@gmail.com`) has been created, so every reference should be
+switched over before the privacy policy is hosted and the store forms are filed
+(Phase 11/13 [Fred] items). This is a pure find-and-replace of a single, stable
+string — no behaviour change beyond the destination of a `mailto:`.
+
+**Acceptance criteria:**
+- Every occurrence of `hellowerecratewise@gmail.com` in the app, docs, and marketing
+  site is replaced with `hellowerecratewise@gmail.com`. Known occurrences (verify
+  none have been added since):
+  - `lib/presentation/widgets/send_feedback_tile.dart` — the
+    `feedbackEmailAddress` constant (drives the in-app Send feedback `mailto:`).
+  - `docs/store/PRIVACY_POLICY.md` and `site/src/privacy.md` — "Questions about
+    this policy".
+  - `docs/store/STORE_LISTINGS.md` — the "Contact email" field (two places).
+  - `docs/release/STORE_REVIEW.md` — App Review contact note.
+  - `docs/beta/FEEDBACK_TRIAGE.md` — the Send-feedback channel row.
+  - `site/src/index.njk` (contact line) and `site/src/_layouts/base.njk` (footer
+    `mailto:`).
+- The in-app Send feedback button opens a `mailto:` to the new address with the
+  existing subject/body (version + platform prefilled) unchanged; the snackbar
+  fallback message names the new address.
+- No occurrence of the old address remains anywhere in the repo except immutable
+  history (git log / CHANGELOG entries that record past state are not rewritten).
+  `grep -ri "hellowerecratewise@gmail.com"` over the working tree (excluding
+  `graphify-out/`, `.git/`) returns nothing.
+- The new mailbox is confirmed to exist and receive mail before the privacy
+  policy is re-hosted and the store forms are filed ([Fred]).
+- Tests stay green. The existing `send_feedback_tile_test.dart` asserts against
+  the `feedbackEmailAddress` constant (not the literal), so updating the constant
+  needs no test change — but the suite must still pass.
+
+**Investigation notes:**
+- 9 occurrences across 8 files at time of writing (see the list above); all are
+  the same literal string, so a single careful replace covers them. Re-grep
+  before finishing in case new docs reference it.
+- The only code reference is the `feedbackEmailAddress` constant in
+  `send_feedback_tile.dart`; everything else is Markdown/Nunjucks docs and the
+  static site. The widget reads the constant, and the test references the
+  constant symbol, so behaviour and tests follow automatically.
+- Do **not** touch the `graphify-out/` knowledge-graph artifacts or
+  `~/.claude/...` memory; those regenerate and are out of scope.
+- The marketing site (`site/`) is a separate static build — confirm whether it
+  needs a re-deploy after the change (likely yes, alongside the privacy-policy
+  hosting in Phase 11).
+- CHANGELOG / commit history that mentions the old address as a historical fact
+  should be left as-is (don't rewrite history); only live, user-facing references
+  change.
+- Precedents: US-59/US-60/US-61 (privacy policy + store listings that carry the
+  contact email), US-64 (the in-app Send feedback tile and its constant).
+- Roadmap fit: Phase 11/13 release readiness — replacing a personal address with
+  a project mailbox before going public.
+
+**Status: story only — not implemented.**
