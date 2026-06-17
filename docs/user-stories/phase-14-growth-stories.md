@@ -1072,3 +1072,85 @@ that only resolve inside the repo.
 - Roadmap fit: Phase 14 — project presentation on the public site.
 
 **Status: story only — not implemented.**
+
+---
+
+### US-91: Fix the failing GitHub Pages build (Jekyll vs the Eleventy Actions workflow)
+
+**2 SP · S5 (CI / release — release-blocking: the public site does not deploy)**
+
+> As the maintainer publishing the Cratewise site,
+> I want the GitHub Pages deployment to succeed using our Eleventy build,
+> so that the privacy policy (and the planned changelog/README pages) actually go
+> live instead of failing on every push.
+
+**Background:** The Pages build is currently failing with:
+
+```
+GitHub Pages: jekyll v3.10.0
+Theme: jekyll-theme-primer
+Source: /github/workspace/.
+github-pages 232 | Error: Invalid scheme format: 'phase2 - Prompt 5'
+```
+
+This is the **legacy Jekyll "deploy from a branch" builder scanning the whole
+repo root** — not our intended build. The repo already ships an Eleventy site
+under `site/` with a GitHub Actions workflow
+(`.github/workflows/deploy-pages.yml`) that builds `site/_site` and publishes via
+`actions/deploy-pages`. Because the Pages **Source** is still set to "Deploy from
+a branch", GitHub runs Jekyll over `/github/workspace/.`, picks up unrelated
+Markdown (there is no `_config.yml`, so it scans everything), and crashes on the
+archived prompt files under `docs/archive/prompts/used/` whose names/headings
+contain a colon (e.g. `phase2 - Prompt 5D: …`). Jekyll plugins
+(`jekyll-relative-links` / `jekyll-titles-from-headings`) treat the text before
+the colon as a URI scheme; `phase2 - Prompt 5` contains spaces, so Addressable
+raises `Invalid scheme format`. The fix is to make Pages use our Eleventy
+workflow and to harden the repo so a stray Jekyll build can't run.
+
+**Acceptance criteria:**
+- The public site (`https://<owner>.github.io/Crate/`) **deploys successfully** —
+  no `Invalid scheme format` error — and the privacy page (and existing pages)
+  render correctly under the `/Crate/` path prefix.
+- GitHub Pages **Build and deployment → Source** is set to **GitHub Actions**, so
+  the existing `deploy-pages.yml` (Eleventy → `actions/deploy-pages`) is the only
+  builder and the implicit Jekyll branch build no longer runs over the repo root.
+  *(Repo Settings change — **[Fred]**; the rest of this story makes the repo
+  resilient regardless.)*
+- Defensive hardening so a Jekyll build can never fail the repo again, even if the
+  setting is changed back: add a repo-root `.nojekyll` file (and confirm the
+  Eleventy artifact `site/_site` is unaffected). With `.nojekyll`, the legacy
+  builder serves files as-is and skips the Jekyll processing that crashes.
+- The crash trigger is neutralised: either the `.nojekyll` above is sufficient, or
+  the archived prompt filenames/headings under `docs/archive/prompts/used/` that
+  contain a colon are renamed/escaped so no tool parses them as a `scheme:path`
+  URI. (Prefer `.nojekyll`; renaming ~30 archive files is optional hardening.)
+- A push to `master` (or a manual `workflow_dispatch`) results in a **green Pages
+  deployment**, verified in the Actions tab and by loading the live URL.
+- No change to app code or tests; the Eleventy site content is otherwise
+  unchanged.
+
+**Investigation notes:**
+- The log is the proof: `github-pages 232`, `jekyll v3.10.0`,
+  `Source: /github/workspace/.`, theme `jekyll-theme-primer` — all hallmarks of
+  the default branch-based Jekyll build, which our Eleventy setup is meant to
+  replace.
+- Root cause is the **Pages Source setting**, not the Eleventy config. The
+  workflow `deploy-pages.yml` already builds correctly with
+  `npx @11ty/eleventy --pathprefix=/Crate/`; it just isn't the active deployment
+  source.
+- There is no `_config.yml` at the root, so Jekyll scans the entire tree
+  (including `docs/`), which is how it reaches the archived prompt files.
+- The offending files: `docs/archive/prompts/used/phase2 - Prompt 5*.md` (and
+  siblings) — colons in the filename/first heading. Addressable's scheme
+  validation rejects a "scheme" containing spaces.
+- `.nojekyll` is the standard, low-risk guard against the legacy builder; it lives
+  at the repo root for branch builds. The Actions artifact path is `site/_site`.
+- Cross-reference US-89/US-90: once the changelog/README pages are added, this
+  same (Actions) deployment carries them; getting the deployment correct here
+  unblocks those.
+- Precedents: US-59 (privacy hosting on this site), the existing
+  `deploy-pages.yml` workflow.
+- Roadmap fit: Phase 11/14 release readiness — the public site must build before
+  launch.
+
+**Status: story only — not implemented.**
