@@ -1221,3 +1221,78 @@ no behaviour change.
 - Roadmap fit: Phase 11/14 — keep CI/CD green and future-proof ahead of release.
 
 **Status: story only — not implemented.**
+
+---
+
+### US-93: Rename the GitHub repository from `Crate` to `cratewise`
+
+**2 SP · S5 (repo / release hygiene)**
+
+> As the maintainer,
+> I want the GitHub repository renamed from `Crate` to `cratewise`,
+> so that the repo URL matches the product name and the GitHub Pages site is
+> served from a `/cratewise/` path that lines up with the brand.
+
+**Background:** The repository is currently named `Crate` (owner `itris`, i.e.
+`https://github.com/itris/Crate`, Pages at `https://itris.github.io/Crate/`),
+while the product, package, and everything user-facing is **Cratewise**. Renaming
+the repo to `cratewise` aligns the two. GitHub renames are mostly seamless — it
+auto-redirects the old URL and existing clones keep working via the redirect — but
+a few places **hard-code the repo name** and must be updated, the most important
+being the GitHub Pages **path prefix** (`/Crate/`), which is case-sensitive and
+will 404 the site if it doesn't match the new repo name.
+
+**Acceptance criteria:**
+- The GitHub repository is renamed to `cratewise` (**[Fred]** — repo Settings →
+  rename; only the owner can do this). Confirm the new canonical name/casing
+  (`cratewise`) since the Pages path prefix must match it exactly.
+- The GitHub Pages path prefix is updated to the new name everywhere it is
+  hard-coded, so the published site resolves under
+  `https://itris.github.io/cratewise/`:
+  - `.github/workflows/deploy-pages.yml` — `--pathprefix=/Crate/` → the new
+    prefix, and the explanatory comment.
+  - `site/eleventy.config.js` — the comment referencing
+    `https://<user>.github.io/Crate/`.
+- All hard-coded repo/Pages URLs in docs are updated to the new path:
+  - `docs/store/STORE_LISTINGS.md` — privacy policy URL
+    `https://itris.github.io/Crate/privacy/`.
+  - `docs/release/STORE_PUBLISHING_GUIDE.md` — the verify step URL.
+  - Any `https://github.com/itris/Crate/...` links (e.g. in the README/CONTRIBUTING
+    once US-88/US-90 add them) point at the new repo URL. (GitHub redirects the old
+    one, but links should be canonical.)
+- The `.github/ISSUE_TEMPLATE/*.md` "about" lines ("Request a new feature for
+  Crate" / "Report a bug in Crate") read "Cratewise".
+- The local clone's `origin` remote is updated to the new URL
+  (`git remote set-url origin …`) — optional, since GitHub redirects, but tidy.
+  The local working-directory path (`/Users/fred/Projects/Crate`) is independent
+  of the GitHub name and does **not** have to change.
+- After the rename + path-prefix change, the Pages site **deploys and loads** at
+  the new URL (coordinates with US-91, which fixes the build itself), and the
+  privacy policy page resolves at `…/cratewise/privacy/`.
+- No occurrence of the old `/Crate/` Pages path or `itris/Crate` URL remains in
+  live config/docs (git history excepted). The product copy "Record Crate" in
+  `STORE_COPY_OPTIONS.md` is prose, not the repo name — leave it.
+
+**Investigation notes:**
+- The high-risk item is the **path prefix**: GitHub Pages project sites serve from
+  `/<repo>/`, the prefix is case-sensitive, and a mismatch silently 404s every
+  asset. Update `deploy-pages.yml` and re-verify the live site.
+- GitHub auto-creates a redirect from `itris/Crate` → `itris/cratewise`, so old
+  clones, links, and the existing remote keep working; updating them is hygiene,
+  not a hard requirement.
+- Decide the exact casing with the rename: `cratewise` (lowercase, as requested)
+  vs `Cratewise`. Whatever is chosen, the Pages path prefix and all URLs must
+  match it exactly.
+- Known hard-coded references found at write time: `deploy-pages.yml` (pathprefix
+  + comment), `site/eleventy.config.js` (comment), `docs/store/STORE_LISTINGS.md`,
+  `docs/release/STORE_PUBLISHING_GUIDE.md`, `.github/ISSUE_TEMPLATE/feature_request.md`
+  and `bug_report.md`. Re-grep at implementation time in case US-88/89/90 added
+  more.
+- Sequencing: do this together with or right after US-91 (Pages build fix) since
+  both touch the Pages deployment; updating the path prefix while the build is
+  still broken won't surface a working site.
+- Precedents: US-59/US-89/US-91 (the Pages site + workflow), US-60/US-61 (store
+  listings carrying the privacy URL).
+- Roadmap fit: Phase 11/14 — brand/repo alignment before going public.
+
+**Status: story only — not implemented.**
