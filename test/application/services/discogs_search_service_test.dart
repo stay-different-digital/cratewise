@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cratewise/application/services/discogs_search_service.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
+import 'package:cratewise/domain/models/search_filter.dart';
 import 'package:cratewise/domain/models/search_result_page.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
@@ -232,5 +233,29 @@ void main() {
       );
       expect(spy.deleteCallCount, 0);
     });
+  });
+
+  group('DiscogsSearchService — filter (US-85)', () {
+    test(
+      'forwards the selected filter to the Discogs query parameter',
+      () async {
+        late http.Request captured;
+        final service = _makeService(
+          'token',
+          MockClient((request) async {
+            captured = request;
+            return http.Response(_searchBody([]), 200);
+          }),
+        );
+
+        await service.search('blue', filter: SearchFilter.artist);
+        expect(captured.url.queryParameters['artist'], 'blue');
+        expect(captured.url.queryParameters.containsKey('q'), isFalse);
+        expect(captured.url.queryParameters['type'], 'release');
+
+        await service.search('blue');
+        expect(captured.url.queryParameters['q'], 'blue');
+      },
+    );
   });
 }

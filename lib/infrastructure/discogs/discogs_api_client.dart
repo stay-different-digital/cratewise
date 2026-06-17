@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
+import '../../domain/models/search_filter.dart';
 import '../../shared/errors/app_error.dart';
 import 'dto/discogs_collection_item.dart';
 import 'dto/discogs_identity.dart';
@@ -56,18 +57,29 @@ class DiscogsApiClient {
 
   /// Searches Discogs releases by [query] text.
   ///
-  /// [page] is 1-based. [perPage] defaults to 50.
+  /// [page] is 1-based. [perPage] defaults to 50. [filter] scopes the match to
+  /// a single field (US-85): `all` uses the general `q` parameter (default,
+  /// matches every field); `release`/`artist`/`label` use the field-scoped
+  /// `release_title`/`artist`/`label` parameters. `type=release` is always sent
+  /// so the response shape is unchanged.
   Future<DiscogsSearchPageDto> searchReleases(
     String query,
     String token, {
     int page = 1,
     int perPage = 50,
+    SearchFilter filter = SearchFilter.all,
   }) async {
+    final textParam = switch (filter) {
+      SearchFilter.all => 'q',
+      SearchFilter.release => 'release_title',
+      SearchFilter.artist => 'artist',
+      SearchFilter.label => 'label',
+    };
     final response = await _get(
       '/database/search',
       token,
       queryParameters: {
-        'q': query,
+        textParam: query,
         'type': 'release',
         'page': '$page',
         'per_page': '$perPage',

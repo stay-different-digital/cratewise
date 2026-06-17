@@ -1,5 +1,6 @@
 import 'package:cratewise/application/services/search_query_cache.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
+import 'package:cratewise/domain/models/search_filter.dart';
 import 'package:cratewise/domain/models/search_result_page.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -70,13 +71,29 @@ void main() {
       expect(cache.get('c'), isNotNull);
     });
 
-    test('normalizeKey trims and lowercases', () {
+    test('normalizeKey trims, lowercases, and defaults to the All scope', () {
       expect(
         SearchQueryCache.normalizeKey('  Miles Davis  '),
-        equals('miles davis'),
+        equals('all:miles davis'),
       );
-      expect(SearchQueryCache.normalizeKey('BEATLES'), equals('beatles'));
-      expect(SearchQueryCache.normalizeKey('nirvana'), equals('nirvana'));
+      expect(SearchQueryCache.normalizeKey('BEATLES'), equals('all:beatles'));
+      expect(SearchQueryCache.normalizeKey('nirvana'), equals('all:nirvana'));
+    });
+
+    test('normalizeKey scopes the key by filter (US-85)', () {
+      expect(
+        SearchQueryCache.normalizeKey('blue', SearchFilter.artist),
+        equals('artist:blue'),
+      );
+      // Same text under different filters must not collide.
+      expect(
+        SearchQueryCache.normalizeKey('blue', SearchFilter.artist),
+        isNot(equals(SearchQueryCache.normalizeKey('blue'))),
+      );
+      expect(
+        SearchQueryCache.normalizeKey('blue', SearchFilter.label),
+        equals('label:blue'),
+      );
     });
 
     test('put overwrites an existing entry and resets its TTL', () {

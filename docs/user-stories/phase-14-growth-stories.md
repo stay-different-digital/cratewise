@@ -648,7 +648,23 @@ default), behaviour is exactly as it is today (general `q`).
 - Roadmap fit: Phase 14 search UX — completing the filter feature so the chips
   actually scope results.
 
-**Status: story only — not implemented.**
+**Status (2026-06-17): implemented.** Plumbed `SearchFilter` through all three
+layers: `DiscogsApiClient.searchReleases` gained a `SearchFilter filter` param
+and maps the text to `q` (All) / `release_title` / `artist` / `label`, always
+keeping `type=release`; `DiscogsSearchService.search` forwards it; `SearchScreen`
+passes `_filter` into `_onSubmit`, `_searchInBackground`, and `_loadMore`, tracks
+`_lastFilter` so the skip-guard also compares the filter, and re-runs the current
+search from the chip `onSelected` handler. Clearing the field resets the scope to
+All. `SearchQueryCache.normalizeKey` now takes an optional `SearchFilter` and
+prefixes the key (`'${filter.name}:<text>'`) so All vs Artist for the same text
+don't collide; the barcode cache keeps the default All scope.
+Pagination/background-refresh use the originating filter. 7 new/updated tests
+(api-client per-filter params, service forwarding, filter-scoped cache key, chip
+re-issues the search, pagination preserves the filter, no cross-filter cache
+collision); suite 2407 → 2414, all green. **Live-API note:** the
+`release_title`/`artist`/`label` field filters are documented Discogs
+`/database/search` params but were not verified against the live API from this
+environment — worth a quick manual check on device.
 
 ---
 

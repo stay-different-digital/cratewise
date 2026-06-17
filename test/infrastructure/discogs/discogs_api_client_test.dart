@@ -6,6 +6,7 @@ import 'package:cratewise/infrastructure/discogs/dto/discogs_identity.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_release.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_search_result.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_wantlist_item.dart';
+import 'package:cratewise/domain/models/search_filter.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -341,6 +342,50 @@ void main() {
       );
       await client.searchReleases('test', _fakeToken, page: 3);
       expect(captured.url.queryParameters['page'], '3');
+    });
+
+    test('scopes the query parameter to the selected filter (US-85)', () async {
+      late http.Request captured;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(searchBody([]), 200);
+        }),
+      );
+
+      // All → general `q`.
+      await client.searchReleases('blue', _fakeToken);
+      expect(captured.url.queryParameters['q'], 'blue');
+      expect(captured.url.queryParameters['type'], 'release');
+
+      // Release → release_title (and no general q).
+      await client.searchReleases(
+        'blue',
+        _fakeToken,
+        filter: SearchFilter.release,
+      );
+      expect(captured.url.queryParameters['release_title'], 'blue');
+      expect(captured.url.queryParameters.containsKey('q'), isFalse);
+      expect(captured.url.queryParameters['type'], 'release');
+
+      // Artist → artist.
+      await client.searchReleases(
+        'blue',
+        _fakeToken,
+        filter: SearchFilter.artist,
+      );
+      expect(captured.url.queryParameters['artist'], 'blue');
+      expect(captured.url.queryParameters.containsKey('q'), isFalse);
+
+      // Label → label.
+      await client.searchReleases(
+        'blue',
+        _fakeToken,
+        filter: SearchFilter.label,
+      );
+      expect(captured.url.queryParameters['label'], 'blue');
+      expect(captured.url.queryParameters.containsKey('q'), isFalse);
+      expect(captured.url.queryParameters['type'], 'release');
     });
 
     test('throws InvalidTokenError on 401', () async {

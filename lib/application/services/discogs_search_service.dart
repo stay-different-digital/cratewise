@@ -1,4 +1,5 @@
 import '../../domain/models/release_search_result.dart';
+import '../../domain/models/search_filter.dart';
 import '../../domain/models/search_result_page.dart';
 import '../../domain/repositories/token_storage.dart';
 import '../../infrastructure/discogs/discogs_api_client.dart';
@@ -16,14 +17,24 @@ class DiscogsSearchService {
 
   /// Searches Discogs releases for [query] using the saved token.
   ///
-  /// [page] is 1-based; defaults to the first page.
+  /// [page] is 1-based; defaults to the first page. [filter] scopes the match
+  /// to a single field (US-85); defaults to [SearchFilter.all] (general query).
   /// Throws [NoTokenError] if no token is stored.
   /// Propagates [AppError] subtypes from the API client.
-  Future<SearchResultPage> search(String query, {int page = 1}) async {
+  Future<SearchResultPage> search(
+    String query, {
+    int page = 1,
+    SearchFilter filter = SearchFilter.all,
+  }) async {
     final token = await _storage.loadToken();
     if (token == null) throw const NoTokenError();
     try {
-      final dto = await _apiClient.searchReleases(query, token, page: page);
+      final dto = await _apiClient.searchReleases(
+        query,
+        token,
+        page: page,
+        filter: filter,
+      );
       return SearchResultPage(
         items: dto.results.map(_toResult).toList(),
         currentPage: dto.currentPage,

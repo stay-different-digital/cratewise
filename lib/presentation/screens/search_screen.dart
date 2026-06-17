@@ -131,9 +131,12 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   _SearchState _state = const _Idle();
   Timer? _debounce;
   String _lastQuery = '';
-  // Selected search-scope filter (US-84). All = no chip selected = search every
-  // field. US-84 only holds the state; US-85 will scope the query to it.
+  // Selected search-scope filter (US-84/US-85). All = no chip selected = search
+  // every field via the general `q` query.
   SearchFilter _filter = SearchFilter.all;
+  // Filter of the search currently shown — paired with [_lastQuery] so the
+  // skip-guard and pagination/background refresh stay on the same filter (US-85).
+  SearchFilter _lastFilter = SearchFilter.all;
   ReleaseSearchResult? _selectedResult;
   int _searchGeneration = 0;
   // Discogs release ids the user already has locally. Loaded once and refreshed
@@ -197,9 +200,12 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     final query = _controller.text.trim();
     if (query.isEmpty) {
       _lastQuery = '';
+      // Clearing the field resets the scope back to All (US-84/US-85).
+      _lastFilter = SearchFilter.all;
       setState(() {
         _state = const _Idle();
         _selectedResult = null;
+        _filter = SearchFilter.all;
       });
       return;
     }
@@ -214,20 +220,25 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     _debounce?.cancel();
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
-    // Only skip if we already have fresh (non-cached) results for this query.
+    final filter = _filter;
+    // Only skip if we already have fresh (non-cached) results for this exact
+    // query *and* filter — a filter change with identical text must re-search.
     final alreadyHasFreshResults =
         _state is _Results &&
         !(_state as _Results).isLoadingMore &&
         !(_state as _Results).fromCache;
     if (trimmed == _lastQuery &&
+        filter == _lastFilter &&
         (_state is _Loading || alreadyHasFreshResults)) {
       return;
     }
     _lastQuery = trimmed;
+    _lastFilter = filter;
     final gen = ++_searchGeneration;
 
-    // Check cache first — show immediately and refresh in background.
-    final cacheKey = SearchQueryCache.normalizeKey(trimmed);
+    // Check cache first — show immediately and refresh in background. The key
+    // is scoped by filter so "All" and "Artist" results don't collide (US-85).
+    final cacheKey = SearchQueryCache.normalizeKey(trimmed, filter);
     final cached = _cache.get(cacheKey);
     if (cached != null) {
       setState(() {
@@ -240,7 +251,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
         );
         _selectedResult = null;
       });
-      _searchInBackground(trimmed, cacheKey, gen);
+      _searchInBackground(trimmed, cacheKey, gen, filter);
       return;
     }
 
@@ -249,7 +260,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
       _selectedResult = null;
     });
     try {
-      final page = await _service.search(trimmed);
+      final page = await _service.search(trimmed, filter: filter);
       if (!mounted || gen != _searchGeneration) return;
       _cache.put(cacheKey, page);
       setState(
@@ -270,9 +281,10 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     String query,
     String cacheKey,
     int gen,
+    SearchFilter filter,
   ) async {
     try {
-      final page = await _service.search(query);
+      final page = await _service.search(query, filter: filter);
       if (!mounted || gen != _searchGeneration) return;
       _cache.put(cacheKey, page);
       setState(
@@ -305,6 +317,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
       final page = await _service.search(
         _lastQuery,
         page: current.currentPage + 1,
+        filter: _lastFilter,
       );
       if (!mounted || gen != _searchGeneration) return;
       setState(
@@ -375,7 +388,14 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
         ),
         _SearchFilterChips(
           selected: _filter,
-          onChanged: (f) => setState(() => _filter = f),
+          onChanged: (f) {
+            setState(() => _filter = f);
+            // Re-run the current search immediately under the new scope (US-85)
+            // — the user shouldn't have to re-type. The skip-guard compares the
+            // filter, so identical text still re-searches.
+            final text = _controller.text.trim();
+            if (text.isNotEmpty) _onSubmit(text);
+          },
         ),
         Expanded(child: _buildBody(isWide: isWide)),
       ],

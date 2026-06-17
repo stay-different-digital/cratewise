@@ -5,6 +5,7 @@ import 'package:cratewise/application/services/search_query_cache.dart';
 import 'package:cratewise/presentation/screens/release_detail_screen.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
+import 'package:cratewise/domain/models/search_filter.dart';
 import 'package:cratewise/domain/models/search_result_page.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
@@ -54,7 +55,11 @@ class _FakeSearchService extends DiscogsSearchService {
   final AppError? throws;
 
   @override
-  Future<SearchResultPage> search(String query, {int page = 1}) async {
+  Future<SearchResultPage> search(
+    String query, {
+    int page = 1,
+    SearchFilter filter = SearchFilter.all,
+  }) async {
     if (throws != null) throw throws!;
     return _singlePage(results ?? []);
   }
@@ -68,9 +73,45 @@ class _CountingSearchService extends DiscogsSearchService {
   int callCount = 0;
 
   @override
-  Future<SearchResultPage> search(String query, {int page = 1}) async {
+  Future<SearchResultPage> search(
+    String query, {
+    int page = 1,
+    SearchFilter filter = SearchFilter.all,
+  }) async {
     callCount++;
     return _singlePage(results);
+  }
+}
+
+/// Records the filter (and page) of every search call so US-85 tests can assert
+/// the filter is plumbed through and preserved across pagination.
+class _RecordingSearchService extends DiscogsSearchService {
+  _RecordingSearchService({required this.page1, required this.page2})
+    : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
+
+  final List<ReleaseSearchResult> page1;
+  final List<ReleaseSearchResult> page2;
+  final List<SearchFilter> filters = [];
+  final List<int> pages = [];
+
+  @override
+  Future<SearchResultPage> search(
+    String query, {
+    int page = 1,
+    SearchFilter filter = SearchFilter.all,
+  }) async {
+    filters.add(filter);
+    pages.add(page);
+    final items = page == 1 ? page1 : page2;
+    // Only advertise a second page when one exists, so tests that don't want
+    // the auto-prefetch of page 2 stay single-call.
+    final totalPages = page2.isEmpty ? 1 : 2;
+    return SearchResultPage(
+      items: items,
+      currentPage: page,
+      totalPages: totalPages,
+      totalResults: page1.length + page2.length,
+    );
   }
 }
 
@@ -83,7 +124,11 @@ class _FlippingSearchService extends DiscogsSearchService {
   int _callCount = 0;
 
   @override
-  Future<SearchResultPage> search(String query, {int page = 1}) async {
+  Future<SearchResultPage> search(
+    String query, {
+    int page = 1,
+    SearchFilter filter = SearchFilter.all,
+  }) async {
     _callCount++;
     if (_callCount == 1) throw firstError;
     return _singlePage(results);
@@ -97,8 +142,11 @@ class _DelayedSearchService extends DiscogsSearchService {
   final Completer<SearchResultPage> _completer;
 
   @override
-  Future<SearchResultPage> search(String query, {int page = 1}) =>
-      _completer.future;
+  Future<SearchResultPage> search(
+    String query, {
+    int page = 1,
+    SearchFilter filter = SearchFilter.all,
+  }) => _completer.future;
 }
 
 class _SequencedDelayedSearchService extends DiscogsSearchService {
@@ -109,8 +157,11 @@ class _SequencedDelayedSearchService extends DiscogsSearchService {
   int _callIndex = 0;
 
   @override
-  Future<SearchResultPage> search(String query, {int page = 1}) =>
-      _completers[_callIndex++].future;
+  Future<SearchResultPage> search(
+    String query, {
+    int page = 1,
+    SearchFilter filter = SearchFilter.all,
+  }) => _completers[_callIndex++].future;
 }
 
 /// Returns page 1 with [page1Items] (hasMore = true), then page 2 with
@@ -127,7 +178,11 @@ class _PaginatingSearchService extends DiscogsSearchService {
   final AppError? page2Error;
 
   @override
-  Future<SearchResultPage> search(String query, {int page = 1}) async {
+  Future<SearchResultPage> search(
+    String query, {
+    int page = 1,
+    SearchFilter filter = SearchFilter.all,
+  }) async {
     if (page == 1) {
       return SearchResultPage(
         items: page1Items,
@@ -1326,20 +1381,101 @@ void main() {
       expect(chip('label'), findsOneWidget);
     });
 
-    testWidgets('selecting a chip does not (yet) trigger a search (US-84)', (
+    testWidgets('selecting a chip with an empty search box runs no search', (
       tester,
     ) async {
       final service = _CountingSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
-      await submitSearch(tester, 'blue');
-      expect(service.callCount, 1);
+      await tester.pump();
 
-      // US-84 is UI-only: changing the filter must not re-issue the query.
-      // (Re-running on filter change is delivered by US-85.)
       await tester.tap(chip('artist'));
       await tester.pump();
 
-      expect(service.callCount, 1);
+      expect(service.callCount, 0);
+      expect(isSelected(tester, 'artist'), isTrue);
+    });
+  });
+
+  group('SearchScreen — filter scoping (US-85)', () {
+    Finder chip(String name) => find.byKey(Key('search-filter-chip-$name'));
+
+    testWidgets('the initial search runs under the All filter by default', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'blue');
+
+      expect(service.filters, [SearchFilter.all]);
+    });
+
+    testWidgets('changing the chip re-issues the search under the new filter', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'blue');
+      expect(service.filters, [SearchFilter.all]);
+
+      await tester.tap(chip('artist'));
+      await tester.pump();
+      await tester.pump();
+
+      // A second call was made, scoped to Artist, with the same text.
+      expect(service.filters, [SearchFilter.all, SearchFilter.artist]);
+    });
+
+    testWidgets('pagination preserves the originating filter', (tester) async {
+      // page2 is non-empty, so _ResultsList auto-prefetches page 2 (the first
+      // page fits the viewport). Each search therefore fetches page 1 then
+      // page 2 under the same filter.
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: [_abbeyRoad],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'blue');
+      await tester.pumpAndSettle();
+
+      // Page 1 + auto-prefetched page 2, both under All.
+      expect(service.pages, contains(2));
+      final firstPage2 = service.pages.indexOf(2);
+      expect(service.filters[firstPage2], SearchFilter.all);
+
+      // Switch to Artist — re-runs page 1, then page 2 is prefetched again,
+      // still scoped to Artist.
+      await tester.tap(chip('artist'));
+      await tester.pumpAndSettle();
+
+      expect(service.pages.last, 2);
+      expect(service.filters.last, SearchFilter.artist);
+    });
+
+    testWidgets('an All search and an Artist search for the same text do not '
+        'collide in the cache', (tester) async {
+      final cache = SearchQueryCache();
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service, queryCache: cache));
+      await submitSearch(tester, 'blue');
+      await tester.tap(chip('artist'));
+      await tester.pump();
+      await tester.pump();
+
+      // Distinct cache keys were written for the two scopes.
+      expect(cache.get(SearchQueryCache.normalizeKey('blue')), isNotNull);
+      expect(
+        cache.get(SearchQueryCache.normalizeKey('blue', SearchFilter.artist)),
+        isNotNull,
+      );
     });
   });
 }
@@ -1365,7 +1501,11 @@ class _BlockingPaginationService extends DiscogsSearchService {
   final AppError? page2Error;
 
   @override
-  Future<SearchResultPage> search(String query, {int page = 1}) async {
+  Future<SearchResultPage> search(
+    String query, {
+    int page = 1,
+    SearchFilter filter = SearchFilter.all,
+  }) async {
     if (page == 1) {
       return SearchResultPage(
         items: page1Items,
