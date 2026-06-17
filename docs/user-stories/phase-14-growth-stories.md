@@ -1101,6 +1101,28 @@ that only resolve inside the repo.
   US-87 (contact address).
 - Roadmap fit: Phase 14 — project presentation on the public site.
 
+**Status: implemented.** Added an `/about/` page that publishes the **full**
+repo-root `README.md` (single source of truth — chose full README over a
+hand-curated "About" excerpt to keep it generated-not-edited / zero-drift, per
+the AC). Reuses the US-89 mechanism: new global-data file `site/src/_data/readme.js`
+reads `../../../README.md`; `site/src/about.njk` (layout `base.njk`,
+`permalink: /about/`) renders it through the `markdown` filter. Two link
+problems handled: (1) repo-relative links (`docs/...`, `CLAUDE.md`,
+`pubspec.yaml`, `CHANGELOG.md`) are rewritten at build time to absolute
+`github.com/itris/Crate/blob/master/...` URLs; (2) the README's GitHub-style TOC
+`#anchors` now resolve because heading ids are generated via `markdown-it-anchor`
+with a GitHub-matching `githubSlug` (maps each space to its own hyphen, so
+"Tech stack & architecture" → `tech-stack--architecture`). Refactored US-89's
+link-rewriting + the new slug into a shared `site/lib/repo-markdown.js`
+(`REPO_BLOB_BASE` is now the single rename point for US-93). Added the About link
+to header + footer nav in `base.njk`, `addWatchTarget("../README.md")`, `README.md`
+to the deploy workflow's `on.push.paths`, and `markdown-it-anchor` to
+`package.json`. Verified a clean `npx @11ty/eleventy --pathprefix=/Crate/` writes
+`_site/about/index.html` with all 10 TOC anchors resolving, every repo-relative
+link rewritten (no bare `docs/`/`CLAUDE`/`pubspec` links remain), and
+`/Crate/about/`-prefixed nav. Contact uses `hellowerecratewise@gmail.com` (via
+US-88's README); the Discogs disclaimer stays in the site footer.
+
 **Status: story only — not implemented.**
 
 ---

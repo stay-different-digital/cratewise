@@ -1,7 +1,13 @@
 import { HtmlBasePlugin } from "@11ty/eleventy";
 import MarkdownIt from "markdown-it";
+import markdownItAnchor from "markdown-it-anchor";
+import { githubSlug } from "./lib/repo-markdown.js";
 
-const md = new MarkdownIt({ html: true, linkify: true });
+// Heading ids use GitHub's slug algorithm so the TOC anchors in README.md
+// (e.g. #tech-stack--architecture) resolve on the rendered About page.
+const md = new MarkdownIt({ html: true, linkify: true }).use(markdownItAnchor, {
+  slugify: githubSlug,
+});
 
 export default function (eleventyConfig) {
   // Rewrites absolute URLs when the site is served from a path prefix,
@@ -10,14 +16,16 @@ export default function (eleventyConfig) {
 
   eleventyConfig.addPassthroughCopy("src/css");
 
-  // Render a Markdown string to HTML — used by the Changelog page, whose body
-  // comes from the repo-root CHANGELOG.md via the `changelog` global data file.
+  // Render a Markdown string to HTML — used by the Changelog and About pages,
+  // whose bodies come from the repo-root CHANGELOG.md / README.md via the
+  // `changelog` / `readme` global data files.
   eleventyConfig.addFilter("markdown", (value) =>
     value ? md.render(value) : "",
   );
 
-  // Rebuild when the source-of-truth changelog changes during `--serve`.
+  // Rebuild when the source-of-truth files change during `--serve`.
   eleventyConfig.addWatchTarget("../CHANGELOG.md");
+  eleventyConfig.addWatchTarget("../README.md");
 
   return {
     dir: {
