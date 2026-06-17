@@ -6,10 +6,10 @@ import 'application/use_cases/purge_stale_failed_actions_use_case.dart';
 import 'infrastructure/local_database/app_database.dart';
 import 'infrastructure/local_database/local_retry_action_repository.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  _purgeStaleFailedActions();
-  CleanUpStaleCsvExportsUseCase().execute();
+  await _purgeStaleFailedActions();
+  await CleanUpStaleCsvExportsUseCase().execute();
   runApp(const CratewiseApp());
 }
 
