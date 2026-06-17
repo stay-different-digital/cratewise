@@ -84,6 +84,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   late final CollectionRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
   late final ThumbnailCacheService _thumbnailCacheService;
+  bool _ownsThumbService = false;
   CachedReleaseMetadataRepository? _cacheRepository;
   DiscogsReleaseDetailService? _detailService;
   PendingDiscogsDeletionRepository? _deletionRepository;
@@ -95,6 +96,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     super.initState();
     _thumbnailRepository =
         widget.thumbnailRepository ?? LocalThumbnailRepository();
+    _ownsThumbService = widget.thumbnailCacheService == null;
     _thumbnailCacheService =
         widget.thumbnailCacheService ??
         ThumbnailCacheService(repository: _thumbnailRepository);
@@ -169,6 +171,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
   @override
   void dispose() {
     appRouteObserver.unsubscribe(this);
+    if (_ownsThumbService) _thumbnailCacheService.close();
     super.dispose();
   }
 

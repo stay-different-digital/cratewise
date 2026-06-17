@@ -81,6 +81,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
   late final WishlistRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
   late final ThumbnailCacheService _thumbnailCacheService;
+  bool _ownsThumbService = false;
   DiscogsReleaseDetailService? _detailService;
   PendingDiscogsDeletionRepository? _deletionRepository;
   AddToCollectionUseCase? _addToCollectionUseCase;
@@ -92,6 +93,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
     super.initState();
     _thumbnailRepository =
         widget.thumbnailRepository ?? LocalThumbnailRepository();
+    _ownsThumbService = widget.thumbnailCacheService == null;
     _thumbnailCacheService =
         widget.thumbnailCacheService ??
         ThumbnailCacheService(repository: _thumbnailRepository);
@@ -158,6 +160,7 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
 
   @override
   void dispose() {
+    if (_ownsThumbService) _thumbnailCacheService.close();
     super.dispose();
   }
 

@@ -65,6 +65,7 @@ class PendingDeletionsScreen extends StatefulWidget {
 class _PendingDeletionsScreenState extends State<PendingDeletionsScreen> {
   late final PendingDiscogsDeletionRepository _repository;
   late final ExecutePendingDeletionsUseCase _executeUseCase;
+  DiscogsApiClient? _ownedApiClient;
   _State _state = const _Loading();
 
   @override
@@ -73,11 +74,12 @@ class _PendingDeletionsScreenState extends State<PendingDeletionsScreen> {
     _repository =
         widget.deletionRepository ??
         AppRepositoriesScope.of(context).pendingDeletion;
+    if (widget.executeUseCase == null) _ownedApiClient = DiscogsApiClient();
     _executeUseCase =
         widget.executeUseCase ??
         ExecutePendingDeletionsUseCase(
           tokenStorage: DiscogsTokenStorage(),
-          apiClient: DiscogsApiClient(),
+          apiClient: _ownedApiClient!,
           deletionRepository: _repository,
         );
     _load();
@@ -85,6 +87,7 @@ class _PendingDeletionsScreenState extends State<PendingDeletionsScreen> {
 
   @override
   void dispose() {
+    _ownedApiClient?.close();
     super.dispose();
   }
 

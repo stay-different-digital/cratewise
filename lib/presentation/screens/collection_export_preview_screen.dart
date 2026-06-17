@@ -78,6 +78,7 @@ class _CollectionExportPreviewScreenState
     extends State<CollectionExportPreviewScreen> {
   late final BuildCollectionExportPreviewUseCase _useCase;
   ExecuteCollectionExportUseCase? _executeUseCase;
+  DiscogsApiClient? _ownedApiClient;
   _PreviewState _state = const _Loading();
 
   @override
@@ -92,10 +93,11 @@ class _CollectionExportPreviewScreenState
         repository: repos.collection,
         capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
       );
+      _ownedApiClient = DiscogsApiClient();
       _executeUseCase = ExecuteCollectionExportUseCase(
         capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
         tokenStorage: DiscogsTokenStorage(),
-        apiClient: DiscogsApiClient(),
+        apiClient: _ownedApiClient!,
         collectionRepository: repos.collection,
         jobRepository: repos.importExportJob,
         rowResultRepository: repos.importExportRowResult,
@@ -154,6 +156,7 @@ class _CollectionExportPreviewScreenState
 
   @override
   void dispose() {
+    _ownedApiClient?.close();
     super.dispose();
   }
 

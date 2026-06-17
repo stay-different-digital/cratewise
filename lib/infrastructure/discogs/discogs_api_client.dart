@@ -36,6 +36,8 @@ class DiscogsApiClient {
   final Duration _timeout;
   final Future<void> Function(Duration) _delay;
 
+  void close() => _client.close();
+
   /// Set when the last response had remaining ≤ [_kRateLimitThreshold].
   /// Cleared at the start of [_waitIfNeeded] so only the very next request waits.
   DateTime? _nextAllowedAt;

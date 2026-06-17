@@ -104,6 +104,7 @@ class ReleaseDetailScreen extends StatefulWidget {
 
 class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
   late final DiscogsReleaseDetailService _service;
+  ThumbnailCacheService? _ownedThumbService;
   AddToCollectionUseCase? _addUseCase;
   AddToWishlistUseCase? _addWishlistUseCase;
   late final CachedReleaseMetadataRepository? _cacheRepository;
@@ -132,13 +133,17 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
             : null);
     _cacheRepository = widget.cacheRepository ?? repos?.cachedRelease;
     _deletionRepository = widget.deletionRepository ?? repos?.pendingDeletion;
+    if (widget.detailService == null && widget.thumbnailCacheService == null) {
+      _ownedThumbService = ThumbnailCacheService(
+        repository: LocalThumbnailRepository(),
+      );
+    }
     _service =
         widget.detailService ??
         DiscogsReleaseDetailService(
           cacheRepository: _cacheRepository,
           thumbnailCacheService:
-              widget.thumbnailCacheService ??
-              ThumbnailCacheService(repository: LocalThumbnailRepository()),
+              widget.thumbnailCacheService ?? _ownedThumbService,
         );
     _fetch();
     _checkInitialCollectionStatus();
@@ -147,6 +152,7 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
 
   @override
   void dispose() {
+    _ownedThumbService?.close();
     super.dispose();
   }
 

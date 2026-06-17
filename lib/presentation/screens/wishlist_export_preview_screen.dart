@@ -78,6 +78,7 @@ class _WishlistExportPreviewScreenState
     extends State<WishlistExportPreviewScreen> {
   late final BuildWishlistExportPreviewUseCase _useCase;
   ExecuteWishlistExportUseCase? _executeUseCase;
+  DiscogsApiClient? _ownedApiClient;
   _PreviewState _state = const _Loading();
 
   @override
@@ -92,10 +93,11 @@ class _WishlistExportPreviewScreenState
         repository: repos.wishlist,
         capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
       );
+      _ownedApiClient = DiscogsApiClient();
       _executeUseCase = ExecuteWishlistExportUseCase(
         capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
         tokenStorage: DiscogsTokenStorage(),
-        apiClient: DiscogsApiClient(),
+        apiClient: _ownedApiClient!,
         wishlistRepository: repos.wishlist,
         jobRepository: repos.importExportJob,
         rowResultRepository: repos.importExportRowResult,
@@ -154,6 +156,7 @@ class _WishlistExportPreviewScreenState
 
   @override
   void dispose() {
+    _ownedApiClient?.close();
     super.dispose();
   }
 

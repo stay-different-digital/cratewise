@@ -59,6 +59,7 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   late final WishlistRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
   late final ThumbnailCacheService _thumbnailCacheService;
+  bool _ownsThumbService = false;
   _WishlistState _state = const _Loading();
   final _searchController = TextEditingController();
   Timer? _debounce;
@@ -69,6 +70,7 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
     super.initState();
     _thumbnailRepository =
         widget.thumbnailRepository ?? LocalThumbnailRepository();
+    _ownsThumbService = widget.thumbnailCacheService == null;
     _thumbnailCacheService =
         widget.thumbnailCacheService ??
         ThumbnailCacheService(repository: _thumbnailRepository);
@@ -129,6 +131,7 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
     wishlistImportNotifier.removeListener(_onImportNotification);
     _debounce?.cancel();
     _searchController.dispose();
+    if (_ownsThumbService) _thumbnailCacheService.close();
     super.dispose();
   }
 

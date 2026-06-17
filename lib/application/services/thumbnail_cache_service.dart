@@ -19,6 +19,8 @@ class ThumbnailCacheService {
   final http.Client _httpClient;
   final ThumbnailEvictionService _evictionService;
 
+  void close() => _httpClient.close();
+
   Future<String?> getOrFetch(int releaseId, String? imageUrl) async {
     final cached = await _repository.getLocalPath(releaseId);
     if (cached != null) return cached;
