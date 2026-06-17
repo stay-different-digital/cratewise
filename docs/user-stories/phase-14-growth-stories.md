@@ -952,3 +952,123 @@ changes.
   the repo ahead of open-sourcing or sharing.
 
 **Status: story only — not implemented.**
+
+---
+
+### US-89: Publish the CHANGELOG on the Cratewise (11ty) website
+
+**3 SP · S5 (web / release communication)**
+
+> As a user or prospective user visiting the Cratewise site,
+> I want a **Changelog** page that shows what's new in each release,
+> so that I can see the app's progress without digging through the GitHub repo.
+
+**Background:** The marketing/privacy site under `site/` is an Eleventy (11ty v3)
+static site deployed to GitHub Pages (`.github/workflows/deploy-pages.yml`, served
+from `https://<owner>.github.io/Crate/`). It currently has only a landing page
+(`index.njk`) and the privacy policy (`privacy.md`), both using
+`_layouts/base.njk`. The release notes live in the repo-root `CHANGELOG.md`
+(consolidated into the `[1.0.0]` entry per US-69) but are not surfaced on the
+site. This story adds a **Changelog page** generated from the **single source of
+truth** — the root `CHANGELOG.md` — so the site and the repo never drift. The
+main wrinkle is that Eleventy only reads from `site/src`, while `CHANGELOG.md`
+lives at the repo root, so the build must pull it in.
+
+**Acceptance criteria:**
+- The site has a `/changelog/` page rendered through `base.njk`, with a title and
+  description, listed in the site nav (header and/or footer in `base.njk`).
+- The page content is generated from the repo-root `CHANGELOG.md` — **not a
+  hand-maintained copy**. The root file stays the single source of truth; any
+  on-site copy is generated at build time and is git-ignored (or clearly marked
+  generated). Editing the changelog means editing only the root file.
+- The Markdown renders to proper HTML (headings, lists, links, the version
+  sections) consistent with the site's styling.
+- Internal links remain correct under the GitHub Pages path prefix (the build
+  runs `--pathprefix=/Crate/` via `HtmlBasePlugin`); links inside the changelog
+  that point at repo files (e.g.
+  `docs/archive/CHANGELOG_DEV_HISTORY.md`) either resolve to the GitHub repo
+  (absolute URL) or are handled so they don't 404 on the site.
+- `npm run build` in `site/` (and `npx @11ty/eleventy --pathprefix=/Crate/` as CI
+  runs it) produces `_site/changelog/index.html` with the changelog content.
+- The deploy workflow **actually redeploys when the changelog changes**: its
+  `on.push.paths` filter currently only watches `site/**`, so add `CHANGELOG.md`
+  (and the sync mechanism's inputs) to the trigger, otherwise a changelog edit
+  won't publish.
+- No secrets and no broken Discogs-disclaimer; the existing pages and styling are
+  unaffected.
+
+**Investigation notes:**
+- Eleventy config (`site/eleventy.config.js`) is ESM, `dir.input = src`,
+  `output = _site`, `layouts = _layouts`, with `HtmlBasePlugin` and a CI
+  `--pathprefix`. Pages declare `layout: base.njk` + `title` in front matter (see
+  `privacy.md`).
+- Two viable mechanisms — pick one and note the trade-off:
+  1. **Prebuild copy (recommended):** an npm `prebuild` script in
+     `site/package.json` copies `../CHANGELOG.md` → `site/src/changelog.md`,
+     prepending the `layout: base.njk` / `title` / `permalink: /changelog/` front
+     matter. Eleventy then renders it as a normal Markdown page (Markdown→HTML for
+     free). Git-ignore the generated `site/src/changelog.md`. CI runs `npm ci`
+     before the build, so a `prebuild`/`build` script hook runs automatically.
+  2. **Global data + template:** `src/_data/changelog.js` reads `../../CHANGELOG.md`
+     via `node:fs` and a `changelog.njk` renders it through a markdown-it filter
+     (add the filter to the config). No generated file, but you must wire up
+     Markdown rendering yourself.
+- The header/footer nav lives in `base.njk`; add the Changelog link there so it
+  appears site-wide.
+- Mind the CI `paths` trigger (above) — it is the easy thing to forget and the
+  reason a changelog update would silently not deploy.
+- Precedents: US-59/privacy hosting (the same site + Pages workflow), US-69 (the
+  consolidated root `CHANGELOG.md` this consumes).
+- Roadmap fit: Phase 14 — release communication on the public site.
+
+**Status: story only — not implemented.**
+
+---
+
+### US-90: Publish the README (project overview) on the Cratewise (11ty) website
+
+**3 SP · S5 (web / project presentation — follow-up to US-89)**
+
+> As someone evaluating Cratewise from the website,
+> I want a page that presents the project overview from the README,
+> so that I can read what the app is and how it's built without going to GitHub.
+
+**Background:** Follow-up to US-89, reusing the same root-Markdown→Eleventy
+mechanism for the repo-root `README.md`. Best sequenced **after US-88** (which
+fills the README out), so there is worthwhile content to publish. A README is
+developer-facing and contains repo-relative links and dev instructions, so this
+story must decide how much of it belongs on a public site and how to handle links
+that only resolve inside the repo.
+
+**Acceptance criteria:**
+- The site has a project-overview page (e.g. `/about/` or `/readme/`) rendered
+  through `base.njk`, linked in the site nav, generated from the repo-root
+  `README.md` as the single source of truth (same generated-not-hand-edited rule
+  as US-89).
+- The Markdown renders cleanly and matches site styling.
+- **Repo-relative links and dev-only content are handled** so the public page
+  isn't full of dead links: either rewrite relative links (e.g. `docs/...`,
+  source paths) to absolute GitHub URLs at build time, or publish a suitable
+  subset/“About” framing of the README rather than the raw developer instructions.
+  The chosen approach is documented in the page or build script.
+- Path-prefix-safe under `--pathprefix=/Crate/`; `npm run build` produces the new
+  page; the deploy workflow's `paths` filter includes `README.md` so README edits
+  redeploy.
+- Contact references use `hellowerecratewise@gmail.com` (US-87); no secrets; the
+  Discogs disclaimer remains.
+
+**Investigation notes:**
+- Reuse the US-89 mechanism (prebuild copy or `_data` + markdown-it). If using the
+  prebuild-copy approach, this is a second copy step (`../README.md` →
+  `site/src/about.md` with front matter) plus a link-rewriting pass.
+- Decide README-vs-About scope with US-88's author: the full dev README may be
+  more than a marketing site wants; an "About / project overview" excerpt may read
+  better for a public audience. Keep the repo `README.md` as the source either way.
+- Link rewriting is the main work: relative links like `docs/architecture/` or
+  `lib/...` 404 on the Pages site; map them to
+  `https://github.com/<owner>/Crate/blob/master/...` or strip them.
+- Precedents: US-89 (the mechanism + CI trigger), US-88 (the README content),
+  US-87 (contact address).
+- Roadmap fit: Phase 14 — project presentation on the public site.
+
+**Status: story only — not implemented.**
