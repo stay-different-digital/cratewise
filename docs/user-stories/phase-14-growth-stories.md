@@ -1153,7 +1153,19 @@ workflow and to harden the repo so a stray Jekyll build can't run.
 - Roadmap fit: Phase 11/14 release readiness — the public site must build before
   launch.
 
-**Status: story only — not implemented.**
+**Status (2026-06-17): partially implemented — repo guard done; Pages Source
+switch pending [Fred].** Added an empty `.nojekyll` at the repo root. Under the
+legacy "deploy from a branch" Jekyll builder this disables Jekyll processing
+entirely, so the build can no longer crash on the colon-containing archived
+prompt filenames under `docs/archive/prompts/used/` (`Invalid scheme format:
+'phase2 - Prompt 5'`). This neutralises the failure. **Still required from
+[Fred]:** switch GitHub Pages **Build and deployment → Source** to **GitHub
+Actions** so the existing Eleventy workflow (`deploy-pages.yml`) is the actual
+builder — otherwise Pages serves the raw repo root (no error, but not the real
+site). The Eleventy artifact (`site/_site`, published via Actions) is unaffected
+by the root `.nojekyll`. Renaming the ~30 colon-containing archive files was left
+undone as optional hardening — `.nojekyll` covers the failure. No app code or
+tests touched.
 
 ---
 
