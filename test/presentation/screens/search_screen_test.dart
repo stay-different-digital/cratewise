@@ -170,12 +170,11 @@ class _PaginatingSearchService extends DiscogsSearchService {
   _PaginatingSearchService({
     required this.page1Items,
     required this.page2Items,
-    this.page2Error,
   }) : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
 
   final List<ReleaseSearchResult> page1Items;
   final List<ReleaseSearchResult> page2Items;
-  final AppError? page2Error;
+  final AppError? page2Error = null;
 
   @override
   Future<SearchResultPage> search(
@@ -1084,7 +1083,7 @@ void main() {
   // hasQuery). These tests confirm no suffix icon leaks in through the widget
   // tree in either theme — ruling out the Flutter layer as the source.
   group('SearchScreen — search bar suffix icon (US-55)', () {
-    InputDecoration _searchBarDecoration(WidgetTester tester) {
+    InputDecoration searchBarDecoration(WidgetTester tester) {
       final tf = tester.widget<TextField>(find.byType(TextField));
       return tf.decoration!;
     }
@@ -1102,7 +1101,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(_searchBarDecoration(tester).suffixIcon, isNull);
+      expect(searchBarDecoration(tester).suffixIcon, isNull);
     });
 
     testWidgets('no suffix icon in dark mode with empty query', (tester) async {
@@ -1116,7 +1115,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(_searchBarDecoration(tester).suffixIcon, isNull);
+      expect(searchBarDecoration(tester).suffixIcon, isNull);
     });
 
     testWidgets('clear IconButton appears in dark mode once query is entered', (
@@ -1135,7 +1134,7 @@ void main() {
       await tester.enterText(find.byType(TextField), 'miles');
       await tester.pump();
 
-      expect(_searchBarDecoration(tester).suffixIcon, isNotNull);
+      expect(searchBarDecoration(tester).suffixIcon, isNotNull);
       expect(find.byIcon(Icons.clear), findsOneWidget);
     });
   });
@@ -1490,13 +1489,12 @@ void main() {
 class _BlockingPaginationService extends DiscogsSearchService {
   _BlockingPaginationService({
     required this.page1Items,
-    this.page2Items = const [],
     this.page2Completer,
     this.page2Error,
   }) : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
 
   final List<ReleaseSearchResult> page1Items;
-  final List<ReleaseSearchResult> page2Items;
+  final List<ReleaseSearchResult> page2Items = const [];
   final Completer<SearchResultPage>? page2Completer;
   final AppError? page2Error;
 

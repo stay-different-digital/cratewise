@@ -91,9 +91,8 @@ class _ThrowingTokenStorage implements TokenStorage {
 }
 
 class _SpyTokenStorage implements TokenStorage {
-  _SpyTokenStorage({this.token = 'tok', this.username = 'user123'});
-  final String? token;
-  final String? username;
+  final String? token = 'tok';
+  final String? username = 'user123';
   int deleteCallCount = 0;
 
   @override
@@ -172,6 +171,7 @@ class _FakeJobRepository implements ImportExportJobRepository {
     int limit = 20,
     int offset = 0,
   }) async => [];
+  @override
   Future<int> count() async => 0;
 
   @override
@@ -193,6 +193,7 @@ class _ThrowingJobRepository implements ImportExportJobRepository {
     int limit = 20,
     int offset = 0,
   }) async => [];
+  @override
   Future<int> count() async => 0;
 
   @override
@@ -679,7 +680,7 @@ void main() {
     group('rate-limit retry', () {
       Future<void> noOpDelay(Duration _) async {}
 
-      DiscogsApiClient _apiClientWithStatuses(List<int> statuses) {
+      DiscogsApiClient apiClientWithStatuses(List<int> statuses) {
         var call = 0;
         return DiscogsApiClient(
           httpClient: MockClient((_) async {
@@ -694,7 +695,7 @@ void main() {
         'returns ExportCompleted exported=1 when item succeeds on retry after 429',
         () async {
           final uc = makeUseCase(
-            apiClient: _apiClientWithStatuses([429, 201]),
+            apiClient: apiClientWithStatuses([429, 201]),
             delay: noOpDelay,
             maxItemRetries: 1,
           );
@@ -709,7 +710,7 @@ void main() {
       test('calls delay with 60-second duration on 429', () async {
         final delays = <Duration>[];
         final uc = makeUseCase(
-          apiClient: _apiClientWithStatuses([429, 201]),
+          apiClient: apiClientWithStatuses([429, 201]),
           delay: (d) async => delays.add(d),
           maxItemRetries: 1,
         );
@@ -739,7 +740,7 @@ void main() {
 
       test('item counts as failed when retries exhausted', () async {
         final uc = makeUseCase(
-          apiClient: _apiClientWithStatuses([429]),
+          apiClient: apiClientWithStatuses([429]),
           delay: noOpDelay,
           maxItemRetries: 0,
         );
@@ -774,7 +775,7 @@ void main() {
         final delays = <Duration>[];
         // 3 consecutive 429s: 2 retries allowed, so delay called twice then rethrows
         final uc = makeUseCase(
-          apiClient: _apiClientWithStatuses([429, 429, 429]),
+          apiClient: apiClientWithStatuses([429, 429, 429]),
           delay: (d) async => delays.add(d),
           maxItemRetries: 2,
         );
@@ -786,7 +787,7 @@ void main() {
       test('saves ValidRow for item that succeeds after retry', () async {
         final rowRepo = _FakeRowResultRepository();
         final uc = makeUseCase(
-          apiClient: _apiClientWithStatuses([429, 201]),
+          apiClient: apiClientWithStatuses([429, 201]),
           delay: noOpDelay,
           maxItemRetries: 1,
           rowResultRepository: rowRepo,

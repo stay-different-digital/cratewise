@@ -8,7 +8,7 @@ import 'package:integration_test/integration_test.dart';
 ///
 /// Not part of `flutter test` — run with:
 /// flutter drive --driver=test_driver/integration_test.dart \
-///   --target=integration_test/qa_section_a_test.dart -d <device>
+///   --target=integration_test/qa_section_a_test.dart -d `<device>`
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 

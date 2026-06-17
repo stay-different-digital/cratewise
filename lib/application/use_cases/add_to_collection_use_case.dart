@@ -31,9 +31,8 @@ class AddToCollectionUseCase {
   AddToCollectionUseCase(
     this._repository, {
     String Function()? idGenerator,
-    RetryActionRepository? retryRepository,
-  }) : _idGenerator = idGenerator ?? _newUuid,
-       _retryRepository = retryRepository;
+    this._retryRepository,
+  }) : _idGenerator = idGenerator ?? _newUuid;
 
   static String _newUuid() => const Uuid().v4();
 

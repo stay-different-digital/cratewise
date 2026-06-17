@@ -5,9 +5,8 @@ import 'package:path_provider/path_provider.dart';
 class CleanUpStaleCsvExportsUseCase {
   CleanUpStaleCsvExportsUseCase({
     Future<Directory> Function()? getTempDir,
-    Duration ttl = const Duration(days: 7),
-  }) : _getTempDir = getTempDir ?? getTemporaryDirectory,
-       _ttl = ttl;
+    this._ttl = const Duration(days: 7),
+  }) : _getTempDir = getTempDir ?? getTemporaryDirectory;
 
   final Future<Directory> Function() _getTempDir;
   final Duration _ttl;

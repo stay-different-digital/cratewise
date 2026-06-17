@@ -1652,7 +1652,7 @@ void main() {
   group('DiscogsApiClient rate-limit back-off', () {
     const identityBody = '{"username":"u","resource_url":"u"}';
 
-    http.Response _withRemaining(
+    http.Response withRemaining(
       int remaining, {
       int status = 200,
       String body = identityBody,
@@ -1678,7 +1678,7 @@ void main() {
     test('does not delay when remaining is above the threshold', () async {
       final delays = <Duration>[];
       final client = DiscogsApiClient(
-        httpClient: MockClient((_) async => _withRemaining(5)),
+        httpClient: MockClient((_) async => withRemaining(5)),
         delay: (d) async => delays.add(d),
       );
 
@@ -1695,7 +1695,7 @@ void main() {
         httpClient: MockClient((_) async {
           callCount++;
           return callCount == 1
-              ? _withRemaining(0)
+              ? withRemaining(0)
               : http.Response(identityBody, 200);
         }),
         delay: (d) async => delays.add(d),
@@ -1716,7 +1716,7 @@ void main() {
           httpClient: MockClient((_) async {
             callCount++;
             return callCount == 1
-                ? _withRemaining(0)
+                ? withRemaining(0)
                 : http.Response(identityBody, 200);
           }),
           delay: (d) async => delays.add(d),
@@ -1736,7 +1736,7 @@ void main() {
         httpClient: MockClient((_) async {
           callCount++;
           return callCount == 1
-              ? _withRemaining(0)
+              ? withRemaining(0)
               : http.Response(identityBody, 200);
         }),
         delay: (d) async => delays.add(d),
@@ -1757,7 +1757,7 @@ void main() {
         final client = DiscogsApiClient(
           httpClient: MockClient((_) async {
             callCount++;
-            return callCount == 1 ? _withRemaining(0) : http.Response('', 201);
+            return callCount == 1 ? withRemaining(0) : http.Response('', 201);
           }),
           delay: (d) async => delays.add(d),
         );

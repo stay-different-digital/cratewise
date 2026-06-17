@@ -144,6 +144,7 @@ class _FakeJobRepository implements ImportExportJobRepository {
     int limit = 20,
     int offset = 0,
   }) async => [];
+  @override
   Future<int> count() async => 0;
 
   @override
@@ -162,26 +163,6 @@ class _FakeJobRepository implements ImportExportJobRepository {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-Widget _buildSubject({
-  FetchCollectionImportPreviewUseCase? importUseCase,
-  FetchWishlistImportPreviewUseCase? wishlistImportUseCase,
-  BuildCollectionExportPreviewUseCase? collectionExportPreviewUseCase,
-  BuildWishlistExportPreviewUseCase? wishlistExportPreviewUseCase,
-  BuildCollectionCsvExportPreviewUseCase? collectionCsvExportPreviewUseCase,
-  BuildWishlistCsvExportPreviewUseCase? wishlistCsvExportPreviewUseCase,
-  ImportExportJobRepository? jobRepository,
-}) => MaterialApp(
-  home: ImportExportScreen(
-    collectionImportUseCase: importUseCase,
-    wishlistImportUseCase: wishlistImportUseCase,
-    collectionExportPreviewUseCase: collectionExportPreviewUseCase,
-    wishlistExportPreviewUseCase: wishlistExportPreviewUseCase,
-    collectionCsvExportPreviewUseCase: collectionCsvExportPreviewUseCase,
-    wishlistCsvExportPreviewUseCase: wishlistCsvExportPreviewUseCase,
-    jobRepository: jobRepository,
-  ),
-);
 
 /// Router-backed wrapper for tests that navigate to sub-screens.
 /// Fake use cases are injected directly into the sub-screen route builders so

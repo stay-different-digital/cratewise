@@ -2,10 +2,9 @@ import '../../domain/repositories/retry_action_repository.dart';
 
 class PurgeStaleFailedActionsUseCase {
   PurgeStaleFailedActionsUseCase({
-    required RetryActionRepository retryRepo,
-    Duration ttl = const Duration(days: 30),
-  }) : _retryRepo = retryRepo,
-       _ttl = ttl;
+    required this._retryRepo,
+    this._ttl = const Duration(days: 30),
+  });
 
   final RetryActionRepository _retryRepo;
   final Duration _ttl;

@@ -2235,7 +2235,7 @@ void main() {
   });
 
   group('ReleaseDetailScreen — condition prompt', () {
-    Widget _buildScreen({required CollectionRepository repo}) => _wrap(
+    Widget buildScreen({required CollectionRepository repo}) => _wrap(
       ReleaseDetailScreen(
         releaseId: 249504,
         detailService: _LoadedService(detail: _kindOfBlue),
@@ -2249,7 +2249,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _buildScreen(repo: _TrackingCollectionRepository()),
+        buildScreen(repo: _TrackingCollectionRepository()),
       );
       await tester.pumpAndSettle();
 
@@ -2263,7 +2263,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _buildScreen(
+        buildScreen(
           repo: _TrackingCollectionRepository(alreadyContains: true),
         ),
       );
@@ -2279,7 +2279,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _buildScreen(repo: _TrackingCollectionRepository()),
+        buildScreen(repo: _TrackingCollectionRepository()),
       );
       await tester.pumpAndSettle();
 
@@ -2294,7 +2294,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _buildScreen(repo: _TrackingCollectionRepository()),
+        buildScreen(repo: _TrackingCollectionRepository()),
       );
       await tester.pumpAndSettle();
 
@@ -2310,7 +2310,7 @@ void main() {
 
     testWidgets('tapping Skip does not call repository.update', (tester) async {
       final repo = _TrackingCollectionRepository();
-      await tester.pumpWidget(_buildScreen(repo: repo));
+      await tester.pumpWidget(buildScreen(repo: repo));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add to Collection'));
@@ -2325,7 +2325,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _buildScreen(repo: _TrackingCollectionRepository()),
+        buildScreen(repo: _TrackingCollectionRepository()),
       );
       await tester.pumpAndSettle();
 
@@ -2342,7 +2342,7 @@ void main() {
       'tapping Save calls repository.update with selected conditions',
       (tester) async {
         final repo = _TrackingCollectionRepository();
-        await tester.pumpWidget(_buildScreen(repo: repo));
+        await tester.pumpWidget(buildScreen(repo: repo));
         await tester.pumpAndSettle();
 
         await tester.tap(find.text('Add to Collection'));

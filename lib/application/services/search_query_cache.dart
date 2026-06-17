@@ -8,12 +8,10 @@ import '../../domain/models/search_result_page.dart';
 /// evicted first, with recency updated on every [get]).
 class SearchQueryCache {
   SearchQueryCache({
-    int maxEntries = 20,
-    Duration ttl = const Duration(hours: 24),
+    this._maxEntries = 20,
+    this._ttl = const Duration(hours: 24),
     DateTime Function()? clock,
-  }) : _maxEntries = maxEntries,
-       _ttl = ttl,
-       _clock = clock ?? (() => DateTime.now());
+  }) : _clock = clock ?? (() => DateTime.now());
 
   final int _maxEntries;
   final Duration _ttl;

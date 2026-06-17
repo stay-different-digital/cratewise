@@ -14,8 +14,8 @@ class _FakeJobRepository implements ImportExportJobRepository {
   _FakeJobRepository({
     this.jobs = const [],
     this.throwsOnLoad = false,
-    int? total,
-  }) : _total = total;
+    this._total,
+  });
 
   final List<ImportExportJob> jobs;
   final bool throwsOnLoad;

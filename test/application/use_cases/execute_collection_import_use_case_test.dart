@@ -126,6 +126,7 @@ class _FakeJobRepository implements ImportExportJobRepository {
     int limit = 20,
     int offset = 0,
   }) async => jobs;
+  @override
   Future<int> count() async => 0;
 
   @override

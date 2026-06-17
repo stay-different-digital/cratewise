@@ -19,7 +19,7 @@ class _FakeThumbnailRepository implements ThumbnailRepository {
   int _totalBytes;
   bool removeAllCalled = false;
 
-  _FakeThumbnailRepository({int totalBytes = 0}) : _totalBytes = totalBytes;
+  _FakeThumbnailRepository({this._totalBytes = 0});
 
   @override
   Future<int> totalSizeBytes() async => _totalBytes;

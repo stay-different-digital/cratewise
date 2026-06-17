@@ -3,8 +3,7 @@ import '../../domain/repositories/thumbnail_repository.dart';
 const int kDefaultThumbnailCacheLimitBytes = 200 * 1024 * 1024; // 200 MB
 
 class ThumbnailEvictionService {
-  const ThumbnailEvictionService({required ThumbnailRepository repository})
-    : _repository = repository;
+  const ThumbnailEvictionService({required this._repository});
 
   final ThumbnailRepository _repository;
 

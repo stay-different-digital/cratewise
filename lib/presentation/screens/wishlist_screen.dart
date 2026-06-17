@@ -198,8 +198,9 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
               setState(() {}); // immediate: clear-button visibility
               _debounce?.cancel();
               _debounce = Timer(const Duration(milliseconds: 300), () {
-                if (mounted)
+                if (mounted) {
                   setState(() => _debouncedQuery = _searchController.text);
+                }
               });
             },
             decoration: InputDecoration(

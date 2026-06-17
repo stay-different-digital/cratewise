@@ -35,9 +35,8 @@ class _FakeTokenStorage implements TokenStorage {
 }
 
 class _SpyTokenStorage implements TokenStorage {
-  _SpyTokenStorage({this.token = 'fake_token', this.username = 'testuser'});
-  final String? token;
-  final String? username;
+  final String? token = 'fake_token';
+  final String? username = 'testuser';
   int deleteCallCount = 0;
 
   @override
