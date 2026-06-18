@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_repositories.dart';
+import '../../app/locale_preference.dart';
+import '../../app/app.dart';
 import '../../app/router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../application/services/thumbnail_eviction_service.dart';
 import '../../domain/models/pending_discogs_deletion.dart';
 import '../../domain/repositories/collection_repository.dart';
@@ -31,6 +34,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -39,8 +43,8 @@ class SettingsScreen extends StatelessWidget {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.import_export),
-          title: const Text('Import & Export'),
-          subtitle: const Text('Move records to and from Discogs or CSV files'),
+          title: Text(l10n.settingsImportExport),
+          subtitle: Text(l10n.settingsImportExportSubtitle),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => context.push(AppRoutes.importExport),
         ),
@@ -48,8 +52,8 @@ class SettingsScreen extends StatelessWidget {
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.history_toggle_off_outlined),
-          title: const Text('Failed Actions'),
-          subtitle: const Text('View actions waiting to be retried'),
+          title: Text(l10n.settingsFailedActions),
+          subtitle: Text(l10n.settingsFailedActionsSubtitle),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => context.push(AppRoutes.failedActions),
         ),
@@ -64,10 +68,12 @@ class SettingsScreen extends StatelessWidget {
           deletionRepository: deletionRepository,
         ),
         const SizedBox(height: 8),
+        const _LanguageSection(),
+        const SizedBox(height: 8),
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.tour_outlined),
-          title: const Text('Rondleiding opnieuw starten'),
+          title: Text(l10n.settingsTourRestart),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => context.push(AppRoutes.onboarding),
         ),
@@ -122,14 +128,15 @@ class _ThumbnailCacheSectionState extends State<_ThumbnailCacheSection> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final subtitle = _sizeBytes == null
-        ? 'Calculating…'
+        ? l10n.calculating
         : _formatSize(_sizeBytes!);
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: const Icon(Icons.image_outlined),
-      title: const Text('Thumbnail Cache'),
+      title: Text(l10n.settingsThumbnailCache),
       subtitle: Text(subtitle),
       trailing: _clearing
           ? const SizedBox(
@@ -139,7 +146,7 @@ class _ThumbnailCacheSectionState extends State<_ThumbnailCacheSection> {
             )
           : TextButton(
               onPressed: _sizeBytes == 0 ? null : _clear,
-              child: const Text('Clear'),
+              child: Text(l10n.actionClear),
             ),
     );
   }
@@ -226,14 +233,14 @@ class _LocalDataSectionState extends State<_LocalDataSection> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(ctx)!.actionCancel),
           ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(ctx).colorScheme.error,
             ),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Clear'),
+            child: Text(AppLocalizations.of(ctx)!.actionClear),
           ),
         ],
       ),
@@ -315,7 +322,7 @@ class _LocalDataSectionState extends State<_LocalDataSection> {
         Padding(
           padding: const EdgeInsets.only(bottom: 4),
           child: Text(
-            'Local data',
+            AppLocalizations.of(context)!.settingsLocalData,
             style: theme.textTheme.titleSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -323,7 +330,7 @@ class _LocalDataSectionState extends State<_LocalDataSection> {
         ),
         _ClearTile(
           icon: Icons.library_music_outlined,
-          title: 'Clear collection',
+          title: AppLocalizations.of(context)!.settingsClearCollection,
           count: _collectionCount,
           clearing: _clearing,
           buttonStyle: destructive,
@@ -331,7 +338,7 @@ class _LocalDataSectionState extends State<_LocalDataSection> {
         ),
         _ClearTile(
           icon: Icons.bookmark_border,
-          title: 'Clear wishlist',
+          title: AppLocalizations.of(context)!.settingsClearWishlist,
           count: _wishlistCount,
           clearing: _clearing,
           buttonStyle: destructive,
@@ -361,8 +368,9 @@ class _ClearTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final subtitle = count == null
-        ? 'Calculating…'
+        ? l10n.calculating
         : '$count ${count == 1 ? 'item' : 'items'}';
     final enabled = !clearing && (count ?? 0) > 0;
     return ListTile(
@@ -379,8 +387,70 @@ class _ClearTile extends StatelessWidget {
           : TextButton(
               style: buttonStyle,
               onPressed: enabled ? onClear : null,
-              child: const Text('Clear'),
+              child: Text(l10n.actionClear),
             ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Language section (US-114)
+// ---------------------------------------------------------------------------
+
+class _LanguageSection extends StatefulWidget {
+  const _LanguageSection();
+
+  @override
+  State<_LanguageSection> createState() => _LanguageSectionState();
+}
+
+class _LanguageSectionState extends State<_LanguageSection> {
+  static const _locales = <Locale?>[
+    null,
+    Locale('en'),
+    Locale('de'),
+    Locale('fr'),
+    Locale('es'),
+    Locale('nl'),
+  ];
+
+  Future<void> _onChanged(Locale? locale) async {
+    await saveLocalePreference(locale);
+    if (!mounted) return;
+    LocaleScope.maybeOf(context)?.value = locale;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final current = LocaleScope.maybeOf(context)?.value;
+
+    String labelFor(Locale? locale) => switch (locale?.languageCode) {
+      null => l10n.settingsLanguageSystem,
+      'en' => l10n.languageEnglish,
+      'de' => l10n.languageGerman,
+      'fr' => l10n.languageFrench,
+      'es' => l10n.languageSpanish,
+      'nl' => l10n.languageDutch,
+      _ => locale!.languageCode,
+    };
+
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.language),
+      title: Text(l10n.settingsLanguage),
+      trailing: DropdownButton<Locale?>(
+        value: current,
+        underline: const SizedBox.shrink(),
+        items: [
+          for (final locale in _locales)
+            DropdownMenuItem(
+              value: locale,
+              child: Text(labelFor(locale)),
+            ),
+        ],
+        onChanged: _onChanged,
+      ),
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/pending_discogs_deletion_repository.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
+import 'package:cratewise/l10n/app_localizations.dart';
 import 'package:cratewise/presentation/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -155,7 +156,18 @@ class _FakeDeletionRepo implements PendingDiscogsDeletionRepository {
   ) async {}
 }
 
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: child),
+);
+
+Widget _wrapNl(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  locale: const Locale('nl'),
+  home: Scaffold(body: child),
+);
 
 // Builds a SettingsScreen with hermetic local-data fakes so the "Local data"
 // section never opens a real on-device database during tests.
@@ -463,6 +475,16 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('About Cratewise'), findsOneWidget);
+    });
+  });
+
+  group('SettingsScreen — NL locale (US-113)', () {
+    testWidgets('shows Dutch labels when locale is nl', (tester) async {
+      await tester.pumpWidget(_wrapNl(_settings()));
+      await tester.pump();
+
+      expect(find.text('Importeren en exporteren'), findsOneWidget);
+      expect(find.text('Lokale gegevens'), findsOneWidget);
     });
   });
 }
