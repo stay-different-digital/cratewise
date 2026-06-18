@@ -34,6 +34,7 @@ class ReleaseDetail {
     this.year,
     this.notes,
     this.coverUrl,
+    this.imageUrls = const [],
   });
 
   final int id;
@@ -54,5 +55,6 @@ class ReleaseDetail {
   final List<ReleaseTrack> tracklist;
   final String? notes;
   final String? coverUrl;
+  final List<String> imageUrls;
   final List<ReleaseIdentifier> identifiers;
 }

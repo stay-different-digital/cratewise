@@ -129,6 +129,7 @@ class DiscogsReleaseDetailService {
           .toList(),
       notes: dto.notes,
       coverUrl: dto.coverUrl,
+      imageUrls: dto.imageUrls,
       identifiers: dto.identifiers
           .map((i) => ReleaseIdentifier(type: i.type, value: i.value))
           .toList(),

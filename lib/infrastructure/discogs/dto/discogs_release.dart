@@ -50,6 +50,7 @@ class DiscogsReleaseDto {
     this.notes,
     this.coverUrl,
     this.thumbUrl,
+    this.imageUrls = const [],
   });
 
   final int id;
@@ -71,6 +72,7 @@ class DiscogsReleaseDto {
   final String? notes;
   final String? coverUrl;
   final String? thumbUrl;
+  final List<String> imageUrls;
   final List<DiscogsIdentifierDto> identifiers;
 
   factory DiscogsReleaseDto.fromJson(Map<String, dynamic> json) {
@@ -133,8 +135,9 @@ class DiscogsReleaseDto {
     final rawImages = json['images'] as List<dynamic>?;
     String? coverUrl;
     String? thumbUrl;
+    final List<String> imageUrls = [];
     if (rawImages != null && rawImages.isNotEmpty) {
-      final images = rawImages.map((i) => i as Map<String, dynamic>);
+      final images = rawImages.map((i) => i as Map<String, dynamic>).toList();
       final primaryImages = images.where((i) => i['type'] == 'primary');
       final imageMap = primaryImages.isNotEmpty
           ? primaryImages.first
@@ -143,6 +146,11 @@ class DiscogsReleaseDto {
       final uri150 = imageMap['uri150'] as String?;
       coverUrl = (uri != null && uri.isNotEmpty) ? uri : null;
       thumbUrl = (uri150 != null && uri150.isNotEmpty) ? uri150 : null;
+      // Collect all full-res URIs in API order for the gallery.
+      for (final img in images) {
+        final u = img['uri'] as String?;
+        if (u != null && u.isNotEmpty) imageUrls.add(u);
+      }
     }
 
     // Tracklist — skip section heading rows
@@ -183,6 +191,7 @@ class DiscogsReleaseDto {
       notes: json['notes'] as String?,
       coverUrl: coverUrl,
       thumbUrl: thumbUrl,
+      imageUrls: imageUrls,
       identifiers: identifiers,
     );
   }

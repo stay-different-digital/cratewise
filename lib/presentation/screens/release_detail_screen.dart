@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 import 'package:uuid/uuid.dart';
@@ -24,6 +22,7 @@ import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../shared/errors/app_error.dart';
 import '../../shared/utils/date_format_utils.dart';
 import '../widgets/rate_limit_retry_button.dart';
+import '../widgets/release_image_gallery.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -948,12 +947,18 @@ class _DetailBody extends StatelessWidget {
 
   static const _kWideBreakpoint = 700.0;
 
+  List<String> get _effectiveImageUrls =>
+      detail.imageUrls.isNotEmpty
+          ? detail.imageUrls
+          : (detail.coverUrl != null ? [detail.coverUrl!] : const []);
+
   Widget _buildCoverNarrow() {
-    if (localThumbnailPath != null) {
-      return _LocalCoverImage(path: localThumbnailPath!);
-    }
-    if (detail.coverUrl != null) return _CoverImage(url: detail.coverUrl!);
-    return const SizedBox.shrink();
+    final urls = _effectiveImageUrls;
+    if (urls.isEmpty && localThumbnailPath == null) return const SizedBox.shrink();
+    return ReleaseImageGallery(
+      imageUrls: urls,
+      localThumbnailPath: localThumbnailPath,
+    );
   }
 
   @override
@@ -995,19 +1000,15 @@ class _DetailBody extends StatelessWidget {
   }
 
   Widget _buildWideCover(BuildContext context) {
+    final urls = _effectiveImageUrls;
+    if (urls.isNotEmpty || localThumbnailPath != null) {
+      return ReleaseImageGallery(
+        imageUrls: urls,
+        localThumbnailPath: localThumbnailPath,
+        borderRadius: BorderRadius.circular(8),
+      );
+    }
     final theme = Theme.of(context);
-    if (localThumbnailPath != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: _LocalCoverImage(path: localThumbnailPath!),
-      );
-    }
-    if (detail.coverUrl != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: _CoverImage(url: detail.coverUrl!),
-      );
-    }
     return AspectRatio(
       aspectRatio: 1,
       child: DecoratedBox(
@@ -1273,63 +1274,6 @@ class _IdentifiersSection extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _LocalCoverImage extends StatelessWidget {
-  const _LocalCoverImage({required this.path});
-
-  final String path;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Image.file(
-        File(path),
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => ColoredBox(
-          color: theme.colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: Icon(
-              Icons.album,
-              size: 72,
-              color: theme.colorScheme.outlineVariant,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CoverImage extends StatelessWidget {
-  const _CoverImage({required this.url});
-
-  final String url;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AspectRatio(
-      key: const Key('release-cover-image'),
-      aspectRatio: 1,
-      child: Image.network(
-        url,
-        fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => ColoredBox(
-          color: theme.colorScheme.surfaceContainerHighest,
-          child: Center(
-            child: Icon(
-              Icons.album,
-              size: 72,
-              color: theme.colorScheme.outlineVariant,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

@@ -19,6 +19,7 @@ import '../../app/app_repositories.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../shared/utils/date_format_utils.dart';
 import '../widgets/release_details_sections.dart';
+import '../widgets/release_image_gallery.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -792,6 +793,19 @@ class _WishlistDetailBody extends StatelessWidget {
 
   String? get _coverUrl => item.coverUrl ?? releaseDetail?.coverUrl;
 
+  Widget _imageWidget(BorderRadius borderRadius) {
+    final urls = releaseDetail?.imageUrls ?? const [];
+    if (urls.isNotEmpty) {
+      return ReleaseImageGallery(imageUrls: urls, borderRadius: borderRadius);
+    }
+    return _CachedCoverImage(
+      releaseId: item.discogsReleaseId,
+      coverUrl: _coverUrl,
+      borderRadius: borderRadius,
+      thumbnailCacheService: thumbnailCacheService,
+    );
+  }
+
   bool get _hasReleaseNotes =>
       releaseDetail?.notes != null && releaseDetail!.notes!.trim().isNotEmpty;
 
@@ -817,12 +831,7 @@ class _WishlistDetailBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _CachedCoverImage(
-              releaseId: item.discogsReleaseId,
-              coverUrl: _coverUrl,
-              borderRadius: BorderRadius.zero,
-              thumbnailCacheService: thumbnailCacheService,
-            ),
+            _imageWidget(BorderRadius.zero),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: _TitleArtist(item: item),
@@ -860,12 +869,7 @@ class _WishlistDetailBody extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _CachedCoverImage(
-                    releaseId: item.discogsReleaseId,
-                    coverUrl: _coverUrl,
-                    borderRadius: BorderRadius.circular(8),
-                    thumbnailCacheService: thumbnailCacheService,
-                  ),
+                  _imageWidget(BorderRadius.circular(8)),
                   const SizedBox(height: 20),
                   _TitleArtist(item: item),
                   const SizedBox(height: 16),
