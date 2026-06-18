@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
@@ -830,6 +833,80 @@ void main() {
       expect(find.text('John Coltrane'), findsNothing);
 
       await tester.binding.setSurfaceSize(null);
+    });
+  });
+
+  group('WishlistScreen easter egg — shake (US-111)', () {
+    Widget buildWithShake(
+      Stream<AccelerometerEvent> stream, {
+      List<WishlistItem> items = const [],
+    }) {
+      final repo = _FakeWishlistRepository(items: items);
+      final router = GoRouter(
+        initialLocation: '/wishlist',
+        routes: [
+          GoRoute(
+            path: '/wishlist',
+            builder: (_, _) => Scaffold(
+              body: WishlistScreen(
+                repository: repo,
+                accelerometerStream: stream,
+              ),
+            ),
+            routes: [
+              GoRoute(
+                path: ':itemId',
+                builder: (_, state) => WishlistDetailScreen(
+                  itemId: state.pathParameters['itemId']!,
+                  repository: repo,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+      return MaterialApp.router(routerConfig: router);
+    }
+
+    testWidgets('shake with non-empty wishlist navigates to WishlistDetailScreen', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final ctrl = StreamController<AccelerometerEvent>(sync: true);
+      addTearDown(ctrl.close);
+
+      await tester.pumpWidget(
+        buildWithShake(ctrl.stream, items: [_makeItem(id: 'xyz')]),
+      );
+      await tester.pumpAndSettle();
+
+      ctrl.add(AccelerometerEvent(25.0, 0.0, 0.0, DateTime.now()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(WishlistDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('shake with empty wishlist shows SnackBar', (tester) async {
+      final ctrl = StreamController<AccelerometerEvent>(sync: true);
+      addTearDown(ctrl.close);
+
+      await tester.pumpWidget(buildWithShake(ctrl.stream));
+      await tester.pumpAndSettle();
+
+      ctrl.add(AccelerometerEvent(25.0, 0.0, 0.0, DateTime.now()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(WishlistDetailScreen), findsNothing);
+      expect(
+        find.text('Je verlanglijst is leeg — voeg eerst platen toe.'),
+        findsOneWidget,
+      );
     });
   });
 }

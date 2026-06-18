@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 import '../../app/app_repositories.dart';
 import '../../app/router.dart';
@@ -45,11 +47,13 @@ class WishlistScreen extends StatefulWidget {
     this.repository,
     this.thumbnailRepository,
     this.thumbnailCacheService,
+    this.accelerometerStream,
   });
 
   final WishlistRepository? repository;
   final ThumbnailRepository? thumbnailRepository;
   final ThumbnailCacheService? thumbnailCacheService;
+  final Stream<AccelerometerEvent>? accelerometerStream;
 
   @override
   State<WishlistScreen> createState() => _WishlistScreenState();
@@ -64,6 +68,11 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   final _searchController = TextEditingController();
   Timer? _debounce;
   String _debouncedQuery = '';
+  static const _kShakeThreshold = 20.0;
+  static const _kShakeCooldown = Duration(seconds: 2);
+  StreamSubscription<AccelerometerEvent>? _shakeSub;
+  DateTime _lastShake = DateTime(0);
+  bool _shakeActive = true;
 
   @override
   void initState() {
@@ -78,6 +87,8 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
         widget.repository ?? AppRepositoriesScope.of(context).wishlist;
     _load();
     wishlistImportNotifier.addListener(_onImportNotification);
+    _shakeSub = (widget.accelerometerStream ?? accelerometerEventStream())
+        .listen(_onAccelerometer);
   }
 
   void _onImportNotification() {
@@ -92,7 +103,13 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   }
 
   @override
-  void didPopNext() => _refresh();
+  void didPushNext() => _shakeActive = false;
+
+  @override
+  void didPopNext() {
+    _shakeActive = true;
+    _refresh();
+  }
 
   Future<void> _load() async {
     setState(() => _state = const _Loading());
@@ -129,6 +146,7 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   void dispose() {
     wishlistRouteObserver.unsubscribe(this);
     wishlistImportNotifier.removeListener(_onImportNotification);
+    _shakeSub?.cancel();
     _debounce?.cancel();
     _searchController.dispose();
     if (_ownsThumbService) _thumbnailCacheService.close();
@@ -172,6 +190,28 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
         thumbnailCacheService: _thumbnailCacheService,
       ),
     );
+  }
+
+  void _onAccelerometer(AccelerometerEvent event) {
+    if (!mounted || !_shakeActive) return;
+    final shell = StatefulNavigationShell.maybeOf(context);
+    if (shell != null && shell.currentIndex != 2) return;
+    final x = event.x, y = event.y, z = event.z;
+    if (sqrt(x * x + y * y + z * z) < _kShakeThreshold) return;
+    final now = DateTime.now();
+    if (now.difference(_lastShake) < _kShakeCooldown) return;
+    _lastShake = now;
+    final state = _state;
+    if (state is! _Loaded || state.items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Je verlanglijst is leeg — voeg eerst platen toe.'),
+        ),
+      );
+      return;
+    }
+    final item = state.items[Random().nextInt(state.items.length)];
+    context.push(AppRoutes.wishlistDetail(item.id));
   }
 
   @override
