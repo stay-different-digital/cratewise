@@ -14,6 +14,7 @@ class DiscogsTokenSection extends StatefulWidget {
     super.key,
     this.connectionService,
     this.urlLauncher,
+    this.onConnected,
   });
 
   final DiscogsConnectionService? connectionService;
@@ -21,6 +22,9 @@ class DiscogsTokenSection extends StatefulWidget {
   /// Injected only for testing. Production code passes null and uses
   /// url_launcher's [launchUrl] directly.
   final Future<bool> Function(Uri uri)? urlLauncher;
+
+  /// Called after a token is successfully validated and saved.
+  final VoidCallback? onConnected;
 
   @override
   State<DiscogsTokenSection> createState() => _DiscogsTokenSectionState();
@@ -99,6 +103,7 @@ class _DiscogsTokenSectionState extends State<DiscogsTokenSection> {
         _status = _ConnectionState.connected;
         _connectedUsername = username;
       });
+      widget.onConnected?.call();
     } on InvalidTokenError {
       if (!mounted) return;
       setState(() {

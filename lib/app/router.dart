@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../application/services/thumbnail_eviction_service.dart';
 import '../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../presentation/screens/barcode_scan_screen.dart';
+import '../presentation/screens/onboarding_screen.dart';
 import '../presentation/screens/collection_csv_export_preview_screen.dart';
 import '../presentation/screens/collection_csv_import_preview_screen.dart';
 import '../presentation/screens/collection_detail_screen.dart';
@@ -64,6 +65,8 @@ abstract final class AppRoutes {
     ).toString();
   }
 
+  static const onboarding = '/onboarding';
+
   static String collectionDetail(String itemId) => '/collection/$itemId';
   static String wishlistDetail(String itemId) => '/wishlist/$itemId';
 }
@@ -72,9 +75,14 @@ abstract final class AppRoutes {
 // Router instance
 // ---------------------------------------------------------------------------
 
-GoRouter createAppRouter() => GoRouter(
-  initialLocation: AppRoutes.search,
+GoRouter createAppRouter({bool showOnboarding = false}) => GoRouter(
+  initialLocation:
+      showOnboarding ? AppRoutes.onboarding : AppRoutes.search,
   routes: [
+    GoRoute(
+      path: AppRoutes.onboarding,
+      builder: (_, _) => const OnboardingScreen(),
+    ),
     StatefulShellRoute.indexedStack(
       builder: (_, _, navigationShell) =>
           HomeShellScreen(navigationShell: navigationShell),

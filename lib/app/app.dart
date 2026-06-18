@@ -7,7 +7,9 @@ import 'router.dart';
 import 'theme.dart';
 
 class CratewiseApp extends StatefulWidget {
-  const CratewiseApp({super.key});
+  const CratewiseApp({super.key, this.showOnboarding = false});
+
+  final bool showOnboarding;
 
   @override
   State<CratewiseApp> createState() => _CratewiseAppState();
@@ -16,7 +18,7 @@ class CratewiseApp extends StatefulWidget {
 class _CratewiseAppState extends State<CratewiseApp> {
   late final AppDatabase _database;
   late final AppRepositories _repositories;
-  late final GoRouter _router = createAppRouter();
+  late final GoRouter _router = createAppRouter(showOnboarding: widget.showOnboarding);
 
   @override
   void initState() {
