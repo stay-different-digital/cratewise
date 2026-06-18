@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 import '../../app/app_repositories.dart';
 import '../../app/router.dart';
@@ -105,6 +107,7 @@ class SearchScreen extends StatefulWidget {
     this.queryCache,
     this.collectionRepository,
     this.wishlistRepository,
+    this.accelerometerStream,
   });
 
   final DiscogsSearchService? searchService;
@@ -114,6 +117,7 @@ class SearchScreen extends StatefulWidget {
   final SearchQueryCache? queryCache;
   final CollectionRepository? collectionRepository;
   final WishlistRepository? wishlistRepository;
+  final Stream<AccelerometerEvent>? accelerometerStream;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -141,6 +145,14 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   Set<int> _collectionIds = const {};
   Set<int> _wishlistIds = const {};
 
+  // Easter egg: shake → Rick Astley (US-109).
+  static const _kShakeThreshold = 20.0; // m/s²
+  static const _kShakeCooldown = Duration(seconds: 2);
+  static const _kRickAstleyReleaseId = 1758356;
+  StreamSubscription<AccelerometerEvent>? _shakeSub;
+  DateTime _lastShake = DateTime(0);
+  bool _shakeActive = true;
+
   @override
   void initState() {
     super.initState();
@@ -151,6 +163,8 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     _wishlistRepository = widget.wishlistRepository ?? repos?.wishlist;
     _controller.addListener(_onQueryChanged);
     _loadMembership();
+    _shakeSub = (widget.accelerometerStream ?? accelerometerEventStream())
+        .listen(_onAccelerometer);
   }
 
   @override
@@ -161,7 +175,13 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   }
 
   @override
-  void didPopNext() => _loadMembership();
+  void didPushNext() => _shakeActive = false;
+
+  @override
+  void didPopNext() {
+    _shakeActive = true;
+    _loadMembership();
+  }
 
   /// Resolves which results are already in the collection / on the wishlist.
   /// A storage failure degrades to "no icons" rather than breaking search.
@@ -330,8 +350,21 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   void dispose() {
     searchRouteObserver.unsubscribe(this);
     _debounce?.cancel();
+    _shakeSub?.cancel();
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onAccelerometer(AccelerometerEvent event) {
+    if (!mounted || !_shakeActive) return;
+    final shell = StatefulNavigationShell.maybeOf(context);
+    if (shell != null && shell.currentIndex != 0) return;
+    final x = event.x, y = event.y, z = event.z;
+    if (sqrt(x * x + y * y + z * z) < _kShakeThreshold) return;
+    final now = DateTime.now();
+    if (now.difference(_lastShake) < _kShakeCooldown) return;
+    _lastShake = now;
+    context.go(AppRoutes.searchRelease(_kRickAstleyReleaseId));
   }
 
   @override

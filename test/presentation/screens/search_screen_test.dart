@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:sensors_plus/sensors_plus.dart';
 import 'package:cratewise/application/services/discogs_search_service.dart';
 import 'package:cratewise/application/services/search_query_cache.dart';
 import 'package:cratewise/presentation/screens/release_detail_screen.dart';
@@ -1477,6 +1478,75 @@ void main() {
         cache.get(SearchQueryCache.normalizeKey('blue', SearchFilter.artist)),
         isNotNull,
       );
+    });
+  });
+
+  group('SearchScreen easter egg — shake (US-109)', () {
+    Widget buildWithShake(Stream<AccelerometerEvent> stream) {
+      final router = GoRouter(
+        initialLocation: '/search',
+        routes: [
+          GoRoute(
+            path: '/search',
+            builder: (_, _) => Scaffold(
+              body: SearchScreen(
+                searchService: _FakeSearchService(),
+                accelerometerStream: stream,
+              ),
+            ),
+            routes: [
+              GoRoute(
+                path: 'release/:releaseId',
+                builder: (_, state) => ReleaseDetailScreen(
+                  releaseId: int.parse(state.pathParameters['releaseId']!),
+                  initialArtist: state.uri.queryParameters['artist'],
+                  initialTitle: state.uri.queryParameters['title'],
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+      return MaterialApp.router(routerConfig: router);
+    }
+
+    testWidgets('shake above threshold navigates to Rick Astley release 1758356', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final ctrl = StreamController<AccelerometerEvent>(sync: true);
+      addTearDown(ctrl.close);
+
+      await tester.pumpWidget(buildWithShake(ctrl.stream));
+      await tester.pump();
+
+      ctrl.add(AccelerometerEvent(25.0, 0.0, 0.0, DateTime.now()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(ReleaseDetailScreen), findsOneWidget);
+      final screen = tester.widget<ReleaseDetailScreen>(
+        find.byType(ReleaseDetailScreen),
+      );
+      expect(screen.releaseId, 1758356);
+    });
+
+    testWidgets('shake below threshold does not navigate', (tester) async {
+      final ctrl = StreamController<AccelerometerEvent>(sync: true);
+      addTearDown(ctrl.close);
+
+      await tester.pumpWidget(buildWithShake(ctrl.stream));
+      await tester.pump();
+
+      ctrl.add(AccelerometerEvent(5.0, 0.0, 0.0, DateTime.now()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(ReleaseDetailScreen), findsNothing);
     });
   });
 }
