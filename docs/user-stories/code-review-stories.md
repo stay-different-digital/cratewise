@@ -211,3 +211,67 @@ lost normaal op naar `Cratewise/build/`. Vermoeden: de map is een restant van de
 - [ ] Draai `flutter test` — controleer of de map terugkomt.
 - [ ] Draai `flutter build apk --debug` — controleer opnieuw.
 - [ ] Controleer `~/.gradle/` op init-scripts of cached projectpaden die naar `Crate` verwijzen.
+
+---
+
+### US-103: Afbeeldingen op detailpagina's zijn scrollbaar
+
+**Priority: Medium · 3 SP**
+
+> Als gebruiker die een release bekijkt,
+> wil ik door alle beschikbare afbeeldingen kunnen scrollen op de Search-, Collection- en Wishlist-detailpagina,
+> zodat ik de hoes, labels en andere foto's van een release kan bekijken zonder de app te verlaten.
+
+**Context:**
+De Discogs API levert bij een release-detail een `images`-array met meerdere afbeeldings-URL's (`uri`). Momenteel slaat [`release_detail.dart`](lib/domain/models/release_detail.dart) slechts één `coverUrl` op en tonen alle drie detailschermen ([`release_detail_screen.dart`](lib/presentation/screens/release_detail_screen.dart), [`collection_detail_screen.dart`](lib/presentation/screens/collection_detail_screen.dart), [`wishlist_detail_screen.dart`](lib/presentation/screens/wishlist_detail_screen.dart)) alleen die ene afbeelding. Overige foto's (labelfoto's, achterkant) zijn niet toegankelijk.
+
+**Acceptance criteria:**
+- `ReleaseDetail` heeft een nieuw veld `imageUrls: List<String>` dat alle afbeeldings-URL's uit de Discogs API-response bevat (op volgorde zoals de API ze levert). `coverUrl` blijft behouden als convenience-getter (`imageUrls.firstOrNull`).
+- De Discogs API-client mappt het `images`-array uit de response naar `imageUrls`.
+- Alle drie detailschermen tonen een horizontaal scrollbare `PageView` voor de afbeeldingen, met een dots-indicator die aangeeft hoeveel afbeeldingen er zijn en welke actief is.
+- Bij precies één afbeelding is er geen dots-indicator zichtbaar en is scrollen uitgeschakeld.
+- Bij nul afbeeldingen toont de widget de huidige placeholder (albumicoontje).
+- De `PageView` is toegankelijk via semantics: elke pagina heeft een label "Afbeelding X van Y".
+- `flutter analyze` geeft 0 issues en `flutter test` blijft groen; nieuwe widget tests voor de image gallery worden toegevoegd.
+
+**QA-checklist:**
+- [ ] Open een release met meerdere afbeeldingen in Search — verifieer dat je kunt scrollen en de dots correct bewegen.
+- [ ] Controleer hetzelfde in Collection en Wishlist voor dezelfde release.
+- [ ] Open een release met slechts één afbeelding — verifieer dat er geen dots zichtbaar zijn.
+- [ ] Open een release zonder afbeeldingen — verifieer dat de placeholder wordt getoond.
+- [ ] Controleer dat de `PageView` niet schuift terwijl je verticaal scrollt in het detailscherm.
+
+---
+
+### US-104: Begeleide onboarding voor nieuwe gebruikers
+
+**Priority: Medium · 5 SP**
+
+> Als nieuwe gebruiker die de app voor het eerst opent,
+> wil ik stap voor stap worden begeleid bij het instellen van mijn Discogs-account en het importeren van mijn collectie en verlanglijst,
+> zodat ik zonder handleiding direct aan de slag kan en meteen mijn eigen data zie.
+
+**Context:**
+Nieuwe gebruikers landen nu rechtstreeks op de Search-tab zonder enige begeleiding. De benodigde bouwstenen bestaan al: [`discogs_token_section.dart`](lib/presentation/widgets/discogs_token_section.dart) voor het koppelen van een Discogs-account, en [`import_export_screen.dart`](lib/presentation/screens/import_export_screen.dart) voor het importeren van collectie en verlanglijst. Er is echter geen wizard die deze stappen achtereenvolgens aanbiedt, en er is geen detectie of een gebruiker al eerder heeft geconfigureerd. In [`settings_screen.dart`](lib/presentation/screens/settings_screen.dart) bevindt zich al een link naar Import/Export, maar geen optie om de onboarding opnieuw te starten.
+
+**Acceptance criteria:**
+- Bij de eerste app-start (geen Discogs-token aanwezig) wordt automatisch een `OnboardingScreen` getoond in plaats van de hoofdnavigatie.
+- De onboarding bestaat uit drie stappen:
+  1. **Welkomstscherm** — korte uitleg van Cratewise en wat de gebruiker gaat doen.
+  2. **Discogs-token koppelen** — hergebruikt de bestaande `DiscogsTokenSection`-widget; de "Volgende"-knop wordt pas actief nadat het token succesvol is gevalideerd.
+  3. **Collectie & verlanglijst importeren** — geeft directe toegang tot de Discogs-import voor collectie én verlanglijst; de gebruiker kan deze stap overslaan met een expliciete "Sla over"-link.
+- Na voltooiing (of overslaan van stap 3) navigeert de app naar de normale hoofdnavigatie.
+- De onboarding-status wordt persistent opgeslagen (bijv. via `shared_preferences` of `flutter_secure_storage`) zodat de wizard niet opnieuw verschijnt bij herstart.
+- De `SettingsScreen` bevat een nieuwe tegel **"Rondleiding opnieuw starten"** die de onboarding opnieuw toont (nuttig bij account-wissel of reset). De tegel is altijd zichtbaar, ongeacht of er een token is ingesteld.
+- `flutter analyze` geeft 0 issues en `flutter test` blijft groen; er zijn widget tests voor:
+  - de onboarding toont bij eerste start (geen token),
+  - de onboarding toont niet bij herstart als al geconfigureerd,
+  - de "Volgende"-knop in stap 2 is uitgeschakeld totdat het token gevalideerd is,
+  - de "Sla over"-link in stap 3 navigeert naar de hoofdnavigatie.
+
+**QA-checklist:**
+- [ ] Verwijder app-data / installeer vers — verifieer dat de onboarding automatisch verschijnt.
+- [ ] Doorloop alle drie stappen inclusief een echte token-validatie — verifieer dat de app naar de hoofdnavigatie gaat.
+- [ ] Herstart de app na voltooide onboarding — verifieer dat de onboarding niet opnieuw verschijnt.
+- [ ] Gebruik de tegel "Rondleiding opnieuw starten" in de instellingen — verifieer dat de onboarding weer verschijnt.
+- [ ] Sla stap 3 (import) over — verifieer dat de app direct naar de hoofdnavigatie gaat.
