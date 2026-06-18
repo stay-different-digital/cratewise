@@ -275,3 +275,77 @@ Nieuwe gebruikers landen nu rechtstreeks op de Search-tab zonder enige begeleidi
 - [ ] Herstart de app na voltooide onboarding — verifieer dat de onboarding niet opnieuw verschijnt.
 - [ ] Gebruik de tegel "Rondleiding opnieuw starten" in de instellingen — verifieer dat de onboarding weer verschijnt.
 - [ ] Sla stap 3 (import) over — verifieer dat de app direct naar de hoofdnavigatie gaat.
+
+---
+
+### US-105: Projectbestanden staan op de juiste plek
+
+**Priority: Low · 2 SP**
+
+> Als ontwikkelaar,
+> wil ik dat alle projectbestanden logisch en consistent zijn georganiseerd,
+> zodat de repository overzichtelijk blijft en nieuwe bijdragers snel kunnen navigeren.
+
+**Context:**
+Een inspectie van de projectstructuur (2026-06-18) toont een aantal bestanden die op de verkeerde plek staan of verouderd zijn:
+
+| Bestand / map | Huidige locatie | Probleem |
+|---|---|---|
+| `flutter_01.png` | root | 163 KB screenshot zonder verwijzing in README of docs |
+| `primer.md` | root | Verouderde sessie-context uit Jun 2026; root is geen archief |
+| `package-lock.json` | root | Leeg npm-lockfile (`packages: {}`); Flutter gebruikt geen npm |
+| `docs/product/ROADMAP.md` | `docs/product/` | V1-roadmap (jun 2) wordt overschaduwd door `ROADMAP_V2.md` (jun 11) |
+| `beta-user-stories.md` / `-m` / `-s` | `docs/user-stories/` | Pre-fase backlog-bronmateriaal; niet dezelfde categorie als fase-stories |
+
+**Acceptance criteria:**
+- `flutter_01.png` is verplaatst naar `docs/assets/screenshots/` of verwijderd als het nergens naar verwezen wordt.
+- `primer.md` is verplaatst naar `docs/archive/` of verwijderd (inhoud is verouderd en niet operationeel relevant).
+- `package-lock.json` is verwijderd uit de root (geen npm-afhankelijkheden in dit project).
+- `docs/product/ROADMAP.md` (V1) is verplaatst naar `docs/archive/`; `ROADMAP_V2.md` blijft de enige actieve roadmap in `docs/product/`.
+- `beta-user-stories.md`, `beta-user-stories-m.md` en `beta-user-stories-s.md` zijn verplaatst van `docs/user-stories/` naar `docs/archive/` (het zijn bronbestanden, geen actieve sprints).
+- `flutter analyze` geeft 0 issues en `flutter test` blijft groen na de wijzigingen.
+- `.gitignore` wordt indien nodig bijgewerkt (bijv. als `flutter_01.png` nooit gecommit had mogen worden).
+
+**QA-checklist:**
+- [ ] Verifieer dat `git status` na de wijzigingen schoon is (geen onverwachte ongetrackte bestanden).
+- [ ] Verifieer dat `docs/product/` alleen `PROJECT_BRIEF.md` en `ROADMAP_V2.md` bevat.
+- [ ] Verifieer dat `docs/archive/` de gearchiveerde bestanden bevat.
+
+---
+
+### US-106: Fix — camera blijft zwart na toestemmingsdialoog bij barcode-scanner
+
+**Priority: High · 2 SP · Status: Resolved**
+
+> Als gebruiker,
+> wil ik dat de camera direct actief is nadat ik cameratoestemming heb verleend,
+> zodat ik meteen een barcode kan scannen zonder de app opnieuw te openen.
+
+**Spike-bevinding (2026-06-18):**
+De oorzaak ligt niet in de Discogs API maar in de camera-lifecycle. Op Android triggert de
+toestemmingsdialoog de `AppLifecycleState.paused`-state. De `MobileScanner`-widget verwerkt intern
+alleen `inactive` (iOS), niet `paused` (Android). Hierdoor stopt de camera bij het openen van de
+dialoog, maar start hij niet opnieuw na het verlenen van toestemming — de camera blijft zwart.
+
+| Vraag | Bevinding |
+|---|---|
+| Is het probleem in de camera of in de lookup? | **Camera** — de scanner bereikt de lookup nooit. |
+| Waarom blijft het scherm zwart? | `MobileScanner.useAppLifecycleState` handelt `paused` niet af. |
+| Betere API-route nodig? | Nee — de API is niet bereikt; search-endpoint is voldoende. |
+| Oplossing? | `WidgetsBindingObserver` zelf beheren; `useAppLifecycleState: false` op widget. |
+
+**Geïmplementeerde fix (`_CameraScanAreaState`):**
+- `WidgetsBindingObserver` mixin toegevoegd; handmatig `addObserver`/`removeObserver` in `initState`/`dispose`.
+- `didChangeAppLifecycleState`: `paused`/`inactive` → `stop()`, `resumed` → `start()` (met `hasCameraPermission`-guard).
+- `MobileScanner(useAppLifecycleState: false, …)` — ingebouwde handler uitgeschakeld om dubbele aanroepen te voorkomen.
+- `AndroidManifest.xml`: `<uses-feature android:name="android.hardware.camera" android:required="false" />` toegevoegd.
+
+**Acceptance criteria:**
+- [x] Spike-bevinding gedocumenteerd.
+- [x] Oorzaak vastgesteld: camera lifecycle, niet de API.
+- [x] Fix geïmplementeerd en gecommit.
+
+**QA-checklist:**
+- [x] Na toestemming verlenen start de camera opnieuw (geen zwart scherm).
+- [x] Op iOS: camera stopt bij notificatiebalk/telefoongesprek, hervat na terugkeer.
+- [ ] Handmatige barcode-invoer geeft resultaten (bevestigt dat de API-kant werkt).

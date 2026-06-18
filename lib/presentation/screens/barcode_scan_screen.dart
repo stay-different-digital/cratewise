@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -605,7 +606,8 @@ class _CameraScanArea extends StatefulWidget {
   State<_CameraScanArea> createState() => _CameraScanAreaState();
 }
 
-class _CameraScanAreaState extends State<_CameraScanArea> {
+class _CameraScanAreaState extends State<_CameraScanArea>
+    with WidgetsBindingObserver {
   late final MobileScannerController _scanController;
 
   @override
@@ -613,12 +615,32 @@ class _CameraScanAreaState extends State<_CameraScanArea> {
     super.initState();
     _scanController = MobileScannerController();
     _scanController.addListener(_onControllerChanged);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  // Built-in useAppLifecycleState skips `paused` (only handles `inactive`).
+  // On Android the permission dialog triggers `paused`, not `inactive`, so the
+  // camera stays black after grant. We own the full lifecycle here and disable
+  // the built-in handler on the MobileScanner widget.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_scanController.value.hasCameraPermission) return;
+    switch (state) {
+      case AppLifecycleState.inactive: // iOS: notification shade, phone call
+      case AppLifecycleState.paused:   // Android: permission dialog, background
+        unawaited(_scanController.stop());
+      case AppLifecycleState.resumed:
+        unawaited(_scanController.start());
+      default:
+        break;
+    }
   }
 
   void _onControllerChanged() => setState(() {});
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _scanController.removeListener(_onControllerChanged);
     _scanController.dispose();
     super.dispose();
@@ -643,6 +665,7 @@ class _CameraScanAreaState extends State<_CameraScanArea> {
         children: [
           MobileScanner(
             controller: _scanController,
+            useAppLifecycleState: false,
             onDetect: widget.onDetect,
             errorBuilder: (context, error) {
               if (error.errorCode == MobileScannerErrorCode.permissionDenied) {
