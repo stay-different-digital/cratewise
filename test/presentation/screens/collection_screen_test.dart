@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
@@ -948,6 +951,80 @@ void main() {
 
       expect(find.text('Miles Davis'), findsOneWidget);
       expect(find.text('John Coltrane'), findsOneWidget);
+    });
+  });
+
+  group('CollectionScreen easter egg — shake (US-110)', () {
+    Widget buildWithShake(
+      Stream<AccelerometerEvent> stream, {
+      List<CollectionItem> items = const [],
+    }) {
+      final repo = _FakeCollectionRepository(items: items);
+      final router = GoRouter(
+        initialLocation: '/collection',
+        routes: [
+          GoRoute(
+            path: '/collection',
+            builder: (_, _) => Scaffold(
+              body: CollectionScreen(
+                repository: repo,
+                accelerometerStream: stream,
+              ),
+            ),
+            routes: [
+              GoRoute(
+                path: ':itemId',
+                builder: (_, state) => CollectionDetailScreen(
+                  itemId: state.pathParameters['itemId']!,
+                  repository: repo,
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+      return MaterialApp.router(routerConfig: router);
+    }
+
+    testWidgets('shake with non-empty collection navigates to CollectionDetailScreen', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final ctrl = StreamController<AccelerometerEvent>(sync: true);
+      addTearDown(ctrl.close);
+
+      await tester.pumpWidget(
+        buildWithShake(ctrl.stream, items: [_makeItem(id: 'abc')]),
+      );
+      await tester.pumpAndSettle();
+
+      ctrl.add(AccelerometerEvent(25.0, 0.0, 0.0, DateTime.now()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(CollectionDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('shake with empty collection shows SnackBar', (tester) async {
+      final ctrl = StreamController<AccelerometerEvent>(sync: true);
+      addTearDown(ctrl.close);
+
+      await tester.pumpWidget(buildWithShake(ctrl.stream));
+      await tester.pumpAndSettle();
+
+      ctrl.add(AccelerometerEvent(25.0, 0.0, 0.0, DateTime.now()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(CollectionDetailScreen), findsNothing);
+      expect(
+        find.text('Je collectie is leeg — voeg eerst platen toe.'),
+        findsOneWidget,
+      );
     });
   });
 }
