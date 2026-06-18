@@ -349,3 +349,52 @@ dialoog, maar start hij niet opnieuw na het verlenen van toestemming — de came
 - [x] Na toestemming verlenen start de camera opnieuw (geen zwart scherm).
 - [x] Op iOS: camera stopt bij notificatiebalk/telefoongesprek, hervat na terugkeer.
 - [ ] Handmatige barcode-invoer geeft resultaten (bevestigt dat de API-kant werkt).
+
+---
+
+### US-107: Spike — onderzoek KGP-waarschuwing bij `flutter build apk`
+
+**Priority: Medium · 1 SP (spike) · Status: Resolved**
+
+> Als ontwikkelaar,
+> wil ik weten wat de Kotlin Gradle Plugin-waarschuwing betekent en of er al fixes beschikbaar zijn,
+> zodat toekomstige Flutter-versies de build niet breken.
+
+**Spike-bevinding (2026-06-18):**
+
+De KGP-waarschuwing zit volledig aan de **plugin-kant** — het is niet oplosbaar vanuit de app.
+Elke plugin heeft in zijn eigen `build.gradle` nog `apply plugin: 'kotlin-android'` staan.
+Zodra Flutter `android.builtInKotlin=true` verplicht stelt (AGP 9.0+ default), breekt de build.
+
+**Mitigatie is al aanwezig:** `android/gradle.properties` bevat al:
+```
+android.builtInKotlin=false
+```
+Dit is de door Flutter aanbevolen opt-out. De build slaagt en blijft slagen zolang deze flag actief is.
+
+**Onderzoeksresultaten per plugin:**
+
+| Plugin | Huidig | Getest | KGP-warning weg? | Opmerking |
+|---|---|---|---|---|
+| `file_picker` | ^10.0.0 | 11.0.2 | Nee | 11.x slaat KGP over op AGP 9+ maar compileert dan niet omdat `builtInKotlin=false` ook built-in Kotlin uitschakelt — teruggedraaid |
+| `package_info_plus` | ^8.3.1 | 9.0.1 | Nee | Past KGP nog steeds toe — warning blijft |
+| `mobile_scanner` | ^7.2.0 | 7.2.0 | Nee | Al op laatste versie, geen upstream-fix beschikbaar |
+| `share_plus` | ^10.0.0 | 12.0.2 | Nee | 12.x compileert niet (bug: `ShareSuccessManager`), 13.x heeft win32-conflict met `flutter_secure_storage` |
+
+**Kritieke bevinding — migratie is alles-of-niets:**
+`file_picker 11.x` laat zien waarom losse upgrades niet werken: de plugin past slim conditioneel geen KGP toe op AGP 9+, maar `android.builtInKotlin=false` schakelt ook de built-in Kotlin uit. Resultaat: geen KGP én geen built-in Kotlin → Kotlin-code wordt niet gecompileerd → build breekt.
+
+Alle vier de plugins moeten simultaan naar Built-in Kotlin migreren vóór `builtInKotlin=true` gezet kan worden. Zodra `mobile_scanner` en `share_plus` gereed zijn, moet ook `flutter_secure_storage` naar ^10.x (win32 v6) om `share_plus ^13.x` te kunnen gebruiken.
+
+**Alle wijzigingen zijn teruggedraaid** — `pubspec.yaml` en codebasis staan op originele versies.
+
+**Vervolgactie:** volg GitHub-issues voor `mobile_scanner` (#KGP) en `share_plus` (#KGP). Plan een gecombineerde upgrade zodra alle vier plugins gereed zijn.
+
+**Acceptance criteria:**
+- [x] Per plugin vastgesteld of een compatibele versie beschikbaar is.
+- [x] Aanbeveling: wacht op plugin-releases; `android.builtInKotlin=false` is de huidige mitigatie.
+
+**QA-checklist:**
+- [x] Spike-bevinding gedocumenteerd.
+- [x] `flutter build apk` slaagt na de upgrades (warning blijft, is verwacht).
+- [ ] KGP-warning verdwenen — te doen zodra plugin-auteurs hun fix publishen.
