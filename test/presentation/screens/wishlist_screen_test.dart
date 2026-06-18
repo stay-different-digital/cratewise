@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cratewise/domain/models/wishlist_item.dart';
+import 'package:cratewise/l10n/app_localizations.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
@@ -178,7 +179,18 @@ WishlistItem _makeItem({
   updatedAt: DateTime(2026, 1, 1),
 );
 
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: child),
+);
+
+Widget _wrapNl(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  locale: const Locale('nl'),
+  home: Scaffold(body: child),
+);
 
 GoRouter _makeWishlistRouter({
   required WishlistRepository repo,
@@ -209,8 +221,11 @@ GoRouter _makeWishlistRouter({
   );
 }
 
-Widget _wrapNavigable(GoRouter router) =>
-    MaterialApp.router(routerConfig: router);
+Widget _wrapNavigable(GoRouter router) => MaterialApp.router(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  routerConfig: router,
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -865,7 +880,11 @@ void main() {
           ),
         ],
       );
-      return MaterialApp.router(routerConfig: router);
+      return MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
+      );
     }
 
     testWidgets('shake with non-empty wishlist navigates to WishlistDetailScreen', (
@@ -907,6 +926,16 @@ void main() {
         find.text('Je verlanglijst is leeg — voeg eerst platen toe.'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('WishlistScreen — NL locale (US-113)', () {
+    testWidgets('shows Dutch labels when locale is nl', (tester) async {
+      final repo = _FakeWishlistRepository();
+      await tester.pumpWidget(_wrapNl(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Je verlanglijst is leeg'), findsOneWidget);
     });
   });
 }

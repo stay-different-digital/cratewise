@@ -10,6 +10,7 @@ import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
+import 'package:cratewise/l10n/app_localizations.dart';
 import 'package:cratewise/presentation/screens/barcode_scan_screen.dart';
 import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
@@ -159,7 +160,18 @@ class _FakeWishlistRepository implements WishlistRepository {
 // Helpers
 // ---------------------------------------------------------------------------
 
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: child),
+);
+
+Widget _wrapNl(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  locale: const Locale('nl'),
+  home: Scaffold(body: child),
+);
 
 const _kResult = ReleaseSearchResult(
   id: 249504,
@@ -896,6 +908,13 @@ void main() {
       expect(find.byType(ReleaseSearchResultCard), findsOneWidget);
       expect(find.byKey(const Key('in-collection-icon')), findsNothing);
       expect(find.byKey(const Key('on-wishlist-icon')), findsNothing);
+    });
+  });
+
+  group('BarcodeScanScreen — NL locale (US-113)', () {
+    testWidgets('shows Dutch labels when locale is nl', (tester) async {
+      await tester.pumpWidget(_wrapNl(const BarcodeScanScreen()));
+      expect(find.text('Streepjescode scannen'), findsOneWidget);
     });
   });
 }

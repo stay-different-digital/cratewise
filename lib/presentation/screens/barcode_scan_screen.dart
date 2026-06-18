@@ -9,6 +9,7 @@ import '../../application/services/search_query_cache.dart';
 import '../../application/use_cases/barcode_lookup_use_case.dart';
 import '../../domain/models/release_search_result.dart';
 import '../../app/app_repositories.dart';
+import '../../l10n/app_localizations.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../shared/errors/app_error.dart';
@@ -179,13 +180,14 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
     );
   }
 
-  static String? _validateBarcode(String trimmed) {
+  String? _validateBarcode(String trimmed) {
     if (trimmed.isEmpty) return null;
+    final l10n = AppLocalizations.of(context)!;
     if (!RegExp(r'^\d+$').hasMatch(trimmed)) {
-      return "This doesn't look like a barcode";
+      return l10n.barcodeValidationNotBarcode;
     }
     if (trimmed.length != 8 && trimmed.length != 12 && trimmed.length != 13) {
-      return 'Barcode must be 8, 12, or 13 digits';
+      return l10n.barcodeValidationWrongLength;
     }
     return null;
   }
@@ -389,7 +391,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => _onSearch(),
                   decoration: InputDecoration(
-                    hintText: 'Enter barcode manually…',
+                    hintText: AppLocalizations.of(context)!.barcodeEnterManually,
                     border: const OutlineInputBorder(),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
@@ -404,7 +406,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
               FilledButton(
                 key: const Key('search-barcode-button'),
                 onPressed: _canSearch ? _onSearch : null,
-                child: const Text('Search'),
+                child: Text(AppLocalizations.of(context)!.barcodeSearchButton),
               ),
             ],
           ),
@@ -415,7 +417,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
             key: const Key('scan-barcode-button'),
             onPressed: _onScanButtonPressed,
             icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('Scan barcode'),
+            label: Text(AppLocalizations.of(context)!.barcodeScanButton),
           ),
         ),
         Expanded(child: _buildResults()),
@@ -447,7 +449,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
                         textInputAction: TextInputAction.search,
                         onSubmitted: (_) => _onSearch(),
                         decoration: InputDecoration(
-                          hintText: 'Enter barcode manually…',
+                          hintText: AppLocalizations.of(context)!.barcodeEnterManually,
                           border: const OutlineInputBorder(),
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
@@ -462,7 +464,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
                     FilledButton(
                       key: const Key('search-barcode-button'),
                       onPressed: _canSearch ? _onSearch : null,
-                      child: const Text('Search'),
+                      child: Text(AppLocalizations.of(context)!.barcodeSearchButton),
                     ),
                   ],
                 ),
@@ -473,7 +475,7 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
                   key: const Key('scan-barcode-button'),
                   onPressed: _onScanButtonPressed,
                   icon: const Icon(Icons.qr_code_scanner),
-                  label: const Text('Scan barcode'),
+                  label: Text(AppLocalizations.of(context)!.barcodeScanButton),
                 ),
               ),
             ],
@@ -528,7 +530,7 @@ class _ScanAreaPlaceholder extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              "Tap 'Scan barcode' to open your camera",
+              AppLocalizations.of(context)!.barcodeScanPrompt,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -570,14 +572,14 @@ class _PermissionDeniedScanArea extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Camera permission denied',
+                AppLocalizations.of(context)!.barcodePermissionDenied,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Allow camera access in Settings to scan barcodes.',
+                AppLocalizations.of(context)!.barcodePermissionDeniedHint,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
@@ -794,10 +796,10 @@ class _EmptyState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text('Scan or enter a barcode', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context)!.barcodeScanOrEnter, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Point your camera at a barcode or type one above.',
+              AppLocalizations.of(context)!.barcodeScanOrEnterHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -962,10 +964,10 @@ class _NoResultsState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text('No releases found', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context)!.barcodeNoReleases, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'No Discogs releases match this barcode. Try a different barcode or check the number.',
+              AppLocalizations.of(context)!.barcodeNoReleasesHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -997,12 +999,12 @@ class _NoTokenState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Discogs account not connected',
+              AppLocalizations.of(context)!.barcodeNoToken,
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Go to Settings to connect your Discogs account.',
+              AppLocalizations.of(context)!.barcodeNoTokenHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -1033,10 +1035,10 @@ class _RateLimitedState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text('Too many requests', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context)!.barcodeRateLimited, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Discogs is limiting requests right now. Wait a moment and try again.',
+              AppLocalizations.of(context)!.barcodeRateLimitedHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -1063,10 +1065,10 @@ class _ErrorState extends StatelessWidget {
           children: [
             Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
             const SizedBox(height: 16),
-            Text('Something went wrong', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context)!.barcodeSomethingWrong, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Could not reach Discogs. An internet connection is needed for barcode lookups.',
+              AppLocalizations.of(context)!.barcodeSomethingWrongHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -1103,7 +1105,7 @@ class _CachedResultsBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Showing saved results',
+              AppLocalizations.of(context)!.cachedResultsBanner,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSecondaryContainer,
               ),

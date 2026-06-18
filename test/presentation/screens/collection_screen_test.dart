@@ -8,6 +8,7 @@ import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
 import 'package:cratewise/presentation/screens/collection_screen.dart';
 import 'package:cratewise/presentation/widgets/collection_item_card.dart';
+import 'package:cratewise/l10n/app_localizations.dart';
 import 'package:cratewise/shared/route_observer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -181,7 +182,18 @@ CollectionItem _makeItem({
   updatedAt: DateTime(2026, 1, 1),
 );
 
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: Scaffold(body: child),
+);
+
+Widget _wrapNl(Widget child) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  locale: const Locale('nl'),
+  home: Scaffold(body: child),
+);
 
 GoRouter _makeCollectionRouter({
   required CollectionRepository repo,
@@ -213,8 +225,11 @@ GoRouter _makeCollectionRouter({
   );
 }
 
-Widget _wrapNavigable(GoRouter router) =>
-    MaterialApp.router(routerConfig: router);
+Widget _wrapNavigable(GoRouter router) => MaterialApp.router(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  routerConfig: router,
+);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -983,7 +998,11 @@ void main() {
           ),
         ],
       );
-      return MaterialApp.router(routerConfig: router);
+      return MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
+      );
     }
 
     testWidgets('shake with non-empty collection navigates to CollectionDetailScreen', (
@@ -1025,6 +1044,18 @@ void main() {
         find.text('Je collectie is leeg — voeg eerst platen toe.'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('CollectionScreen — NL locale (US-113)', () {
+    testWidgets('shows Dutch empty-state title when locale is nl', (
+      tester,
+    ) async {
+      final repo = _FakeCollectionRepository();
+      await tester.pumpWidget(_wrapNl(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Je collectie is leeg'), findsOneWidget);
     });
   });
 }

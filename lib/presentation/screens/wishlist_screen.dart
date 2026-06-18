@@ -12,6 +12,7 @@ import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/import_notifier.dart';
 import '../../shared/route_observer.dart';
 import '../widgets/wishlist_item_card.dart';
@@ -239,7 +240,7 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
               });
             },
             decoration: InputDecoration(
-              hintText: 'Search your wishlist…',
+              hintText: AppLocalizations.of(context)!.wishlistSearchHint,
               prefixIcon: const Icon(Icons.search),
               suffixIcon: hasQuery
                   ? IconButton(
@@ -355,10 +356,10 @@ class _EmptyWishlistState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text('Your wishlist is empty', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context)!.wishlistEmptyTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Your wishlist is saved on this device and works without internet.',
+              AppLocalizations.of(context)!.wishlistOfflineNote,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -366,7 +367,7 @@ class _EmptyWishlistState extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Use the Search tab to find releases and add them.',
+              AppLocalizations.of(context)!.addViaSearchHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -432,13 +433,13 @@ class _NoSearchResults extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No results for "$query"',
+              AppLocalizations.of(context)!.wishlistNoResultsTitle(query),
               style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Try a different artist or title.',
+              AppLocalizations.of(context)!.wishlistNoResultsBody,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,

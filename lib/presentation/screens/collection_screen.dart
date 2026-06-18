@@ -12,6 +12,7 @@ import '../../domain/models/collection_item.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/import_notifier.dart';
 import '../../shared/route_observer.dart';
 import '../widgets/collection_item_card.dart';
@@ -202,7 +203,7 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
               });
             },
             decoration: InputDecoration(
-              hintText: 'Search your collection…',
+              hintText: AppLocalizations.of(context)!.collectionSearchHint,
               prefixIcon: const Icon(Icons.search),
               suffixIcon: hasQuery
                   ? IconButton(
@@ -356,12 +357,12 @@ class _EmptyCollectionState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Your collection is empty',
+              AppLocalizations.of(context)!.collectionEmptyTitle,
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Your collection is saved on this device and works without internet.',
+              AppLocalizations.of(context)!.collectionOfflineNote,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -369,7 +370,7 @@ class _EmptyCollectionState extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Use the Search tab to find releases and add them.',
+              AppLocalizations.of(context)!.addViaSearchHint,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -435,13 +436,13 @@ class _NoSearchResults extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No results for "$query"',
+              AppLocalizations.of(context)!.collectionNoResultsTitle(query),
               style: theme.textTheme.titleMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Try a different artist or title.',
+              AppLocalizations.of(context)!.collectionNoResultsBody,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,

@@ -13,6 +13,7 @@ import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/token_storage.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
+import 'package:cratewise/l10n/app_localizations.dart';
 import 'package:cratewise/presentation/screens/search_screen.dart';
 import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
@@ -304,6 +305,8 @@ Widget _buildScreen(
   WishlistRepository? wishlistRepository,
 }) {
   return MaterialApp(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(
       body: SearchScreen(
         searchService: service,
@@ -314,6 +317,13 @@ Widget _buildScreen(
     ),
   );
 }
+
+Widget _buildScreenNl(DiscogsSearchService service) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  locale: const Locale('nl'),
+  home: Scaffold(body: SearchScreen(searchService: service)),
+);
 
 Widget _buildScreenWithRouter(DiscogsSearchService service) {
   final router = GoRouter(
@@ -335,7 +345,11 @@ Widget _buildScreenWithRouter(DiscogsSearchService service) {
       ),
     ],
   );
-  return MaterialApp.router(routerConfig: router);
+  return MaterialApp.router(
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    routerConfig: router,
+  );
 }
 
 const _kindOfBlue = ReleaseSearchResult(
@@ -1096,6 +1110,8 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: ThemeData(useMaterial3: true, brightness: Brightness.light),
           home: Scaffold(
             body: SearchScreen(searchService: _FakeSearchService()),
@@ -1110,6 +1126,8 @@ void main() {
     testWidgets('no suffix icon in dark mode with empty query', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: ThemeData(useMaterial3: true, brightness: Brightness.dark),
           home: Scaffold(
             body: SearchScreen(searchService: _FakeSearchService()),
@@ -1126,6 +1144,8 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           theme: ThemeData(useMaterial3: true, brightness: Brightness.dark),
           home: Scaffold(
             body: SearchScreen(searchService: _FakeSearchService()),
@@ -1290,7 +1310,11 @@ void main() {
           ),
         ],
       );
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
+      ));
       await submitSearch(tester, 'vinyl');
       expect(find.byKey(const Key('in-collection-icon')), findsNothing);
 
@@ -1507,7 +1531,11 @@ void main() {
           ),
         ],
       );
-      return MaterialApp.router(routerConfig: router);
+      return MaterialApp.router(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: router,
+      );
     }
 
     testWidgets('shake above threshold navigates to Rick Astley release 1758356', (
@@ -1547,6 +1575,15 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(ReleaseDetailScreen), findsNothing);
+    });
+  });
+
+  group('SearchScreen — NL locale (US-113)', () {
+    testWidgets('shows Dutch labels when locale is nl', (tester) async {
+      await tester.pumpWidget(_buildScreenNl(_FakeSearchService()));
+      await tester.pump();
+
+      expect(find.text('Zoek op Discogs'), findsOneWidget);
     });
   });
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 class AppNavRail extends StatelessWidget {
   const AppNavRail({
     super.key,
@@ -12,35 +14,36 @@ class AppNavRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return NavigationRail(
       selectedIndex: selectedIndex,
       onDestinationSelected: onDestinationSelected,
       labelType: NavigationRailLabelType.all,
-      destinations: const [
+      destinations: [
         NavigationRailDestination(
-          icon: Icon(Icons.search_outlined),
-          selectedIcon: Icon(Icons.search),
-          label: Text('Search'),
+          icon: const Icon(Icons.search_outlined),
+          selectedIcon: const Icon(Icons.search),
+          label: Text(l10n.navSearch),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.album_outlined),
-          selectedIcon: Icon(Icons.album),
-          label: Text('Collection'),
+          icon: const Icon(Icons.album_outlined),
+          selectedIcon: const Icon(Icons.album),
+          label: Text(l10n.navCollection),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.bookmark_border),
-          selectedIcon: Icon(Icons.bookmark),
-          label: Text('Wishlist'),
+          icon: const Icon(Icons.bookmark_border),
+          selectedIcon: const Icon(Icons.bookmark),
+          label: Text(l10n.navWishlist),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.qr_code_scanner),
-          selectedIcon: Icon(Icons.qr_code_scanner),
-          label: Text('Scan'),
+          icon: const Icon(Icons.qr_code_scanner),
+          selectedIcon: const Icon(Icons.qr_code_scanner),
+          label: Text(l10n.navScan),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.settings_outlined),
-          selectedIcon: Icon(Icons.settings),
-          label: Text('Settings'),
+          icon: const Icon(Icons.settings_outlined),
+          selectedIcon: const Icon(Icons.settings),
+          label: Text(l10n.navSettings),
         ),
       ],
     );

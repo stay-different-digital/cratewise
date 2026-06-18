@@ -16,6 +16,7 @@ import '../../domain/models/search_filter.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
+import '../../l10n/app_localizations.dart';
 import '../../shared/errors/app_error.dart';
 import '../../shared/route_observer.dart';
 import '../widgets/rate_limit_retry_button.dart';
@@ -385,12 +386,12 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
             textInputAction: TextInputAction.search,
             onSubmitted: _onSubmit,
             decoration: InputDecoration(
-              hintText: 'Artist, album, or label…',
+              hintText: AppLocalizations.of(context)!.searchHint,
               prefixIcon: const Icon(Icons.search),
               suffixIcon: hasQuery
                   ? IconButton(
                       icon: const Icon(Icons.clear),
-                      tooltip: 'Clear search',
+                      tooltip: AppLocalizations.of(context)!.searchClearTooltip,
                       onPressed: _controller.clear,
                     )
                   : null,
@@ -514,6 +515,16 @@ class _SearchFilterChips extends StatelessWidget {
     SearchFilter.label,
   ];
 
+  String _filterLabel(BuildContext context, SearchFilter filter) {
+    final l10n = AppLocalizations.of(context)!;
+    return switch (filter) {
+      SearchFilter.release => l10n.searchFilterRelease,
+      SearchFilter.artist => l10n.searchFilterArtist,
+      SearchFilter.label => l10n.searchFilterLabel,
+      SearchFilter.all => '',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -525,7 +536,7 @@ class _SearchFilterChips extends StatelessWidget {
           for (final filter in _choices)
             FilterChip(
               key: Key('search-filter-chip-${filter.name}'),
-              label: Text(filter.chipLabel),
+              label: Text(_filterLabel(context, filter)),
               selected: selected == filter,
               onSelected: (isSelected) =>
                   onChanged(isSelected ? filter : SearchFilter.all),
@@ -558,10 +569,10 @@ class _EmptyState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text('Search Discogs', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context)!.searchEmptyTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Type an artist, album, or label name to search.',
+              AppLocalizations.of(context)!.searchEmptyBody,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -601,10 +612,10 @@ class _NoResultsState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text('No results', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context)!.searchNoResultsTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Try a different search term.',
+              AppLocalizations.of(context)!.searchNoResultsBody,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -685,10 +696,10 @@ class _NoSelectionPlaceholder extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text('Select a result', style: theme.textTheme.titleMedium),
+            Text(AppLocalizations.of(context)!.searchSelectResultTitle, style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Text(
-              'Tap a search result to view its details.',
+              AppLocalizations.of(context)!.searchSelectResultBody,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -906,7 +917,7 @@ class _CachedResultsBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'Showing saved results',
+              AppLocalizations.of(context)!.cachedResultsBanner,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSecondaryContainer,
               ),

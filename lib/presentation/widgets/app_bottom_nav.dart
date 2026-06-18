@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
     super.key,
@@ -12,34 +14,35 @@ class AppBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return NavigationBar(
       selectedIndex: selectedIndex,
       onDestinationSelected: onDestinationSelected,
-      destinations: const [
+      destinations: [
         NavigationDestination(
-          icon: Icon(Icons.search_outlined),
-          selectedIcon: Icon(Icons.search),
-          label: 'Search',
+          icon: const Icon(Icons.search_outlined),
+          selectedIcon: const Icon(Icons.search),
+          label: l10n.navSearch,
         ),
         NavigationDestination(
-          icon: Icon(Icons.album_outlined),
-          selectedIcon: Icon(Icons.album),
-          label: 'Collection',
+          icon: const Icon(Icons.album_outlined),
+          selectedIcon: const Icon(Icons.album),
+          label: l10n.navCollection,
         ),
         NavigationDestination(
-          icon: Icon(Icons.bookmark_border),
-          selectedIcon: Icon(Icons.bookmark),
-          label: 'Wishlist',
+          icon: const Icon(Icons.bookmark_border),
+          selectedIcon: const Icon(Icons.bookmark),
+          label: l10n.navWishlist,
         ),
         NavigationDestination(
-          icon: Icon(Icons.qr_code_scanner),
-          selectedIcon: Icon(Icons.qr_code_scanner),
-          label: 'Scan',
+          icon: const Icon(Icons.qr_code_scanner),
+          selectedIcon: const Icon(Icons.qr_code_scanner),
+          label: l10n.navScan,
         ),
         NavigationDestination(
-          icon: Icon(Icons.settings_outlined),
-          selectedIcon: Icon(Icons.settings),
-          label: 'Settings',
+          icon: const Icon(Icons.settings_outlined),
+          selectedIcon: const Icon(Icons.settings),
+          label: l10n.navSettings,
         ),
       ],
     );
