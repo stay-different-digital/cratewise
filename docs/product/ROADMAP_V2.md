@@ -150,3 +150,26 @@ Possible features, to be prioritised after 1.0:
 - Duplicate detection.
 - DJ fields: BPM, key, energy, gig crates.
 - iPad-specific power features: drag and drop, keyboard shortcuts, multitasking.
+- Easter eggs: shake on Search → Rick Roll (US-109), shake on Collection → random record (US-110), shake on Wishlist → random record (US-111).
+
+## Phase 15: Meertaligheid (i18n)
+
+Goal:
+
+- De app standaard in het Engels aanbieden en ondersteuning voor vijf talen inbouwen: Engels, Duits, Frans, Spaans en Nederlands.
+- Gebruikers kunnen de taal handmatig overschrijven via de instellingen.
+
+Package-keuze: `flutter_localizations` (Flutter SDK, geen nieuwe dependency) + `intl` (al aanwezig) + `flutter gen-l10n`.
+
+Deliverables:
+
+- US-112: i18n-infrastructuur opzetten (ARB-bestanden, `l10n.yaml`, `flutter gen-l10n`, `MaterialApp` configureren).
+- US-113: Kernsschermen vertalen naar alle vijf talen + widget-tests bijwerken.
+- US-114: Taalvoorkeur-instelling in het instellingenscherm met directe omschakeling en persistentie.
+
+Done criteria:
+
+- Een gebruiker met een Duits apparaat ziet de app volledig in het Duits.
+- Een gebruiker kan de taal overschrijven in de instellingen zonder app-herstart.
+- Alle kernsschermen zijn vertaald; geen hardcoded Engelse strings meer zichtbaar voor eindgebruikers.
+- `flutter analyze` geeft 0 issues en `flutter test` blijft groen.

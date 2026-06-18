@@ -398,3 +398,36 @@ Alle vier de plugins moeten simultaan naar Built-in Kotlin migreren vóór `buil
 - [x] Spike-bevinding gedocumenteerd.
 - [x] `flutter build apk` slaagt na de upgrades (warning blijft, is verwacht).
 - [ ] KGP-warning verdwenen — te doen zodra plugin-auteurs hun fix publishen.
+
+---
+
+### US-108: Gecombineerde plugin-upgrade naar Built-in Kotlin
+
+**Priority: Low · 2 SP · Blokker: upstream plugin-releases**
+
+> Als ontwikkelaar,
+> wil ik alle vier Kotlin-plugins in één keer upgraden naar versies die AGP 9 Built-in Kotlin ondersteunen,
+> zodat de KGP-waarschuwing verdwijnt en `android.builtInKotlin=false` uit `gradle.properties` kan worden verwijderd.
+
+**Context (zie US-107):**
+De migratie is alles-of-niets. `android.builtInKotlin=false` houdt de build werkend totdat alle vier plugins gereed zijn. Zodra ze dat zijn, moeten ze simultaan worden geüpgraded.
+
+**Status per 2026-06-18 (upgrade-poging uitgevoerd):**
+| Plugin | Huidig | Nieuwste | Status |
+|---|---|---|---|
+| `mobile_scanner` | ^7.2.0 | 7.2.0 | **Blokker** — KGP-fix niet beschikbaar; geen nieuwere versie in ^7.x |
+| `file_picker` | ^10.0.0 | 10.3.10 | **Blokker** — ^10.x vereist win32 ^5.x; conflicteert met alle ^6.x packages; upgrade naar ^11.x vereist `builtInKotlin=true` wat mobile_scanner breekt |
+| `share_plus` | ^10.0.0 | 13.1.0 | Gereed (win32 ^6.x) — wacht op file_picker + mobile_scanner |
+| `flutter_secure_storage` | ^9.2.2 | 10.3.1 | Gereed (win32 ^6.x) — wacht op file_picker + mobile_scanner |
+| `package_info_plus` | ^8.3.1 | 10.1.0 | Gereed (win32 ^6.x) — wacht op file_picker + mobile_scanner |
+
+**Gevonden bij upgrade-poging:** `flutter_secure_storage 10.3.1` is nu beschikbaar (lost het oorspronkelijke win32-conflict op), maar `file_picker ^10.x` introduceert hetzelfde win32 ^5.x-conflict opnieuw. De keten is: om file_picker te upgraden is `builtInKotlin=true` nodig, wat vereist dat alle plugins KGP niet meer toepassen — maar `mobile_scanner 7.2.0` doet dat nog wel.
+
+**Enige overgebleven harde blokker: `mobile_scanner`** — zodra die een KGP-vrije versie publiceert kan de volledige upgrade in één keer.
+
+**Acceptance criteria:**
+- Alle vijf packages zijn geüpgraded naar compatibele versies in één PR.
+- `android.builtInKotlin=false` is verwijderd uit `android/gradle.properties` (of vervangen door `true`).
+- `flutter build apk` slaagt zonder KGP-waarschuwing.
+- `flutter analyze` geeft 0 issues en `flutter test` blijft groen.
+- Eventuele API-breekpunten (bijv. `Share.shareXFiles` → `SharePlus.instance.share`) zijn bijgewerkt in de betroffen Dart-bestanden.

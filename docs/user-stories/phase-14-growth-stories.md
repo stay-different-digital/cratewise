@@ -1393,3 +1393,81 @@ Pages Source switch (US-91) must happen for this to go live — until the repo i
 renamed, deploying the `/cratewise/` prefix would 404 the still-`Crate` site, so
 rename first (or together), then push. Optional tidy: `git remote set-url origin
 git@github.com:itris/cratewise.git` (GitHub redirects regardless).
+
+---
+
+### US-109: Easter egg — schud op Zoekscherm → Rick Roll
+
+**Priority: Low · 2 SP**
+
+> Als gebruiker die op het Zoekscherm staat,
+> wil ik dat de app naar de detailpagina van Rick Astley's "Never Gonna Give You Up" navigeert als ik mijn telefoon schud,
+> zodat er een verborgen verrassing zit in de app.
+
+**Context:**
+De Discogs-release is release ID `1758356` (Rick Astley – Never Gonna Give You Up). De schuddetectie is een momentopname — één shake triggert de navigatie, waarna de normale flow hervat. Aanbevolen package: `sensors_plus` (accelerometer) — kan gedeeld worden met US-110 en US-111.
+
+**Acceptance criteria:**
+- Op het Zoekscherm detecteert de app een schudbeweging (drempelwaarde afstembaar via constante).
+- Na een schud navigeert de app naar de Release Detail-pagina van Discogs release `1758356`.
+- De navigatie hergebruikt de bestaande `ReleaseDetailScreen`-route en de Discogs API-client — geen aparte route of hardcoded UI.
+- De schuddetectie is actief zolang het Zoekscherm in de voorgrond staat; op andere schermen doet niets.
+- Er is geen zichtbare UI-hint (geen knop, geen tooltip) — het is een echte easter egg.
+- `flutter analyze` geeft 0 issues en `flutter test` blijft groen; voeg een unit test toe die controleert dat de juiste release-ID wordt geladen.
+
+**QA-checklist:**
+- [ ] Schud het apparaat op het Zoekscherm — verifieer navigatie naar Rick Astley.
+- [ ] Navigeer naar een ander scherm — verifieer dat schudden daar niets doet.
+- [ ] Schud twee keer snel — verifieer dat de navigatie niet dubbel triggert.
+
+---
+
+### US-110: Easter egg — schud op Collectiescherm → willekeurige plaat
+
+**Priority: Low · 2 SP**
+
+> Als gebruiker die op het Collectiescherm staat,
+> wil ik dat de app me naar een willekeurige plaat uit mijn collectie brengt als ik mijn telefoon schud,
+> zodat ik op een speelse manier een plaat ontdek om te draaien.
+
+**Context:**
+De collectie is beschikbaar via de bestaande `LocalCollectionRepository`. Willekeurig item kiezen via `RANDOM()` in de query of `shuffle` op de lijst. Deelt schuddetectie-infrastructuur met US-109 en US-111.
+
+**Acceptance criteria:**
+- Op het Collectiescherm detecteert de app een schudbeweging.
+- Na een schud navigeert de app naar de detail-pagina van een willekeurig item uit de lokale collectie.
+- Als de collectie leeg is, toont de app een korte `SnackBar` ("Je collectie is leeg — voeg eerst platen toe.") en navigeert niet.
+- De willekeurige selectie is uniform over alle items in de collectie.
+- Er is geen zichtbare UI-hint.
+- `flutter analyze` geeft 0 issues en `flutter test` blijft groen; voeg een test toe voor het lege-collectie-geval.
+
+**QA-checklist:**
+- [ ] Schud op het Collectiescherm met ≥1 plaat — verifieer navigatie naar een detail-pagina.
+- [ ] Schud meerdere keren — verifieer dat er variatie is in de geselecteerde platen.
+- [ ] Schud met een lege collectie — verifieer de SnackBar.
+
+---
+
+### US-111: Easter egg — schud op Verlanglijstscherm → willekeurige plaat
+
+**Priority: Low · 2 SP**
+
+> Als gebruiker die op het Verlanglijstscherm staat,
+> wil ik dat de app me naar een willekeurige plaat uit mijn verlanglijst brengt als ik mijn telefoon schud,
+> zodat ik op een speelse manier een plaat ontdek die ik nog wil kopen.
+
+**Context:**
+Identiek aan US-110 maar voor de verlanglijst (`LocalWishlistRepository`). Kan worden opgepakt direct na of tegelijk met US-110 omdat de implementatiestructuur gelijk is. Deelt schuddetectie-infrastructuur met US-109 en US-110.
+
+**Acceptance criteria:**
+- Op het Verlanglijstscherm detecteert de app een schudbeweging.
+- Na een schud navigeert de app naar de detail-pagina van een willekeurig item uit de lokale verlanglijst.
+- Als de verlanglijst leeg is, toont de app een korte `SnackBar` ("Je verlanglijst is leeg — voeg eerst platen toe.") en navigeert niet.
+- De willekeurige selectie is uniform over alle items in de verlanglijst.
+- Er is geen zichtbare UI-hint.
+- `flutter analyze` geeft 0 issues en `flutter test` blijft groen; voeg een test toe voor het lege-verlanglijst-geval.
+
+**QA-checklist:**
+- [ ] Schud op het Verlanglijstscherm met ≥1 plaat — verifieer navigatie naar een detail-pagina.
+- [ ] Schud meerdere keren — verifieer variatie.
+- [ ] Schud met een lege verlanglijst — verifieer de SnackBar.
