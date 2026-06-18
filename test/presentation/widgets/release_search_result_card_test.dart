@@ -13,6 +13,16 @@ const _kindOfBlue = ReleaseSearchResult(
   year: 1959,
 );
 
+const _noYearNoCountry = ReleaseSearchResult(
+  id: 1,
+  title: 'Unknown Press',
+  artist: 'Various',
+  format: 'Vinyl',
+  label: 'Promo',
+  country: '',
+  year: null,
+);
+
 Widget _wrap({bool inCollection = false, bool onWishlist = false}) {
   return MaterialApp(
     home: Scaffold(
@@ -26,6 +36,44 @@ Widget _wrap({bool inCollection = false, bool onWishlist = false}) {
 }
 
 void main() {
+  group('ReleaseSearchResultCard meta field order (US-100)', () {
+    testWidgets('shows label · year · format on a single meta row', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('Columbia · 1959 · Vinyl'), findsOneWidget);
+    });
+
+    testWidgets('omits year from meta row when year is null', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ReleaseSearchResultCard(result: _noYearNoCountry),
+          ),
+        ),
+      );
+      expect(find.text('Promo · Vinyl'), findsOneWidget);
+    });
+
+    testWidgets('shows country on a separate row when non-empty', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap());
+      expect(find.text('US'), findsOneWidget);
+    });
+
+    testWidgets('omits country row when country is empty', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ReleaseSearchResultCard(result: _noYearNoCountry),
+          ),
+        ),
+      );
+      expect(find.text(''), findsNothing);
+    });
+  });
+
   group('ReleaseSearchResultCard membership icons (US-80)', () {
     testWidgets('shows the collection icon when in collection only', (
       tester,

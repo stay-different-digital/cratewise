@@ -457,18 +457,20 @@ void main() {
       expect(find.text('Kind Of Blue'), findsOneWidget);
     });
 
-    testWidgets('result card shows format and label', (tester) async {
+    testWidgets('result card shows label · year · format meta row', (
+      tester,
+    ) async {
       final service = _FakeSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
-      expect(find.text('Vinyl · Columbia'), findsOneWidget);
+      expect(find.text('Columbia · 1959 · Vinyl'), findsOneWidget);
     });
 
-    testWidgets('result card shows year and country', (tester) async {
+    testWidgets('result card shows country on a separate row', (tester) async {
       final service = _FakeSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'miles');
-      expect(find.text('1959 · US'), findsOneWidget);
+      expect(find.text('US'), findsOneWidget);
     });
 
     testWidgets('result card shows Discogs release ID', (tester) async {

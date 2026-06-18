@@ -20,12 +20,11 @@ class ReleaseSearchResultCard extends StatelessWidget {
   /// Whether this release is already on the local wishlist (US-80).
   final bool onWishlist;
 
-  String get _formatLabel => '${result.format} · ${result.label}';
-
-  String get _yearCountry {
+  String get _metaLine {
     final parts = <String>[
+      result.label,
       if (result.year != null) '${result.year}',
-      result.country,
+      result.format,
     ];
     return parts.join(' · ');
   }
@@ -62,20 +61,11 @@ class ReleaseSearchResultCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      _formatLabel,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
                     Row(
                       children: [
                         Expanded(
                           child: Text(
-                            _yearCountry,
+                            _metaLine,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -91,6 +81,17 @@ class ReleaseSearchResultCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (result.country.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        result.country,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),
