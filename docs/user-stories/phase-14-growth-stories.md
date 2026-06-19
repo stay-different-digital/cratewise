@@ -1471,3 +1471,339 @@ Identiek aan US-110 maar voor de verlanglijst (`LocalWishlistRepository`). Kan w
 - [ ] Schud op het Verlanglijstscherm met ≥1 plaat — verifieer navigatie naar een detail-pagina.
 - [ ] Schud meerdere keren — verifieer variatie.
 - [ ] Schud met een lege verlanglijst — verifieer de SnackBar.
+
+---
+
+### US-115: Collectiestatistieken en inzichten
+
+**4 SP · S5 (post-1.0 growth)**
+
+> Als verzamelaar,
+> wil ik statistieken en inzichten over mijn collectie zien,
+> zodat ik beter begrijp wat ik bezit en makkelijker keuzes maak over kopen,
+> opruimen en draaien.
+
+**Roadmap fit:** Phase 14 "Collection statistics and insights". Nummering gaat
+verder na US-114 omdat US-112 t/m US-114 al gereserveerd zijn voor Phase 15
+i18n.
+
+**Acceptance criteria:**
+- De app heeft een nieuw statistiekenoverzicht dat bereikbaar is vanuit de
+  Collection-tab of Settings, zonder de hoofdflow van zoeken/verzamelen te
+  verstoren.
+- Het overzicht toont minimaal: totaal aantal collectie-items, aantal unieke
+  artiesten, aantal unieke labels, verdeling per decennium, verdeling per
+  format, meest voorkomende genres/styles wanneer metadata beschikbaar is, en
+  aantal items zonder cover of zonder jaar.
+- Alle tellingen komen uit de lokale Drift-database en werken volledig offline;
+  er worden geen Discogs API-calls gedaan om het dashboard te openen.
+- Het overzicht degradeert netjes wanneer metadata ontbreekt: onbekende waarden
+  worden gegroepeerd als "Unknown" in plaats van verborgen of foutief geteld.
+- De berekeningen zijn snel genoeg voor grote collecties (richtlijn: 5.000
+  items zonder merkbare UI-freeze); dure aggregaties lopen buiten de build
+  methode en worden hergebruikt zolang de collectie niet wijzigt.
+- De iPad-layout gebruikt de extra breedte voor meerdere insight-blokken naast
+  elkaar; telefoonlayouts blijven scanbaar in een verticale lijst.
+- Tests dekken de aggregaties, lege collectie, ontbrekende metadata, en de
+  offline-only eigenschap (geen API-call bij openen).
+
+**Investigation notes:**
+- Start met read-only inzichten; bewerken, grafieken exporteren of waardeschatting
+  zijn expliciet buiten scope.
+- Gebruik de bestaande `CollectionRepository` / lokale database als bron. Als
+  aggregaties via `getAll()` te traag worden, voeg gerichte Drift-count queries
+  toe in de repositorylaag in plaats van logica in widgets te stoppen.
+- Hergebruik metadata die al beschikbaar is via collectie-items en
+  `CachedReleaseMetadata`; forceer geen netwerkrefresh.
+- Houd rekening met i18n: nieuwe zichtbare labels moeten via `AppLocalizations`
+  zodra Phase 15 actief is.
+
+---
+
+### US-116: Geavanceerde filters voor collectie en verlanglijst
+
+**5 SP · S5 (post-1.0 growth)**
+
+> Als gebruiker met een grotere collectie of verlanglijst,
+> wil ik kunnen filteren op eigenschappen zoals genre, jaar, format, label,
+> conditie en sync-status,
+> zodat ik snel een relevante subset vind zonder handmatig door alles te scrollen.
+
+**Roadmap fit:** Phase 14 "Advanced filters and saved searches".
+
+**Acceptance criteria:**
+- Collection en Wishlist krijgen een filterpaneel of filter-bottom-sheet dat
+  past bij telefoon en iPad, zonder de bestaande zoekbalk en sortering te breken.
+- Collection-filters ondersteunen minimaal: jaar/decennium, format, label,
+  genre/style wanneer beschikbaar, media condition, sleeve condition, tags,
+  storage location, sync-status, en items met/zonder cover.
+- Wishlist-filters ondersteunen minimaal: jaar/decennium, format, label,
+  genre/style wanneer beschikbaar, priority, target price aanwezig/niet aanwezig,
+  sync-status, en items met/zonder cover.
+- Meerdere filters kunnen gecombineerd worden; de UI toont duidelijk welke
+  filters actief zijn en biedt "Clear all".
+- Filteren gebeurt lokaal en offline, zonder Discogs API-calls.
+- Grote lijsten blijven performant; filterlogica staat in application/domain of
+  repositorylaag en niet verspreid over widgets.
+- De actieve filters blijven behouden zolang de gebruiker in dezelfde app-sessie
+  tussen tabs/detailpagina's navigeert; permanente opslag hoort bij US-117.
+- Tests dekken gecombineerde filters, lege resultaten, resetten, offline gedrag
+  en het verschil tussen collection- en wishlist-specifieke velden.
+
+**Investigation notes:**
+- Sluit aan op de bestaande filter/sort patronen in Collection/Wishlist en de
+  SearchFilter-infrastructuur uit US-84/US-85 waar dat zinvol is, maar voorkom
+  dat search-specifieke enumwaarden gaan lekken naar lokale lijstfilters.
+- Overweeg kleine value objects zoals `CollectionFilterSet` en
+  `WishlistFilterSet`, zodat filters testbaar blijven buiten Flutter widgets.
+- Voor tags en storage location kan een faceted count later waardevol zijn; deze
+  story hoeft alleen de filterselectie en filtering zelf te leveren.
+
+---
+
+### US-117: Opgeslagen zoekopdrachten en filtersets
+
+**4 SP · S5 (post-1.0 growth)**
+
+> Als gebruiker die vaak dezelfde zoekopdrachten of filters gebruikt,
+> wil ik zoekopdrachten en filtersets kunnen opslaan,
+> zodat ik met één tik terugkeer naar mijn vaste crate-digging workflows.
+
+**Roadmap fit:** Phase 14 "Advanced filters and saved searches". Bouwt voort op
+US-85 en bij voorkeur US-116.
+
+**Acceptance criteria:**
+- Een gebruiker kan een Discogs zoekopdracht opslaan inclusief zoektekst en
+  actieve Search-filter (All/Release/Artist/Label).
+- Een gebruiker kan een Collection- of Wishlist-filterset opslaan inclusief alle
+  actieve lokale filters uit US-116.
+- Opgeslagen items hebben een door de gebruiker bewerkbare naam, een type
+  (`discogsSearch`, `collectionFilter`, `wishlistFilter`) en een
+  laatst-gebruikt timestamp.
+- Een nieuw scherm of sectie toont opgeslagen zoekopdrachten/filtersets, met
+  openen, hernoemen en verwijderen.
+- Opgeslagen zoekopdrachten zijn local-first en werken offline voor lokale
+  filters; Discogs zoekopdrachten mogen offline geen netwerkresultaten eisen en
+  tonen dan bestaande cached search results wanneer beschikbaar.
+- De opslag gebruikt Drift met een migratie en repositorycontract; er worden geen
+  tokens of secrets opgeslagen in de saved-search payload.
+- Tests dekken opslaan, openen, hernoemen, verwijderen, type-specifieke payloads,
+  cached/offline Discogs search gedrag en database-migratie.
+
+**Investigation notes:**
+- Houd saved-search payloads expliciet en versieerbaar, bijvoorbeeld met een
+  klein JSON-model per type plus een `schemaVersion`, zodat latere filtervelden
+  niet oude opgeslagen zoekopdrachten breken.
+- Vermijd afhankelijkheid op UI-labels in de opgeslagen data; bewaar enumwaarden
+  of stabiele keys.
+- Denk aan iPad: saved searches kunnen later een sidebar/quick-access patroon
+  krijgen, maar deze story mag starten met een eenvoudige lijst.
+
+---
+
+### US-118: Volledige Discogs OAuth-login via backend proxy
+
+**8 SP · S4 (post-1.0 growth, security-sensitive)**
+
+> Als gebruiker,
+> wil ik mijn Discogs-account kunnen verbinden via een normale login-flow,
+> zodat ik geen personal access token hoef te kopiëren uit Discogs developer
+> settings.
+
+**Roadmap fit:** Phase 14 "Full Discogs OAuth login flow (with backend proxy if
+secrets require it)".
+
+**Acceptance criteria:**
+- De bestaande personal-token flow blijft werken en wordt niet verwijderd; OAuth
+  wordt een extra verbindingsmethode.
+- De Flutter-app bevat geen Discogs consumer secret en logt nooit OAuth tokens of
+  verifier values.
+- Als Discogs secrets nodig zijn, loopt de OAuth-handshake via een backend proxy
+  die request-token/access-token stappen afhandelt en alleen noodzakelijke data
+  teruggeeft aan de app.
+- De app opent de Discogs authorization URL in de externe browser of een
+  platformconforme auth sessie en verwerkt de callback/deep link betrouwbaar op
+  Android, iPhone en iPad.
+- Access credentials worden via de bestaande secure-storage abstractie bewaard;
+  logout/reconnect verwijdert OAuth credentials en laat lokale collectie/wishlist
+  intact tenzij de gebruiker expliciet wist.
+- De UI maakt duidelijk dat Cratewise een onafhankelijke app is die de Discogs
+  API gebruikt en geen officiele Discogs-app is.
+- Foutpaden zijn vriendelijk en tokenvrij: gebruiker annuleert, callback faalt,
+  proxy onbereikbaar, Discogs rate-limited/unavailable, invalid verifier.
+- Tests dekken de auth-state machine, secure-storage calls, logout/reconnect,
+  callback parsing, en tokenvrije fouten. Een manual QA checklist dekt de echte
+  platform-login op Android, iPhone en iPad.
+
+**Investigation notes:**
+- Start met een technische spike als de exacte Discogs OAuth 1.0a vereisten of
+  callback-URLs onzeker zijn; leg het resultaat vast in een ADR voordat productie
+  OAuth gebouwd wordt.
+- Security rules uit `docs/security/SECURITY.md` zijn leidend: geen secrets in
+  app/source, geen tokens in logs of error messages, en productie-secrets alleen
+  server-side.
+- Backend proxy deployment, monitoring en kosten zijn productbeslissingen; maak
+  die expliciet voordat dit als implementatiewerk wordt ingepland.
+
+---
+
+### US-119: Tweeweg-sync preview voor remote wijzigingen en conflicten
+
+**8 SP · S4 (post-1.0 growth)**
+
+> Als gebruiker die zowel in Cratewise als op Discogs wijzigingen maakt,
+> wil ik vooraf zien welke lokale en remote wijzigingen gesynchroniseerd worden,
+> zodat ik conflicten bewust kan oplossen zonder data kwijt te raken.
+
+**Roadmap fit:** Phase 14 "Two-way sync improvements between local data and
+Discogs". US-72 dekt lokale deletions richting Discogs; deze story dekt de
+bredere sync-preview en conflictafhandeling.
+
+**Acceptance criteria:**
+- De Import & Export hub krijgt een "Review sync changes" flow die lokale en
+  remote collection/wishlist verschillen samenvat voordat er iets geschreven
+  wordt.
+- De preview onderscheidt minimaal: lokaal nieuw, remote nieuw, lokaal gewijzigd,
+  remote gewijzigd, lokaal verwijderd in afwachting van Discogs-verwijdering
+  (US-72), duplicate/conflict, en niet-ondersteunde wijziging.
+- De gebruiker kiest per conflict een richting: lokaal behouden, remote
+  overnemen, of overslaan. Destructieve remote acties blijven opt-in.
+- De flow werkt per collection en wishlist en gebruikt dezelfde
+  rate-limit/backoff policy als bestaande import/export-acties.
+- Sync-acties zijn resumable waar mogelijk: gedeeltelijke successen worden in de
+  import/export history en sync-status zichtbaar, zonder dubbel schrijven bij een
+  retry.
+- Offline openen toont de laatst bekende lokale status en blokkeert remote sync
+  met een vriendelijke melding.
+- Tests dekken diff-classificatie, conflictkeuze, retry/idempotentie,
+  rate-limit/backoff, tokenvrije foutmeldingen en history/sync-status updates.
+
+**Investigation notes:**
+- Dit raakt meerdere bestaande flows: Discogs import, export, pending deletions,
+  sync-status en import/export history. Houd implementatie in kleine slices.
+- Maak eerst een pure diff service in application/domain; UI mag alleen een
+  voorbereide preview renderen.
+- Conflictregels moeten conservatief zijn. Bij twijfel niets overschrijven en
+  de gebruiker laten kiezen.
+
+---
+
+### US-120: Duplicaatdetectie en review
+
+**5 SP · S5 (post-1.0 growth)**
+
+> Als verzamelaar,
+> wil ik mogelijke dubbele records in mijn collectie en verlanglijst kunnen
+> vinden,
+> zodat ik mijn data kan opschonen zonder per ongeluk echte meerdere exemplaren
+> te verliezen.
+
+**Roadmap fit:** Phase 14 "Duplicate detection".
+
+**Acceptance criteria:**
+- De app heeft een duplicatenoverzicht dat mogelijke duplicates groepeert op
+  sterke match (zelfde Discogs release ID) en zachte match (zelfde
+  artist/title/year of barcode waar beschikbaar).
+- Het overzicht maakt onderscheid tussen echte duplicates en bewuste meerdere
+  exemplaren; de gebruiker kan een groep markeren als "keep as multiple copies"
+  zodat die niet steeds terugkomt.
+- Voor collection-items toont de groep relevante verschillen: condition, notes,
+  tags, storage location, instance_id/sync-status en created/updated metadata
+  wanneer beschikbaar.
+- Voor wishlist-items toont de groep relevante verschillen: priority, target
+  price, notes en sync-status.
+- De eerste versie voert geen automatische merge uit zonder bevestiging. De
+  gebruiker kan items openen en handmatig verwijderen; een later merge-flow mag
+  apart worden gepland.
+- Detectie werkt lokaal/offline en is performant voor grote collecties.
+- Tests dekken sterke matches, zachte matches, false-positive suppressie,
+  collection/wishlist verschillen en lege/kleine datasets.
+
+**Investigation notes:**
+- Begin read-only plus "ignore group"; echte merge is risicovol omdat lokale
+  velden en Discogs sync-status behouden moeten blijven.
+- Bewaar genegeerde duplicate-groepen met stabiele keys, bijvoorbeeld per
+  entiteitstype en genormaliseerde release/match key.
+- Houd meerdere exemplaren van dezelfde release legitiem: vinylcollecties kunnen
+  bewust meerdere pressings of copies hebben.
+
+---
+
+### US-121: DJ-velden voor BPM, key, energy en gig crates
+
+**6 SP · S5 (post-1.0 growth)**
+
+> Als DJ,
+> wil ik BPM, muzikale key, energy en gig-crates bij mijn platen kunnen beheren,
+> zodat Cratewise niet alleen mijn collectie registreert maar ook helpt bij het
+> voorbereiden van sets.
+
+**Roadmap fit:** Phase 14 "DJ fields: BPM, key, energy, gig crates".
+
+**Acceptance criteria:**
+- Collection-items krijgen optionele DJ-metadata: BPM, key, energy-level, en een
+  of meer gig crate labels.
+- De collection detail edit-flow laat deze velden beheren met passende controls:
+  numerieke invoer voor BPM, vaste key-keuze, energy als kleine schaal, en
+  crate-labels als tags.
+- Collection-lijst en filters kunnen op DJ-velden sorteren/filteren zodra de
+  velden gevuld zijn; lege waarden blijven netjes onderaan of in "Unknown".
+- CSV export/import neemt DJ-velden mee met duidelijke kolomnamen en valideert
+  ongeldige waarden zonder de hele import onnodig te laten falen.
+- DJ-velden zijn lokaal en worden niet naar Discogs geschreven; de UI zegt niet
+  of impliceert dat Discogs deze velden ondersteunt.
+- Database-migratie behoudt bestaande collecties zonder DJ-data.
+- Tests dekken validatie, opslag/migratie, edit-flow, filter/sort, CSV
+  round-trip en local-only syncgedrag.
+
+**Investigation notes:**
+- Definieer value objects voor BPM/key/energy zodat validatie niet in widgets of
+  CSV-code verspreid raakt.
+- "Gig crates" lijken op tags maar hebben een ander doel. Hergebruik UI-patronen
+  waar mogelijk, maar houd de data semantisch gescheiden zodat filters duidelijk
+  blijven.
+- Denk aan snelle invoer op telefoon: DJ's willen dit waarschijnlijk staand in
+  een platenzaak of tijdens setvoorbereiding doen.
+
+---
+
+### US-122: iPad powerfeatures voor drag-and-drop, toetsenbord en multitasking
+
+**8 SP · S5 (post-1.0 growth)**
+
+> Als iPad-gebruiker,
+> wil ik Cratewise efficient kunnen bedienen met groter scherm, toetsenbord en
+> multitasking,
+> zodat de app aanvoelt als een echte iPad-app in plaats van een vergrote
+> telefoonapp.
+
+**Roadmap fit:** Phase 14 "iPad-specific power features: drag and drop,
+keyboard shortcuts, multitasking".
+
+**Acceptance criteria:**
+- De iPad-layout ondersteunt relevante toetsenbordshortcuts, minimaal: zoeken
+  focussen, tab wisselen, geselecteerd item openen, terug navigeren, en
+  import/export of instellingen openen waar logisch.
+- Beschikbare shortcuts zijn discoverable via de standaard iPad keyboard
+  shortcut overlay (`Shortcuts`/`Actions`) en hebben geen conflict met platform-
+  conventies.
+- Drag-and-drop werkt binnen de app voor relevante flows, bijvoorbeeld een item
+  vanuit Wishlist naar Collection slepen als snelpad voor US-86, of items naar
+  gig crates/tags slepen zodra US-121 bestaat.
+- Split View en Slide Over blijven bruikbaar: layouts reageren op breedtewijziging
+  zonder overflow, verloren selectie of vastzittende navigation state.
+- De iPad two-pane patronen worden benut waar ze al bestaan of logisch zijn:
+  lijst links, detail rechts, zonder extra netwerkcalls door layoutwissels.
+- Alle features hebben muis/trackpad-vriendelijke hit targets en focus states.
+- Tests dekken shortcut actions, responsive width changes en waar mogelijk
+  drag-target state. Manual QA dekt fysieke iPad met hardware keyboard,
+  trackpad/muis, Split View en landscape/portrait.
+
+**Investigation notes:**
+- Splits implementatie waarschijnlijk op in kleinere slices: shortcuts eerst,
+  daarna multitasking-responsiveness, daarna drag-and-drop per concrete flow.
+- Gebruik Flutter's `Shortcuts`, `Actions`, `FocusableActionDetector` en
+  platform drag APIs waar passend; vermijd custom gesture hacks die met scrollen
+  of accessibility botsen.
+- Houd iPhone/Android gedrag ongewijzigd. Deze story voegt iPad-power toe maar
+  mag de mobiele basisflows niet zwaarder maken.

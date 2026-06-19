@@ -143,13 +143,13 @@ Done criteria:
 
 Possible features, to be prioritised after 1.0:
 
-- Collection statistics and insights.
-- Advanced filters and saved searches.
-- Full Discogs OAuth login flow (with backend proxy if secrets require it).
-- Two-way sync improvements between local data and Discogs.
-- Duplicate detection.
-- DJ fields: BPM, key, energy, gig crates.
-- iPad-specific power features: drag and drop, keyboard shortcuts, multitasking.
+- Collection statistics and insights (US-115).
+- Advanced filters (US-116) and saved searches (US-117).
+- Full Discogs OAuth login flow (US-118, with backend proxy if secrets require it).
+- Two-way sync improvements between local data and Discogs (US-72, US-119).
+- Duplicate detection (US-120).
+- DJ fields: BPM, key, energy, gig crates (US-121).
+- iPad-specific power features: drag and drop, keyboard shortcuts, multitasking (US-122).
 - Easter eggs: shake on Search → Rick Roll (US-109), shake on Collection → random record (US-110), shake on Wishlist → random record (US-111).
 
 ## Phase 15: Meertaligheid (i18n)
