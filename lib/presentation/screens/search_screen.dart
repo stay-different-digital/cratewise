@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import 'dart:convert';
+
+import 'package:uuid/uuid.dart';
+
 import '../../app/app_repositories.dart';
 import '../../app/router.dart';
 import '../../application/services/discogs_search_service.dart';
@@ -12,9 +16,11 @@ import '../../application/services/search_query_cache.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
 import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/release_search_result.dart';
+import '../../domain/models/saved_search.dart';
 import '../../domain/models/search_filter.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
+import '../../domain/repositories/saved_search_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/errors/app_error.dart';
@@ -109,6 +115,7 @@ class SearchScreen extends StatefulWidget {
     this.collectionRepository,
     this.wishlistRepository,
     this.accelerometerStream,
+    this.savedSearchRepository,
   });
 
   final DiscogsSearchService? searchService;
@@ -119,6 +126,7 @@ class SearchScreen extends StatefulWidget {
   final CollectionRepository? collectionRepository;
   final WishlistRepository? wishlistRepository;
   final Stream<AccelerometerEvent>? accelerometerStream;
+  final SavedSearchRepository? savedSearchRepository;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -129,6 +137,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   late final SearchQueryCache _cache;
   CollectionRepository? _collectionRepository;
   WishlistRepository? _wishlistRepository;
+  SavedSearchRepository? _savedSearchRepository;
   final _controller = TextEditingController();
   _SearchState _state = const _Idle();
   Timer? _debounce;
@@ -162,6 +171,8 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     final repos = AppRepositoriesScope.maybeOf(context);
     _collectionRepository = widget.collectionRepository ?? repos?.collection;
     _wishlistRepository = widget.wishlistRepository ?? repos?.wishlist;
+    _savedSearchRepository =
+        widget.savedSearchRepository ?? repos?.savedSearch;
     _controller.addListener(_onQueryChanged);
     _loadMembership();
     _shakeSub = (widget.accelerometerStream ?? accelerometerEventStream())
@@ -356,6 +367,73 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     super.dispose();
   }
 
+  Future<void> _saveCurrentSearch() async {
+    final repo = _savedSearchRepository;
+    if (repo == null) return;
+    final query = _controller.text.trim();
+    if (query.isEmpty) return;
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Save search'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Search name'),
+          onSubmitted: (v) => Navigator.of(ctx).pop(v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (name == null || name.isEmpty || !mounted) return;
+    await repo.save(SavedSearch(
+      id: const Uuid().v4(),
+      name: name,
+      type: SavedSearchType.discogsSearch,
+      payloadJson: jsonEncode({
+        'query': query,
+        'filter': _filter.name,
+        'schemaVersion': 1,
+      }),
+      schemaVersion: 1,
+      createdAt: DateTime.now(),
+      lastUsedAt: DateTime.now(),
+    ));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Search "$name" saved')),
+      );
+    }
+  }
+
+  Future<void> _loadSavedSearch() async {
+    final result = await context.push<SavedSearch>(
+      AppRoutes.savedSearches,
+      extra: SavedSearchType.discogsSearch,
+    );
+    if (result == null || !mounted) return;
+    final payload =
+        jsonDecode(result.payloadJson) as Map<String, dynamic>;
+    final query = payload['query'] as String;
+    final filter = SearchFilter.values.byName(
+      payload['filter'] as String? ?? SearchFilter.all.name,
+    );
+    _controller.text = query;
+    setState(() => _filter = filter);
+    _savedSearchRepository?.updateLastUsed(result.id, DateTime.now());
+    _onSubmit(query);
+  }
+
   void _onAccelerometer(AccelerometerEvent event) {
     if (!mounted || !_shakeActive) return;
     final shell = StatefulNavigationShell.maybeOf(context);
@@ -378,34 +456,55 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: TextField(
-            controller: _controller,
-            autocorrect: false,
-            enableSuggestions: false,
-            textInputAction: TextInputAction.search,
-            onSubmitted: _onSubmit,
-            decoration: InputDecoration(
-              hintText: AppLocalizations.of(context)!.searchHint,
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: hasQuery
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      tooltip: AppLocalizations.of(context)!.searchClearTooltip,
-                      onPressed: _controller.clear,
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(28),
-                borderSide: BorderSide.none,
+          padding: const EdgeInsets.fromLTRB(16, 16, 0, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: _onSubmit,
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.searchHint,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: hasQuery
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            tooltip: AppLocalizations.of(
+                              context,
+                            )!.searchClearTooltip,
+                            onPressed: _controller.clear,
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(28),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 0,
+                      horizontal: 20,
+                    ),
+                  ),
+                ),
               ),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 0,
-                horizontal: 20,
+              if (hasQuery)
+                IconButton(
+                  key: const Key('save-search-button'),
+                  icon: const Icon(Icons.bookmark_add_outlined),
+                  tooltip: 'Save search',
+                  onPressed: _saveCurrentSearch,
+                ),
+              IconButton(
+                key: const Key('load-saved-search-button'),
+                icon: const Icon(Icons.bookmarks_outlined),
+                tooltip: 'Saved searches',
+                onPressed: _loadSavedSearch,
               ),
-            ),
+            ],
           ),
         ),
         _SearchFilterChips(

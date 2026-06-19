@@ -14,6 +14,7 @@ import '../../domain/repositories/wishlist_repository.dart';
 import '../widgets/about_section_tile.dart';
 import '../widgets/discogs_token_section.dart';
 import '../widgets/send_feedback_tile.dart';
+import '../widgets/version_footer.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({
@@ -22,6 +23,7 @@ class SettingsScreen extends StatelessWidget {
     this.collectionRepository,
     this.wishlistRepository,
     this.deletionRepository,
+    this.appVersionLoader,
   });
 
   final ThumbnailEvictionService? evictionService;
@@ -31,6 +33,7 @@ class SettingsScreen extends StatelessWidget {
   final CollectionRepository? collectionRepository;
   final WishlistRepository? wishlistRepository;
   final PendingDiscogsDeletionRepository? deletionRepository;
+  final Future<String> Function()? appVersionLoader;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +60,15 @@ class SettingsScreen extends StatelessWidget {
           trailing: const Icon(Icons.chevron_right),
           onTap: () => context.push(AppRoutes.failedActions),
         ),
+        const SizedBox(height: 8),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.bookmarks_outlined),
+          title: const Text('Saved searches & filters'),
+          subtitle: const Text('Manage your saved searches and filter sets'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => context.push(AppRoutes.savedSearches),
+        ),
         if (evictionService != null) ...[
           const SizedBox(height: 8),
           _ThumbnailCacheSection(evictionService: evictionService!),
@@ -81,6 +93,7 @@ class SettingsScreen extends StatelessWidget {
         const SendFeedbackTile(),
         const SizedBox(height: 8),
         const AboutSectionTile(),
+        VersionFooter(appVersionLoader: appVersionLoader),
       ],
     );
   }

@@ -8,13 +8,19 @@ import 'package:sensors_plus/sensors_plus.dart';
 import '../../app/app_repositories.dart';
 import '../../app/router.dart';
 import '../../application/services/thumbnail_cache_service.dart';
+import '../../domain/models/cached_release_metadata.dart';
+import '../../domain/models/collection_filter_set.dart';
 import '../../domain/models/collection_item.dart';
+import '../../domain/models/saved_search.dart';
+import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
+import '../../domain/repositories/saved_search_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/import_notifier.dart';
 import '../../shared/route_observer.dart';
+import '../widgets/collection_filter_sheet.dart';
 import '../widgets/collection_item_card.dart';
 
 // ---------------------------------------------------------------------------
@@ -49,12 +55,16 @@ class CollectionScreen extends StatefulWidget {
     this.thumbnailRepository,
     this.thumbnailCacheService,
     this.accelerometerStream,
+    this.metadataRepository,
+    this.savedSearchRepository,
   });
 
   final CollectionRepository? repository;
   final ThumbnailRepository? thumbnailRepository;
   final ThumbnailCacheService? thumbnailCacheService;
   final Stream<AccelerometerEvent>? accelerometerStream;
+  final CachedReleaseMetadataRepository? metadataRepository;
+  final SavedSearchRepository? savedSearchRepository;
 
   @override
   State<CollectionScreen> createState() => _CollectionScreenState();
@@ -64,8 +74,12 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
   late final CollectionRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
   late final ThumbnailCacheService _thumbnailCacheService;
+  CachedReleaseMetadataRepository? _metaRepository;
+  late final SavedSearchRepository? _savedSearchRepository;
   bool _ownsThumbService = false;
   _CollectionState _state = const _Loading();
+  List<CachedReleaseMetadata> _metadata = const [];
+  CollectionFilterSet _filter = const CollectionFilterSet();
   final _searchController = TextEditingController();
   Timer? _debounce;
   String _debouncedQuery = '';
@@ -86,6 +100,12 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
         ThumbnailCacheService(repository: _thumbnailRepository);
     _repository =
         widget.repository ?? AppRepositoriesScope.of(context).collection;
+    _metaRepository =
+        widget.metadataRepository ??
+        AppRepositoriesScope.maybeOf(context)?.cachedRelease;
+    _savedSearchRepository =
+        widget.savedSearchRepository ??
+        AppRepositoriesScope.maybeOf(context)?.savedSearch;
     _load();
     collectionImportNotifier.addListener(_onImportNotification);
     _shakeSub = (widget.accelerometerStream ?? accelerometerEventStream())
@@ -115,9 +135,15 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
   Future<void> _load() async {
     setState(() => _state = const _Loading());
     try {
-      final items = await _repository.getAll();
+      final itemsFuture = _repository.getAll();
+      final metaFuture = _metaRepository?.getAll();
+      final items = await itemsFuture;
+      final meta = await metaFuture ?? const [];
       if (!mounted) return;
-      setState(() => _state = _Loaded(items));
+      setState(() {
+        _state = _Loaded(items);
+        _metadata = meta;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _state = const _CollectionError());
@@ -126,9 +152,15 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
 
   Future<void> _refresh() async {
     try {
-      final items = await _repository.getAll();
+      final itemsFuture = _repository.getAll();
+      final metaFuture = _metaRepository?.getAll();
+      final items = await itemsFuture;
+      final meta = await metaFuture ?? const [];
       if (!mounted) return;
-      setState(() => _state = _Loaded(items));
+      setState(() {
+        _state = _Loaded(items);
+        _metadata = meta;
+      });
     } catch (_) {
       if (!mounted) return;
       if (_state is _Loaded) {
@@ -237,6 +269,22 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
                 ),
               ),
               IconButton(
+                key: const Key('collection-filter-button'),
+                icon: Badge(
+                  isLabelVisible: !_filter.isEmpty,
+                  label: Text('${_filter.activeCount}'),
+                  child: const Icon(Icons.filter_list_outlined),
+                ),
+                tooltip: 'Filter',
+                onPressed: _openFilterSheet,
+              ),
+              IconButton(
+                key: const Key('collection-saved-searches-button'),
+                icon: const Icon(Icons.bookmark_outline),
+                tooltip: 'Saved filters',
+                onPressed: _openSavedSearches,
+              ),
+              IconButton(
                 key: const Key('collection-stats-button'),
                 icon: const Icon(Icons.bar_chart_outlined),
                 tooltip: 'View statistics',
@@ -265,9 +313,36 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
     };
   }
 
+  Future<void> _openFilterSheet() async {
+    final items =
+        _state is _Loaded ? (_state as _Loaded).items : <CollectionItem>[];
+    final result = await showModalBottomSheet<CollectionFilterSet>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => CollectionFilterSheet(
+        current: _filter,
+        items: items,
+        metadata: _metadata,
+        savedSearchRepository: _savedSearchRepository,
+      ),
+    );
+    if (result != null && mounted) setState(() => _filter = result);
+  }
+
+  Future<void> _openSavedSearches() async {
+    final result = await context.push<SavedSearch>(
+      AppRoutes.savedSearches,
+      extra: SavedSearchType.collectionFilter,
+    );
+    if (result == null || !mounted) return;
+    final filter = CollectionFilterSet.fromJsonString(result.payloadJson);
+    setState(() => _filter = filter);
+    _savedSearchRepository?.updateLastUsed(result.id, DateTime.now());
+  }
+
   Widget _buildLoadedList(List<CollectionItem> items) {
     final q = _debouncedQuery.trim().toLowerCase();
-    final filtered = q.isEmpty
+    var filtered = q.isEmpty
         ? items
         : items
               .where(
@@ -277,14 +352,29 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
               )
               .toList();
 
+    if (!_filter.isEmpty) {
+      filtered = _filter.apply(filtered, metadata: _metadata);
+    }
+
     if (filtered.isEmpty) {
       return _NoSearchResults(query: _debouncedQuery.trim());
     }
     return RefreshIndicator(
       onRefresh: _refresh,
-      child: _CollectionList(
-        items: filtered,
-        thumbnailCacheService: _thumbnailCacheService,
+      child: Column(
+        children: [
+          if (!_filter.isEmpty)
+            _ActiveFilterBar(
+              count: _filter.activeCount,
+              onClear: () => setState(() => _filter = const CollectionFilterSet()),
+            ),
+          Expanded(
+            child: _CollectionList(
+              items: filtered,
+              thumbnailCacheService: _thumbnailCacheService,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -351,6 +441,50 @@ class _CollectionList extends StatelessWidget {
 
   void _openDetail(BuildContext context, int index) {
     context.push(AppRoutes.collectionDetail(items[index].id));
+  }
+}
+
+class _ActiveFilterBar extends StatelessWidget {
+  const _ActiveFilterBar({required this.count, required this.onClear});
+
+  final int count;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          Icon(
+            Icons.filter_list,
+            size: 16,
+            color: theme.colorScheme.secondary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$count filter${count == 1 ? '' : 's'} active',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.secondary,
+              ),
+            ),
+          ),
+          TextButton(
+            key: const Key('clear-filters-button'),
+            onPressed: onClear,
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

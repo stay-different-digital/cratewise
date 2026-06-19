@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../application/services/thumbnail_eviction_service.dart';
 import '../infrastructure/local_database/local_thumbnail_repository.dart';
+import '../domain/models/saved_search.dart';
 import '../presentation/screens/barcode_scan_screen.dart';
 import '../presentation/screens/onboarding_screen.dart';
 import '../presentation/screens/collection_csv_export_preview_screen.dart';
@@ -17,6 +18,7 @@ import '../presentation/screens/import_export_history_screen.dart';
 import '../presentation/screens/pending_deletions_screen.dart';
 import '../presentation/screens/import_export_screen.dart';
 import '../presentation/screens/release_detail_screen.dart';
+import '../presentation/screens/saved_searches_screen.dart';
 import '../presentation/screens/search_screen.dart';
 import '../presentation/screens/settings_screen.dart';
 import '../presentation/screens/wishlist_csv_export_preview_screen.dart';
@@ -68,6 +70,7 @@ abstract final class AppRoutes {
 
   static const onboarding = '/onboarding';
 
+  static const savedSearches = '/saved-searches';
   static const collectionStatistics = '/collection/statistics';
   static String collectionDetail(String itemId) => '/collection/$itemId';
   static String wishlistDetail(String itemId) => '/wishlist/$itemId';
@@ -84,6 +87,12 @@ GoRouter createAppRouter({bool showOnboarding = false}) => GoRouter(
     GoRoute(
       path: AppRoutes.onboarding,
       builder: (_, _) => const OnboardingScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.savedSearches,
+      builder: (_, state) => SavedSearchesScreen(
+        filterType: state.extra as SavedSearchType?,
+      ),
     ),
     StatefulShellRoute.indexedStack(
       builder: (_, _, navigationShell) =>

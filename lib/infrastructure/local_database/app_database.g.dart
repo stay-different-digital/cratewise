@@ -178,6 +178,46 @@ class $CollectionItemsTable extends CollectionItems
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _bpmMeta = const VerificationMeta('bpm');
+  @override
+  late final GeneratedColumn<int> bpm = GeneratedColumn<int>(
+    'bpm',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<MusicalKey?, String> musicalKey =
+      GeneratedColumn<String>(
+        'musical_key',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<MusicalKey?>($CollectionItemsTable.$convertermusicalKeyn);
+  static const VerificationMeta _energyLevelMeta = const VerificationMeta(
+    'energyLevel',
+  );
+  @override
+  late final GeneratedColumn<int> energyLevel = GeneratedColumn<int>(
+    'energy_level',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<String>?, String> gigCrates =
+      GeneratedColumn<String>(
+        'gig_crates',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<List<String>?>(
+        $CollectionItemsTable.$convertergigCratesn,
+      );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -219,6 +259,10 @@ class $CollectionItemsTable extends CollectionItems
     storageLocation,
     syncStatus,
     discogsInstanceId,
+    bpm,
+    musicalKey,
+    energyLevel,
+    gigCrates,
     createdAt,
     updatedAt,
   ];
@@ -326,6 +370,21 @@ class $CollectionItemsTable extends CollectionItems
         ),
       );
     }
+    if (data.containsKey('bpm')) {
+      context.handle(
+        _bpmMeta,
+        bpm.isAcceptableOrUnknown(data['bpm']!, _bpmMeta),
+      );
+    }
+    if (data.containsKey('energy_level')) {
+      context.handle(
+        _energyLevelMeta,
+        energyLevel.isAcceptableOrUnknown(
+          data['energy_level']!,
+          _energyLevelMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -427,6 +486,26 @@ class $CollectionItemsTable extends CollectionItems
         DriftSqlType.int,
         data['${effectivePrefix}discogs_instance_id'],
       ),
+      bpm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bpm'],
+      ),
+      musicalKey: $CollectionItemsTable.$convertermusicalKeyn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}musical_key'],
+        ),
+      ),
+      energyLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}energy_level'],
+      ),
+      gigCrates: $CollectionItemsTable.$convertergigCratesn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}gig_crates'],
+        ),
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -453,6 +532,14 @@ class $CollectionItemsTable extends CollectionItems
       const SyncStatusConverter();
   static TypeConverter<SyncStatus?, String?> $convertersyncStatusn =
       NullAwareTypeConverter.wrap($convertersyncStatus);
+  static TypeConverter<MusicalKey, String> $convertermusicalKey =
+      const MusicalKeyConverter();
+  static TypeConverter<MusicalKey?, String?> $convertermusicalKeyn =
+      NullAwareTypeConverter.wrap($convertermusicalKey);
+  static TypeConverter<List<String>, String> $convertergigCrates =
+      const StringListConverter();
+  static TypeConverter<List<String>?, String?> $convertergigCratesn =
+      NullAwareTypeConverter.wrap($convertergigCrates);
 }
 
 class CollectionRow extends DataClass implements Insertable<CollectionRow> {
@@ -473,6 +560,10 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
   final String? storageLocation;
   final SyncStatus? syncStatus;
   final int? discogsInstanceId;
+  final int? bpm;
+  final MusicalKey? musicalKey;
+  final int? energyLevel;
+  final List<String>? gigCrates;
   final DateTime createdAt;
   final DateTime updatedAt;
   const CollectionRow({
@@ -493,6 +584,10 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     this.storageLocation,
     this.syncStatus,
     this.discogsInstanceId,
+    this.bpm,
+    this.musicalKey,
+    this.energyLevel,
+    this.gigCrates,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -550,6 +645,22 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     if (!nullToAbsent || discogsInstanceId != null) {
       map['discogs_instance_id'] = Variable<int>(discogsInstanceId);
     }
+    if (!nullToAbsent || bpm != null) {
+      map['bpm'] = Variable<int>(bpm);
+    }
+    if (!nullToAbsent || musicalKey != null) {
+      map['musical_key'] = Variable<String>(
+        $CollectionItemsTable.$convertermusicalKeyn.toSql(musicalKey),
+      );
+    }
+    if (!nullToAbsent || energyLevel != null) {
+      map['energy_level'] = Variable<int>(energyLevel);
+    }
+    if (!nullToAbsent || gigCrates != null) {
+      map['gig_crates'] = Variable<String>(
+        $CollectionItemsTable.$convertergigCratesn.toSql(gigCrates),
+      );
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -592,6 +703,16 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       discogsInstanceId: discogsInstanceId == null && nullToAbsent
           ? const Value.absent()
           : Value(discogsInstanceId),
+      bpm: bpm == null && nullToAbsent ? const Value.absent() : Value(bpm),
+      musicalKey: musicalKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(musicalKey),
+      energyLevel: energyLevel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(energyLevel),
+      gigCrates: gigCrates == null && nullToAbsent
+          ? const Value.absent()
+          : Value(gigCrates),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -624,6 +745,10 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       storageLocation: serializer.fromJson<String?>(json['storageLocation']),
       syncStatus: serializer.fromJson<SyncStatus?>(json['syncStatus']),
       discogsInstanceId: serializer.fromJson<int?>(json['discogsInstanceId']),
+      bpm: serializer.fromJson<int?>(json['bpm']),
+      musicalKey: serializer.fromJson<MusicalKey?>(json['musicalKey']),
+      energyLevel: serializer.fromJson<int?>(json['energyLevel']),
+      gigCrates: serializer.fromJson<List<String>?>(json['gigCrates']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -649,6 +774,10 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       'storageLocation': serializer.toJson<String?>(storageLocation),
       'syncStatus': serializer.toJson<SyncStatus?>(syncStatus),
       'discogsInstanceId': serializer.toJson<int?>(discogsInstanceId),
+      'bpm': serializer.toJson<int?>(bpm),
+      'musicalKey': serializer.toJson<MusicalKey?>(musicalKey),
+      'energyLevel': serializer.toJson<int?>(energyLevel),
+      'gigCrates': serializer.toJson<List<String>?>(gigCrates),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -672,6 +801,10 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     Value<String?> storageLocation = const Value.absent(),
     Value<SyncStatus?> syncStatus = const Value.absent(),
     Value<int?> discogsInstanceId = const Value.absent(),
+    Value<int?> bpm = const Value.absent(),
+    Value<MusicalKey?> musicalKey = const Value.absent(),
+    Value<int?> energyLevel = const Value.absent(),
+    Value<List<String>?> gigCrates = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => CollectionRow(
@@ -696,6 +829,10 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     discogsInstanceId: discogsInstanceId.present
         ? discogsInstanceId.value
         : this.discogsInstanceId,
+    bpm: bpm.present ? bpm.value : this.bpm,
+    musicalKey: musicalKey.present ? musicalKey.value : this.musicalKey,
+    energyLevel: energyLevel.present ? energyLevel.value : this.energyLevel,
+    gigCrates: gigCrates.present ? gigCrates.value : this.gigCrates,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -730,6 +867,14 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       discogsInstanceId: data.discogsInstanceId.present
           ? data.discogsInstanceId.value
           : this.discogsInstanceId,
+      bpm: data.bpm.present ? data.bpm.value : this.bpm,
+      musicalKey: data.musicalKey.present
+          ? data.musicalKey.value
+          : this.musicalKey,
+      energyLevel: data.energyLevel.present
+          ? data.energyLevel.value
+          : this.energyLevel,
+      gigCrates: data.gigCrates.present ? data.gigCrates.value : this.gigCrates,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -755,6 +900,10 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
           ..write('storageLocation: $storageLocation, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('discogsInstanceId: $discogsInstanceId, ')
+          ..write('bpm: $bpm, ')
+          ..write('musicalKey: $musicalKey, ')
+          ..write('energyLevel: $energyLevel, ')
+          ..write('gigCrates: $gigCrates, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -762,7 +911,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     discogsReleaseId,
     artist,
@@ -780,9 +929,13 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     storageLocation,
     syncStatus,
     discogsInstanceId,
+    bpm,
+    musicalKey,
+    energyLevel,
+    gigCrates,
     createdAt,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -804,6 +957,10 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
           other.storageLocation == this.storageLocation &&
           other.syncStatus == this.syncStatus &&
           other.discogsInstanceId == this.discogsInstanceId &&
+          other.bpm == this.bpm &&
+          other.musicalKey == this.musicalKey &&
+          other.energyLevel == this.energyLevel &&
+          other.gigCrates == this.gigCrates &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -826,6 +983,10 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
   final Value<String?> storageLocation;
   final Value<SyncStatus?> syncStatus;
   final Value<int?> discogsInstanceId;
+  final Value<int?> bpm;
+  final Value<MusicalKey?> musicalKey;
+  final Value<int?> energyLevel;
+  final Value<List<String>?> gigCrates;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -847,6 +1008,10 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     this.storageLocation = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.discogsInstanceId = const Value.absent(),
+    this.bpm = const Value.absent(),
+    this.musicalKey = const Value.absent(),
+    this.energyLevel = const Value.absent(),
+    this.gigCrates = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -869,6 +1034,10 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     this.storageLocation = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.discogsInstanceId = const Value.absent(),
+    this.bpm = const Value.absent(),
+    this.musicalKey = const Value.absent(),
+    this.energyLevel = const Value.absent(),
+    this.gigCrates = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -899,6 +1068,10 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     Expression<String>? storageLocation,
     Expression<String>? syncStatus,
     Expression<int>? discogsInstanceId,
+    Expression<int>? bpm,
+    Expression<String>? musicalKey,
+    Expression<int>? energyLevel,
+    Expression<String>? gigCrates,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -921,6 +1094,10 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
       if (storageLocation != null) 'storage_location': storageLocation,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (discogsInstanceId != null) 'discogs_instance_id': discogsInstanceId,
+      if (bpm != null) 'bpm': bpm,
+      if (musicalKey != null) 'musical_key': musicalKey,
+      if (energyLevel != null) 'energy_level': energyLevel,
+      if (gigCrates != null) 'gig_crates': gigCrates,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -945,6 +1122,10 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     Value<String?>? storageLocation,
     Value<SyncStatus?>? syncStatus,
     Value<int?>? discogsInstanceId,
+    Value<int?>? bpm,
+    Value<MusicalKey?>? musicalKey,
+    Value<int?>? energyLevel,
+    Value<List<String>?>? gigCrates,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -967,6 +1148,10 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
       storageLocation: storageLocation ?? this.storageLocation,
       syncStatus: syncStatus ?? this.syncStatus,
       discogsInstanceId: discogsInstanceId ?? this.discogsInstanceId,
+      bpm: bpm ?? this.bpm,
+      musicalKey: musicalKey ?? this.musicalKey,
+      energyLevel: energyLevel ?? this.energyLevel,
+      gigCrates: gigCrates ?? this.gigCrates,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1039,6 +1224,22 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     if (discogsInstanceId.present) {
       map['discogs_instance_id'] = Variable<int>(discogsInstanceId.value);
     }
+    if (bpm.present) {
+      map['bpm'] = Variable<int>(bpm.value);
+    }
+    if (musicalKey.present) {
+      map['musical_key'] = Variable<String>(
+        $CollectionItemsTable.$convertermusicalKeyn.toSql(musicalKey.value),
+      );
+    }
+    if (energyLevel.present) {
+      map['energy_level'] = Variable<int>(energyLevel.value);
+    }
+    if (gigCrates.present) {
+      map['gig_crates'] = Variable<String>(
+        $CollectionItemsTable.$convertergigCratesn.toSql(gigCrates.value),
+      );
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1071,6 +1272,10 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
           ..write('storageLocation: $storageLocation, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('discogsInstanceId: $discogsInstanceId, ')
+          ..write('bpm: $bpm, ')
+          ..write('musicalKey: $musicalKey, ')
+          ..write('energyLevel: $energyLevel, ')
+          ..write('gigCrates: $gigCrates, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -5255,6 +5460,484 @@ class PendingDiscogsDeletionsCompanion
   }
 }
 
+class $SavedSearchesTable extends SavedSearches
+    with TableInfo<$SavedSearchesTable, SavedSearchRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SavedSearchesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<SavedSearchType, String> type =
+      GeneratedColumn<String>(
+        'type',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<SavedSearchType>($SavedSearchesTable.$convertertype);
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _schemaVersionMeta = const VerificationMeta(
+    'schemaVersion',
+  );
+  @override
+  late final GeneratedColumn<int> schemaVersion = GeneratedColumn<int>(
+    'schema_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastUsedAtMeta = const VerificationMeta(
+    'lastUsedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastUsedAt = GeneratedColumn<DateTime>(
+    'last_used_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    type,
+    payloadJson,
+    schemaVersion,
+    createdAt,
+    lastUsedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'saved_searches';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SavedSearchRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    if (data.containsKey('schema_version')) {
+      context.handle(
+        _schemaVersionMeta,
+        schemaVersion.isAcceptableOrUnknown(
+          data['schema_version']!,
+          _schemaVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_schemaVersionMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('last_used_at')) {
+      context.handle(
+        _lastUsedAtMeta,
+        lastUsedAt.isAcceptableOrUnknown(
+          data['last_used_at']!,
+          _lastUsedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_lastUsedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SavedSearchRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SavedSearchRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      type: $SavedSearchesTable.$convertertype.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}type'],
+        )!,
+      ),
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+      schemaVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}schema_version'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      lastUsedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_used_at'],
+      )!,
+    );
+  }
+
+  @override
+  $SavedSearchesTable createAlias(String alias) {
+    return $SavedSearchesTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<SavedSearchType, String> $convertertype =
+      const SavedSearchTypeConverter();
+}
+
+class SavedSearchRow extends DataClass implements Insertable<SavedSearchRow> {
+  final String id;
+  final String name;
+  final SavedSearchType type;
+  final String payloadJson;
+  final int schemaVersion;
+  final DateTime createdAt;
+  final DateTime lastUsedAt;
+  const SavedSearchRow({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.payloadJson,
+    required this.schemaVersion,
+    required this.createdAt,
+    required this.lastUsedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    {
+      map['type'] = Variable<String>(
+        $SavedSearchesTable.$convertertype.toSql(type),
+      );
+    }
+    map['payload_json'] = Variable<String>(payloadJson);
+    map['schema_version'] = Variable<int>(schemaVersion);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['last_used_at'] = Variable<DateTime>(lastUsedAt);
+    return map;
+  }
+
+  SavedSearchesCompanion toCompanion(bool nullToAbsent) {
+    return SavedSearchesCompanion(
+      id: Value(id),
+      name: Value(name),
+      type: Value(type),
+      payloadJson: Value(payloadJson),
+      schemaVersion: Value(schemaVersion),
+      createdAt: Value(createdAt),
+      lastUsedAt: Value(lastUsedAt),
+    );
+  }
+
+  factory SavedSearchRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SavedSearchRow(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      type: serializer.fromJson<SavedSearchType>(json['type']),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+      schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      lastUsedAt: serializer.fromJson<DateTime>(json['lastUsedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'type': serializer.toJson<SavedSearchType>(type),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+      'schemaVersion': serializer.toJson<int>(schemaVersion),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'lastUsedAt': serializer.toJson<DateTime>(lastUsedAt),
+    };
+  }
+
+  SavedSearchRow copyWith({
+    String? id,
+    String? name,
+    SavedSearchType? type,
+    String? payloadJson,
+    int? schemaVersion,
+    DateTime? createdAt,
+    DateTime? lastUsedAt,
+  }) => SavedSearchRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    type: type ?? this.type,
+    payloadJson: payloadJson ?? this.payloadJson,
+    schemaVersion: schemaVersion ?? this.schemaVersion,
+    createdAt: createdAt ?? this.createdAt,
+    lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+  );
+  SavedSearchRow copyWithCompanion(SavedSearchesCompanion data) {
+    return SavedSearchRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      type: data.type.present ? data.type.value : this.type,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+      schemaVersion: data.schemaVersion.present
+          ? data.schemaVersion.value
+          : this.schemaVersion,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastUsedAt: data.lastUsedAt.present
+          ? data.lastUsedAt.value
+          : this.lastUsedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SavedSearchRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('type: $type, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('schemaVersion: $schemaVersion, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastUsedAt: $lastUsedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    type,
+    payloadJson,
+    schemaVersion,
+    createdAt,
+    lastUsedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SavedSearchRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.type == this.type &&
+          other.payloadJson == this.payloadJson &&
+          other.schemaVersion == this.schemaVersion &&
+          other.createdAt == this.createdAt &&
+          other.lastUsedAt == this.lastUsedAt);
+}
+
+class SavedSearchesCompanion extends UpdateCompanion<SavedSearchRow> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<SavedSearchType> type;
+  final Value<String> payloadJson;
+  final Value<int> schemaVersion;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> lastUsedAt;
+  final Value<int> rowid;
+  const SavedSearchesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.type = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastUsedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SavedSearchesCompanion.insert({
+    required String id,
+    required String name,
+    required SavedSearchType type,
+    required String payloadJson,
+    required int schemaVersion,
+    required DateTime createdAt,
+    required DateTime lastUsedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       type = Value(type),
+       payloadJson = Value(payloadJson),
+       schemaVersion = Value(schemaVersion),
+       createdAt = Value(createdAt),
+       lastUsedAt = Value(lastUsedAt);
+  static Insertable<SavedSearchRow> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? type,
+    Expression<String>? payloadJson,
+    Expression<int>? schemaVersion,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? lastUsedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (type != null) 'type': type,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (schemaVersion != null) 'schema_version': schemaVersion,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastUsedAt != null) 'last_used_at': lastUsedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SavedSearchesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<SavedSearchType>? type,
+    Value<String>? payloadJson,
+    Value<int>? schemaVersion,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? lastUsedAt,
+    Value<int>? rowid,
+  }) {
+    return SavedSearchesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      payloadJson: payloadJson ?? this.payloadJson,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
+      createdAt: createdAt ?? this.createdAt,
+      lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(
+        $SavedSearchesTable.$convertertype.toSql(type.value),
+      );
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (schemaVersion.present) {
+      map['schema_version'] = Variable<int>(schemaVersion.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (lastUsedAt.present) {
+      map['last_used_at'] = Variable<DateTime>(lastUsedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SavedSearchesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('type: $type, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('schemaVersion: $schemaVersion, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastUsedAt: $lastUsedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5271,6 +5954,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ImportExportRowResultsTable(this);
   late final $PendingDiscogsDeletionsTable pendingDiscogsDeletions =
       $PendingDiscogsDeletionsTable(this);
+  late final $SavedSearchesTable savedSearches = $SavedSearchesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5283,6 +5967,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     importExportJobs,
     importExportRowResults,
     pendingDiscogsDeletions,
+    savedSearches,
   ];
 }
 
@@ -5305,6 +5990,10 @@ typedef $$CollectionItemsTableCreateCompanionBuilder =
       Value<String?> storageLocation,
       Value<SyncStatus?> syncStatus,
       Value<int?> discogsInstanceId,
+      Value<int?> bpm,
+      Value<MusicalKey?> musicalKey,
+      Value<int?> energyLevel,
+      Value<List<String>?> gigCrates,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -5328,6 +6017,10 @@ typedef $$CollectionItemsTableUpdateCompanionBuilder =
       Value<String?> storageLocation,
       Value<SyncStatus?> syncStatus,
       Value<int?> discogsInstanceId,
+      Value<int?> bpm,
+      Value<MusicalKey?> musicalKey,
+      Value<int?> energyLevel,
+      Value<List<String>?> gigCrates,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -5429,6 +6122,28 @@ class $$CollectionItemsTableFilterComposer
   ColumnFilters<int> get discogsInstanceId => $composableBuilder(
     column: $table.discogsInstanceId,
     builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bpm => $composableBuilder(
+    column: $table.bpm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<MusicalKey?, MusicalKey, String>
+  get musicalKey => $composableBuilder(
+    column: $table.musicalKey,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<int> get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<String>?, List<String>, String>
+  get gigCrates => $composableBuilder(
+    column: $table.gigCrates,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
@@ -5536,6 +6251,26 @@ class $$CollectionItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get bpm => $composableBuilder(
+    column: $table.bpm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get musicalKey => $composableBuilder(
+    column: $table.musicalKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gigCrates => $composableBuilder(
+    column: $table.gigCrates,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -5622,6 +6357,23 @@ class $$CollectionItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get bpm =>
+      $composableBuilder(column: $table.bpm, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<MusicalKey?, String> get musicalKey =>
+      $composableBuilder(
+        column: $table.musicalKey,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<int> get energyLevel => $composableBuilder(
+    column: $table.energyLevel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<List<String>?, String> get gigCrates =>
+      $composableBuilder(column: $table.gigCrates, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -5679,6 +6431,10 @@ class $$CollectionItemsTableTableManager
                 Value<String?> storageLocation = const Value.absent(),
                 Value<SyncStatus?> syncStatus = const Value.absent(),
                 Value<int?> discogsInstanceId = const Value.absent(),
+                Value<int?> bpm = const Value.absent(),
+                Value<MusicalKey?> musicalKey = const Value.absent(),
+                Value<int?> energyLevel = const Value.absent(),
+                Value<List<String>?> gigCrates = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -5700,6 +6456,10 @@ class $$CollectionItemsTableTableManager
                 storageLocation: storageLocation,
                 syncStatus: syncStatus,
                 discogsInstanceId: discogsInstanceId,
+                bpm: bpm,
+                musicalKey: musicalKey,
+                energyLevel: energyLevel,
+                gigCrates: gigCrates,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -5723,6 +6483,10 @@ class $$CollectionItemsTableTableManager
                 Value<String?> storageLocation = const Value.absent(),
                 Value<SyncStatus?> syncStatus = const Value.absent(),
                 Value<int?> discogsInstanceId = const Value.absent(),
+                Value<int?> bpm = const Value.absent(),
+                Value<MusicalKey?> musicalKey = const Value.absent(),
+                Value<int?> energyLevel = const Value.absent(),
+                Value<List<String>?> gigCrates = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -5744,6 +6508,10 @@ class $$CollectionItemsTableTableManager
                 storageLocation: storageLocation,
                 syncStatus: syncStatus,
                 discogsInstanceId: discogsInstanceId,
+                bpm: bpm,
+                musicalKey: musicalKey,
+                energyLevel: energyLevel,
+                gigCrates: gigCrates,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -7832,6 +8600,251 @@ typedef $$PendingDiscogsDeletionsTableProcessedTableManager =
       PendingDiscogsDeletionRow,
       PrefetchHooks Function()
     >;
+typedef $$SavedSearchesTableCreateCompanionBuilder =
+    SavedSearchesCompanion Function({
+      required String id,
+      required String name,
+      required SavedSearchType type,
+      required String payloadJson,
+      required int schemaVersion,
+      required DateTime createdAt,
+      required DateTime lastUsedAt,
+      Value<int> rowid,
+    });
+typedef $$SavedSearchesTableUpdateCompanionBuilder =
+    SavedSearchesCompanion Function({
+      Value<String> id,
+      Value<String> name,
+      Value<SavedSearchType> type,
+      Value<String> payloadJson,
+      Value<int> schemaVersion,
+      Value<DateTime> createdAt,
+      Value<DateTime> lastUsedAt,
+      Value<int> rowid,
+    });
+
+class $$SavedSearchesTableFilterComposer
+    extends Composer<_$AppDatabase, $SavedSearchesTable> {
+  $$SavedSearchesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<SavedSearchType, SavedSearchType, String>
+  get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SavedSearchesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SavedSearchesTable> {
+  $$SavedSearchesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SavedSearchesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SavedSearchesTable> {
+  $$SavedSearchesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<SavedSearchType, String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$SavedSearchesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SavedSearchesTable,
+          SavedSearchRow,
+          $$SavedSearchesTableFilterComposer,
+          $$SavedSearchesTableOrderingComposer,
+          $$SavedSearchesTableAnnotationComposer,
+          $$SavedSearchesTableCreateCompanionBuilder,
+          $$SavedSearchesTableUpdateCompanionBuilder,
+          (
+            SavedSearchRow,
+            BaseReferences<_$AppDatabase, $SavedSearchesTable, SavedSearchRow>,
+          ),
+          SavedSearchRow,
+          PrefetchHooks Function()
+        > {
+  $$SavedSearchesTableTableManager(_$AppDatabase db, $SavedSearchesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SavedSearchesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SavedSearchesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SavedSearchesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<SavedSearchType> type = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> lastUsedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SavedSearchesCompanion(
+                id: id,
+                name: name,
+                type: type,
+                payloadJson: payloadJson,
+                schemaVersion: schemaVersion,
+                createdAt: createdAt,
+                lastUsedAt: lastUsedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                required SavedSearchType type,
+                required String payloadJson,
+                required int schemaVersion,
+                required DateTime createdAt,
+                required DateTime lastUsedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => SavedSearchesCompanion.insert(
+                id: id,
+                name: name,
+                type: type,
+                payloadJson: payloadJson,
+                schemaVersion: schemaVersion,
+                createdAt: createdAt,
+                lastUsedAt: lastUsedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SavedSearchesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SavedSearchesTable,
+      SavedSearchRow,
+      $$SavedSearchesTableFilterComposer,
+      $$SavedSearchesTableOrderingComposer,
+      $$SavedSearchesTableAnnotationComposer,
+      $$SavedSearchesTableCreateCompanionBuilder,
+      $$SavedSearchesTableUpdateCompanionBuilder,
+      (
+        SavedSearchRow,
+        BaseReferences<_$AppDatabase, $SavedSearchesTable, SavedSearchRow>,
+      ),
+      SavedSearchRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7856,4 +8869,6 @@ class $AppDatabaseManager {
         _db,
         _db.pendingDiscogsDeletions,
       );
+  $$SavedSearchesTableTableManager get savedSearches =>
+      $$SavedSearchesTableTableManager(_db, _db.savedSearches);
 }

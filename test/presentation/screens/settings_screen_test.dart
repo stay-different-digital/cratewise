@@ -176,17 +176,31 @@ SettingsScreen _settings({
   CollectionRepository? collection,
   WishlistRepository? wishlist,
   PendingDiscogsDeletionRepository? deletions,
+  Future<String> Function()? appVersionLoader,
 }) => SettingsScreen(
   evictionService: evictionService,
   collectionRepository: collection ?? _FakeCollectionRepo(),
   wishlistRepository: wishlist ?? _FakeWishlistRepo(),
   deletionRepository: deletions ?? _FakeDeletionRepo(),
+  appVersionLoader: appVersionLoader,
 );
 
 Finder _clearIn(String tileTitle) => find.descendant(
   of: find.widgetWithText(ListTile, tileTitle),
   matching: find.widgetWithText(TextButton, 'Clear'),
 );
+
+// Scrolls the main list until the Clear button is visible, then taps it.
+// Required because the "Saved searches" tile (added in US-117) pushes the
+// LocalDataSection below the default 800×600 test viewport. The pumpAndSettle
+// after ensureVisible lets _loadCounts() complete (the section was off-screen
+// and not yet built until the scroll brings it into view).
+Future<void> _tapClearIn(WidgetTester tester, String tileTitle) async {
+  final btn = _clearIn(tileTitle);
+  await tester.ensureVisible(btn);
+  await tester.pumpAndSettle();
+  await tester.tap(btn);
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -323,7 +337,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(_clearIn('Clear collection'));
+      await _tapClearIn(tester, 'Clear collection');
       await tester.pumpAndSettle();
 
       expect(find.text('Clear collection?'), findsOneWidget);
@@ -356,7 +370,7 @@ void main() {
         );
         await tester.pump();
 
-        await tester.tap(_clearIn('Clear collection'));
+        await _tapClearIn(tester, 'Clear collection');
         await tester.pumpAndSettle();
         await tester.tap(
           find.descendant(
@@ -384,7 +398,7 @@ void main() {
       await tester.pumpWidget(_wrap(_settings(collection: collection)));
       await tester.pump();
 
-      await tester.tap(_clearIn('Clear collection'));
+      await _tapClearIn(tester, 'Clear collection');
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
       await tester.pumpAndSettle();
@@ -410,7 +424,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(_clearIn('Clear collection'));
+      await _tapClearIn(tester, 'Clear collection');
       await tester.pumpAndSettle();
       await tester.tap(
         find.descendant(
@@ -432,7 +446,7 @@ void main() {
       await tester.pumpWidget(_wrap(_settings(collection: collection)));
       await tester.pump();
 
-      await tester.tap(_clearIn('Clear collection'));
+      await _tapClearIn(tester, 'Clear collection');
       await tester.pumpAndSettle();
       await tester.tap(
         find.descendant(
@@ -475,6 +489,22 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('About Cratewise'), findsOneWidget);
+    });
+  });
+
+  group('SettingsScreen — version footer (US-72)', () {
+    testWidgets('shows version string below the about tile', (tester) async {
+      await tester.pumpWidget(
+        _wrap(_settings(appVersionLoader: () async => '1.0.0.1')),
+      );
+      await tester.pump();
+
+      await tester.scrollUntilVisible(
+        find.text('1.0.0.1'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('1.0.0.1'), findsOneWidget);
     });
   });
 

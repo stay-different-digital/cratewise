@@ -9,6 +9,7 @@ import '../infrastructure/local_database/local_import_export_job_repository.dart
 import '../infrastructure/local_database/local_import_export_row_result_repository.dart';
 import '../infrastructure/local_database/local_pending_discogs_deletion_repository.dart';
 import '../infrastructure/local_database/local_retry_action_repository.dart';
+import '../infrastructure/local_database/local_saved_search_repository.dart';
 import '../infrastructure/local_database/local_wishlist_repository.dart';
 
 /// All database-backed repositories created from a single [AppDatabase].
@@ -23,6 +24,7 @@ class AppRepositories {
       importExportJob = LocalImportExportJobRepository(db),
       importExportRowResult = LocalImportExportRowResultRepository(db),
       retryAction = LocalRetryActionRepository(db),
+      savedSearch = LocalSavedSearchRepository(db),
       transactionRunner = DatabaseTransactionRunner(db);
 
   final LocalCollectionRepository collection;
@@ -32,6 +34,7 @@ class AppRepositories {
   final LocalImportExportJobRepository importExportJob;
   final LocalImportExportRowResultRepository importExportRowResult;
   final LocalRetryActionRepository retryAction;
+  final LocalSavedSearchRepository savedSearch;
   final TransactionRunner transactionRunner;
 }
 

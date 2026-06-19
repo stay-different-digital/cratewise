@@ -8,13 +8,19 @@ import 'package:sensors_plus/sensors_plus.dart';
 import '../../app/app_repositories.dart';
 import '../../app/router.dart';
 import '../../application/services/thumbnail_cache_service.dart';
+import '../../domain/models/cached_release_metadata.dart';
+import '../../domain/models/saved_search.dart';
+import '../../domain/models/wishlist_filter_set.dart';
 import '../../domain/models/wishlist_item.dart';
+import '../../domain/repositories/cached_release_metadata_repository.dart';
+import '../../domain/repositories/saved_search_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/import_notifier.dart';
 import '../../shared/route_observer.dart';
+import '../widgets/wishlist_filter_sheet.dart';
 import '../widgets/wishlist_item_card.dart';
 
 // ---------------------------------------------------------------------------
@@ -49,12 +55,16 @@ class WishlistScreen extends StatefulWidget {
     this.thumbnailRepository,
     this.thumbnailCacheService,
     this.accelerometerStream,
+    this.metadataRepository,
+    this.savedSearchRepository,
   });
 
   final WishlistRepository? repository;
   final ThumbnailRepository? thumbnailRepository;
   final ThumbnailCacheService? thumbnailCacheService;
   final Stream<AccelerometerEvent>? accelerometerStream;
+  final CachedReleaseMetadataRepository? metadataRepository;
+  final SavedSearchRepository? savedSearchRepository;
 
   @override
   State<WishlistScreen> createState() => _WishlistScreenState();
@@ -64,8 +74,12 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   late final WishlistRepository _repository;
   late final ThumbnailRepository _thumbnailRepository;
   late final ThumbnailCacheService _thumbnailCacheService;
+  CachedReleaseMetadataRepository? _metaRepository;
+  late final SavedSearchRepository? _savedSearchRepository;
   bool _ownsThumbService = false;
   _WishlistState _state = const _Loading();
+  List<CachedReleaseMetadata> _metadata = const [];
+  WishlistFilterSet _filter = const WishlistFilterSet();
   final _searchController = TextEditingController();
   Timer? _debounce;
   String _debouncedQuery = '';
@@ -86,6 +100,12 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
         ThumbnailCacheService(repository: _thumbnailRepository);
     _repository =
         widget.repository ?? AppRepositoriesScope.of(context).wishlist;
+    _metaRepository =
+        widget.metadataRepository ??
+        AppRepositoriesScope.maybeOf(context)?.cachedRelease;
+    _savedSearchRepository =
+        widget.savedSearchRepository ??
+        AppRepositoriesScope.maybeOf(context)?.savedSearch;
     _load();
     wishlistImportNotifier.addListener(_onImportNotification);
     _shakeSub = (widget.accelerometerStream ?? accelerometerEventStream())
@@ -115,9 +135,15 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   Future<void> _load() async {
     setState(() => _state = const _Loading());
     try {
-      final items = await _repository.getAll();
+      final itemsFuture = _repository.getAll();
+      final metaFuture = _metaRepository?.getAll();
+      final items = await itemsFuture;
+      final meta = await metaFuture ?? const [];
       if (!mounted) return;
-      setState(() => _state = _Loaded(items));
+      setState(() {
+        _state = _Loaded(items);
+        _metadata = meta;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _state = const _WishlistError());
@@ -126,9 +152,15 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
 
   Future<void> _refresh() async {
     try {
-      final items = await _repository.getAll();
+      final itemsFuture = _repository.getAll();
+      final metaFuture = _metaRepository?.getAll();
+      final items = await itemsFuture;
+      final meta = await metaFuture ?? const [];
       if (!mounted) return;
-      setState(() => _state = _Loaded(items));
+      setState(() {
+        _state = _Loaded(items);
+        _metadata = meta;
+      });
     } catch (_) {
       if (!mounted) return;
       if (_state is _Loaded) {
@@ -169,9 +201,36 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
     };
   }
 
+  Future<void> _openFilterSheet() async {
+    final items =
+        _state is _Loaded ? (_state as _Loaded).items : <WishlistItem>[];
+    final result = await showModalBottomSheet<WishlistFilterSet>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => WishlistFilterSheet(
+        current: _filter,
+        items: items,
+        metadata: _metadata,
+        savedSearchRepository: _savedSearchRepository,
+      ),
+    );
+    if (result != null && mounted) setState(() => _filter = result);
+  }
+
+  Future<void> _openSavedSearches() async {
+    final result = await context.push<SavedSearch>(
+      AppRoutes.savedSearches,
+      extra: SavedSearchType.wishlistFilter,
+    );
+    if (result == null || !mounted) return;
+    final filter = WishlistFilterSet.fromJsonString(result.payloadJson);
+    setState(() => _filter = filter);
+    _savedSearchRepository?.updateLastUsed(result.id, DateTime.now());
+  }
+
   Widget _buildLoadedList(List<WishlistItem> items) {
     final q = _debouncedQuery.trim().toLowerCase();
-    final filtered = q.isEmpty
+    var filtered = q.isEmpty
         ? items
         : items
               .where(
@@ -181,14 +240,30 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
               )
               .toList();
 
+    if (!_filter.isEmpty) {
+      filtered = _filter.apply(filtered, metadata: _metadata);
+    }
+
     if (filtered.isEmpty) {
       return _NoSearchResults(query: _debouncedQuery.trim());
     }
     return RefreshIndicator(
       onRefresh: _refresh,
-      child: _WishlistList(
-        items: filtered,
-        thumbnailCacheService: _thumbnailCacheService,
+      child: Column(
+        children: [
+          if (!_filter.isEmpty)
+            _ActiveFilterBar(
+              count: _filter.activeCount,
+              onClear: () =>
+                  setState(() => _filter = const WishlistFilterSet()),
+            ),
+          Expanded(
+            child: _WishlistList(
+              items: filtered,
+              thumbnailCacheService: _thumbnailCacheService,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -224,46 +299,70 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: TextField(
-            controller: _searchController,
-            autocorrect: false,
-            enableSuggestions: false,
-            textInputAction: TextInputAction.search,
-            onChanged: (_) {
-              setState(() {}); // immediate: clear-button visibility
-              _debounce?.cancel();
-              _debounce = Timer(const Duration(milliseconds: 300), () {
-                if (mounted) {
-                  setState(() => _debouncedQuery = _searchController.text);
-                }
-              });
-            },
-            decoration: InputDecoration(
-              hintText: AppLocalizations.of(context)!.wishlistSearchHint,
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: hasQuery
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      tooltip: 'Clear search',
-                      onPressed: () {
-                        _debounce?.cancel();
-                        _searchController.clear();
-                        setState(() => _debouncedQuery = '');
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(28),
-                borderSide: BorderSide.none,
+          padding: const EdgeInsets.fromLTRB(16, 16, 0, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textInputAction: TextInputAction.search,
+                  onChanged: (_) {
+                    setState(() {}); // immediate: clear-button visibility
+                    _debounce?.cancel();
+                    _debounce = Timer(const Duration(milliseconds: 300), () {
+                      if (mounted) {
+                        setState(
+                          () => _debouncedQuery = _searchController.text,
+                        );
+                      }
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(context)!.wishlistSearchHint,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: hasQuery
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            tooltip: 'Clear search',
+                            onPressed: () {
+                              _debounce?.cancel();
+                              _searchController.clear();
+                              setState(() => _debouncedQuery = '');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(28),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 0,
+                      horizontal: 20,
+                    ),
+                  ),
+                ),
               ),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 0,
-                horizontal: 20,
+              IconButton(
+                key: const Key('wishlist-filter-button'),
+                icon: Badge(
+                  isLabelVisible: !_filter.isEmpty,
+                  label: Text('${_filter.activeCount}'),
+                  child: const Icon(Icons.filter_list_outlined),
+                ),
+                tooltip: 'Filter',
+                onPressed: _openFilterSheet,
               ),
-            ),
+              IconButton(
+                key: const Key('wishlist-saved-searches-button'),
+                icon: const Icon(Icons.bookmarks_outlined),
+                tooltip: 'Saved filters',
+                onPressed: _openSavedSearches,
+              ),
+            ],
           ),
         ),
         Expanded(child: _buildBody()),
@@ -275,6 +374,46 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
 // ---------------------------------------------------------------------------
 // Body widgets
 // ---------------------------------------------------------------------------
+
+class _ActiveFilterBar extends StatelessWidget {
+  const _ActiveFilterBar({required this.count, required this.onClear});
+
+  final int count;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          Icon(Icons.filter_list, size: 16, color: theme.colorScheme.secondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$count filter${count == 1 ? '' : 's'} active',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.secondary,
+              ),
+            ),
+          ),
+          TextButton(
+            key: const Key('clear-filters-button'),
+            onPressed: onClear,
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _WishlistList extends StatelessWidget {
   const _WishlistList({
