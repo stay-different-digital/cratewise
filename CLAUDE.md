@@ -1,3 +1,10 @@
+## Story workflow
+
+Bij elke user story: lees `docs/workflow/STORY_CHECKLIST.md` en volg alle stappen in volgorde.
+Sla geen stap over, ook niet als de story klein lijkt.
+
+---
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.

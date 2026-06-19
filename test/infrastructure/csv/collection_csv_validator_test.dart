@@ -472,4 +472,123 @@ void main() {
       });
     });
   });
+
+  group('DJ field validation (US-121)', () {
+    const djHeaders = [
+      'Artist',
+      'Title',
+      'Discogs Release ID',
+      'Media Condition',
+      'Sleeve Condition',
+      'BPM',
+      'Musical Key',
+      'Energy',
+      'Gig Crates',
+    ];
+    const djBase = [
+      'DJ Artist',
+      'DJ Track',
+      '55555',
+      'Near Mint (NM or M-)',
+      'Very Good Plus (VG+)',
+      '',
+      '',
+      '',
+      '',
+    ];
+
+    CsvParseSuccess dj(List<String> row) =>
+        CsvParseSuccess(headers: djHeaders, rows: [row]);
+
+    test('valid BPM is parsed', () {
+      final row = List<String>.from(djBase)..[5] = '128';
+      final preview = validator.validate(dj(row));
+      expect(preview.validRows.first.bpm, 128);
+    });
+
+    test('BPM below 20 fails', () {
+      final row = List<String>.from(djBase)..[5] = '19';
+      final preview = validator.validate(dj(row));
+      expect(preview.failedRows, hasLength(1));
+    });
+
+    test('BPM above 300 fails', () {
+      final row = List<String>.from(djBase)..[5] = '301';
+      final preview = validator.validate(dj(row));
+      expect(preview.failedRows, hasLength(1));
+    });
+
+    test('non-numeric BPM fails', () {
+      final row = List<String>.from(djBase)..[5] = 'fast';
+      final preview = validator.validate(dj(row));
+      expect(preview.failedRows, hasLength(1));
+    });
+
+    test('empty BPM maps to null', () {
+      final preview = validator.validate(dj(List<String>.from(djBase)));
+      expect(preview.validRows.first.bpm, isNull);
+    });
+
+    test('valid musical key is parsed', () {
+      final row = List<String>.from(djBase)..[6] = 'A major';
+      final preview = validator.validate(dj(row));
+      expect(preview.validRows.first.musicalKey, MusicalKey.aMajor);
+    });
+
+    test('invalid musical key fails', () {
+      final row = List<String>.from(djBase)..[6] = 'X# diminished';
+      final preview = validator.validate(dj(row));
+      expect(preview.failedRows, hasLength(1));
+    });
+
+    test('empty musical key maps to null', () {
+      final preview = validator.validate(dj(List<String>.from(djBase)));
+      expect(preview.validRows.first.musicalKey, isNull);
+    });
+
+    test('valid energy level is parsed', () {
+      final row = List<String>.from(djBase)..[7] = '3';
+      final preview = validator.validate(dj(row));
+      expect(preview.validRows.first.energyLevel, 3);
+    });
+
+    test('energy below 1 fails', () {
+      final row = List<String>.from(djBase)..[7] = '0';
+      final preview = validator.validate(dj(row));
+      expect(preview.failedRows, hasLength(1));
+    });
+
+    test('energy above 5 fails', () {
+      final row = List<String>.from(djBase)..[7] = '6';
+      final preview = validator.validate(dj(row));
+      expect(preview.failedRows, hasLength(1));
+    });
+
+    test('empty energy maps to null', () {
+      final preview = validator.validate(dj(List<String>.from(djBase)));
+      expect(preview.validRows.first.energyLevel, isNull);
+    });
+
+    test('pipe-separated gig crates are parsed', () {
+      final row = List<String>.from(djBase)..[8] = 'Summer Set|Techno Night';
+      final preview = validator.validate(dj(row));
+      expect(
+        preview.validRows.first.gigCrates,
+        ['Summer Set', 'Techno Night'],
+      );
+    });
+
+    test('empty gig crates maps to empty list', () {
+      final preview = validator.validate(dj(List<String>.from(djBase)));
+      expect(preview.validRows.first.gigCrates, isEmpty);
+    });
+
+    test('DJ columns are optional — missing columns are ignored gracefully', () {
+      final preview = validator.validate(_success([_kValidRow]));
+      expect(preview.validRows.first.bpm, isNull);
+      expect(preview.validRows.first.musicalKey, isNull);
+      expect(preview.validRows.first.energyLevel, isNull);
+      expect(preview.validRows.first.gigCrates, isEmpty);
+    });
+  });
 }

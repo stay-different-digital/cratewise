@@ -50,7 +50,7 @@ class _DetailError extends _DetailState {
 // Actions
 // ---------------------------------------------------------------------------
 
-enum _OverflowAction { remove }
+enum _OverflowAction { djFields, remove }
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -296,6 +296,21 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
     }
   }
 
+  Future<void> _showEditDjFieldsSheet(CollectionItem item) async {
+    final updated = await showModalBottomSheet<CollectionItem>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _EditDjFieldsSheet(item: item, repository: _repository),
+    );
+    if (updated != null && mounted) {
+      setState(() => _state = _Loaded(updated));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('DJ fields saved.')));
+    }
+  }
+
   Future<void> _showEditStorageLocationSheet(CollectionItem item) async {
     final updated = await showModalBottomSheet<CollectionItem>(
       context: context,
@@ -362,11 +377,19 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen>
                 PopupMenuButton<_OverflowAction>(
                   key: const Key('detail-overflow-menu'),
                   onSelected: (action) {
-                    if (action == _OverflowAction.remove) {
-                      _confirmRemove(state.item);
+                    switch (action) {
+                      case _OverflowAction.djFields:
+                        _showEditDjFieldsSheet(state.item);
+                      case _OverflowAction.remove:
+                        _confirmRemove(state.item);
                     }
                   },
                   itemBuilder: (_) => const [
+                    PopupMenuItem(
+                      key: Key('edit-dj-fields-menu-item'),
+                      value: _OverflowAction.djFields,
+                      child: Text('Edit DJ fields'),
+                    ),
                     PopupMenuItem(
                       value: _OverflowAction.remove,
                       child: Text('Remove from Cratewise'),
@@ -907,6 +930,12 @@ class _CollectionDetailBody extends StatelessWidget {
 
   bool get _hasTracklist => releaseDetail?.tracklist.isNotEmpty ?? false;
 
+  bool _hasDjFields(CollectionItem item) =>
+      item.bpm != null ||
+      item.musicalKey != null ||
+      item.energyLevel != null ||
+      item.gigCrates.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -938,6 +967,7 @@ class _CollectionDetailBody extends StatelessWidget {
             if (item.notes != null && item.notes!.isNotEmpty)
               _NotesSection(notes: item.notes!),
             if (item.tags.isNotEmpty) _TagsSection(tags: item.tags),
+            if (_hasDjFields(item)) _DjFieldsSection(item: item),
             if (_hasTracklist)
               ReleaseTracklistSection(tracks: releaseDetail!.tracklist),
             if (_hasReleaseNotes)
@@ -980,6 +1010,7 @@ class _CollectionDetailBody extends StatelessWidget {
                   if (item.notes != null && item.notes!.isNotEmpty)
                     _NotesSection(notes: item.notes!),
                   if (item.tags.isNotEmpty) _TagsSection(tags: item.tags),
+                  if (_hasDjFields(item)) _DjFieldsSection(item: item),
                   if (_hasTracklist)
                     ReleaseTracklistSection(tracks: releaseDetail!.tracklist),
                   if (_hasReleaseNotes)
@@ -1383,3 +1414,337 @@ String _syncStatusLabel(SyncStatus status) => switch (status) {
   SyncStatus.conflict => 'Needs review',
   SyncStatus.offline => 'Offline',
 };
+
+// ---------------------------------------------------------------------------
+// DJ fields display section (US-121)
+// ---------------------------------------------------------------------------
+
+class _DjFieldsSection extends StatelessWidget {
+  const _DjFieldsSection({required this.item});
+
+  final CollectionItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(height: 24),
+          Text('DJ', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          if (item.bpm != null)
+            _DjRow(label: 'BPM', value: '${item.bpm}'),
+          if (item.musicalKey != null)
+            _DjRow(label: 'Key', value: item.musicalKey!.label),
+          if (item.energyLevel != null)
+            _DjRow(
+              label: 'Energy',
+              value: '★' * item.energyLevel! + '☆' * (5 - item.energyLevel!),
+            ),
+          if (item.gigCrates.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text('Gig crates', style: theme.textTheme.bodySmall),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: item.gigCrates
+                  .map(
+                    (c) => Chip(
+                      key: Key('gig-crate-chip-$c'),
+                      label: Text(c),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DjRow extends StatelessWidget {
+  const _DjRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 72,
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Edit DJ fields sheet (US-121)
+// ---------------------------------------------------------------------------
+
+class _EditDjFieldsSheet extends StatefulWidget {
+  const _EditDjFieldsSheet({required this.item, required this.repository});
+
+  final CollectionItem item;
+  final CollectionRepository repository;
+
+  @override
+  State<_EditDjFieldsSheet> createState() => _EditDjFieldsSheetState();
+}
+
+class _EditDjFieldsSheetState extends State<_EditDjFieldsSheet> {
+  late final TextEditingController _bpmController;
+  MusicalKey? _musicalKey;
+  int? _energyLevel;
+  late List<String> _gigCrates;
+  late final TextEditingController _crateController;
+  bool _saving = false;
+  bool _hasError = false;
+  String? _bpmError;
+
+  @override
+  void initState() {
+    super.initState();
+    _bpmController = TextEditingController(
+      text: widget.item.bpm?.toString() ?? '',
+    );
+    _musicalKey = widget.item.musicalKey;
+    _energyLevel = widget.item.energyLevel;
+    _gigCrates = List<String>.from(widget.item.gigCrates);
+    _crateController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _bpmController.dispose();
+    _crateController.dispose();
+    super.dispose();
+  }
+
+  void _addCrate() {
+    final crate = _crateController.text.trim();
+    if (crate.isEmpty) return;
+    if (_gigCrates.any((c) => c.toLowerCase() == crate.toLowerCase())) return;
+    setState(() {
+      _gigCrates.add(crate);
+      _crateController.clear();
+    });
+  }
+
+  void _removeCrate(String crate) {
+    setState(() => _gigCrates.remove(crate));
+  }
+
+  Future<void> _save() async {
+    final bpmText = _bpmController.text.trim();
+    int? bpm;
+    if (bpmText.isNotEmpty) {
+      bpm = int.tryParse(bpmText);
+      if (bpm == null || bpm < 20 || bpm > 300) {
+        setState(() => _bpmError = 'Enter a BPM between 20 and 300');
+        return;
+      }
+    }
+    setState(() {
+      _saving = true;
+      _hasError = false;
+      _bpmError = null;
+    });
+    try {
+      final updated = CollectionItem(
+        id: widget.item.id,
+        discogsReleaseId: widget.item.discogsReleaseId,
+        artist: widget.item.artist,
+        title: widget.item.title,
+        label: widget.item.label,
+        catno: widget.item.catno,
+        format: widget.item.format,
+        country: widget.item.country,
+        year: widget.item.year,
+        coverUrl: widget.item.coverUrl,
+        mediaCondition: widget.item.mediaCondition,
+        sleeveCondition: widget.item.sleeveCondition,
+        notes: widget.item.notes,
+        tags: widget.item.tags,
+        storageLocation: widget.item.storageLocation,
+        syncStatus: widget.item.syncStatus,
+        discogsInstanceId: widget.item.discogsInstanceId,
+        createdAt: widget.item.createdAt,
+        updatedAt: DateTime.now(),
+        bpm: bpm,
+        musicalKey: _musicalKey,
+        energyLevel: _energyLevel,
+        gigCrates: List<String>.from(_gigCrates),
+      );
+      await widget.repository.update(updated);
+      if (!mounted) return;
+      Navigator.of(context).pop(updated);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _hasError = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 24 + bottomInset),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Edit DJ fields', style: theme.textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(
+            'Stored locally only — not synced to Discogs.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 24),
+          TextFormField(
+            key: const Key('bpm-text-field'),
+            controller: _bpmController,
+            enabled: !_saving,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'BPM',
+              hintText: '20–300',
+              errorText: _bpmError,
+            ),
+            onChanged: (_) {
+              if (_bpmError != null) setState(() => _bpmError = null);
+            },
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<MusicalKey?>(
+            key: const Key('musical-key-dropdown'),
+            initialValue: _musicalKey,
+            decoration: const InputDecoration(labelText: 'Musical key'),
+            items: [
+              const DropdownMenuItem(value: null, child: Text('Not set')),
+              ...MusicalKey.values.map(
+                (k) => DropdownMenuItem(value: k, child: Text(k.label)),
+              ),
+            ],
+            onChanged: _saving ? null : (v) => setState(() => _musicalKey = v),
+          ),
+          const SizedBox(height: 16),
+          Text('Energy', style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              for (final level in [1, 2, 3, 4, 5])
+                IconButton(
+                  key: Key('energy-$level'),
+                  icon: Icon(
+                    (_energyLevel ?? 0) >= level
+                        ? Icons.star
+                        : Icons.star_border,
+                    color: (_energyLevel ?? 0) >= level
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  onPressed: _saving
+                      ? null
+                      : () => setState(
+                            () => _energyLevel =
+                                _energyLevel == level ? null : level,
+                          ),
+                ),
+              if (_energyLevel != null) ...[
+                const SizedBox(width: 4),
+                Text('$_energyLevel / 5', style: theme.textTheme.bodySmall),
+              ],
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text('Gig crates', style: theme.textTheme.bodyMedium),
+          const SizedBox(height: 4),
+          if (_gigCrates.isNotEmpty) ...[
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                for (final crate in _gigCrates)
+                  InputChip(
+                    key: Key('gig-crate-chip-$crate'),
+                    label: Text(crate),
+                    deleteIcon: const Icon(Icons.close, size: 18),
+                    onDeleted: _saving ? null : () => _removeCrate(crate),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  key: const Key('gig-crate-input-field'),
+                  controller: _crateController,
+                  enabled: !_saving,
+                  decoration: const InputDecoration(labelText: 'Add a gig crate'),
+                  onFieldSubmitted: (_) => _addCrate(),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                key: const Key('add-gig-crate-button'),
+                icon: const Icon(Icons.add),
+                tooltip: 'Add gig crate',
+                onPressed: _saving ? null : _addCrate,
+              ),
+            ],
+          ),
+          if (_hasError) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Could not save DJ fields. Please try again.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          FilledButton(
+            key: const Key('save-dj-fields-button'),
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+}

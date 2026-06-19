@@ -1476,6 +1476,8 @@ Identiek aan US-110 maar voor de verlanglijst (`LocalWishlistRepository`). Kan w
 
 ### US-115: Collectiestatistieken en inzichten
 
+**Status: ✅ Resolved (2026-06-19)**
+
 **4 SP · S5 (post-1.0 growth)**
 
 > Als verzamelaar,
@@ -1811,6 +1813,8 @@ keyboard shortcuts, multitasking".
 ---
 
 ### US-123: Genre- en stijlstatistieken in Collectieoverzicht
+
+**Status: ✅ Resolved (2026-06-19)**
 
 **3 SP · S5 (post-1.0 growth)**
 

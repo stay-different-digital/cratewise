@@ -2066,4 +2066,169 @@ void main() {
       },
     );
   });
+
+  // ---------------------------------------------------------------------------
+  // DJ fields (US-121)
+  // ---------------------------------------------------------------------------
+
+  group('CollectionDetailScreen — DJ fields edit sheet (US-121)', () {
+    Future<void> openDjSheet(WidgetTester tester) async {
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit-dj-fields-menu-item')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('overflow menu shows Edit DJ fields option', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('detail-overflow-menu')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('edit-dj-fields-menu-item')), findsOneWidget);
+    });
+
+    testWidgets('sheet opens with BPM pre-filled from item', (tester) async {
+      final repo = _FakeCollectionRepository(
+        item: CollectionItem(
+          id: 'test-1',
+          discogsReleaseId: 1,
+          artist: 'DJ Test',
+          title: 'Test Track',
+          mediaCondition: RecordCondition.veryGood,
+          sleeveCondition: RecordCondition.nearMint,
+          tags: const [],
+          createdAt: DateTime(2026, 1, 1),
+          updatedAt: DateTime(2026, 1, 1),
+          bpm: 128,
+        ),
+      );
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await openDjSheet(tester);
+
+      expect(find.widgetWithText(TextFormField, '128'), findsOneWidget);
+    });
+
+    testWidgets('invalid BPM shows error and does not call repository', (
+      tester,
+    ) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await openDjSheet(tester);
+
+      await tester.enterText(find.byKey(const Key('bpm-text-field')), '999');
+      await tester.tap(find.byKey(const Key('save-dj-fields-button')));
+      await tester.pump();
+
+      expect(
+        find.text('Enter a BPM between 20 and 300'),
+        findsOneWidget,
+      );
+      expect(repo.updateCallCount, 0);
+    });
+
+    testWidgets('valid save calls repository and shows snackbar', (
+      tester,
+    ) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await openDjSheet(tester);
+
+      await tester.enterText(find.byKey(const Key('bpm-text-field')), '130');
+      await tester.tap(find.byKey(const Key('save-dj-fields-button')));
+      await tester.pumpAndSettle();
+
+      expect(repo.updateCallCount, 1);
+      expect(repo.lastUpdatedItem?.bpm, 130);
+      expect(find.text('DJ fields saved.'), findsOneWidget);
+    });
+
+    testWidgets('can add and remove a gig crate', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await openDjSheet(tester);
+
+      await tester.enterText(
+        find.byKey(const Key('gig-crate-input-field')),
+        'Summer Set',
+      );
+      await tester.tap(find.byKey(const Key('add-gig-crate-button')));
+      await tester.pump();
+
+      expect(
+        find.byKey(const Key('gig-crate-chip-Summer Set')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const Key('gig-crate-chip-Summer Set')),
+          matching: find.byIcon(Icons.close),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const Key('gig-crate-chip-Summer Set')), findsNothing);
+    });
+
+    testWidgets('DJ section visible in body when DJ fields are set', (
+      tester,
+    ) async {
+      final item = CollectionItem(
+        id: 'test-1',
+        discogsReleaseId: 1,
+        artist: 'Test',
+        title: 'Track',
+        mediaCondition: RecordCondition.veryGood,
+        sleeveCondition: RecordCondition.nearMint,
+        tags: const [],
+        createdAt: DateTime(2026, 1, 1),
+        updatedAt: DateTime(2026, 1, 1),
+        bpm: 130,
+        musicalKey: MusicalKey.aMajor,
+        energyLevel: 4,
+        gigCrates: const ['Summer Set'],
+      );
+      final repo = _FakeCollectionRepository(item: item);
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('DJ'), findsOneWidget);
+      expect(find.text('130'), findsOneWidget);
+      expect(find.text('A major'), findsOneWidget);
+      expect(find.byKey(const Key('gig-crate-chip-Summer Set')), findsOneWidget);
+    });
+
+    testWidgets('DJ section hidden when no DJ fields set', (tester) async {
+      final repo = _FakeCollectionRepository(item: _makeItem());
+      await tester.pumpWidget(
+        _wrap(CollectionDetailScreen(itemId: 'test-1', repository: repo)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('DJ'), findsNothing);
+    });
+  });
 }
