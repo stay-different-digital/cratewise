@@ -10,6 +10,27 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.0.2] — 2026-06-19
+
+### Added
+
+- **Advanced collection filters** — tap the filter icon in the Collection tab
+  to open a facet-based filter sheet. Filter by decade, format, label, genre,
+  style, media condition, sleeve condition, tag, storage location, sync status,
+  and cover presence. Active filters are shown in a bar below the toolbar with
+  a one-tap clear option. A badge on the filter button shows the active filter
+  count.
+- **Advanced wishlist filters** — same filter sheet experience in the Wishlist
+  tab: decade, format, label, genre, style, priority, sync status, target price,
+  and cover presence.
+- **Saved searches & filter sets** — save any Discogs search query, collection
+  filter set, or wishlist filter set with a custom name. Load, rename, or delete
+  saved items from the new Saved Searches screen (accessible from Settings or
+  from the bookmark icon in each surface's toolbar). Last-used timestamp is
+  tracked automatically.
+
+---
+
 ## [1.0.1] — 2026-06-19
 
 ### Added
