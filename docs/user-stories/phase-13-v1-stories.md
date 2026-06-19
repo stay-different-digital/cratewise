@@ -60,6 +60,32 @@ devices.
 
 ---
 
+### US-72: Version number is visible on the start screen and at the bottom of Settings
+
+**1 SP**
+
+> As a user or support agent looking at the app,
+> I want to see the app version without hunting through menus,
+> so that I can quickly report which build I am running.
+
+**Acceptance criteria:**
+- The onboarding screen (start screen) shows the version string in the format
+  `Major.Minor.ServiceRelease.BuildNR` (e.g. `1.0.0.1`) in a subtle footer at
+  the bottom of the screen.
+- The Settings screen shows the same version string as a plain footer below the
+  last list item (below the existing "About Cratewise" tile).
+- Both displays read the version at runtime via `package_info_plus` using the
+  `${info.version}.${info.buildNumber}` display format (see ADR-0003).
+- The version is never hardcoded.
+- Widget tests cover: version string appears on the onboarding screen; version
+  string appears in the Settings screen footer.
+- The `pubspec.yaml` `version` field follows the
+  `Major.Minor.ServiceRelease+BuildNR` scheme defined in ADR-0003: ServiceRelease
+  is incremented for each release, BuildNR is incremented for each build
+  iteration of that release.
+
+---
+
 ### US-71: Cratewise 1.0.0 is tagged and live in both stores
 
 **1 SP**
