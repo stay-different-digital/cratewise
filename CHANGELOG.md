@@ -10,7 +10,24 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
-## [1.0.0] — Unreleased
+## [1.0.1] — 2026-06-19
+
+### Added
+
+- **Collection statistics screen** — tap the chart icon next to the search
+  bar in the Collection tab to see a full breakdown of your collection:
+  total records, unique artists and labels, decade distribution, format
+  distribution, and counts of items missing a cover or year. Responsive
+  layout: phone shows a single column, iPad (≥700 dp) shows sections
+  side-by-side.
+- **Genre and style distributions** — when Discogs metadata is cached
+  locally for a release, its genres and styles are counted and shown as
+  ranked bar charts in the statistics screen. No extra API calls; purely
+  from the on-device cache.
+
+---
+
+## [1.0.0] — 2026-06-19
 
 First public release of Cratewise — a local-first vinyl collection app for
 collectors and DJs, for Android, iPhone, and iPad.
