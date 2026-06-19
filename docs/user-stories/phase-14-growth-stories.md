@@ -1524,7 +1524,7 @@ i18n.
 
 ### US-116: Geavanceerde filters voor collectie en verlanglijst
 
-**Status: In Progress**
+**Status: ✅ Resolved — v1.0.2**
 
 **5 SP · S5 (post-1.0 growth)**
 
@@ -1567,7 +1567,7 @@ i18n.
 
 ### US-117: Opgeslagen zoekopdrachten en filtersets
 
-**Status: In Progress**
+**Status: ✅ Resolved — v1.0.2**
 
 **4 SP · S5 (post-1.0 growth)**
 
