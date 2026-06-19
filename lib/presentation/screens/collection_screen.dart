@@ -187,46 +187,62 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: TextField(
-            controller: _searchController,
-            autocorrect: false,
-            enableSuggestions: false,
-            textInputAction: TextInputAction.search,
-            onChanged: (_) {
-              setState(() {}); // immediate: clear-button visibility
-              _debounce?.cancel();
-              _debounce = Timer(const Duration(milliseconds: 300), () {
-                if (mounted) {
-                  setState(() => _debouncedQuery = _searchController.text);
-                }
-              });
-            },
-            decoration: InputDecoration(
-              hintText: AppLocalizations.of(context)!.collectionSearchHint,
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: hasQuery
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      tooltip: 'Clear search',
-                      onPressed: () {
-                        _debounce?.cancel();
-                        _searchController.clear();
-                        setState(() => _debouncedQuery = '');
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(28),
-                borderSide: BorderSide.none,
+          padding: const EdgeInsets.fromLTRB(16, 16, 0, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  textInputAction: TextInputAction.search,
+                  onChanged: (_) {
+                    setState(() {}); // immediate: clear-button visibility
+                    _debounce?.cancel();
+                    _debounce = Timer(const Duration(milliseconds: 300), () {
+                      if (mounted) {
+                        setState(
+                          () => _debouncedQuery = _searchController.text,
+                        );
+                      }
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: AppLocalizations.of(
+                      context,
+                    )!.collectionSearchHint,
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: hasQuery
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            tooltip: 'Clear search',
+                            onPressed: () {
+                              _debounce?.cancel();
+                              _searchController.clear();
+                              setState(() => _debouncedQuery = '');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(28),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 0,
+                      horizontal: 20,
+                    ),
+                  ),
+                ),
               ),
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest,
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 0,
-                horizontal: 20,
+              IconButton(
+                key: const Key('collection-stats-button'),
+                icon: const Icon(Icons.bar_chart_outlined),
+                tooltip: 'View statistics',
+                onPressed: () => context.push(AppRoutes.collectionStatistics),
               ),
-            ),
+            ],
           ),
         ),
         Expanded(child: _buildBody()),

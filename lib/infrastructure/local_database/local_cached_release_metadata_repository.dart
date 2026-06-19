@@ -20,6 +20,12 @@ class LocalCachedReleaseMetadataRepository
   }
 
   @override
+  Future<List<CachedReleaseMetadata>> getAll() async {
+    final rows = await _db.select(_db.cachedReleases).get();
+    return rows.map(_rowToModel).toList();
+  }
+
+  @override
   Future<void> save(CachedReleaseMetadata metadata) async {
     await _db
         .into(_db.cachedReleases)

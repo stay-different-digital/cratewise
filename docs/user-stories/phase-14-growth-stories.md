@@ -1801,9 +1801,45 @@ keyboard shortcuts, multitasking".
 
 **Investigation notes:**
 - Splits implementatie waarschijnlijk op in kleinere slices: shortcuts eerst,
-  daarna multitasking-responsiveness, daarna drag-and-drop per concrete flow.
+  daarna multitasking-responsiveness, daarna drag-en-drop per concrete flow.
 - Gebruik Flutter's `Shortcuts`, `Actions`, `FocusableActionDetector` en
   platform drag APIs waar passend; vermijd custom gesture hacks die met scrollen
   of accessibility botsen.
 - Houd iPhone/Android gedrag ongewijzigd. Deze story voegt iPad-power toe maar
   mag de mobiele basisflows niet zwaarder maken.
+
+---
+
+### US-123: Genre- en stijlstatistieken in Collectieoverzicht
+
+**3 SP · S5 (post-1.0 growth)**
+
+> Als verzamelaar,
+> wil ik in het statistiekenscherm zien hoe mijn collectie verdeeld is over
+> genres en stijlen (uit de Discogs-metadata),
+> zodat ik in één oogopslag zie welke muziekstijlen domineren.
+
+**Roadmap fit:** Uitbreiding op US-115 (Collectiestatistieken en inzichten).
+
+**Acceptance criteria:**
+- Het statistiekenscherm toont een "By genre" distributie-sectie met
+  dezelfde staafstijl als de bestaande decade/format-secties.
+- Het statistiekenscherm toont een "By style" distributie-sectie.
+- Alleen items waarvoor lokaal gecachede Discogs-metadata beschikbaar is
+  tellen mee; items zonder metadata worden stilzwijgend overgeslagen.
+- De secties verschijnen niet als er voor geen enkel item metadata is (lege
+  collectie of alles zonder cache).
+- De data komt uitsluitend uit de lokale SQLite-cache (`cachedReleases`);
+  er worden geen Discogs API-calls gedaan.
+- Genres/stijlen zijn gesorteerd op aantal, aflopend.
+- Tests dekken: lege metadata, gedeeltelijke metadata (mix van items met/zonder),
+  meerdere genres per release, en de widget-weergave van de nieuwe secties.
+
+**Investigation notes:**
+- `CachedReleaseMetadata.genres` en `.styles` zijn `List<String>` — één release
+  kan meerdere genres/stijlen hebben.
+- `CachedReleaseMetadataRepository` heeft nog geen `getAll()`; dat moet worden
+  toegevoegd aan de interface én `LocalCachedReleaseMetadataRepository`.
+- Join op `discogsReleaseId` tussen `CollectionItem` en `CachedReleaseMetadata`.
+- `CollectionStats.from()` uitbreiden met optionele metadata-parameter zodat
+  bestaande tests geen breaking change krijgen.

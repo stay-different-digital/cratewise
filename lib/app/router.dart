@@ -10,6 +10,7 @@ import '../presentation/screens/collection_detail_screen.dart';
 import '../presentation/screens/collection_export_preview_screen.dart';
 import '../presentation/screens/collection_import_preview_screen.dart';
 import '../presentation/screens/collection_screen.dart';
+import '../presentation/screens/collection_statistics_screen.dart';
 import '../presentation/screens/failed_actions_screen.dart';
 import '../presentation/screens/home_shell_screen.dart';
 import '../presentation/screens/import_export_history_screen.dart';
@@ -67,6 +68,7 @@ abstract final class AppRoutes {
 
   static const onboarding = '/onboarding';
 
+  static const collectionStatistics = '/collection/statistics';
   static String collectionDetail(String itemId) => '/collection/$itemId';
   static String wishlistDetail(String itemId) => '/wishlist/$itemId';
 }
@@ -116,6 +118,10 @@ GoRouter createAppRouter({bool showOnboarding = false}) => GoRouter(
               path: AppRoutes.collection,
               builder: (_, _) => const CollectionScreen(),
               routes: [
+                GoRoute(
+                  path: 'statistics',
+                  builder: (_, _) => const CollectionStatisticsScreen(),
+                ),
                 GoRoute(
                   path: ':itemId',
                   builder: (_, state) => CollectionDetailScreen(

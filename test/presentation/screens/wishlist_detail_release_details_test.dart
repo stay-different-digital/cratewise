@@ -44,6 +44,8 @@ class _FakeCacheRepository implements CachedReleaseMetadataRepository {
   @override
   Future<void> save(CachedReleaseMetadata metadata) async {}
   @override
+  Future<List<CachedReleaseMetadata>> getAll() async => const [];
+  @override
   Future<void> remove(int discogsReleaseId) async {}
 }
 

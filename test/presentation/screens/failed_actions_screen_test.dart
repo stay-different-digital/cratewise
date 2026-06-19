@@ -69,6 +69,8 @@ class _NullCacheRepo implements CachedReleaseMetadataRepository {
   @override
   Future<CachedReleaseMetadata?> getByReleaseId(int id) async => null;
   @override
+  Future<List<CachedReleaseMetadata>> getAll() async => const [];
+  @override
   Future<void> save(CachedReleaseMetadata m) async {}
   @override
   Future<void> remove(int id) async {}

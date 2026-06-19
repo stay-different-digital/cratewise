@@ -47,6 +47,9 @@ class _SpyCacheRepo implements CachedReleaseMetadataRepository {
   }
 
   @override
+  Future<List<CachedReleaseMetadata>> getAll() async => const [];
+
+  @override
   Future<void> remove(int id) async => removed.add(id);
 }
 
