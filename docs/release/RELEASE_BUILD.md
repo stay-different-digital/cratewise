@@ -69,7 +69,7 @@ flutter build appbundle --release \
 
 Artefact: `build/app/outputs/bundle/release/app-release.aab`
 
-### iOS (IPA for TestFlight / App Store)
+### iOS and iPadOS (IPA for TestFlight / App Store)
 
 ```sh
 flutter build ipa --release \
@@ -77,8 +77,22 @@ flutter build ipa --release \
 ```
 
 Artefact: `build/ios/ipa/cratewise.ipa` (and the Xcode archive under
-`build/ios/archive/`). Upload via Xcode Organizer, `xcrun altool`, or the
-Transporter app.
+`build/ios/archive/`).
+
+Cratewise uses **Transporter** as the manual upload path for iOS and iPadOS
+releases:
+
+1. Install Transporter from the Mac App Store and sign in with the Apple ID that
+   has access to the Cratewise App Store Connect app record.
+2. Drag `build/ios/ipa/cratewise.ipa` into Transporter.
+3. Click **Deliver** and wait for validation and upload to finish.
+4. Keep the delivery log if Transporter reports a validation warning or error.
+5. After App Store Connect finishes processing the build, assign it to
+   TestFlight or the App Store version.
+
+Transporter is only the upload tool. The IPA still has to be signed correctly
+before upload: Xcode must be signed in, the Runner target must have a Team
+selected, and App Store distribution signing/provisioning must be valid.
 
 Note for builds started from a Claude/agent shell: SPM bare-repo checkouts
 need `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.bareRepository GIT_CONFIG_VALUE_0=all`
@@ -99,6 +113,6 @@ need `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.bareRepository GIT_CONFIG_VALUE_0
 - Android: `flutter install --release` on a connected device, or build an APK
   for sideloading (`flutter build apk --release --obfuscate
   --split-debug-info=build/symbols`).
-- iOS: distribute the archive to TestFlight, or run `flutter run --release`
-  on a connected iPhone.
+- iOS/iPadOS: upload the IPA with Transporter, wait until the build appears in
+  TestFlight, then install it on a connected iPhone and iPad for the smoke test.
 - Smoke test per `RELEASE_CHECKLIST.md` before uploading.

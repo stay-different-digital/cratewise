@@ -24,7 +24,7 @@ details live in `RELEASE_BUILD.md`; store copy lives in
 - [ ] `flutter build appbundle --release --obfuscate --split-debug-info=build/symbols`
 - [ ] Archive `build/symbols/` as `symbols-X.Y.Z+N-android.zip` (outside the repo).
 
-## 4. Build iOS
+## 4. Build iOS and iPadOS
 
 - [ ] Xcode signed in, team selected for Runner.
 - [ ] `flutter build ipa --release --obfuscate --split-debug-info=build/symbols`
@@ -45,7 +45,7 @@ release artefacts (not a debug build):
 ## 6. Upload
 
 - [ ] Android: upload the `.aab` to the Play Console **internal testing** track; release notes from the changelog.
-- [ ] iOS: upload the `.ipa` via Xcode Organizer or Transporter; assign the build to **TestFlight**; export compliance is pre-answered (`ITSAppUsesNonExemptEncryption=NO`).
+- [ ] iOS/iPadOS: upload `build/ios/ipa/cratewise.ipa` with **Transporter**; keep the delivery log if validation reports warnings/errors; assign the processed build to **TestFlight**; export compliance is pre-answered (`ITSAppUsesNonExemptEncryption=NO`).
 - [ ] First release only: store listings, data safety form, and privacy nutrition labels per `../store/STORE_LISTINGS.md`; privacy policy URL live.
 
 ## 7. Tag & close

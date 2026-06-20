@@ -175,7 +175,7 @@ All text is in `../store/STORE_LISTINGS.md`:
 5. **App Review notes**: paste the prepared text from `STORE_REVIEW.md`
    (explains that a Discogs account is optional).
 
-## 3.3 Build and upload
+## 3.3 Build and upload with Transporter
 
 ```sh
 flutter build ipa --release --obfuscate --split-debug-info=build/symbols
@@ -184,10 +184,16 @@ flutter build ipa --release --obfuscate --split-debug-info=build/symbols
 (From a Claude/agent shell, prefix with the SPM git config from
 `RELEASE_BUILD.md`; from your own terminal it's not needed.)
 
-Upload, pick one:
-- **Transporter app** (Mac App Store, simplest): drag in
-  `build/ios/ipa/cratewise.ipa` → Deliver.
-- Or Xcode → Window → Organizer → select the archive → Distribute App.
+Cratewise uses **Transporter** for iOS and iPadOS uploads:
+
+1. Install Transporter from the Mac App Store.
+2. Sign in with the Apple ID that has access to the Cratewise app in App Store
+   Connect.
+3. Drag in `build/ios/ipa/cratewise.ipa`.
+4. Click **Deliver**.
+5. If Transporter reports validation warnings or errors, save the delivery log,
+   fix the issue, bump the build number if a new upload is needed, rebuild, and
+   deliver again.
 
 Processing takes ~15–30 min; the build then appears in App Store Connect.
 
