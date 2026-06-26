@@ -27,6 +27,10 @@ details live in `RELEASE_BUILD.md`; store copy lives in
 ## 4. Build iOS and iPadOS
 
 - [ ] Xcode signed in, team selected for Runner.
+- [ ] **Purpose strings** — for every package added since the last release,
+  verify no new `NS*UsageDescription` key is required. See the table in
+  `RELEASE_BUILD.md § iOS purpose strings`. Missing keys cause an ITMS-90683
+  rejection after upload and require a new binary before the build can proceed.
 - [ ] `flutter build ipa --release --obfuscate --split-debug-info=build/symbols`
 - [ ] Archive `build/symbols/` as `symbols-X.Y.Z+N-ios.zip` (outside the repo).
 

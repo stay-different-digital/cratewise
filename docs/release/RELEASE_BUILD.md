@@ -54,6 +54,28 @@ Rules:
 - Bundle id `app.cratewise` registered in the developer portal (Xcode's
   automatic signing handles this on first archive).
 
+#### iOS purpose strings (Info.plist)
+
+Apple requires a `NS*UsageDescription` key for every privacy-sensitive API
+referenced in the app — including APIs pulled in by third-party packages, even
+when the app itself does not actively use them. Missing keys cause the ITMS-90683
+rejection during upload validation.
+
+Keys currently declared in `ios/Runner/Info.plist`:
+
+| Key | Why it is needed |
+|-----|-----------------|
+| `NSCameraUsageDescription` | Barcode scanning via `mobile_scanner`. |
+| `NSPhotoLibraryUsageDescription` | `file_picker` references the photo library API when presenting the file picker on iOS. |
+| `NSLocationWhenInUseUsageDescription` | Referenced by a transitive SDK dependency; Cratewise does not use location, and the string says so. |
+
+**When adding a new package:** check whether it lists any `NS*UsageDescription`
+requirements in its README or `podspec`. If so, add the key to `Info.plist`
+before the first release build that includes that package. Failing to do this
+results in an ITMS-90683 email from Apple after upload — the build is not
+rejected at submission, but it cannot be promoted to review until a new binary
+with the key is uploaded.
+
 ## Build commands
 
 Both commands enable Dart obfuscation. Obfuscation makes stack traces from
