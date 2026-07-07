@@ -10,6 +10,28 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.0.3] — 2026-07-07
+
+### Added
+
+- **DJ fields (US-121)** — collection items now carry optional DJ metadata:
+  BPM, musical key, energy level (1–5), and gig crates. Edit them from the
+  collection detail screen, filter on them in the filter sheet (BPM range,
+  key, energy, gig crate), and sort the collection list by BPM, key, or
+  energy with a new sort menu; items without a value sort last. CSV
+  export/import carries the four new columns; older CSV files and saved
+  filters keep working. DJ fields are local-only and are never written to
+  Discogs.
+
+### Fixed
+
+- Version display format unified as `version.buildNumber` via one shared
+  helper, shown in the onboarding footer and the About tile.
+- iOS Release build configuration pointed at the wrong bundle identifier;
+  restored to `app.cratewise`.
+
+---
+
 ## [1.0.2] — 2026-06-19
 
 ### Added
