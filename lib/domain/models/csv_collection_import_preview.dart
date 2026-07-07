@@ -18,7 +18,11 @@ class CsvCollectionImportRow {
     this.year,
     this.notes,
     this.storageLocation,
-  });
+    this.bpm,
+    this.musicalKey,
+    this.energyLevel,
+    List<String>? gigCrates,
+  }) : gigCrates = gigCrates ?? const [];
 
   final int rowIndex;
   final String artist;
@@ -34,6 +38,10 @@ class CsvCollectionImportRow {
   final int? year;
   final String? notes;
   final String? storageLocation;
+  final int? bpm;
+  final MusicalKey? musicalKey;
+  final int? energyLevel;
+  final List<String> gigCrates;
 
   String get displayName => '$artist – $title';
 }

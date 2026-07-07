@@ -176,6 +176,10 @@ class ExecuteCollectionCsvImportUseCase {
       syncStatus: SyncStatus.localOnly,
       createdAt: now,
       updatedAt: now,
+      bpm: row.bpm,
+      musicalKey: row.musicalKey,
+      energyLevel: row.energyLevel,
+      gigCrates: row.gigCrates,
     );
   }
 }

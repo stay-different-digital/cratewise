@@ -2,6 +2,79 @@ import 'dart:convert';
 
 import 'sync_status.dart';
 
+/// Valid BPM range for DJ metadata. Shared by the edit UI and the CSV
+/// import validator so the two layers cannot drift apart.
+const int kMinBpm = 20;
+const int kMaxBpm = 300;
+
+enum MusicalKey {
+  cMajor,
+  dbMajor,
+  dMajor,
+  ebMajor,
+  eMajor,
+  fMajor,
+  gbMajor,
+  gMajor,
+  abMajor,
+  aMajor,
+  bbMajor,
+  bMajor,
+  cMinor,
+  dbMinor,
+  dMinor,
+  ebMinor,
+  eMinor,
+  fMinor,
+  gbMinor,
+  gMinor,
+  abMinor,
+  aMinor,
+  bbMinor,
+  bMinor;
+
+  String get label => switch (this) {
+    cMajor => 'C major',
+    dbMajor => 'D♭ major',
+    dMajor => 'D major',
+    ebMajor => 'E♭ major',
+    eMajor => 'E major',
+    fMajor => 'F major',
+    gbMajor => 'G♭ major',
+    gMajor => 'G major',
+    abMajor => 'A♭ major',
+    aMajor => 'A major',
+    bbMajor => 'B♭ major',
+    bMajor => 'B major',
+    cMinor => 'C minor',
+    dbMinor => 'D♭ minor',
+    dMinor => 'D minor',
+    ebMinor => 'E♭ minor',
+    eMinor => 'E minor',
+    fMinor => 'F minor',
+    gbMinor => 'G♭ minor',
+    gMinor => 'G minor',
+    abMinor => 'A♭ minor',
+    aMinor => 'A minor',
+    bbMinor => 'B♭ minor',
+    bMinor => 'B minor',
+  };
+
+  static final Map<String, MusicalKey> _byNormalizedLabel = {
+    for (final k in values) ...{
+      k.label.toLowerCase(): k,
+      k.label.replaceAll('♭', 'b').toLowerCase(): k,
+      k.name.toLowerCase(): k,
+    },
+  };
+
+  /// Case-insensitive lookup accepting the exact label ('A♭ major'), the
+  /// ASCII-flat spelling ('Ab major'), or the enum name ('abMajor'), so
+  /// hand-edited CSV imports don't fail on the unicode flat sign.
+  static MusicalKey? tryFromLabel(String label) =>
+      _byNormalizedLabel[label.trim().toLowerCase()];
+}
+
 enum RecordCondition {
   mint,
   nearMint,
@@ -59,7 +132,11 @@ class CollectionItem {
     this.storageLocation,
     this.syncStatus = SyncStatus.localOnly,
     this.discogsInstanceId,
-  });
+    this.bpm,
+    this.musicalKey,
+    this.energyLevel,
+    List<String>? gigCrates,
+  }) : gigCrates = gigCrates ?? const [];
 
   final String id;
   final int discogsReleaseId;
@@ -85,6 +162,12 @@ class CollectionItem {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  // DJ metadata (US-121) — local only, never synced to Discogs.
+  final int? bpm;
+  final MusicalKey? musicalKey;
+  final int? energyLevel; // 1–5
+  final List<String> gigCrates;
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'discogsReleaseId': discogsReleaseId,
@@ -105,6 +188,10 @@ class CollectionItem {
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
     'discogsInstanceId': discogsInstanceId,
+    'bpm': bpm,
+    'musicalKey': musicalKey?.name,
+    'energyLevel': energyLevel,
+    'gigCrates': gigCrates,
   };
 
   static CollectionItem fromJson(Map<String, dynamic> json) => CollectionItem(
@@ -131,6 +218,12 @@ class CollectionItem {
     createdAt: DateTime.parse(json['createdAt'] as String),
     updatedAt: DateTime.parse(json['updatedAt'] as String),
     discogsInstanceId: json['discogsInstanceId'] as int?,
+    bpm: json['bpm'] as int?,
+    musicalKey: json['musicalKey'] == null
+        ? null
+        : MusicalKey.values.byName(json['musicalKey'] as String),
+    energyLevel: json['energyLevel'] as int?,
+    gigCrates: (json['gigCrates'] as List<dynamic>?)?.cast<String>() ?? [],
   );
 
   static CollectionItem? tryFromJson(String encoded) {
@@ -161,6 +254,13 @@ class CollectionItem {
     DateTime? createdAt,
     DateTime? updatedAt,
     int? discogsInstanceId,
+    // The DJ fields are nullable AND clearable, so they use closures:
+    // omit to keep the current value, pass `() => x` to set, `() => null`
+    // to clear.
+    int? Function()? bpm,
+    MusicalKey? Function()? musicalKey,
+    int? Function()? energyLevel,
+    List<String>? gigCrates,
   }) {
     return CollectionItem(
       id: id ?? this.id,
@@ -182,6 +282,10 @@ class CollectionItem {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       discogsInstanceId: discogsInstanceId ?? this.discogsInstanceId,
+      bpm: bpm != null ? bpm() : this.bpm,
+      musicalKey: musicalKey != null ? musicalKey() : this.musicalKey,
+      energyLevel: energyLevel != null ? energyLevel() : this.energyLevel,
+      gigCrates: gigCrates ?? this.gigCrates,
     );
   }
 }

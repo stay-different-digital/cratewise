@@ -1737,6 +1737,8 @@ bredere sync-preview en conflictafhandeling.
 
 ### US-121: DJ-velden voor BPM, key, energy en gig crates
 
+**Status: In Progress** — domain/CSV/opslag en edit-sheet staan; filter/sort op DJ-velden (AC 3) en bijbehorende tests ontbreken nog.
+
 **6 SP · S5 (post-1.0 growth)**
 
 > Als DJ,

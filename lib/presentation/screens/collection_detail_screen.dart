@@ -1435,8 +1435,7 @@ class _DjFieldsSection extends StatelessWidget {
           const Divider(height: 24),
           Text('DJ', style: theme.textTheme.titleSmall),
           const SizedBox(height: 8),
-          if (item.bpm != null)
-            _DjRow(label: 'BPM', value: '${item.bpm}'),
+          if (item.bpm != null) _DjRow(label: 'BPM', value: '${item.bpm}'),
           if (item.musicalKey != null)
             _DjRow(label: 'Key', value: item.musicalKey!.label),
           if (item.energyLevel != null)
@@ -1560,8 +1559,8 @@ class _EditDjFieldsSheetState extends State<_EditDjFieldsSheet> {
     int? bpm;
     if (bpmText.isNotEmpty) {
       bpm = int.tryParse(bpmText);
-      if (bpm == null || bpm < 20 || bpm > 300) {
-        setState(() => _bpmError = 'Enter a BPM between 20 and 300');
+      if (bpm == null || bpm < kMinBpm || bpm > kMaxBpm) {
+        setState(() => _bpmError = 'Enter a BPM between $kMinBpm and $kMaxBpm');
         return;
       }
     }
@@ -1571,29 +1570,12 @@ class _EditDjFieldsSheetState extends State<_EditDjFieldsSheet> {
       _bpmError = null;
     });
     try {
-      final updated = CollectionItem(
-        id: widget.item.id,
-        discogsReleaseId: widget.item.discogsReleaseId,
-        artist: widget.item.artist,
-        title: widget.item.title,
-        label: widget.item.label,
-        catno: widget.item.catno,
-        format: widget.item.format,
-        country: widget.item.country,
-        year: widget.item.year,
-        coverUrl: widget.item.coverUrl,
-        mediaCondition: widget.item.mediaCondition,
-        sleeveCondition: widget.item.sleeveCondition,
-        notes: widget.item.notes,
-        tags: widget.item.tags,
-        storageLocation: widget.item.storageLocation,
-        syncStatus: widget.item.syncStatus,
-        discogsInstanceId: widget.item.discogsInstanceId,
-        createdAt: widget.item.createdAt,
+      final bpmValue = bpm;
+      final updated = widget.item.copyWith(
         updatedAt: DateTime.now(),
-        bpm: bpm,
-        musicalKey: _musicalKey,
-        energyLevel: _energyLevel,
+        bpm: () => bpmValue,
+        musicalKey: () => _musicalKey,
+        energyLevel: () => _energyLevel,
         gigCrates: List<String>.from(_gigCrates),
       );
       await widget.repository.update(updated);
@@ -1674,9 +1656,10 @@ class _EditDjFieldsSheetState extends State<_EditDjFieldsSheet> {
                   onPressed: _saving
                       ? null
                       : () => setState(
-                            () => _energyLevel =
-                                _energyLevel == level ? null : level,
-                          ),
+                          () => _energyLevel = _energyLevel == level
+                              ? null
+                              : level,
+                        ),
                 ),
               if (_energyLevel != null) ...[
                 const SizedBox(width: 4),
@@ -1710,7 +1693,9 @@ class _EditDjFieldsSheetState extends State<_EditDjFieldsSheet> {
                   key: const Key('gig-crate-input-field'),
                   controller: _crateController,
                   enabled: !_saving,
-                  decoration: const InputDecoration(labelText: 'Add a gig crate'),
+                  decoration: const InputDecoration(
+                    labelText: 'Add a gig crate',
+                  ),
                   onFieldSubmitted: (_) => _addCrate(),
                 ),
               ),

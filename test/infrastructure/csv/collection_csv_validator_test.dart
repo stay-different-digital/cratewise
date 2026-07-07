@@ -541,6 +541,24 @@ void main() {
       expect(preview.failedRows, hasLength(1));
     });
 
+    test('musical key accepts ASCII flat spelling', () {
+      final row = List<String>.from(djBase)..[6] = 'Ab major';
+      final preview = validator.validate(dj(row));
+      expect(preview.validRows.first.musicalKey, MusicalKey.abMajor);
+    });
+
+    test('musical key is case-insensitive', () {
+      final row = List<String>.from(djBase)..[6] = 'a MINOR';
+      final preview = validator.validate(dj(row));
+      expect(preview.validRows.first.musicalKey, MusicalKey.aMinor);
+    });
+
+    test('musical key accepts the enum name', () {
+      final row = List<String>.from(djBase)..[6] = 'bbMinor';
+      final preview = validator.validate(dj(row));
+      expect(preview.validRows.first.musicalKey, MusicalKey.bbMinor);
+    });
+
     test('empty musical key maps to null', () {
       final preview = validator.validate(dj(List<String>.from(djBase)));
       expect(preview.validRows.first.musicalKey, isNull);
@@ -572,10 +590,7 @@ void main() {
     test('pipe-separated gig crates are parsed', () {
       final row = List<String>.from(djBase)..[8] = 'Summer Set|Techno Night';
       final preview = validator.validate(dj(row));
-      expect(
-        preview.validRows.first.gigCrates,
-        ['Summer Set', 'Techno Night'],
-      );
+      expect(preview.validRows.first.gigCrates, ['Summer Set', 'Techno Night']);
     });
 
     test('empty gig crates maps to empty list', () {
@@ -583,12 +598,15 @@ void main() {
       expect(preview.validRows.first.gigCrates, isEmpty);
     });
 
-    test('DJ columns are optional — missing columns are ignored gracefully', () {
-      final preview = validator.validate(_success([_kValidRow]));
-      expect(preview.validRows.first.bpm, isNull);
-      expect(preview.validRows.first.musicalKey, isNull);
-      expect(preview.validRows.first.energyLevel, isNull);
-      expect(preview.validRows.first.gigCrates, isEmpty);
-    });
+    test(
+      'DJ columns are optional — missing columns are ignored gracefully',
+      () {
+        final preview = validator.validate(_success([_kValidRow]));
+        expect(preview.validRows.first.bpm, isNull);
+        expect(preview.validRows.first.musicalKey, isNull);
+        expect(preview.validRows.first.energyLevel, isNull);
+        expect(preview.validRows.first.gigCrates, isEmpty);
+      },
+    );
   });
 }

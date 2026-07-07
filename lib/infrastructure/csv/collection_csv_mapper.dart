@@ -16,6 +16,10 @@ const List<String> collectionCsvHeaders = [
   'Storage Location',
   'Created Date',
   'Updated Date',
+  'BPM',
+  'Musical Key',
+  'Energy',
+  'Gig Crates',
 ];
 
 class CollectionCsvMapper {
@@ -23,7 +27,7 @@ class CollectionCsvMapper {
 
   /// Returns one CSV row for [item]. Column order matches [collectionCsvHeaders].
   /// Optional fields map to empty string when absent.
-  /// Tags are joined with '|' to avoid ambiguity with the CSV delimiter.
+  /// Tags and Gig Crates are joined with '|' to avoid ambiguity with the CSV delimiter.
   List<String> toRow(CollectionItem item) {
     return [
       item.artist,
@@ -41,6 +45,10 @@ class CollectionCsvMapper {
       item.storageLocation ?? '',
       item.createdAt.toIso8601String(),
       item.updatedAt.toIso8601String(),
+      item.bpm?.toString() ?? '',
+      item.musicalKey?.label ?? '',
+      item.energyLevel?.toString() ?? '',
+      item.gigCrates.join('|'),
     ];
   }
 }

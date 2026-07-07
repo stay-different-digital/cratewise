@@ -3,6 +3,11 @@ import '../../domain/models/csv_collection_import_preview.dart';
 import '../../domain/models/import_export_row_result.dart';
 import 'csv_parser.dart';
 
+// BPM range lives in the domain (kMinBpm/kMaxBpm in collection_item.dart)
+// because the edit UI validates the same bounds.
+const _kMinEnergy = 1;
+const _kMaxEnergy = 5;
+
 const _kMaxTextLength = 500;
 const _kMaxTagLength = 100;
 const _kMinYear = 1900;
@@ -197,6 +202,55 @@ class CollectionCsvValidator {
       }
     }
 
+    // --- Optional: BPM ---
+    final bpmStr = cell('BPM');
+    int? bpm;
+    if (bpmStr.isNotEmpty) {
+      bpm = int.tryParse(bpmStr);
+      if (bpm == null || bpm < kMinBpm || bpm > kMaxBpm) {
+        return fail('Invalid BPM: $bpmStr (must be $kMinBpm–$kMaxBpm)');
+      }
+    }
+
+    // --- Optional: Musical Key ---
+    final keyStr = optCell('Musical Key');
+    MusicalKey? musicalKey;
+    if (keyStr != null) {
+      musicalKey = MusicalKey.tryFromLabel(keyStr);
+      if (musicalKey == null) return fail('Invalid musical key: $keyStr');
+    }
+
+    // --- Optional: Energy ---
+    final energyStr = cell('Energy');
+    int? energyLevel;
+    if (energyStr.isNotEmpty) {
+      energyLevel = int.tryParse(energyStr);
+      if (energyLevel == null ||
+          energyLevel < _kMinEnergy ||
+          energyLevel > _kMaxEnergy) {
+        return fail(
+          'Invalid energy: $energyStr (must be $_kMinEnergy–$_kMaxEnergy)',
+        );
+      }
+    }
+
+    // --- Optional: Gig Crates ---
+    final gigCratesStr = cell('Gig Crates');
+    final gigCrates = gigCratesStr.isEmpty
+        ? <String>[]
+        : gigCratesStr
+              .split('|')
+              .map((c) => c.trim())
+              .where((c) => c.isNotEmpty)
+              .toList();
+    for (final crate in gigCrates) {
+      if (crate.length > _kMaxTagLength) {
+        return fail(
+          'A gig crate label exceeds the maximum length of $_kMaxTagLength characters',
+        );
+      }
+    }
+
     return _ValidOutcome(
       CsvCollectionImportRow(
         rowIndex: rowIndex,
@@ -213,6 +267,10 @@ class CollectionCsvValidator {
         year: year,
         notes: notes,
         storageLocation: storageLocation,
+        bpm: bpm,
+        musicalKey: musicalKey,
+        energyLevel: energyLevel,
+        gigCrates: gigCrates,
       ),
     );
   }

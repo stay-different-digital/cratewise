@@ -79,6 +79,10 @@ class LocalCollectionRepository implements CollectionRepository {
       discogsInstanceId: row.discogsInstanceId,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      bpm: row.bpm,
+      musicalKey: row.musicalKey,
+      energyLevel: row.energyLevel,
+      gigCrates: row.gigCrates ?? const [],
     );
   }
 
@@ -103,6 +107,10 @@ class LocalCollectionRepository implements CollectionRepository {
       discogsInstanceId: Value(item.discogsInstanceId),
       createdAt: Value(item.createdAt),
       updatedAt: Value(item.updatedAt),
+      bpm: Value(item.bpm),
+      musicalKey: Value(item.musicalKey),
+      energyLevel: Value(item.energyLevel),
+      gigCrates: Value(item.gigCrates.isEmpty ? null : item.gigCrates),
     );
   }
 }
