@@ -93,13 +93,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return switch (_step) {
       0 => _WelcomeStep(onNext: _goToStep1),
       1 => _TokenStep(
-          onConnected: () => setState(() => _tokenConnected = true),
-          onNext: _tokenConnected ? () => setState(() => _step = 2) : null,
-        ),
+        onConnected: () => setState(() => _tokenConnected = true),
+        onNext: _tokenConnected ? () => setState(() => _step = 2) : null,
+      ),
       _ => _ImportStep(
-          onImport: () => _complete(AppRoutes.importExport),
-          onSkip: () => _complete(AppRoutes.search),
-        ),
+        onImport: () => _complete(AppRoutes.importExport),
+        onSkip: () => _complete(AppRoutes.search),
+      ),
     };
   }
 }
@@ -118,7 +118,10 @@ class _WelcomeStep extends StatelessWidget {
       children: [
         Icon(Icons.album, size: 72, color: theme.colorScheme.primary),
         const SizedBox(height: 24),
-        Text('Jouw platencollectie, overal bij de hand.', style: theme.textTheme.headlineSmall),
+        Text(
+          'Jouw platencollectie, overal bij de hand.',
+          style: theme.textTheme.headlineSmall,
+        ),
         const SizedBox(height: 16),
         Text(
           'Cratewise slaat je Discogs-collectie en verlanglijst lokaal op, '
@@ -127,10 +130,7 @@ class _WelcomeStep extends StatelessWidget {
           style: theme.textTheme.bodyLarge,
         ),
         const SizedBox(height: 32),
-        FilledButton(
-          onPressed: onNext,
-          child: const Text('Aan de slag'),
-        ),
+        FilledButton(onPressed: onNext, child: const Text('Aan de slag')),
       ],
     );
   }

@@ -30,7 +30,8 @@ class _CollectionStatisticsScreenState
     final repo =
         widget.repository ?? AppRepositoriesScope.of(context).collection;
     final metaRepo =
-        widget.metadataRepository ?? AppRepositoriesScope.of(context).cachedRelease;
+        widget.metadataRepository ??
+        AppRepositoriesScope.of(context).cachedRelease;
     final itemsFuture = repo.getAll();
     final metaFuture = metaRepo.getAll();
     _statsFuture = () async {

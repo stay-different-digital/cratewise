@@ -2,8 +2,7 @@ import 'package:cratewise/presentation/widgets/release_image_gallery.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Widget _wrap(Widget child) =>
-    MaterialApp(home: Scaffold(body: child));
+Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: child));
 
 void main() {
   group('ReleaseImageGallery (US-103)', () {
@@ -61,7 +60,13 @@ void main() {
       // 3 AnimatedContainers inside _DotsIndicator
       final pageView = find.byType(PageView);
       expect(pageView, findsOneWidget);
-      expect(find.descendant(of: find.byType(Row), matching: find.byType(AnimatedContainer)), findsNWidgets(3));
+      expect(
+        find.descendant(
+          of: find.byType(Row),
+          matching: find.byType(AnimatedContainer),
+        ),
+        findsNWidgets(3),
+      );
     });
 
     testWidgets('semantics label contains image index and total', (

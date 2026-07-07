@@ -8,11 +8,7 @@ import '../../domain/repositories/saved_search_repository.dart';
 final _dateFmt = DateFormat.yMMMd();
 
 class SavedSearchesScreen extends StatefulWidget {
-  const SavedSearchesScreen({
-    super.key,
-    this.filterType,
-    this.repository,
-  });
+  const SavedSearchesScreen({super.key, this.filterType, this.repository});
 
   /// When set, only shows saved searches of this type.
   final SavedSearchType? filterType;
@@ -31,8 +27,7 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
   void initState() {
     super.initState();
     _repository =
-        widget.repository ??
-        AppRepositoriesScope.of(context).savedSearch;
+        widget.repository ?? AppRepositoriesScope.of(context).savedSearch;
     _load();
   }
 
@@ -104,10 +99,10 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
     final title = widget.filterType == null
         ? 'Saved searches'
         : switch (widget.filterType!) {
-          SavedSearchType.discogsSearch => 'Saved searches',
-          SavedSearchType.collectionFilter => 'Saved filters',
-          SavedSearchType.wishlistFilter => 'Saved filters',
-        };
+            SavedSearchType.discogsSearch => 'Saved searches',
+            SavedSearchType.collectionFilter => 'Saved filters',
+            SavedSearchType.wishlistFilter => 'Saved filters',
+          };
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -178,8 +173,7 @@ class _TypeIcon extends StatelessWidget {
       SavedSearchType.wishlistFilter => Icons.favorite_outline,
     };
     return CircleAvatar(
-      backgroundColor:
-          Theme.of(context).colorScheme.secondaryContainer,
+      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
       child: Icon(
         icon,
         size: 18,
@@ -212,9 +206,9 @@ class _EmptyState extends StatelessWidget {
               filterType == null
                   ? 'No saved searches yet'
                   : switch (filterType!) {
-                    SavedSearchType.discogsSearch => 'No saved searches yet',
-                    _ => 'No saved filters yet',
-                  },
+                      SavedSearchType.discogsSearch => 'No saved searches yet',
+                      _ => 'No saved filters yet',
+                    },
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 8),

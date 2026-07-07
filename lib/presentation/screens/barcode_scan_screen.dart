@@ -391,7 +391,9 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
                   textInputAction: TextInputAction.search,
                   onSubmitted: (_) => _onSearch(),
                   decoration: InputDecoration(
-                    hintText: AppLocalizations.of(context)!.barcodeEnterManually,
+                    hintText: AppLocalizations.of(
+                      context,
+                    )!.barcodeEnterManually,
                     border: const OutlineInputBorder(),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
@@ -449,7 +451,9 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
                         textInputAction: TextInputAction.search,
                         onSubmitted: (_) => _onSearch(),
                         decoration: InputDecoration(
-                          hintText: AppLocalizations.of(context)!.barcodeEnterManually,
+                          hintText: AppLocalizations.of(
+                            context,
+                          )!.barcodeEnterManually,
                           border: const OutlineInputBorder(),
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
@@ -464,7 +468,9 @@ class _BarcodeScanScreenState extends State<BarcodeScanScreen> {
                     FilledButton(
                       key: const Key('search-barcode-button'),
                       onPressed: _canSearch ? _onSearch : null,
-                      child: Text(AppLocalizations.of(context)!.barcodeSearchButton),
+                      child: Text(
+                        AppLocalizations.of(context)!.barcodeSearchButton,
+                      ),
                     ),
                   ],
                 ),
@@ -629,7 +635,7 @@ class _CameraScanAreaState extends State<_CameraScanArea>
     if (!_scanController.value.hasCameraPermission) return;
     switch (state) {
       case AppLifecycleState.inactive: // iOS: notification shade, phone call
-      case AppLifecycleState.paused:   // Android: permission dialog, background
+      case AppLifecycleState.paused: // Android: permission dialog, background
         unawaited(_scanController.stop());
       case AppLifecycleState.resumed:
         unawaited(_scanController.start());
@@ -796,7 +802,10 @@ class _EmptyState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.barcodeScanOrEnter, style: theme.textTheme.titleMedium),
+            Text(
+              AppLocalizations.of(context)!.barcodeScanOrEnter,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.barcodeScanOrEnterHint,
@@ -964,7 +973,10 @@ class _NoResultsState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.barcodeNoReleases, style: theme.textTheme.titleMedium),
+            Text(
+              AppLocalizations.of(context)!.barcodeNoReleases,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.barcodeNoReleasesHint,
@@ -1035,7 +1047,10 @@ class _RateLimitedState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.barcodeRateLimited, style: theme.textTheme.titleMedium),
+            Text(
+              AppLocalizations.of(context)!.barcodeRateLimited,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.barcodeRateLimitedHint,
@@ -1065,7 +1080,10 @@ class _ErrorState extends StatelessWidget {
           children: [
             Icon(Icons.error_outline, size: 56, color: theme.colorScheme.error),
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.barcodeSomethingWrong, style: theme.textTheme.titleMedium),
+            Text(
+              AppLocalizations.of(context)!.barcodeSomethingWrong,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.barcodeSomethingWrongHint,

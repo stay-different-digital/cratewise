@@ -53,11 +53,13 @@ class AppRepositoriesScope extends InheritedWidget {
 
   final AppRepositories repositories;
 
-  static AppRepositories of(BuildContext context) =>
-      context.getInheritedWidgetOfExactType<AppRepositoriesScope>()!.repositories;
+  static AppRepositories of(BuildContext context) => context
+      .getInheritedWidgetOfExactType<AppRepositoriesScope>()!
+      .repositories;
 
-  static AppRepositories? maybeOf(BuildContext context) =>
-      context.getInheritedWidgetOfExactType<AppRepositoriesScope>()?.repositories;
+  static AppRepositories? maybeOf(BuildContext context) => context
+      .getInheritedWidgetOfExactType<AppRepositoriesScope>()
+      ?.repositories;
 
   @override
   bool updateShouldNotify(AppRepositoriesScope oldWidget) => false;

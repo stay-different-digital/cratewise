@@ -2132,10 +2132,7 @@ void main() {
       await tester.tap(find.byKey(const Key('save-dj-fields-button')));
       await tester.pump();
 
-      expect(
-        find.text('Enter a BPM between 20 and 300'),
-        findsOneWidget,
-      );
+      expect(find.text('Enter a BPM between 20 and 300'), findsOneWidget);
       expect(repo.updateCallCount, 0);
     });
 
@@ -2218,7 +2215,10 @@ void main() {
       expect(find.text('DJ'), findsOneWidget);
       expect(find.text('130'), findsOneWidget);
       expect(find.text('A major'), findsOneWidget);
-      expect(find.byKey(const Key('gig-crate-chip-Summer Set')), findsOneWidget);
+      expect(
+        find.byKey(const Key('gig-crate-chip-Summer Set')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('DJ section hidden when no DJ fields set', (tester) async {

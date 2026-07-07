@@ -202,8 +202,9 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   }
 
   Future<void> _openFilterSheet() async {
-    final items =
-        _state is _Loaded ? (_state as _Loaded).items : <WishlistItem>[];
+    final items = _state is _Loaded
+        ? (_state as _Loaded).items
+        : <WishlistItem>[];
     final result = await showModalBottomSheet<WishlistFilterSet>(
       context: context,
       isScrollControlled: true,
@@ -495,7 +496,10 @@ class _EmptyWishlistState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.wishlistEmptyTitle, style: theme.textTheme.titleMedium),
+            Text(
+              AppLocalizations.of(context)!.wishlistEmptyTitle,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.wishlistOfflineNote,

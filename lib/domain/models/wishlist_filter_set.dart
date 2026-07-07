@@ -79,8 +79,7 @@ class WishlistFilterSet {
       if (priorities.isNotEmpty && !priorities.contains(item.priority)) {
         return false;
       }
-      if (syncStatuses.isNotEmpty &&
-          !syncStatuses.contains(item.syncStatus)) {
+      if (syncStatuses.isNotEmpty && !syncStatuses.contains(item.syncStatus)) {
         return false;
       }
       if (hasTargetPrice != null) {

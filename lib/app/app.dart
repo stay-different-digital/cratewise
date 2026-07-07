@@ -34,8 +34,9 @@ class CratewiseApp extends StatefulWidget {
 class _CratewiseAppState extends State<CratewiseApp> {
   late final AppDatabase _database;
   late final AppRepositories _repositories;
-  late final GoRouter _router =
-      createAppRouter(showOnboarding: widget.showOnboarding);
+  late final GoRouter _router = createAppRouter(
+    showOnboarding: widget.showOnboarding,
+  );
   final _localeNotifier = ValueNotifier<Locale?>(null);
 
   @override

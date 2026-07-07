@@ -887,28 +887,29 @@ void main() {
       );
     }
 
-    testWidgets('shake with non-empty wishlist navigates to WishlistDetailScreen', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'shake with non-empty wishlist navigates to WishlistDetailScreen',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      final ctrl = StreamController<AccelerometerEvent>(sync: true);
-      addTearDown(ctrl.close);
+        final ctrl = StreamController<AccelerometerEvent>(sync: true);
+        addTearDown(ctrl.close);
 
-      await tester.pumpWidget(
-        buildWithShake(ctrl.stream, items: [_makeItem(id: 'xyz')]),
-      );
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildWithShake(ctrl.stream, items: [_makeItem(id: 'xyz')]),
+        );
+        await tester.pumpAndSettle();
 
-      ctrl.add(AccelerometerEvent(25.0, 0.0, 0.0, DateTime.now()));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+        ctrl.add(AccelerometerEvent(25.0, 0.0, 0.0, DateTime.now()));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.byType(WishlistDetailScreen), findsOneWidget);
-    });
+        expect(find.byType(WishlistDetailScreen), findsOneWidget);
+      },
+    );
 
     testWidgets('shake with empty wishlist shows SnackBar', (tester) async {
       final ctrl = StreamController<AccelerometerEvent>(sync: true);

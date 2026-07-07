@@ -64,14 +64,21 @@ class _Section extends StatelessWidget {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.selected, required this.onTap});
+  const _Chip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
   final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) =>
-      FilterChip(label: Text(label), selected: selected, onSelected: (_) => onTap());
+  Widget build(BuildContext context) => FilterChip(
+    label: Text(label),
+    selected: selected,
+    onSelected: (_) => onTap(),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -107,38 +114,41 @@ class _WishlistFilterSheetState extends State<WishlistFilterSheet> {
     _hasTargetPrice = f.hasTargetPrice;
     _hasCover = f.hasCover;
 
-    _availableDecades = widget.items
-        .where((i) => i.year != null)
-        .map((i) => (i.year! ~/ 10) * 10)
-        .toSet()
-        .toList()
-      ..sort();
-    _availableFormats = widget.items
-        .where((i) => i.format != null)
-        .map((i) => i.format!)
-        .toSet()
-        .toList()
-      ..sort();
-    _availableLabels = widget.items
-        .where((i) => i.label != null)
-        .map((i) => i.label!)
-        .toSet()
-        .toList()
-      ..sort();
-    final metaMap = {
-      for (final m in widget.metadata) m.discogsReleaseId: m,
-    };
+    _availableDecades =
+        widget.items
+            .where((i) => i.year != null)
+            .map((i) => (i.year! ~/ 10) * 10)
+            .toSet()
+            .toList()
+          ..sort();
+    _availableFormats =
+        widget.items
+            .where((i) => i.format != null)
+            .map((i) => i.format!)
+            .toSet()
+            .toList()
+          ..sort();
+    _availableLabels =
+        widget.items
+            .where((i) => i.label != null)
+            .map((i) => i.label!)
+            .toSet()
+            .toList()
+          ..sort();
+    final metaMap = {for (final m in widget.metadata) m.discogsReleaseId: m};
     final releaseIds = widget.items.map((i) => i.discogsReleaseId).toSet();
-    _availableGenres = releaseIds
-        .expand((id) => metaMap[id]?.genres ?? const <String>[])
-        .toSet()
-        .toList()
-      ..sort();
-    _availableStyles = releaseIds
-        .expand((id) => metaMap[id]?.styles ?? const <String>[])
-        .toSet()
-        .toList()
-      ..sort();
+    _availableGenres =
+        releaseIds
+            .expand((id) => metaMap[id]?.genres ?? const <String>[])
+            .toSet()
+            .toList()
+          ..sort();
+    _availableStyles =
+        releaseIds
+            .expand((id) => metaMap[id]?.styles ?? const <String>[])
+            .toSet()
+            .toList()
+          ..sort();
   }
 
   WishlistFilterSet get _current => WishlistFilterSet(
@@ -180,19 +190,21 @@ class _WishlistFilterSheetState extends State<WishlistFilterSheet> {
       ),
     );
     if (name == null || name.isEmpty) return;
-    await repo.save(SavedSearch(
-      id: const Uuid().v4(),
-      name: name,
-      type: SavedSearchType.wishlistFilter,
-      payloadJson: _current.toJsonString(),
-      schemaVersion: 1,
-      createdAt: DateTime.now(),
-      lastUsedAt: DateTime.now(),
-    ));
+    await repo.save(
+      SavedSearch(
+        id: const Uuid().v4(),
+        name: name,
+        type: SavedSearchType.wishlistFilter,
+        payloadJson: _current.toJsonString(),
+        schemaVersion: 1,
+        createdAt: DateTime.now(),
+        lastUsedAt: DateTime.now(),
+      ),
+    );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Filter "$name" saved')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Filter "$name" saved')));
     }
   }
 
@@ -250,91 +262,119 @@ class _WishlistFilterSheetState extends State<WishlistFilterSheet> {
                 if (_availableDecades.isNotEmpty)
                   _Section(
                     title: 'Decade',
-                    chips: _availableDecades.map((d) => _Chip(
-                      label: '${d}s',
-                      selected: _decades.contains(d),
-                      onTap: () => setState(
-                        () => _decades.contains(d)
-                            ? _decades.remove(d)
-                            : _decades.add(d),
-                      ),
-                    )).toList(),
+                    chips: _availableDecades
+                        .map(
+                          (d) => _Chip(
+                            label: '${d}s',
+                            selected: _decades.contains(d),
+                            onTap: () => setState(
+                              () => _decades.contains(d)
+                                  ? _decades.remove(d)
+                                  : _decades.add(d),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 if (_availableFormats.isNotEmpty)
                   _Section(
                     title: 'Format',
-                    chips: _availableFormats.map((f) => _Chip(
-                      label: f,
-                      selected: _formats.contains(f),
-                      onTap: () => setState(
-                        () => _formats.contains(f)
-                            ? _formats.remove(f)
-                            : _formats.add(f),
-                      ),
-                    )).toList(),
+                    chips: _availableFormats
+                        .map(
+                          (f) => _Chip(
+                            label: f,
+                            selected: _formats.contains(f),
+                            onTap: () => setState(
+                              () => _formats.contains(f)
+                                  ? _formats.remove(f)
+                                  : _formats.add(f),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 if (_availableLabels.isNotEmpty)
                   _Section(
                     title: 'Label',
-                    chips: _availableLabels.map((l) => _Chip(
-                      label: l,
-                      selected: _labels.contains(l),
-                      onTap: () => setState(
-                        () => _labels.contains(l)
-                            ? _labels.remove(l)
-                            : _labels.add(l),
-                      ),
-                    )).toList(),
+                    chips: _availableLabels
+                        .map(
+                          (l) => _Chip(
+                            label: l,
+                            selected: _labels.contains(l),
+                            onTap: () => setState(
+                              () => _labels.contains(l)
+                                  ? _labels.remove(l)
+                                  : _labels.add(l),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 if (_availableGenres.isNotEmpty)
                   _Section(
                     title: 'Genre',
-                    chips: _availableGenres.map((g) => _Chip(
-                      label: g,
-                      selected: _genres.contains(g),
-                      onTap: () => setState(
-                        () => _genres.contains(g)
-                            ? _genres.remove(g)
-                            : _genres.add(g),
-                      ),
-                    )).toList(),
+                    chips: _availableGenres
+                        .map(
+                          (g) => _Chip(
+                            label: g,
+                            selected: _genres.contains(g),
+                            onTap: () => setState(
+                              () => _genres.contains(g)
+                                  ? _genres.remove(g)
+                                  : _genres.add(g),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 if (_availableStyles.isNotEmpty)
                   _Section(
                     title: 'Style',
-                    chips: _availableStyles.map((s) => _Chip(
-                      label: s,
-                      selected: _styles.contains(s),
-                      onTap: () => setState(
-                        () => _styles.contains(s)
-                            ? _styles.remove(s)
-                            : _styles.add(s),
-                      ),
-                    )).toList(),
+                    chips: _availableStyles
+                        .map(
+                          (s) => _Chip(
+                            label: s,
+                            selected: _styles.contains(s),
+                            onTap: () => setState(
+                              () => _styles.contains(s)
+                                  ? _styles.remove(s)
+                                  : _styles.add(s),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 _Section(
                   title: 'Priority',
-                  chips: WishlistPriority.values.map((p) => _Chip(
-                    label: p.label,
-                    selected: _priorities.contains(p),
-                    onTap: () => setState(
-                      () => _priorities.contains(p)
-                          ? _priorities.remove(p)
-                          : _priorities.add(p),
-                    ),
-                  )).toList(),
+                  chips: WishlistPriority.values
+                      .map(
+                        (p) => _Chip(
+                          label: p.label,
+                          selected: _priorities.contains(p),
+                          onTap: () => setState(
+                            () => _priorities.contains(p)
+                                ? _priorities.remove(p)
+                                : _priorities.add(p),
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
                 _Section(
                   title: 'Sync status',
-                  chips: SyncStatus.values.map((s) => _Chip(
-                    label: s.name,
-                    selected: _syncStatuses.contains(s),
-                    onTap: () => setState(
-                      () => _syncStatuses.contains(s)
-                          ? _syncStatuses.remove(s)
-                          : _syncStatuses.add(s),
-                    ),
-                  )).toList(),
+                  chips: SyncStatus.values
+                      .map(
+                        (s) => _Chip(
+                          label: s.name,
+                          selected: _syncStatuses.contains(s),
+                          onTap: () => setState(
+                            () => _syncStatuses.contains(s)
+                                ? _syncStatuses.remove(s)
+                                : _syncStatuses.add(s),
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
                 _Section(
                   title: 'Target price',
@@ -343,16 +383,18 @@ class _WishlistFilterSheetState extends State<WishlistFilterSheet> {
                       label: 'Has target price',
                       selected: _hasTargetPrice == true,
                       onTap: () => setState(
-                        () => _hasTargetPrice =
-                            _hasTargetPrice == true ? null : true,
+                        () => _hasTargetPrice = _hasTargetPrice == true
+                            ? null
+                            : true,
                       ),
                     ),
                     _Chip(
                       label: 'No target price',
                       selected: _hasTargetPrice == false,
                       onTap: () => setState(
-                        () => _hasTargetPrice =
-                            _hasTargetPrice == false ? null : false,
+                        () => _hasTargetPrice = _hasTargetPrice == false
+                            ? null
+                            : false,
                       ),
                     ),
                   ],

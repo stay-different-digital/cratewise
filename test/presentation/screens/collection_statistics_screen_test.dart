@@ -140,7 +140,13 @@ void main() {
 
     testWidgets('shows total records count', (tester) async {
       await tester.pumpWidget(
-        _screen(items: [_item(id: '1'), _item(id: '2'), _item(id: '3')]),
+        _screen(
+          items: [
+            _item(id: '1'),
+            _item(id: '2'),
+            _item(id: '3'),
+          ],
+        ),
       );
       await tester.pumpAndSettle();
       final statTile = find.byKey(const Key('stat-total'));
@@ -201,11 +207,15 @@ void main() {
       expect(find.byKey(const Key('stat-missing-year')), findsOneWidget);
     });
 
-    testWidgets('genre section visible when metadata available', (tester) async {
+    testWidgets('genre section visible when metadata available', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _screen(
           items: [_item(id: '1', discogsReleaseId: 42)],
-          metadata: [_meta(releaseId: 42, genres: ['Rock'], styles: ['Punk'])],
+          metadata: [
+            _meta(releaseId: 42, genres: ['Rock'], styles: ['Punk']),
+          ],
         ),
       );
       await tester.pumpAndSettle();
@@ -213,11 +223,15 @@ void main() {
       expect(find.text('Rock'), findsOneWidget);
     });
 
-    testWidgets('style section visible when metadata available', (tester) async {
+    testWidgets('style section visible when metadata available', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         _screen(
           items: [_item(id: '1', discogsReleaseId: 42)],
-          metadata: [_meta(releaseId: 42, genres: [], styles: ['Punk'])],
+          metadata: [
+            _meta(releaseId: 42, genres: [], styles: ['Punk']),
+          ],
         ),
       );
       await tester.pumpAndSettle();

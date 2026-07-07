@@ -48,8 +48,9 @@ class CollectionStats {
       artists.add(item.artist);
       if (item.label != null) labels.add(item.label!);
 
-      final decade =
-          item.year != null ? '${(item.year! ~/ 10) * 10}s' : 'Unknown';
+      final decade = item.year != null
+          ? '${(item.year! ~/ 10) * 10}s'
+          : 'Unknown';
       decades[decade] = (decades[decade] ?? 0) + 1;
 
       final format = item.format?.split(',').first.trim() ?? 'Unknown';
@@ -78,12 +79,11 @@ class CollectionStats {
     );
 
     final sortedDecades = Map.fromEntries(
-      decades.entries.toList()
-        ..sort((a, b) {
-          if (a.key == 'Unknown') return 1;
-          if (b.key == 'Unknown') return -1;
-          return a.key.compareTo(b.key);
-        }),
+      decades.entries.toList()..sort((a, b) {
+        if (a.key == 'Unknown') return 1;
+        if (b.key == 'Unknown') return -1;
+        return a.key.compareTo(b.key);
+      }),
     );
 
     return CollectionStats(

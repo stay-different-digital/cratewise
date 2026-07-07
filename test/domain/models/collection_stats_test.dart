@@ -161,7 +161,11 @@ void main() {
 
     test('counts genres from metadata', () {
       final item = _item(id: '1', discogsReleaseId: 42);
-      final meta = _meta(releaseId: 42, genres: ['Rock', 'Jazz'], styles: ['Blues Rock']);
+      final meta = _meta(
+        releaseId: 42,
+        genres: ['Rock', 'Jazz'],
+        styles: ['Blues Rock'],
+      );
       final s = CollectionStats.from([item], metadata: [meta]);
       expect(s.byGenre['Rock'], 1);
       expect(s.byGenre['Jazz'], 1);
@@ -195,7 +199,9 @@ void main() {
         _item(id: '1', discogsReleaseId: 1),
         _item(id: '2', discogsReleaseId: 2),
       ];
-      final meta = [_meta(releaseId: 1, genres: ['Rock'], styles: [])];
+      final meta = [
+        _meta(releaseId: 1, genres: ['Rock'], styles: []),
+      ];
       final s = CollectionStats.from(items, metadata: meta);
       expect(s.byGenre['Rock'], 1);
       expect(s.byGenre.length, 1);

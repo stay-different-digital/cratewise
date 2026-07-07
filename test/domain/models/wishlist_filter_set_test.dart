@@ -77,10 +77,7 @@ void main() {
     });
 
     test('filters by decade', () {
-      final items = [
-        _item(id: '1', year: 1990),
-        _item(id: '2', year: 2005),
-      ];
+      final items = [_item(id: '1', year: 1990), _item(id: '2', year: 2005)];
       final result = WishlistFilterSet(decades: {1990}).apply(items);
       expect(result.map((i) => i.id), ['1']);
     });
@@ -122,13 +119,17 @@ void main() {
     });
 
     test('filters by genre from metadata', () {
-      final items = [_item(id: '1', releaseId: 10), _item(id: '2', releaseId: 20)];
+      final items = [
+        _item(id: '1', releaseId: 10),
+        _item(id: '2', releaseId: 20),
+      ];
       final meta = [
         _meta(releaseId: 10, genres: ['Electronic']),
         _meta(releaseId: 20, genres: ['Jazz']),
       ];
-      final result =
-          WishlistFilterSet(genres: {'Electronic'}).apply(items, metadata: meta);
+      final result = WishlistFilterSet(
+        genres: {'Electronic'},
+      ).apply(items, metadata: meta);
       expect(result.map((i) => i.id), ['1']);
     });
 
@@ -160,7 +161,9 @@ void main() {
         hasTargetPrice: true,
         hasCover: false,
       );
-      final restored = WishlistFilterSet.fromJsonString(original.toJsonString());
+      final restored = WishlistFilterSet.fromJsonString(
+        original.toJsonString(),
+      );
       expect(restored.priorities, original.priorities);
       expect(restored.formats, original.formats);
       expect(restored.hasTargetPrice, original.hasTargetPrice);

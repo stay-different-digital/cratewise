@@ -81,8 +81,7 @@ abstract final class AppRoutes {
 // ---------------------------------------------------------------------------
 
 GoRouter createAppRouter({bool showOnboarding = false}) => GoRouter(
-  initialLocation:
-      showOnboarding ? AppRoutes.onboarding : AppRoutes.search,
+  initialLocation: showOnboarding ? AppRoutes.onboarding : AppRoutes.search,
   routes: [
     GoRoute(
       path: AppRoutes.onboarding,
@@ -90,9 +89,8 @@ GoRouter createAppRouter({bool showOnboarding = false}) => GoRouter(
     ),
     GoRoute(
       path: AppRoutes.savedSearches,
-      builder: (_, state) => SavedSearchesScreen(
-        filterType: state.extra as SavedSearchType?,
-      ),
+      builder: (_, state) =>
+          SavedSearchesScreen(filterType: state.extra as SavedSearchType?),
     ),
     StatefulShellRoute.indexedStack(
       builder: (_, _, navigationShell) =>

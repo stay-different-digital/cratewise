@@ -15,7 +15,10 @@ GoRouter _routerWith(Widget screen) => GoRouter(
   routes: [
     GoRoute(path: '/onboarding', builder: (_, _) => screen),
     GoRoute(path: AppRoutes.search, builder: (_, _) => const _SearchStub()),
-    GoRoute(path: AppRoutes.importExport, builder: (_, _) => const _ImportStub()),
+    GoRoute(
+      path: AppRoutes.importExport,
+      builder: (_, _) => const _ImportStub(),
+    ),
   ],
 );
 
@@ -75,9 +78,7 @@ void main() {
 
     testWidgets('shows onboarding when not yet complete', (tester) async {
       // OnboardingService backed by empty secure storage → isComplete() = false.
-      final service = OnboardingService(
-        storage: const FlutterSecureStorage(),
-      );
+      final service = OnboardingService(storage: const FlutterSecureStorage());
       final isComplete = await service.isComplete();
       expect(isComplete, isFalse);
 
@@ -89,9 +90,7 @@ void main() {
     testWidgets('onboarding complete flag suppresses wizard at next start', (
       tester,
     ) async {
-      final service = OnboardingService(
-        storage: const FlutterSecureStorage(),
-      );
+      final service = OnboardingService(storage: const FlutterSecureStorage());
       await service.markComplete();
       expect(await service.isComplete(), isTrue);
     });
@@ -119,7 +118,11 @@ void main() {
       final button = tester.widget<FilledButton>(
         find.byKey(const Key('onboarding-next-token')),
       );
-      expect(button.onPressed, isNull, reason: 'Volgende must be disabled before token is validated');
+      expect(
+        button.onPressed,
+        isNull,
+        reason: 'Volgende must be disabled before token is validated',
+      );
     });
 
     testWidgets('shows version string in footer (US-72)', (tester) async {

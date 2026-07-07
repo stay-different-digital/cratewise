@@ -457,10 +457,7 @@ class _LanguageSectionState extends State<_LanguageSection> {
         underline: const SizedBox.shrink(),
         items: [
           for (final locale in _locales)
-            DropdownMenuItem(
-              value: locale,
-              child: Text(labelFor(locale)),
-            ),
+            DropdownMenuItem(value: locale, child: Text(labelFor(locale))),
         ],
         onChanged: _onChanged,
       ),

@@ -69,35 +69,44 @@ void main() {
     });
 
     testWidgets('shows list of saved searches', (tester) async {
-      final repo = _FakeRepo(items: [
-        _search(id: '1', name: 'My search'),
-        _search(id: '2', name: 'Another search'),
-      ]);
-      await tester.pumpWidget(
-        _wrap(SavedSearchesScreen(repository: repo)),
+      final repo = _FakeRepo(
+        items: [
+          _search(id: '1', name: 'My search'),
+          _search(id: '2', name: 'Another search'),
+        ],
       );
+      await tester.pumpWidget(_wrap(SavedSearchesScreen(repository: repo)));
       await tester.pumpAndSettle();
       expect(find.text('My search'), findsOneWidget);
       expect(find.text('Another search'), findsOneWidget);
     });
 
     testWidgets('filters by type when filterType set', (tester) async {
-      final repo = _FakeRepo(items: [
-        _search(id: '1', name: 'Discogs', type: SavedSearchType.discogsSearch),
-        _search(
-          id: '2',
-          name: 'Collection filter',
-          type: SavedSearchType.collectionFilter,
-          payload: '{"schemaVersion":1,"decades":[],"formats":[],"labels":[],'
-              '"genres":[],"styles":[],"mediaConditions":[],"sleeveConditions":[],'
-              '"tags":[],"storageLocation":null,"syncStatuses":[],"hasCover":null}',
-        ),
-      ]);
+      final repo = _FakeRepo(
+        items: [
+          _search(
+            id: '1',
+            name: 'Discogs',
+            type: SavedSearchType.discogsSearch,
+          ),
+          _search(
+            id: '2',
+            name: 'Collection filter',
+            type: SavedSearchType.collectionFilter,
+            payload:
+                '{"schemaVersion":1,"decades":[],"formats":[],"labels":[],'
+                '"genres":[],"styles":[],"mediaConditions":[],"sleeveConditions":[],'
+                '"tags":[],"storageLocation":null,"syncStatuses":[],"hasCover":null}',
+          ),
+        ],
+      );
       await tester.pumpWidget(
-        _wrap(SavedSearchesScreen(
-          repository: repo,
-          filterType: SavedSearchType.discogsSearch,
-        )),
+        _wrap(
+          SavedSearchesScreen(
+            repository: repo,
+            filterType: SavedSearchType.discogsSearch,
+          ),
+        ),
       );
       await tester.pumpAndSettle();
       expect(find.text('Discogs'), findsOneWidget);
@@ -107,9 +116,7 @@ void main() {
     testWidgets('delete removes item via swipe', (tester) async {
       final item = _search(id: '42', name: 'To delete');
       final repo = _FakeRepo(items: [item]);
-      await tester.pumpWidget(
-        _wrap(SavedSearchesScreen(repository: repo)),
-      );
+      await tester.pumpWidget(_wrap(SavedSearchesScreen(repository: repo)));
       await tester.pumpAndSettle();
 
       await tester.drag(find.text('To delete'), const Offset(-500, 0));
@@ -121,9 +128,7 @@ void main() {
     testWidgets('rename updates name via menu', (tester) async {
       final item = _search(id: '7', name: 'Old name');
       final repo = _FakeRepo(items: [item]);
-      await tester.pumpWidget(
-        _wrap(SavedSearchesScreen(repository: repo)),
-      );
+      await tester.pumpWidget(_wrap(SavedSearchesScreen(repository: repo)));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.more_vert));
@@ -144,20 +149,22 @@ void main() {
       final item = _search(id: '5', name: 'My filter');
       final repo = _FakeRepo(items: [item]);
 
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(
-          builder: (ctx) => ElevatedButton(
-            onPressed: () async {
-              returned = await Navigator.of(ctx).push<SavedSearch>(
-                MaterialPageRoute(
-                  builder: (_) => SavedSearchesScreen(repository: repo),
-                ),
-              );
-            },
-            child: const Text('Open'),
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (ctx) => ElevatedButton(
+              onPressed: () async {
+                returned = await Navigator.of(ctx).push<SavedSearch>(
+                  MaterialPageRoute(
+                    builder: (_) => SavedSearchesScreen(repository: repo),
+                  ),
+                );
+              },
+              child: const Text('Open'),
+            ),
           ),
         ),
-      ));
+      );
 
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();

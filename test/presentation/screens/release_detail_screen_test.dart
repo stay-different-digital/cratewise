@@ -2266,9 +2266,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        buildScreen(
-          repo: _TrackingCollectionRepository(alreadyContains: true),
-        ),
+        buildScreen(repo: _TrackingCollectionRepository(alreadyContains: true)),
       );
       await tester.pumpAndSettle();
 

@@ -947,14 +947,15 @@ class _DetailBody extends StatelessWidget {
 
   static const _kWideBreakpoint = 700.0;
 
-  List<String> get _effectiveImageUrls =>
-      detail.imageUrls.isNotEmpty
-          ? detail.imageUrls
-          : (detail.coverUrl != null ? [detail.coverUrl!] : const []);
+  List<String> get _effectiveImageUrls => detail.imageUrls.isNotEmpty
+      ? detail.imageUrls
+      : (detail.coverUrl != null ? [detail.coverUrl!] : const []);
 
   Widget _buildCoverNarrow() {
     final urls = _effectiveImageUrls;
-    if (urls.isEmpty && localThumbnailPath == null) return const SizedBox.shrink();
+    if (urls.isEmpty && localThumbnailPath == null) {
+      return const SizedBox.shrink();
+    }
     return ReleaseImageGallery(
       imageUrls: urls,
       localThumbnailPath: localThumbnailPath,

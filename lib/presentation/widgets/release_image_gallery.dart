@@ -131,9 +131,7 @@ class _DotsIndicator extends StatelessWidget {
           margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: active
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.5),
+            color: active ? Colors.white : Colors.white.withValues(alpha: 0.5),
           ),
         );
       }),

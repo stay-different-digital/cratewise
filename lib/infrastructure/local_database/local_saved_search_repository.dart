@@ -11,46 +11,51 @@ class LocalSavedSearchRepository implements SavedSearchRepository {
 
   @override
   Future<List<SavedSearch>> getAll() async {
-    final rows = await (_db.select(_db.savedSearches)
-          ..orderBy([(t) => OrderingTerm.desc(t.lastUsedAt)]))
-        .get();
+    final rows = await (_db.select(
+      _db.savedSearches,
+    )..orderBy([(t) => OrderingTerm.desc(t.lastUsedAt)])).get();
     return rows.map(_rowToModel).toList();
   }
 
   @override
   Future<List<SavedSearch>> getByType(SavedSearchType type) async {
-    final rows = await (_db.select(_db.savedSearches)
-          ..where((t) => t.type.equalsValue(type))
-          ..orderBy([(t) => OrderingTerm.desc(t.lastUsedAt)]))
-        .get();
+    final rows =
+        await (_db.select(_db.savedSearches)
+              ..where((t) => t.type.equalsValue(type))
+              ..orderBy([(t) => OrderingTerm.desc(t.lastUsedAt)]))
+            .get();
     return rows.map(_rowToModel).toList();
   }
 
   @override
   Future<void> save(SavedSearch search) async {
-    await _db.into(_db.savedSearches).insertOnConflictUpdate(
-      SavedSearchesCompanion(
-        id: Value(search.id),
-        name: Value(search.name),
-        type: Value(search.type),
-        payloadJson: Value(search.payloadJson),
-        schemaVersion: Value(search.schemaVersion),
-        createdAt: Value(search.createdAt),
-        lastUsedAt: Value(search.lastUsedAt),
-      ),
-    );
+    await _db
+        .into(_db.savedSearches)
+        .insertOnConflictUpdate(
+          SavedSearchesCompanion(
+            id: Value(search.id),
+            name: Value(search.name),
+            type: Value(search.type),
+            payloadJson: Value(search.payloadJson),
+            schemaVersion: Value(search.schemaVersion),
+            createdAt: Value(search.createdAt),
+            lastUsedAt: Value(search.lastUsedAt),
+          ),
+        );
   }
 
   @override
   Future<void> updateName(String id, String name) async {
-    await (_db.update(_db.savedSearches)..where((t) => t.id.equals(id)))
-        .write(SavedSearchesCompanion(name: Value(name)));
+    await (_db.update(_db.savedSearches)..where((t) => t.id.equals(id))).write(
+      SavedSearchesCompanion(name: Value(name)),
+    );
   }
 
   @override
   Future<void> updateLastUsed(String id, DateTime lastUsedAt) async {
-    await (_db.update(_db.savedSearches)..where((t) => t.id.equals(id)))
-        .write(SavedSearchesCompanion(lastUsedAt: Value(lastUsedAt)));
+    await (_db.update(_db.savedSearches)..where((t) => t.id.equals(id))).write(
+      SavedSearchesCompanion(lastUsedAt: Value(lastUsedAt)),
+    );
   }
 
   @override

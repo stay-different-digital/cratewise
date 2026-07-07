@@ -169,10 +169,8 @@ class _SequencedDelayedSearchService extends DiscogsSearchService {
 /// Returns page 1 with [page1Items] (hasMore = true), then page 2 with
 /// [page2Items] on subsequent calls.
 class _PaginatingSearchService extends DiscogsSearchService {
-  _PaginatingSearchService({
-    required this.page1Items,
-    required this.page2Items,
-  }) : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
+  _PaginatingSearchService({required this.page1Items, required this.page2Items})
+    : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
 
   final List<ReleaseSearchResult> page1Items;
   final List<ReleaseSearchResult> page2Items;
@@ -1310,11 +1308,13 @@ void main() {
           ),
         ],
       );
-      await tester.pumpWidget(MaterialApp.router(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        routerConfig: router,
-      ));
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      );
       await submitSearch(tester, 'vinyl');
       expect(find.byKey(const Key('in-collection-icon')), findsNothing);
 
@@ -1538,30 +1538,31 @@ void main() {
       );
     }
 
-    testWidgets('shake above threshold navigates to Rick Astley release 1758356', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets(
+      'shake above threshold navigates to Rick Astley release 1758356',
+      (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
 
-      final ctrl = StreamController<AccelerometerEvent>(sync: true);
-      addTearDown(ctrl.close);
+        final ctrl = StreamController<AccelerometerEvent>(sync: true);
+        addTearDown(ctrl.close);
 
-      await tester.pumpWidget(buildWithShake(ctrl.stream));
-      await tester.pump();
+        await tester.pumpWidget(buildWithShake(ctrl.stream));
+        await tester.pump();
 
-      ctrl.add(AccelerometerEvent(25.0, 0.0, 0.0, DateTime.now()));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+        ctrl.add(AccelerometerEvent(25.0, 0.0, 0.0, DateTime.now()));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.byType(ReleaseDetailScreen), findsOneWidget);
-      final screen = tester.widget<ReleaseDetailScreen>(
-        find.byType(ReleaseDetailScreen),
-      );
-      expect(screen.releaseId, 1758356);
-    });
+        expect(find.byType(ReleaseDetailScreen), findsOneWidget);
+        final screen = tester.widget<ReleaseDetailScreen>(
+          find.byType(ReleaseDetailScreen),
+        );
+        expect(screen.releaseId, 1758356);
+      },
+    );
 
     testWidgets('shake below threshold does not navigate', (tester) async {
       final ctrl = StreamController<AccelerometerEvent>(sync: true);

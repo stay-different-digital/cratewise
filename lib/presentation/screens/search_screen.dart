@@ -171,8 +171,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     final repos = AppRepositoriesScope.maybeOf(context);
     _collectionRepository = widget.collectionRepository ?? repos?.collection;
     _wishlistRepository = widget.wishlistRepository ?? repos?.wishlist;
-    _savedSearchRepository =
-        widget.savedSearchRepository ?? repos?.savedSearch;
+    _savedSearchRepository = widget.savedSearchRepository ?? repos?.savedSearch;
     _controller.addListener(_onQueryChanged);
     _loadMembership();
     _shakeSub = (widget.accelerometerStream ?? accelerometerEventStream())
@@ -396,23 +395,25 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
       ),
     );
     if (name == null || name.isEmpty || !mounted) return;
-    await repo.save(SavedSearch(
-      id: const Uuid().v4(),
-      name: name,
-      type: SavedSearchType.discogsSearch,
-      payloadJson: jsonEncode({
-        'query': query,
-        'filter': _filter.name,
-        'schemaVersion': 1,
-      }),
-      schemaVersion: 1,
-      createdAt: DateTime.now(),
-      lastUsedAt: DateTime.now(),
-    ));
+    await repo.save(
+      SavedSearch(
+        id: const Uuid().v4(),
+        name: name,
+        type: SavedSearchType.discogsSearch,
+        payloadJson: jsonEncode({
+          'query': query,
+          'filter': _filter.name,
+          'schemaVersion': 1,
+        }),
+        schemaVersion: 1,
+        createdAt: DateTime.now(),
+        lastUsedAt: DateTime.now(),
+      ),
+    );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Search "$name" saved')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Search "$name" saved')));
     }
   }
 
@@ -422,8 +423,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
       extra: SavedSearchType.discogsSearch,
     );
     if (result == null || !mounted) return;
-    final payload =
-        jsonDecode(result.payloadJson) as Map<String, dynamic>;
+    final payload = jsonDecode(result.payloadJson) as Map<String, dynamic>;
     final query = payload['query'] as String;
     final filter = SearchFilter.values.byName(
       payload['filter'] as String? ?? SearchFilter.all.name,
@@ -668,7 +668,10 @@ class _EmptyState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.searchEmptyTitle, style: theme.textTheme.titleMedium),
+            Text(
+              AppLocalizations.of(context)!.searchEmptyTitle,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.searchEmptyBody,
@@ -711,7 +714,10 @@ class _NoResultsState extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.searchNoResultsTitle, style: theme.textTheme.titleMedium),
+            Text(
+              AppLocalizations.of(context)!.searchNoResultsTitle,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.searchNoResultsBody,
@@ -795,7 +801,10 @@ class _NoSelectionPlaceholder extends StatelessWidget {
               color: theme.colorScheme.outlineVariant,
             ),
             const SizedBox(height: 16),
-            Text(AppLocalizations.of(context)!.searchSelectResultTitle, style: theme.textTheme.titleMedium),
+            Text(
+              AppLocalizations.of(context)!.searchSelectResultTitle,
+              style: theme.textTheme.titleMedium,
+            ),
             const SizedBox(height: 8),
             Text(
               AppLocalizations.of(context)!.searchSelectResultBody,
