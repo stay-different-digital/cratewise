@@ -107,6 +107,15 @@ unlinked_spec.ds
 **/linux/flutter/generated_plugin_registrant.h
 **/linux/flutter/generated_plugins.cmake
 
+# graphify — keep graph outputs, ignore cache, backups, and local-machine files
+graphify-out/cache/ast/
+graphify-out/20*/
+graphify-out/*.html
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/.graphify_*.json
+graphify-out/.needs_update
+
 # Coverage
 coverage/
 
@@ -120,3 +129,8 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+# Apple signing material — nooit committen (zie security-invarianten)
+*.p12
+*.mobileprovision
+*.cer
