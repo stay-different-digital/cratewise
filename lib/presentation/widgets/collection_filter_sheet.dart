@@ -38,6 +38,11 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
   late String? _storageLocation;
   late Set<SyncStatus> _syncStatuses;
   late bool? _hasCover;
+  late Set<MusicalKey> _musicalKeys;
+  late Set<int> _energyLevels;
+  late Set<String> _gigCrates;
+  final _bpmMinController = TextEditingController();
+  final _bpmMaxController = TextEditingController();
 
   // Facets derived from items/metadata
   late List<int> _availableDecades;
@@ -47,6 +52,10 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
   late List<String> _availableStyles;
   late List<String> _availableTags;
   late List<String> _availableLocations;
+  late List<MusicalKey> _availableKeys;
+  late List<int> _availableEnergies;
+  late List<String> _availableCrates;
+  late bool _hasBpmValues;
 
   @override
   void initState() {
@@ -63,50 +72,80 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
     _storageLocation = f.storageLocation;
     _syncStatuses = Set.from(f.syncStatuses);
     _hasCover = f.hasCover;
+    _musicalKeys = Set.from(f.musicalKeys);
+    _energyLevels = Set.from(f.energyLevels);
+    _gigCrates = Set.from(f.gigCrates);
+    _bpmMinController.text = f.bpmMin?.toString() ?? '';
+    _bpmMaxController.text = f.bpmMax?.toString() ?? '';
 
-    _availableDecades = widget.items
-        .where((i) => i.year != null)
-        .map((i) => (i.year! ~/ 10) * 10)
-        .toSet()
-        .toList()
-      ..sort();
-    _availableFormats = widget.items
-        .where((i) => i.format != null)
-        .map((i) => i.format!)
-        .toSet()
-        .toList()
-      ..sort();
-    _availableLabels = widget.items
-        .where((i) => i.label != null)
-        .map((i) => i.label!)
-        .toSet()
-        .toList()
-      ..sort();
-    final metaMap = {
-      for (final m in widget.metadata) m.discogsReleaseId: m,
-    };
+    _availableDecades =
+        widget.items
+            .where((i) => i.year != null)
+            .map((i) => (i.year! ~/ 10) * 10)
+            .toSet()
+            .toList()
+          ..sort();
+    _availableFormats =
+        widget.items
+            .where((i) => i.format != null)
+            .map((i) => i.format!)
+            .toSet()
+            .toList()
+          ..sort();
+    _availableLabels =
+        widget.items
+            .where((i) => i.label != null)
+            .map((i) => i.label!)
+            .toSet()
+            .toList()
+          ..sort();
+    final metaMap = {for (final m in widget.metadata) m.discogsReleaseId: m};
     final releaseIds = widget.items.map((i) => i.discogsReleaseId).toSet();
-    _availableGenres = releaseIds
-        .expand((id) => metaMap[id]?.genres ?? const <String>[])
-        .toSet()
-        .toList()
+    _availableGenres =
+        releaseIds
+            .expand((id) => metaMap[id]?.genres ?? const <String>[])
+            .toSet()
+            .toList()
+          ..sort();
+    _availableStyles =
+        releaseIds
+            .expand((id) => metaMap[id]?.styles ?? const <String>[])
+            .toSet()
+            .toList()
+          ..sort();
+    _availableTags = widget.items.expand((i) => i.tags).toSet().toList()
       ..sort();
-    _availableStyles = releaseIds
-        .expand((id) => metaMap[id]?.styles ?? const <String>[])
-        .toSet()
-        .toList()
+    _availableLocations =
+        widget.items
+            .where((i) => i.storageLocation != null)
+            .map((i) => i.storageLocation!)
+            .toSet()
+            .toList()
+          ..sort();
+    _availableKeys =
+        widget.items
+            .where((i) => i.musicalKey != null)
+            .map((i) => i.musicalKey!)
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.index.compareTo(b.index));
+    _availableEnergies =
+        widget.items
+            .where((i) => i.energyLevel != null)
+            .map((i) => i.energyLevel!)
+            .toSet()
+            .toList()
+          ..sort();
+    _availableCrates = widget.items.expand((i) => i.gigCrates).toSet().toList()
       ..sort();
-    _availableTags = widget.items
-        .expand((i) => i.tags)
-        .toSet()
-        .toList()
-      ..sort();
-    _availableLocations = widget.items
-        .where((i) => i.storageLocation != null)
-        .map((i) => i.storageLocation!)
-        .toSet()
-        .toList()
-      ..sort();
+    _hasBpmValues = widget.items.any((i) => i.bpm != null);
+  }
+
+  @override
+  void dispose() {
+    _bpmMinController.dispose();
+    _bpmMaxController.dispose();
+    super.dispose();
   }
 
   CollectionFilterSet get _current => CollectionFilterSet(
@@ -121,6 +160,11 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
     storageLocation: _storageLocation,
     syncStatuses: Set.unmodifiable(_syncStatuses),
     hasCover: _hasCover,
+    bpmMin: int.tryParse(_bpmMinController.text.trim()),
+    bpmMax: int.tryParse(_bpmMaxController.text.trim()),
+    musicalKeys: Set.unmodifiable(_musicalKeys),
+    energyLevels: Set.unmodifiable(_energyLevels),
+    gigCrates: Set.unmodifiable(_gigCrates),
   );
 
   Future<void> _saveFilter() async {
@@ -129,19 +173,21 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
     final name = await _askName(context);
     if (name == null || name.isEmpty) return;
     final filter = _current;
-    await repo.save(SavedSearch(
-      id: const Uuid().v4(),
-      name: name,
-      type: SavedSearchType.collectionFilter,
-      payloadJson: filter.toJsonString(),
-      schemaVersion: 1,
-      createdAt: DateTime.now(),
-      lastUsedAt: DateTime.now(),
-    ));
+    await repo.save(
+      SavedSearch(
+        id: const Uuid().v4(),
+        name: name,
+        type: SavedSearchType.collectionFilter,
+        payloadJson: filter.toJsonString(),
+        schemaVersion: 1,
+        createdAt: DateTime.now(),
+        lastUsedAt: DateTime.now(),
+      ),
+    );
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Filter "$name" saved')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Filter "$name" saved')));
     }
   }
 
@@ -186,6 +232,11 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
                     _storageLocation = null;
                     _syncStatuses.clear();
                     _hasCover = null;
+                    _musicalKeys.clear();
+                    _energyLevels.clear();
+                    _gigCrates.clear();
+                    _bpmMinController.clear();
+                    _bpmMaxController.clear();
                   }),
                   child: const Text('Clear all'),
                 ),
@@ -217,122 +268,154 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
                 if (_availableFormats.isNotEmpty)
                   _Section(
                     title: 'Format',
-                    chips: _availableFormats.map((f) => _Chip(
-                      label: f,
-                      selected: _formats.contains(f),
-                      onTap: () => setState(
-                        () => _formats.contains(f)
-                            ? _formats.remove(f)
-                            : _formats.add(f),
-                      ),
-                    )).toList(),
+                    chips: _availableFormats
+                        .map(
+                          (f) => _Chip(
+                            label: f,
+                            selected: _formats.contains(f),
+                            onTap: () => setState(
+                              () => _formats.contains(f)
+                                  ? _formats.remove(f)
+                                  : _formats.add(f),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 if (_availableLabels.isNotEmpty)
                   _Section(
                     title: 'Label',
-                    chips: _availableLabels.map((l) => _Chip(
-                      label: l,
-                      selected: _labels.contains(l),
-                      onTap: () => setState(
-                        () => _labels.contains(l)
-                            ? _labels.remove(l)
-                            : _labels.add(l),
-                      ),
-                    )).toList(),
+                    chips: _availableLabels
+                        .map(
+                          (l) => _Chip(
+                            label: l,
+                            selected: _labels.contains(l),
+                            onTap: () => setState(
+                              () => _labels.contains(l)
+                                  ? _labels.remove(l)
+                                  : _labels.add(l),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 if (_availableGenres.isNotEmpty)
                   _Section(
                     title: 'Genre',
-                    chips: _availableGenres.map((g) => _Chip(
-                      label: g,
-                      selected: _genres.contains(g),
-                      onTap: () => setState(
-                        () => _genres.contains(g)
-                            ? _genres.remove(g)
-                            : _genres.add(g),
-                      ),
-                    )).toList(),
+                    chips: _availableGenres
+                        .map(
+                          (g) => _Chip(
+                            label: g,
+                            selected: _genres.contains(g),
+                            onTap: () => setState(
+                              () => _genres.contains(g)
+                                  ? _genres.remove(g)
+                                  : _genres.add(g),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 if (_availableStyles.isNotEmpty)
                   _Section(
                     title: 'Style',
-                    chips: _availableStyles.map((s) => _Chip(
-                      label: s,
-                      selected: _styles.contains(s),
-                      onTap: () => setState(
-                        () => _styles.contains(s)
-                            ? _styles.remove(s)
-                            : _styles.add(s),
-                      ),
-                    )).toList(),
+                    chips: _availableStyles
+                        .map(
+                          (s) => _Chip(
+                            label: s,
+                            selected: _styles.contains(s),
+                            onTap: () => setState(
+                              () => _styles.contains(s)
+                                  ? _styles.remove(s)
+                                  : _styles.add(s),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 _Section(
                   title: 'Media condition',
                   chips: RecordCondition.values
                       .where((c) => c != RecordCondition.notSet)
-                      .map((c) => _Chip(
-                        label: c.abbreviation,
-                        selected: _mediaConditions.contains(c),
-                        onTap: () => setState(
-                          () => _mediaConditions.contains(c)
-                              ? _mediaConditions.remove(c)
-                              : _mediaConditions.add(c),
+                      .map(
+                        (c) => _Chip(
+                          label: c.abbreviation,
+                          selected: _mediaConditions.contains(c),
+                          onTap: () => setState(
+                            () => _mediaConditions.contains(c)
+                                ? _mediaConditions.remove(c)
+                                : _mediaConditions.add(c),
+                          ),
                         ),
-                      ))
+                      )
                       .toList(),
                 ),
                 _Section(
                   title: 'Sleeve condition',
                   chips: RecordCondition.values
                       .where((c) => c != RecordCondition.notSet)
-                      .map((c) => _Chip(
-                        label: c.abbreviation,
-                        selected: _sleeveConditions.contains(c),
-                        onTap: () => setState(
-                          () => _sleeveConditions.contains(c)
-                              ? _sleeveConditions.remove(c)
-                              : _sleeveConditions.add(c),
+                      .map(
+                        (c) => _Chip(
+                          label: c.abbreviation,
+                          selected: _sleeveConditions.contains(c),
+                          onTap: () => setState(
+                            () => _sleeveConditions.contains(c)
+                                ? _sleeveConditions.remove(c)
+                                : _sleeveConditions.add(c),
+                          ),
                         ),
-                      ))
+                      )
                       .toList(),
                 ),
                 if (_availableTags.isNotEmpty)
                   _Section(
                     title: 'Tag',
-                    chips: _availableTags.map((t) => _Chip(
-                      label: t,
-                      selected: _tags.contains(t),
-                      onTap: () => setState(
-                        () => _tags.contains(t)
-                            ? _tags.remove(t)
-                            : _tags.add(t),
-                      ),
-                    )).toList(),
+                    chips: _availableTags
+                        .map(
+                          (t) => _Chip(
+                            label: t,
+                            selected: _tags.contains(t),
+                            onTap: () => setState(
+                              () => _tags.contains(t)
+                                  ? _tags.remove(t)
+                                  : _tags.add(t),
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 if (_availableLocations.isNotEmpty)
                   _Section(
                     title: 'Storage location',
-                    chips: _availableLocations.map((loc) => _Chip(
-                      label: loc,
-                      selected: _storageLocation == loc,
-                      onTap: () => setState(
-                        () => _storageLocation == loc
-                            ? _storageLocation = null
-                            : _storageLocation = loc,
-                      ),
-                    )).toList(),
+                    chips: _availableLocations
+                        .map(
+                          (loc) => _Chip(
+                            label: loc,
+                            selected: _storageLocation == loc,
+                            onTap: () => setState(
+                              () => _storageLocation == loc
+                                  ? _storageLocation = null
+                                  : _storageLocation = loc,
+                            ),
+                          ),
+                        )
+                        .toList(),
                   ),
                 _Section(
                   title: 'Sync status',
-                  chips: SyncStatus.values.map((s) => _Chip(
-                    label: s.name,
-                    selected: _syncStatuses.contains(s),
-                    onTap: () => setState(
-                      () => _syncStatuses.contains(s)
-                          ? _syncStatuses.remove(s)
-                          : _syncStatuses.add(s),
-                    ),
-                  )).toList(),
+                  chips: SyncStatus.values
+                      .map(
+                        (s) => _Chip(
+                          label: s.name,
+                          selected: _syncStatuses.contains(s),
+                          onTap: () => setState(
+                            () => _syncStatuses.contains(s)
+                                ? _syncStatuses.remove(s)
+                                : _syncStatuses.add(s),
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
                 _Section(
                   title: 'Cover image',
@@ -353,6 +436,98 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
                     ),
                   ],
                 ),
+                if (_hasBpmValues) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12, bottom: 6),
+                    child: Text(
+                      'BPM',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 96,
+                        child: TextField(
+                          key: const Key('bpm-min-field'),
+                          controller: _bpmMinController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Min',
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Text('–'),
+                      ),
+                      SizedBox(
+                        width: 96,
+                        child: TextField(
+                          key: const Key('bpm-max-field'),
+                          controller: _bpmMaxController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Max',
+                            isDense: true,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (_availableKeys.isNotEmpty)
+                  _Section(
+                    title: 'Key',
+                    chips: _availableKeys
+                        .map(
+                          (k) => _Chip(
+                            label: k.label,
+                            selected: _musicalKeys.contains(k),
+                            onTap: () => setState(
+                              () => _musicalKeys.contains(k)
+                                  ? _musicalKeys.remove(k)
+                                  : _musicalKeys.add(k),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                if (_availableEnergies.isNotEmpty)
+                  _Section(
+                    title: 'Energy',
+                    chips: _availableEnergies
+                        .map(
+                          (e) => _Chip(
+                            label: '$e',
+                            selected: _energyLevels.contains(e),
+                            onTap: () => setState(
+                              () => _energyLevels.contains(e)
+                                  ? _energyLevels.remove(e)
+                                  : _energyLevels.add(e),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                if (_availableCrates.isNotEmpty)
+                  _Section(
+                    title: 'Gig crate',
+                    chips: _availableCrates
+                        .map(
+                          (c) => _Chip(
+                            label: c,
+                            selected: _gigCrates.contains(c),
+                            onTap: () => setState(
+                              () => _gigCrates.contains(c)
+                                  ? _gigCrates.remove(c)
+                                  : _gigCrates.add(c),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
               ],
             ),
           ),
@@ -432,10 +607,7 @@ class _Section extends StatelessWidget {
     children: [
       Padding(
         padding: const EdgeInsets.only(top: 12, bottom: 6),
-        child: Text(
-          title,
-          style: Theme.of(context).textTheme.labelLarge,
-        ),
+        child: Text(title, style: Theme.of(context).textTheme.labelLarge),
       ),
       Wrap(spacing: 8, runSpacing: 4, children: chips),
     ],

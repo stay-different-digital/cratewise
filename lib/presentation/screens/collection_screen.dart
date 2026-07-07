@@ -11,6 +11,7 @@ import '../../application/services/thumbnail_cache_service.dart';
 import '../../domain/models/cached_release_metadata.dart';
 import '../../domain/models/collection_filter_set.dart';
 import '../../domain/models/collection_item.dart';
+import '../../domain/models/collection_sort.dart';
 import '../../domain/models/saved_search.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
@@ -80,6 +81,7 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
   _CollectionState _state = const _Loading();
   List<CachedReleaseMetadata> _metadata = const [];
   CollectionFilterSet _filter = const CollectionFilterSet();
+  CollectionSort _sort = CollectionSort.newestFirst;
   final _searchController = TextEditingController();
   Timer? _debounce;
   String _debouncedQuery = '';
@@ -278,6 +280,27 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
                 tooltip: 'Filter',
                 onPressed: _openFilterSheet,
               ),
+              PopupMenuButton<CollectionSort>(
+                key: const Key('collection-sort-button'),
+                icon: Icon(
+                  Icons.sort,
+                  color: _sort != CollectionSort.newestFirst
+                      ? theme.colorScheme.primary
+                      : null,
+                ),
+                tooltip: 'Sort',
+                initialValue: _sort,
+                onSelected: (s) => setState(() => _sort = s),
+                itemBuilder: (context) => CollectionSort.values
+                    .map(
+                      (s) => CheckedPopupMenuItem(
+                        value: s,
+                        checked: s == _sort,
+                        child: Text(s.label),
+                      ),
+                    )
+                    .toList(),
+              ),
               IconButton(
                 key: const Key('collection-saved-searches-button'),
                 icon: const Icon(Icons.bookmark_outline),
@@ -314,8 +337,9 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
   }
 
   Future<void> _openFilterSheet() async {
-    final items =
-        _state is _Loaded ? (_state as _Loaded).items : <CollectionItem>[];
+    final items = _state is _Loaded
+        ? (_state as _Loaded).items
+        : <CollectionItem>[];
     final result = await showModalBottomSheet<CollectionFilterSet>(
       context: context,
       isScrollControlled: true,
@@ -355,6 +379,7 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
     if (!_filter.isEmpty) {
       filtered = _filter.apply(filtered, metadata: _metadata);
     }
+    filtered = _sort.apply(filtered);
 
     if (filtered.isEmpty) {
       return _NoSearchResults(query: _debouncedQuery.trim());
@@ -366,7 +391,8 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
           if (!_filter.isEmpty)
             _ActiveFilterBar(
               count: _filter.activeCount,
-              onClear: () => setState(() => _filter = const CollectionFilterSet()),
+              onClear: () =>
+                  setState(() => _filter = const CollectionFilterSet()),
             ),
           Expanded(
             child: _CollectionList(
@@ -458,11 +484,7 @@ class _ActiveFilterBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Row(
         children: [
-          Icon(
-            Icons.filter_list,
-            size: 16,
-            color: theme.colorScheme.secondary,
-          ),
+          Icon(Icons.filter_list, size: 16, color: theme.colorScheme.secondary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(

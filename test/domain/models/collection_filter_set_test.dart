@@ -18,6 +18,10 @@ CollectionItem _item({
   String? coverUrl,
   RecordCondition media = RecordCondition.veryGood,
   RecordCondition sleeve = RecordCondition.veryGood,
+  int? bpm,
+  MusicalKey? musicalKey,
+  int? energyLevel,
+  List<String> gigCrates = const [],
 }) => CollectionItem(
   id: id,
   discogsReleaseId: releaseId,
@@ -34,6 +38,10 @@ CollectionItem _item({
   syncStatus: syncStatus,
   createdAt: DateTime(2026),
   updatedAt: DateTime(2026),
+  bpm: bpm,
+  musicalKey: musicalKey,
+  energyLevel: energyLevel,
+  gigCrates: gigCrates,
 );
 
 CachedReleaseMetadata _meta({
@@ -60,10 +68,7 @@ void main() {
     });
 
     test('isEmpty false when any filter set', () {
-      expect(
-        CollectionFilterSet(formats: {'LP'}).isEmpty,
-        isFalse,
-      );
+      expect(CollectionFilterSet(formats: {'LP'}).isEmpty, isFalse);
     });
 
     test('apply with empty filter returns all items', () {
@@ -89,7 +94,10 @@ void main() {
     });
 
     test('filters by format', () {
-      final items = [_item(id: '1', format: 'LP'), _item(id: '2', format: '12"')];
+      final items = [
+        _item(id: '1', format: 'LP'),
+        _item(id: '2', format: '12"'),
+      ];
       final result = CollectionFilterSet(formats: {'LP'}).apply(items);
       expect(result.map((i) => i.id), ['1']);
     });
@@ -104,33 +112,47 @@ void main() {
     });
 
     test('filters by genre using metadata', () {
-      final items = [_item(id: '1', releaseId: 10), _item(id: '2', releaseId: 20)];
+      final items = [
+        _item(id: '1', releaseId: 10),
+        _item(id: '2', releaseId: 20),
+      ];
       final metadata = [
         _meta(releaseId: 10, genres: ['Electronic']),
         _meta(releaseId: 20, genres: ['Jazz']),
       ];
-      final result = CollectionFilterSet(genres: {'Electronic'})
-          .apply(items, metadata: metadata);
+      final result = CollectionFilterSet(
+        genres: {'Electronic'},
+      ).apply(items, metadata: metadata);
       expect(result.map((i) => i.id), ['1']);
     });
 
     test('genre filter excludes item with no metadata', () {
-      final items = [_item(id: '1', releaseId: 10), _item(id: '2', releaseId: 20)];
-      final metadata = [_meta(releaseId: 10, genres: ['Electronic'])];
+      final items = [
+        _item(id: '1', releaseId: 10),
+        _item(id: '2', releaseId: 20),
+      ];
+      final metadata = [
+        _meta(releaseId: 10, genres: ['Electronic']),
+      ];
       // item 2 has no metadata — excluded when genre filter active
-      final result = CollectionFilterSet(genres: {'Electronic'})
-          .apply(items, metadata: metadata);
+      final result = CollectionFilterSet(
+        genres: {'Electronic'},
+      ).apply(items, metadata: metadata);
       expect(result.map((i) => i.id), ['1']);
     });
 
     test('filters by style using metadata', () {
-      final items = [_item(id: '1', releaseId: 1), _item(id: '2', releaseId: 2)];
+      final items = [
+        _item(id: '1', releaseId: 1),
+        _item(id: '2', releaseId: 2),
+      ];
       final metadata = [
         _meta(releaseId: 1, styles: ['Ambient']),
         _meta(releaseId: 2, styles: ['Techno']),
       ];
-      final result = CollectionFilterSet(styles: {'Ambient'})
-          .apply(items, metadata: metadata);
+      final result = CollectionFilterSet(
+        styles: {'Ambient'},
+      ).apply(items, metadata: metadata);
       expect(result.map((i) => i.id), ['1']);
     });
 
@@ -241,12 +263,121 @@ void main() {
         syncStatuses: {SyncStatus.synced},
         hasCover: true,
       );
-      final restored = CollectionFilterSet.fromJsonString(original.toJsonString());
+      final restored = CollectionFilterSet.fromJsonString(
+        original.toJsonString(),
+      );
       expect(restored.decades, original.decades);
       expect(restored.formats, original.formats);
       expect(restored.labels, original.labels);
       expect(restored.syncStatuses, original.syncStatuses);
       expect(restored.hasCover, original.hasCover);
+    });
+
+    group('DJ field filters (US-121)', () {
+      test('filters by BPM range, items without BPM excluded', () {
+        final items = [
+          _item(id: '1', bpm: 100),
+          _item(id: '2', bpm: 128),
+          _item(id: '3', bpm: 140),
+          _item(id: '4'),
+        ];
+        final result = CollectionFilterSet(
+          bpmMin: 120,
+          bpmMax: 130,
+        ).apply(items);
+        expect(result.map((i) => i.id), ['2']);
+      });
+
+      test('BPM bounds are inclusive and work independently', () {
+        final items = [_item(id: '1', bpm: 120), _item(id: '2', bpm: 130)];
+        expect(CollectionFilterSet(bpmMin: 120).apply(items).map((i) => i.id), [
+          '1',
+          '2',
+        ]);
+        expect(CollectionFilterSet(bpmMax: 120).apply(items).map((i) => i.id), [
+          '1',
+        ]);
+      });
+
+      test('filters by musical key, items without key excluded', () {
+        final items = [
+          _item(id: '1', musicalKey: MusicalKey.aMinor),
+          _item(id: '2', musicalKey: MusicalKey.cMajor),
+          _item(id: '3'),
+        ];
+        final result = CollectionFilterSet(
+          musicalKeys: {MusicalKey.aMinor},
+        ).apply(items);
+        expect(result.map((i) => i.id), ['1']);
+      });
+
+      test('filters by energy level, items without energy excluded', () {
+        final items = [
+          _item(id: '1', energyLevel: 5),
+          _item(id: '2', energyLevel: 2),
+          _item(id: '3'),
+        ];
+        final result = CollectionFilterSet(energyLevels: {4, 5}).apply(items);
+        expect(result.map((i) => i.id), ['1']);
+      });
+
+      test('filters by gig crate (any match)', () {
+        final items = [
+          _item(id: '1', gigCrates: ['House Night', 'Warmup']),
+          _item(id: '2', gigCrates: ['Techno']),
+          _item(id: '3'),
+        ];
+        final result = CollectionFilterSet(gigCrates: {'Warmup'}).apply(items);
+        expect(result.map((i) => i.id), ['1']);
+      });
+
+      test('activeCount counts BPM range as one group', () {
+        final f = CollectionFilterSet(
+          bpmMin: 100,
+          bpmMax: 130,
+          musicalKeys: {MusicalKey.aMinor},
+          energyLevels: {5},
+          gigCrates: {'Warmup'},
+        );
+        expect(f.activeCount, 4);
+        expect(f.isEmpty, isFalse);
+      });
+
+      test('DJ fields round-trip through JSON', () {
+        final original = CollectionFilterSet(
+          bpmMin: 100,
+          bpmMax: 130,
+          musicalKeys: {MusicalKey.gbMinor, MusicalKey.aMajor},
+          energyLevels: {3, 4},
+          gigCrates: {'Warmup'},
+        );
+        final restored = CollectionFilterSet.fromJsonString(
+          original.toJsonString(),
+        );
+        expect(restored.bpmMin, 100);
+        expect(restored.bpmMax, 130);
+        expect(restored.musicalKeys, original.musicalKeys);
+        expect(restored.energyLevels, original.energyLevels);
+        expect(restored.gigCrates, original.gigCrates);
+      });
+
+      test('fromJson accepts pre-US-121 payloads without DJ keys', () {
+        // Snapshot of a saved-search payload from before the DJ fields
+        // existed; loading it must not throw and must default the DJ
+        // filters to inactive.
+        const oldPayload =
+            '{"schemaVersion":1,"decades":[1990],"formats":["LP"],'
+            '"labels":[],"genres":[],"styles":[],"mediaConditions":[],'
+            '"sleeveConditions":[],"tags":[],"storageLocation":null,'
+            '"syncStatuses":[],"hasCover":null}';
+        final restored = CollectionFilterSet.fromJsonString(oldPayload);
+        expect(restored.decades, {1990});
+        expect(restored.bpmMin, isNull);
+        expect(restored.bpmMax, isNull);
+        expect(restored.musicalKeys, isEmpty);
+        expect(restored.energyLevels, isEmpty);
+        expect(restored.gigCrates, isEmpty);
+      });
     });
   });
 }
