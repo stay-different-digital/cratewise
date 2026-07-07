@@ -5,6 +5,7 @@ import '../../app/router.dart';
 import '../../application/services/discogs_connection_service.dart';
 import '../../application/services/onboarding_service.dart';
 import '../widgets/discogs_token_section.dart';
+import '../widgets/version_footer.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({
@@ -13,6 +14,7 @@ class OnboardingScreen extends StatefulWidget {
     this.connectionService,
     @visibleForTesting this.initialStep = 0,
     @visibleForTesting this.initialTokenConnected = false,
+    @visibleForTesting this.appVersionLoader,
   });
 
   /// Injected only for testing.
@@ -26,6 +28,9 @@ class OnboardingScreen extends StatefulWidget {
 
   @visibleForTesting
   final bool initialTokenConnected;
+
+  @visibleForTesting
+  final Future<String> Function()? appVersionLoader;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -63,9 +68,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         title: Text(_titles[_step]),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: _buildStep(),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: _buildStep(),
+              ),
+            ),
+            VersionFooter(appVersionLoader: widget.appVersionLoader),
+          ],
         ),
       ),
     );

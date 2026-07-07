@@ -12,19 +12,19 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _buildApp(AboutSectionTile(appVersionLoader: () async => '1.0.0+2')),
+        _buildApp(AboutSectionTile(appVersionLoader: () async => '1.0.0.2')),
       );
       await tester.pump();
 
       expect(find.text('About Cratewise'), findsOneWidget);
-      expect(find.text('Version 1.0.0+2'), findsOneWidget);
+      expect(find.text('Version 1.0.0.2'), findsOneWidget);
     });
 
     testWidgets('tapping opens the about dialog with name and version', (
       tester,
     ) async {
       await tester.pumpWidget(
-        _buildApp(AboutSectionTile(appVersionLoader: () async => '1.0.0+2')),
+        _buildApp(AboutSectionTile(appVersionLoader: () async => '1.0.0.2')),
       );
       await tester.pump();
 
@@ -33,7 +33,7 @@ void main() {
 
       expect(find.byType(AboutDialog), findsOneWidget);
       expect(find.text('Cratewise'), findsOneWidget);
-      expect(find.text('1.0.0+2'), findsOneWidget);
+      expect(find.text('1.0.0.2'), findsOneWidget);
       expect(
         find.text('Uses the Discogs API. Not affiliated with Discogs.'),
         findsOneWidget,
@@ -44,7 +44,7 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        _buildApp(AboutSectionTile(appVersionLoader: () async => '1.0.0+2')),
+        _buildApp(AboutSectionTile(appVersionLoader: () async => '1.0.0.2')),
       );
       await tester.pump();
 

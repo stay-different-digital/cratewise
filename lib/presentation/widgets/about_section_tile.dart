@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+
+import '../../shared/utils/app_version.dart';
 
 /// Settings tile showing the app name and runtime version, opening the
 /// standard Flutter about dialog with the open-source licence viewer.
@@ -7,7 +8,7 @@ class AboutSectionTile extends StatefulWidget {
   const AboutSectionTile({super.key, this.appVersionLoader});
 
   /// Injected only for testing. Production code passes null and reads the
-  /// version from [PackageInfo].
+  /// version via [displayAppVersion].
   final Future<String> Function()? appVersionLoader;
 
   @override
@@ -26,12 +27,7 @@ class _AboutSectionTileState extends State<AboutSectionTile> {
   Future<void> _loadVersion() async {
     String version;
     try {
-      if (widget.appVersionLoader != null) {
-        version = await widget.appVersionLoader!();
-      } else {
-        final info = await PackageInfo.fromPlatform();
-        version = '${info.version}+${info.buildNumber}';
-      }
+      version = await (widget.appVersionLoader ?? displayAppVersion)();
     } catch (_) {
       version = 'unknown';
     }

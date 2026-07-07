@@ -122,6 +122,19 @@ void main() {
       expect(button.onPressed, isNull, reason: 'Volgende must be disabled before token is validated');
     });
 
+    testWidgets('shows version string in footer (US-72)', (tester) async {
+      await tester.pumpWidget(
+        _wrap(
+          OnboardingScreen(
+            service: OnboardingService(storage: const FlutterSecureStorage()),
+            appVersionLoader: () async => '1.0.0.1',
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('1.0.0.1'), findsOneWidget);
+    });
+
     testWidgets('"Sla over" on import step navigates to main navigation', (
       tester,
     ) async {
