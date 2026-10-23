@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 
+import '../services/thumbnail_cache_service.dart';
 import '../../domain/models/retry_action.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/retry_action_repository.dart';
@@ -64,21 +65,14 @@ class RetryThumbnailUseCase {
       return const RetryThumbnailNoUrl();
     }
 
-    http.Response response;
-    try {
-      response = await _httpClient.get(Uri.parse(coverUrl));
-    } catch (_) {
-      await _recordAttempt(action);
-      return const RetryThumbnailNetworkError();
-    }
-
-    if (response.statusCode != 200) {
+    final bytes = await downloadImage(_httpClient, coverUrl);
+    if (bytes == null) {
       await _recordAttempt(action);
       return const RetryThumbnailNetworkError();
     }
 
     try {
-      await _thumbnailRepo.save(releaseId, response.bodyBytes);
+      await _thumbnailRepo.save(releaseId, bytes);
       await retryRepo.remove(action.id);
       return const RetryThumbnailSuccess();
     } catch (_) {

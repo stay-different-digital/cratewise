@@ -150,10 +150,10 @@
     "semantic_hash": "c71abf768ab105d9b5403254af54f55c"
   },
   "lib/application/services/thumbnail_cache_service.dart": {
-    "mtime": 1781729299.7348819,
-    "seen": 1792749595.2236469,
-    "ast_hash": "ca8fbfd1925c2aacb3303f36ead542d3",
-    "semantic_hash": "ca8fbfd1925c2aacb3303f36ead542d3"
+    "mtime": 1792750625.49099,
+    "seen": 1792750673.450347,
+    "ast_hash": "cb823eeb720699894912325b8614969b",
+    "semantic_hash": ""
   },
   "lib/application/services/thumbnail_eviction_service.dart": {
     "mtime": 1781725520.5132537,
@@ -336,10 +336,10 @@
     "semantic_hash": ""
   },
   "lib/application/use_cases/retry_thumbnail_use_case.dart": {
-    "mtime": 1780579509.422408,
-    "seen": 1792749595.223671,
-    "ast_hash": "991b90d3550e30e3c2b5d44ed48bc777",
-    "semantic_hash": "991b90d3550e30e3c2b5d44ed48bc777"
+    "mtime": 1792750632.0384498,
+    "seen": 1792750673.450372,
+    "ast_hash": "4b04d700cb25d350ff3a89cb91141ce1",
+    "semantic_hash": ""
   },
   "lib/domain/models/cached_release_metadata.dart": {
     "mtime": 1780576815.2424912,
@@ -882,10 +882,10 @@
     "semantic_hash": "7acb31ccfab41ac034e0d622789c1331"
   },
   "test/application/services/thumbnail_cache_service_test.dart": {
-    "mtime": 1780579509.733736,
-    "seen": 1792749595.223777,
-    "ast_hash": "147f27d500697ae88856020e2e848a3e",
-    "semantic_hash": "147f27d500697ae88856020e2e848a3e"
+    "mtime": 1792750635.1869104,
+    "seen": 1792750673.450471,
+    "ast_hash": "9dd35710dc82e6b758920261a8556b83",
+    "semantic_hash": ""
   },
   "test/application/services/thumbnail_eviction_service_test.dart": {
     "mtime": 1780579548.07829,
@@ -3312,9 +3312,9 @@
     "semantic_hash": ""
   },
   "docs/user-stories/phase-16-code-review-stories.md": {
-    "mtime": 1792750552.118401,
-    "seen": 1792750554.5899131,
-    "ast_hash": "e42cbaabecd969e41a69fadb050eb9f6",
+    "mtime": 1792750614.15542,
+    "seen": 1792750615.387048,
+    "ast_hash": "6db963da009c052f777afdb6edf6435e",
     "semantic_hash": ""
   },
   "drift_schemas/drift_schema_v1.json": {

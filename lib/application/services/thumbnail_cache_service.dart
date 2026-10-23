@@ -1,9 +1,28 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
 import '../../domain/repositories/thumbnail_repository.dart';
 import 'thumbnail_eviction_service.dart';
+
+/// Downloads a cover image; null on network error, timeout, non-200 or a
+/// non-image response (US-128). A missing content-type is accepted.
+Future<Uint8List?> downloadImage(
+  http.Client client,
+  String url, {
+  Duration timeout = const Duration(seconds: 15),
+}) async {
+  try {
+    final response = await client.get(Uri.parse(url)).timeout(timeout);
+    final type = response.headers['content-type'];
+    if (response.statusCode != 200) return null;
+    if (type != null && !type.startsWith('image/')) return null;
+    return response.bodyBytes;
+  } on Exception {
+    return null;
+  }
+}
 
 class ThumbnailCacheService {
   ThumbnailCacheService({
@@ -27,10 +46,10 @@ class ThumbnailCacheService {
 
     if (imageUrl == null || imageUrl.isEmpty) return null;
 
+    final bytes = await downloadImage(_httpClient, imageUrl);
+    if (bytes == null) return null;
     try {
-      final response = await _httpClient.get(Uri.parse(imageUrl));
-      if (response.statusCode != 200) return null;
-      await _repository.save(releaseId, response.bodyBytes);
+      await _repository.save(releaseId, bytes);
       unawaited(_evictionService.evictIfNeeded());
       return await _repository.getLocalPath(releaseId);
     } catch (_) {

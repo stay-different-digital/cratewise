@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:cratewise/application/services/thumbnail_cache_service.dart';
@@ -264,6 +265,44 @@ void main() {
       await service.getOrFetch(1, 'https://example.com/cover.jpg');
       await Future<void>.delayed(Duration.zero);
       expect(eviction.evictCallCount, 0);
+    });
+  });
+
+  group('downloadImage (US-128)', () {
+    test('returns null when the server never answers', () async {
+      final client = MockClient((_) => Completer<http.Response>().future);
+
+      final bytes = await downloadImage(
+        client,
+        'https://img.discogs.com/a.jpg',
+        timeout: const Duration(milliseconds: 10),
+      );
+
+      expect(bytes, isNull);
+    });
+
+    test('returns null for a non-image content-type', () async {
+      final client = MockClient(
+        (_) async => http.Response(
+          '<html>captive portal</html>',
+          200,
+          headers: {'content-type': 'text/html'},
+        ),
+      );
+
+      expect(await downloadImage(client, 'https://x/a.jpg'), isNull);
+    });
+
+    test('returns the bytes for an image response', () async {
+      final client = MockClient(
+        (_) async => http.Response.bytes(
+          [1, 2, 3],
+          200,
+          headers: {'content-type': 'image/jpeg'},
+        ),
+      );
+
+      expect(await downloadImage(client, 'https://x/a.jpg'), [1, 2, 3]);
     });
   });
 }
