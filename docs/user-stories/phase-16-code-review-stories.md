@@ -92,6 +92,8 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 
 ### US-127: CSV-export is beschermd tegen formula injection
 
+**Status: In Progress**
+
 **Priority: Medium · 2 SP**
 
 > Als gebruiker die een export in Excel/Numbers opent,
