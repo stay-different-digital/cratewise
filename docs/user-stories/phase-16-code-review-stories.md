@@ -212,6 +212,8 @@ Gebruik geen nieuwe abstractielaag per entiteit. Maak per paar één generiek sc
 
 ### US-132: Use cases vangen alleen verwachte exceptions
 
+**Status: In Progress**
+
 **Priority: Low · 3 SP**
 
 > Als ontwikkelaar,
