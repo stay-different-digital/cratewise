@@ -92,7 +92,7 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 
 ### US-127: CSV-export is beschermd tegen formula injection
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-10-23)**
 
 **Priority: Medium · 2 SP**
 
