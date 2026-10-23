@@ -97,6 +97,7 @@ void main() {
     final repo = _SpyDeletionRepository({});
     final uc = _makeUseCase(
       apiClient: DiscogsApiClient(
+        delay: (_) async {},
         httpClient: MockClient((_) async => http.Response('', 204)),
       ),
       deletionRepository: repo,
@@ -116,6 +117,7 @@ void main() {
     });
     final uc = _makeUseCase(
       apiClient: DiscogsApiClient(
+        delay: (_) async {},
         httpClient: MockClient((request) async {
           captured.add('${request.method} ${request.url.path}');
           return http.Response('', 204);
@@ -144,6 +146,7 @@ void main() {
     });
     final uc = _makeUseCase(
       apiClient: DiscogsApiClient(
+        delay: (_) async {},
         httpClient: MockClient((_) async => http.Response('', 500)),
       ),
       deletionRepository: repo,
@@ -163,6 +166,7 @@ void main() {
     });
     final uc = _makeUseCase(
       apiClient: DiscogsApiClient(
+        delay: (_) async {},
         httpClient: MockClient((_) async {
           calls++;
           return http.Response('', calls < 2 ? 429 : 204);
@@ -184,6 +188,7 @@ void main() {
     });
     final uc = _makeUseCase(
       apiClient: DiscogsApiClient(
+        delay: (_) async {},
         httpClient: MockClient((_) async => http.Response('', 204)),
       ),
       deletionRepository: repo,
@@ -204,6 +209,7 @@ void main() {
     });
     final uc = _makeUseCase(
       apiClient: DiscogsApiClient(
+        delay: (_) async {},
         httpClient: MockClient((_) async => http.Response('', 401)),
       ),
       deletionRepository: repo,
@@ -222,6 +228,7 @@ void main() {
       });
       final uc = _makeUseCase(
         apiClient: DiscogsApiClient(
+          delay: (_) async {},
           httpClient: MockClient((_) async => http.Response('', 404)),
         ),
         deletionRepository: repo,
@@ -245,6 +252,7 @@ void main() {
         });
         final uc = _makeUseCase(
           apiClient: DiscogsApiClient(
+            delay: (_) async {},
             httpClient: MockClient((req) async {
               requests.add('${req.method} ${req.url.path}');
               if (req.method == 'GET') {
@@ -273,6 +281,7 @@ void main() {
         });
         final uc = _makeUseCase(
           apiClient: DiscogsApiClient(
+            delay: (_) async {},
             httpClient: MockClient(
               (_) async => http.Response('{"releases":[]}', 200),
             ),
@@ -297,6 +306,7 @@ void main() {
         });
         final uc = _makeUseCase(
           apiClient: DiscogsApiClient(
+            delay: (_) async {},
             httpClient: MockClient(
               (_) async => http.Response(
                 '{"releases":[{"instance_id":1},{"instance_id":2}]}',

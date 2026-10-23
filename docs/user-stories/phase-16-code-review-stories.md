@@ -81,7 +81,7 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 - `_waitIfNeeded` maakt `_nextAllowedAt` leeg vóór de `await`, waardoor gelijktijdige aanroepers de wachttijd overslaan.
 
 **Acceptance criteria:**
-- `AppRepositories` (of een naastgelegen composition root) maakt precies één `DiscogsApiClient` aan. Schermen en use cases krijgen die via `AppRepositoriesScope` mee en sluiten hem niet zelf.
+- In productie bestaat precies één `DiscogsApiClient`. *Uitgevoerd als `DiscogsApiClient.shared`: alle `?? DiscogsApiClient()`-defaults en schermen gebruiken deze instantie, in plaats van hem via `AppRepositoriesScope` door ~30 constructors door te geven. Schermen sluiten hem niet.*
 - Geen enkel bestand in `lib/presentation/` roept `DiscogsApiClient()` of `http.Client()` aan.
 - Een 429-response zet `_nextAllowedAt` (respecteer `Retry-After` als die aanwezig is, anders 60 s) voordat `RateLimitedError` wordt gegooid.
 - Gelijktijdige requests tijdens een back-off wachten allemaal tot `_nextAllowedAt`.

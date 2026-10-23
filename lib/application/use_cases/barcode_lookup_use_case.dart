@@ -39,7 +39,7 @@ class BarcodeLookupError extends BarcodeLookupResult {
 class BarcodeLookupUseCase {
   BarcodeLookupUseCase({TokenStorage? storage, DiscogsApiClient? apiClient})
     : _storage = storage ?? DiscogsTokenStorage(),
-      _apiClient = apiClient ?? DiscogsApiClient();
+      _apiClient = apiClient ?? DiscogsApiClient.shared;
 
   final TokenStorage _storage;
   final DiscogsApiClient _apiClient;

@@ -2157,4 +2157,57 @@ void main() {
       );
     });
   });
+
+  group('US-126: shared back-off', () {
+    test('a 429 makes the next request wait (Retry-After honoured)', () async {
+      final delays = <Duration>[];
+      var calls = 0;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async {
+          calls++;
+          return calls == 1
+              ? http.Response('', 429, headers: {'retry-after': '30'})
+              : http.Response('{"username":"u","resource_url":"u"}', 200);
+        }),
+        delay: (d) async => delays.add(d),
+      );
+
+      await expectLater(
+        client.fetchIdentity(_fakeToken),
+        throwsA(isA<RateLimitedError>()),
+      );
+      await client.fetchIdentity(_fakeToken);
+
+      expect(delays, hasLength(1));
+      expect(delays.single.inSeconds, inInclusiveRange(28, 30));
+    });
+
+    test('concurrent requests during a back-off all wait', () async {
+      final delays = <Duration>[];
+      var calls = 0;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((_) async {
+          calls++;
+          return calls == 1
+              ? http.Response('', 429)
+              : http.Response('{"username":"u","resource_url":"u"}', 200);
+        }),
+        delay: (d) async {
+          delays.add(d);
+          await Future<void>.delayed(Duration.zero);
+        },
+      );
+
+      await expectLater(
+        client.fetchIdentity(_fakeToken),
+        throwsA(isA<RateLimitedError>()),
+      );
+      await Future.wait([
+        client.fetchIdentity(_fakeToken),
+        client.fetchIdentity(_fakeToken),
+      ]);
+
+      expect(delays, hasLength(2));
+    });
+  });
 }

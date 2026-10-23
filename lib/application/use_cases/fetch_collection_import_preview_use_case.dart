@@ -45,7 +45,7 @@ class FetchCollectionImportPreviewUseCase {
     Future<void> Function(Duration)? delay,
     int? maxPageRetries,
   }) : _storage = storage ?? DiscogsTokenStorage(),
-       _apiClient = apiClient ?? DiscogsApiClient(),
+       _apiClient = apiClient ?? DiscogsApiClient.shared,
        _delay = delay ?? ((d) => Future.delayed(d)),
        _maxPageRetries = maxPageRetries ?? _kMaxPageRetries;
 

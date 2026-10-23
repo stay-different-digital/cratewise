@@ -32,14 +32,18 @@ class DiscogsApiClient {
        _timeout = requestTimeout ?? _kDefaultTimeout,
        _delay = delay ?? ((d) => Future.delayed(d));
 
+  /// The app-wide client (US-126): rate-limit back-off is per instance, so
+  /// production code must share this one. Never [close] it.
+  static final shared = DiscogsApiClient();
+
   final http.Client _client;
   final Duration _timeout;
   final Future<void> Function(Duration) _delay;
 
   void close() => _client.close();
 
-  /// Set when the last response had remaining ≤ [_kRateLimitThreshold].
-  /// Cleared at the start of [_waitIfNeeded] so only the very next request waits.
+  /// Set when the last response had remaining ≤ [_kRateLimitThreshold] or
+  /// was a 429. Every request sent before this moment waits until it.
   DateTime? _nextAllowedAt;
 
   /// Fetches the authenticated user's Discogs identity.
@@ -255,8 +259,8 @@ class DiscogsApiClient {
     } on Exception {
       throw const NetworkError();
     }
-    _checkStatus(response);
     _updateRateLimitState(response);
+    _checkStatus(response);
     return response;
   }
 
@@ -294,24 +298,31 @@ class DiscogsApiClient {
     } on Exception {
       throw const NetworkError();
     }
-    _checkStatus(response, expectedStatus);
     _updateRateLimitState(response);
+    _checkStatus(response, expectedStatus);
     return response;
   }
 
-  /// Waits out any proactive rate-limit back-off before sending the next request.
-  /// Clears [_nextAllowedAt] before awaiting so only one concurrent caller waits.
+  /// Waits out any rate-limit back-off before sending the next request.
+  /// Concurrent callers all wait for the same moment.
   Future<void> _waitIfNeeded() async {
     final until = _nextAllowedAt;
     if (until == null) return;
-    _nextAllowedAt = null;
     final wait = until.difference(DateTime.now());
     if (wait > Duration.zero) await _delay(wait);
+    if (_nextAllowedAt == until) _nextAllowedAt = null;
   }
 
-  /// Reads [X-Discogs-Ratelimit-Remaining] from a successful response and
-  /// schedules a back-off delay if the allowance is at or below the threshold.
+  /// Schedules a back-off after a 429 (honouring `Retry-After`) or when
+  /// [X-Discogs-Ratelimit-Remaining] is at or below the threshold.
   void _updateRateLimitState(http.Response response) {
+    if (response.statusCode == 429) {
+      final retryAfter = int.tryParse(response.headers['retry-after'] ?? '');
+      _nextAllowedAt = DateTime.now().add(
+        retryAfter != null ? Duration(seconds: retryAfter) : _kRateLimitWindow,
+      );
+      return;
+    }
     final raw = response.headers['x-discogs-ratelimit-remaining'];
     if (raw == null) return;
     final remaining = int.tryParse(raw);

@@ -227,6 +227,7 @@ class _FakeRowResultRepository implements ImportExportRowResultRepository {
 
 DiscogsApiClient _apiClientReturning(int statusCode) {
   return DiscogsApiClient(
+    delay: (_) async {},
     httpClient: MockClient(
       (_) async => http.Response(jsonEncode({}), statusCode),
     ),
@@ -235,6 +236,7 @@ DiscogsApiClient _apiClientReturning(int statusCode) {
 
 DiscogsApiClient _apiClientThrowing() {
   return DiscogsApiClient(
+    delay: (_) async {},
     httpClient: MockClient((_) async => throw Exception('no internet')),
   );
 }
@@ -364,6 +366,7 @@ void main() {
         final uc = makeUseCase(
           capabilityUseCase: const _NotSupportedCapabilityUseCase(),
           apiClient: DiscogsApiClient(
+            delay: (_) async {},
             httpClient: MockClient((_) async {
               apiCalled = true;
               return http.Response('', 201);
@@ -467,6 +470,7 @@ void main() {
           items: items,
           collectionRepository: repo,
           apiClient: DiscogsApiClient(
+            delay: (_) async {},
             httpClient: MockClient(
               (_) async => http.Response('{"instance_id": 424242}', 201),
             ),
@@ -551,6 +555,7 @@ void main() {
           ]);
           int callCount = 0;
           final apiClient = DiscogsApiClient(
+            delay: (_) async {},
             httpClient: MockClient((_) async {
               callCount++;
               return http.Response('', callCount == 1 ? 201 : 401);
@@ -688,6 +693,7 @@ void main() {
       DiscogsApiClient apiClientWithStatuses(List<int> statuses) {
         var call = 0;
         return DiscogsApiClient(
+          delay: (_) async {},
           httpClient: MockClient((_) async {
             final code = call < statuses.length ? statuses[call] : 201;
             call++;
@@ -728,6 +734,7 @@ void main() {
         final uc = makeUseCase(
           // call 1: item-0 => 201, call 2: item-1 => 429, call 3: item-1 retry => 201
           apiClient: DiscogsApiClient(
+            delay: (_) async {},
             httpClient: MockClient((_) async {
               totalCalls++;
               return http.Response(jsonEncode({}), totalCalls == 2 ? 429 : 201);
@@ -761,6 +768,7 @@ void main() {
         var totalCalls = 0;
         final uc = makeUseCase(
           apiClient: DiscogsApiClient(
+            delay: (_) async {},
             httpClient: MockClient((_) async {
               totalCalls++;
               return http.Response(jsonEncode({}), totalCalls == 1 ? 429 : 201);

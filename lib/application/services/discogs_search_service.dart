@@ -10,7 +10,7 @@ import '../../shared/errors/app_error.dart';
 class DiscogsSearchService {
   DiscogsSearchService({TokenStorage? storage, DiscogsApiClient? apiClient})
     : _storage = storage ?? DiscogsTokenStorage(),
-      _apiClient = apiClient ?? DiscogsApiClient();
+      _apiClient = apiClient ?? DiscogsApiClient.shared;
 
   final TokenStorage _storage;
   final DiscogsApiClient _apiClient;

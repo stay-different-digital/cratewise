@@ -53,7 +53,7 @@ class RetryMetadataRefreshUseCase {
     TokenStorage? storage,
     DiscogsApiClient? apiClient,
   }) : _storage = storage ?? DiscogsTokenStorage(),
-       _apiClient = apiClient ?? DiscogsApiClient();
+       _apiClient = apiClient ?? DiscogsApiClient.shared;
 
   final RetryActionRepository retryRepo;
   final CachedReleaseMetadataRepository cacheRepo;

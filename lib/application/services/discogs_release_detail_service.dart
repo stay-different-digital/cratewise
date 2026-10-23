@@ -18,7 +18,7 @@ class DiscogsReleaseDetailService {
     this._thumbnailCacheService,
     this._cacheRetryRecorder,
   }) : _storage = storage ?? DiscogsTokenStorage(),
-       _apiClient = apiClient ?? DiscogsApiClient();
+       _apiClient = apiClient ?? DiscogsApiClient.shared;
 
   final TokenStorage _storage;
   final DiscogsApiClient _apiClient;
