@@ -133,7 +133,7 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 
 ### US-129: Discogs-import met meerdere exemplaren van dezelfde release
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-10-23)**
 
 **Priority: Medium · 3 SP**
 
