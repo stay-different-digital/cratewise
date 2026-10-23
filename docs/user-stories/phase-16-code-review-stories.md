@@ -159,6 +159,8 @@ Het detecteren van duplicaten gebeurt alleen op `releaseId`:
 
 ### US-130: Collection- en wishlist-import/export-schermen delen één implementatie
 
+**Status: In Progress**
+
 **Priority: Medium · 8 SP**
 
 > Als ontwikkelaar,
