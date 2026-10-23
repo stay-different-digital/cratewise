@@ -133,6 +133,8 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 
 ### US-129: Discogs-import met meerdere exemplaren van dezelfde release
 
+**Status: In Progress**
+
 **Priority: Medium · 3 SP**
 
 > Als verzamelaar met twee exemplaren van dezelfde persing,
