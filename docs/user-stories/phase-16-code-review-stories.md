@@ -12,7 +12,7 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 
 ### US-124: Pending deletions die op Discogs al weg zijn blijven niet eeuwig hangen
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-10-23)**
 
 **Priority: High · 3 SP**
 
