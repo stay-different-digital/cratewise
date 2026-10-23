@@ -66,7 +66,7 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 
 ### US-126: Eén gedeelde DiscogsApiClient met app-brede rate-limit back-off
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-10-23)**
 
 **Priority: Medium · 5 SP**
 
