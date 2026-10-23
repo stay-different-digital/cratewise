@@ -1,5 +1,7 @@
 import 'package:csv/csv.dart';
 
+import 'csv_cell_escape.dart';
+
 sealed class CsvParseResult {
   const CsvParseResult();
 }
@@ -59,7 +61,10 @@ class CsvParser {
 
       final dataRows = rawRows
           .skip(1)
-          .map((row) => row.map((c) => c.toString().trim()).toList())
+          .map(
+            (row) =>
+                row.map((c) => unescapeCsvCell(c.toString().trim())).toList(),
+          )
           .toList();
 
       return CsvParseSuccess(headers: headers, rows: dataRows);

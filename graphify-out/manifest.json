@@ -534,16 +534,16 @@
     "semantic_hash": "5fd6c7b96b8c2bb1fa1eec07812f267a"
   },
   "lib/infrastructure/csv/csv_file_writer.dart": {
-    "mtime": 1780601585.819516,
-    "seen": 1792749595.223704,
-    "ast_hash": "7877bee80b2afc4c3236c463aa97b977",
-    "semantic_hash": "7877bee80b2afc4c3236c463aa97b977"
+    "mtime": 1792750574.8253338,
+    "seen": 1792750613.699816,
+    "ast_hash": "edac24065a1eccb6dbf83a8178221b18",
+    "semantic_hash": ""
   },
   "lib/infrastructure/csv/csv_parser.dart": {
-    "mtime": 1780601961.6104157,
-    "seen": 1792749595.223705,
-    "ast_hash": "b0af9ff14c8a781b3e4dc4bc51984bf0",
-    "semantic_hash": "b0af9ff14c8a781b3e4dc4bc51984bf0"
+    "mtime": 1792750574.8276913,
+    "seen": 1792750613.699817,
+    "ast_hash": "b23808817ccaba1d4b2862dfd57e8a65",
+    "semantic_hash": ""
   },
   "lib/infrastructure/csv/wishlist_csv_mapper.dart": {
     "mtime": 1780579509.4628701,
@@ -3312,9 +3312,9 @@
     "semantic_hash": ""
   },
   "docs/user-stories/phase-16-code-review-stories.md": {
-    "mtime": 1792750547.5013928,
-    "seen": 1792750551.633538,
-    "ast_hash": "f3509ef4bb91429eebe2da2837327ffd",
+    "mtime": 1792750552.118401,
+    "seen": 1792750554.5899131,
+    "ast_hash": "e42cbaabecd969e41a69fadb050eb9f6",
     "semantic_hash": ""
   },
   "drift_schemas/drift_schema_v1.json": {
@@ -3477,6 +3477,18 @@
     "mtime": 1792750166.1837404,
     "seen": 1792750240.465589,
     "ast_hash": "74da90241414e9c1949736ff56aba4b2",
+    "semantic_hash": ""
+  },
+  "lib/infrastructure/csv/csv_cell_escape.dart": {
+    "mtime": 1792750574.5282195,
+    "seen": 1792750613.6998138,
+    "ast_hash": "733f2fd14ed3c475510250de4d96328c",
+    "semantic_hash": ""
+  },
+  "test/infrastructure/csv/csv_cell_escape_test.dart": {
+    "mtime": 1792750574.833796,
+    "seen": 1792750613.699931,
+    "ast_hash": "eac1756d80db6a93e83c8b67ccdfaeec",
     "semantic_hash": ""
   }
 }

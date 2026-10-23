@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:csv/csv.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'csv_cell_escape.dart';
+
 abstract class CsvFileWriter {
   Future<String> write({
     required String filename,
@@ -21,7 +23,10 @@ class TempCsvFileWriter implements CsvFileWriter {
     required List<List<String>> rows,
   }) async {
     const converter = ListToCsvConverter();
-    final allRows = <List<dynamic>>[headers, ...rows];
+    final allRows = <List<dynamic>>[
+      headers,
+      for (final row in rows) row.map(escapeCsvCell).toList(),
+    ];
     final csvString = converter.convert(allRows);
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/$filename');
