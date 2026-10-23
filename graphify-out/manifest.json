@@ -102,9 +102,9 @@
     "semantic_hash": "a225a382d14d7b16b6f602a5c1d49331"
   },
   "lib/app/app.dart": {
-    "mtime": 1783430859.3571777,
-    "seen": 1792749595.223638,
-    "ast_hash": "340a67ab91eabe0bfdb36e0dbe22c708",
+    "mtime": 1792751277.1504183,
+    "seen": 1792751319.3346639,
+    "ast_hash": "c0cec9367b31584063b2010cfaf2186a",
     "semantic_hash": ""
   },
   "lib/app/router.dart": {
@@ -660,10 +660,10 @@
     "semantic_hash": "51edb9a48f45d49ef038f921bea600d0"
   },
   "lib/main.dart": {
-    "mtime": 1781769257.936435,
-    "seen": 1792749595.2237241,
-    "ast_hash": "d0b59c3304643cfc9e6595e3bb8a3616",
-    "semantic_hash": "d0b59c3304643cfc9e6595e3bb8a3616"
+    "mtime": 1792751277.1487362,
+    "seen": 1792751319.3347552,
+    "ast_hash": "2220d1353225b66a8d749a84f4a6b55d",
+    "semantic_hash": ""
   },
   "lib/presentation/screens/barcode_scan_screen.dart": {
     "mtime": 1783430859.5491824,
@@ -3264,9 +3264,9 @@
     "semantic_hash": ""
   },
   "docs/user-stories/phase-16-code-review-stories.md": {
-    "mtime": 1792751251.5211108,
-    "seen": 1792751255.612484,
-    "ast_hash": "069322b6ccc1c07f5c0b6edecb504c8e",
+    "mtime": 1792751256.0952435,
+    "seen": 1792751258.615019,
+    "ast_hash": "7f0874ae994389657ede749e603340b1",
     "semantic_hash": ""
   },
   "drift_schemas/drift_schema_v1.json": {

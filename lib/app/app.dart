@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'dart:async';
+
+import '../application/use_cases/purge_stale_failed_actions_use_case.dart';
 import '../infrastructure/local_database/app_database.dart';
 import '../l10n/app_localizations.dart';
 import 'app_repositories.dart';
@@ -44,6 +47,12 @@ class _CratewiseAppState extends State<CratewiseApp> {
     super.initState();
     _database = AppDatabase(openAppDatabase());
     _repositories = AppRepositories(_database);
+    // Fire-and-forget on the app-wide database (US-131): one AppDatabase only.
+    unawaited(
+      PurgeStaleFailedActionsUseCase(
+        retryRepo: _repositories.retryAction,
+      ).execute().catchError((Object _) {}),
+    );
     _localeNotifier.addListener(() => setState(() {}));
     _loadLocale();
   }
