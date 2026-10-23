@@ -12,6 +12,8 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 
 ### US-124: Pending deletions die op Discogs al weg zijn blijven niet eeuwig hangen
 
+**Status: In Progress**
+
 **Priority: High · 3 SP**
 
 > Als verzamelaar,
