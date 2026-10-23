@@ -38,7 +38,7 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 
 ### US-125: Migratietests voor het Drift-schema (v1 → v12)
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-10-23)**
 
 **Priority: High · 5 SP**
 
