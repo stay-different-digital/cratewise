@@ -113,6 +113,8 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 
 ### US-128: Thumbnail-downloads hebben een timeout
 
+**Status: In Progress**
+
 **Priority: Medium · 1 SP**
 
 > Als gebruiker op een slechte verbinding,
