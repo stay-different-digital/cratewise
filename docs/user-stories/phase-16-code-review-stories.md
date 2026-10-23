@@ -113,7 +113,7 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 
 ### US-128: Thumbnail-downloads hebben een timeout
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-10-23)**
 
 **Priority: Medium · 1 SP**
 
