@@ -30,6 +30,7 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 - Een collection-tombstone zonder `discogsInstanceId` wordt niet meer naar de API gestuurd. Kies één van deze twee opties en leg de keuze vast in de story:
   - (a) instance id opzoeken via `GET /users/{u}/collection/releases/{releaseId}`;
   - (b) tombstone verwijderen en apart tellen (bijvoorbeeld `unresolvable`), zodat de gebruiker dit in het resultaat ziet.
+- **Gekozen: (a)** — instance id opzoeken; 0 exemplaren → tombstone weg (niets te verwijderen), 1 → dat exemplaar verwijderen, >1 → tombstone blijft (niet te bepalen welk exemplaar bedoeld is).
 - Bij 401/403 blijft het huidige gedrag (`clearIfRevoked`) ongewijzigd.
 - Unit-tests dekken: 404 → removed, null instance id → gekozen gedrag, 500 → tombstone blijft staan.
 

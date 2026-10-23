@@ -203,6 +203,24 @@ class DiscogsApiClient {
     );
   }
 
+  /// Returns the collection *instance* ids the user holds for [releaseId]
+  /// (empty when the release is not in their collection).
+  Future<List<int>> fetchCollectionInstanceIds(
+    String username,
+    int releaseId,
+    String token,
+  ) async {
+    final response = await _get(
+      '/users/$username/collection/releases/$releaseId',
+      token,
+    );
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    return [
+      for (final r in (json['releases'] as List? ?? const []))
+        (r as Map<String, dynamic>)['instance_id'] as int,
+    ];
+  }
+
   /// Removes [releaseId] from the authenticated user's Discogs wantlist.
   ///
   /// Returns normally on success (HTTP 204); throws an [AppError] subtype on

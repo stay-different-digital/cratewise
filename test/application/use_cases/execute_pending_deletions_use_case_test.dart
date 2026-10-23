@@ -214,4 +214,104 @@ void main() {
 
     expect(tokenStorage.cleared, isTrue);
   });
+
+  group('US-124: tombstones that can never succeed', () {
+    test('a 404 counts as removed and clears the tombstone', () async {
+      final repo = _SpyDeletionRepository({
+        DeletionEntityType.wishlist: [_wishlistDeletion(id: 'w-1')],
+      });
+      final uc = _makeUseCase(
+        apiClient: DiscogsApiClient(
+          httpClient: MockClient((_) async => http.Response('', 404)),
+        ),
+        deletionRepository: repo,
+      );
+
+      final result = await uc.execute() as PendingDeletionsCompleted;
+
+      expect(result.removed, 1);
+      expect(result.failed, 0);
+      expect(repo.removedIds, ['w-1']);
+    });
+
+    test(
+      'missing instance id is looked up, then that instance is deleted',
+      () async {
+        final requests = <String>[];
+        final repo = _SpyDeletionRepository({
+          DeletionEntityType.collection: [
+            _collectionDeletion(id: 'c-1', instanceId: null),
+          ],
+        });
+        final uc = _makeUseCase(
+          apiClient: DiscogsApiClient(
+            httpClient: MockClient((req) async {
+              requests.add('${req.method} ${req.url.path}');
+              if (req.method == 'GET') {
+                return http.Response('{"releases":[{"instance_id":777}]}', 200);
+              }
+              return http.Response('', 204);
+            }),
+          ),
+          deletionRepository: repo,
+        );
+
+        final result = await uc.execute() as PendingDeletionsCompleted;
+
+        expect(result.removed, 1);
+        expect(requests.last, endsWith('/releases/100/instances/777'));
+      },
+    );
+
+    test(
+      'missing instance id with no copy on Discogs clears the tombstone',
+      () async {
+        final repo = _SpyDeletionRepository({
+          DeletionEntityType.collection: [
+            _collectionDeletion(id: 'c-1', instanceId: null),
+          ],
+        });
+        final uc = _makeUseCase(
+          apiClient: DiscogsApiClient(
+            httpClient: MockClient(
+              (_) async => http.Response('{"releases":[]}', 200),
+            ),
+          ),
+          deletionRepository: repo,
+        );
+
+        final result = await uc.execute() as PendingDeletionsCompleted;
+
+        expect(result.removed, 1);
+        expect(repo.removedIds, ['c-1']);
+      },
+    );
+
+    test(
+      'missing instance id with several copies keeps the tombstone',
+      () async {
+        final repo = _SpyDeletionRepository({
+          DeletionEntityType.collection: [
+            _collectionDeletion(id: 'c-1', instanceId: null),
+          ],
+        });
+        final uc = _makeUseCase(
+          apiClient: DiscogsApiClient(
+            httpClient: MockClient(
+              (_) async => http.Response(
+                '{"releases":[{"instance_id":1},{"instance_id":2}]}',
+                200,
+              ),
+            ),
+          ),
+          deletionRepository: repo,
+        );
+
+        final result = await uc.execute() as PendingDeletionsCompleted;
+
+        expect(result.failed, 1);
+        expect(repo.removedIds, isEmpty);
+      },
+    );
+  });
 }

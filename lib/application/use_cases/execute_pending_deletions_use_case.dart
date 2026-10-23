@@ -99,6 +99,10 @@ class ExecutePendingDeletionsUseCase {
       try {
         await _delete(deletion, username, token);
         return;
+      } on UnexpectedApiError catch (e) {
+        // 404: already gone on Discogs — the deletion's goal is met.
+        if (e.statusCode == 404) return;
+        rethrow;
       } on RateLimitedError {
         if (attempts >= _maxItemRetries) rethrow;
         attempts++;
@@ -111,14 +115,13 @@ class ExecutePendingDeletionsUseCase {
     PendingDiscogsDeletion deletion,
     String username,
     String token,
-  ) {
+  ) async {
     switch (deletion.entityType) {
       case DeletionEntityType.collection:
-        final instanceId = deletion.discogsInstanceId;
-        if (instanceId == null) {
-          // Can't address a collection entry without its instance id.
-          throw const UnexpectedApiError(0);
-        }
+        final instanceId =
+            deletion.discogsInstanceId ??
+            await _resolveInstanceId(deletion, username, token);
+        if (instanceId == null) return; // not in the Discogs collection
         return _apiClient.removeFromCollection(
           username,
           deletion.discogsReleaseId,
@@ -132,5 +135,23 @@ class ExecutePendingDeletionsUseCase {
           token,
         );
     }
+  }
+
+  /// Looks up the instance id for tombstones recorded without one (US-124).
+  /// Returns null when Discogs has no copy (nothing left to delete). With
+  /// several copies we can't tell which one was meant, so the tombstone
+  /// stays and is reported as failed.
+  Future<int?> _resolveInstanceId(
+    PendingDiscogsDeletion deletion,
+    String username,
+    String token,
+  ) async {
+    final ids = await _apiClient.fetchCollectionInstanceIds(
+      username,
+      deletion.discogsReleaseId,
+      token,
+    );
+    if (ids.length > 1) throw const UnexpectedApiError(0);
+    return ids.isEmpty ? null : ids.single;
   }
 }
