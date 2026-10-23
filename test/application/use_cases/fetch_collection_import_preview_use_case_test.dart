@@ -130,7 +130,20 @@ class _FakeCollectionRepository implements CollectionRepository {
       _ids.contains(discogsReleaseId);
 
   @override
-  Future<List<CollectionItem>> getAll() async => [];
+  Future<List<CollectionItem>> getAll() async => [
+    for (final id in _ids)
+      CollectionItem(
+        id: 'local-$id',
+        discogsReleaseId: id,
+        artist: 'A',
+        title: 'T',
+        mediaCondition: RecordCondition.notSet,
+        sleeveCondition: RecordCondition.notSet,
+        tags: const [],
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      ),
+  ];
 
   @override
   Future<CollectionItem?> getById(String id) async => null;

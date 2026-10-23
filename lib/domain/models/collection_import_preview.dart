@@ -40,7 +40,12 @@ class DuplicateCollectionRow extends CollectionImportRow {
     super.year,
     super.thumbUrl,
     super.instanceId,
+    this.linkTargetId,
   });
+
+  /// Local item this Discogs instance will be linked to; null when the
+  /// instance is already linked (US-129).
+  final String? linkTargetId;
 }
 
 /// Item cannot be imported because required metadata is missing or invalid.

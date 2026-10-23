@@ -591,6 +591,7 @@ void main() {
                 releaseId: 200,
                 title: 'Kind Of Blue',
                 artist: 'Miles Davis',
+                linkTargetId: 'id-200',
               ),
             ],
           );
@@ -626,6 +627,7 @@ void main() {
               releaseId: 200,
               title: 'Kind Of Blue',
               artist: 'Miles Davis',
+              linkTargetId: 'id-200',
             ),
           ],
         );
@@ -654,6 +656,7 @@ void main() {
               releaseId: 200,
               title: 'Kind Of Blue',
               artist: 'Miles Davis',
+              linkTargetId: 'id-200',
             ),
           ],
         );

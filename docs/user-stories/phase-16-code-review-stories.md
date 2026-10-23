@@ -153,6 +153,7 @@ Het detecteren van duplicaten gebeurt alleen op `releaseId`:
 - Een Discogs-instance waarvan de `instanceId` lokaal al bestaat, telt als "Already linked".
 - De preview laadt lokale items en tombstones één keer vooraf (geen query per rij).
 - Bestaande tests voor gewone duplicaten blijven groen.
+- *Uitvoering:* de preview kiest per Discogs-instance een lokaal doel (`DuplicateCollectionRow.linkTargetId`). Een tombstone met instance id blokkeert alleen dat exemplaar. Lokale items zonder `discogsInstanceId` (ook al gesynchroniseerde items van vóór v9) zijn koppelbaar en krijgen zo alsnog hun instance id.
 
 ---
 

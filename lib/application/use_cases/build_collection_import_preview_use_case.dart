@@ -15,17 +15,43 @@ class BuildCollectionImportPreviewUseCase {
   final CollectionRepository _repository;
   final PendingDiscogsDeletionRepository? _deletionRepository;
 
+  /// Matches Discogs instances to local items per instance (US-129): an
+  /// instance already linked locally is a duplicate; otherwise it claims one
+  /// unlinked local copy of the same release; with no copy left it is new.
+  /// Local state is loaded once up front instead of queried per row.
   Future<CollectionImportPreview> execute(
     List<DiscogsCollectionItemDto> items,
   ) async {
+    final local = await _repository.getAll();
+    final linkedInstanceIds = {
+      for (final i in local)
+        if (i.discogsInstanceId != null) i.discogsInstanceId!,
+    };
+    final unlinkedByRelease = <int, List<String>>{};
+    for (final i in local) {
+      if (i.discogsInstanceId == null) {
+        unlinkedByRelease.putIfAbsent(i.discogsReleaseId, () => []).add(i.id);
+      }
+    }
+    final tombstones =
+        await _deletionRepository?.getByType(DeletionEntityType.collection) ??
+        const <PendingDiscogsDeletion>[];
+
     final rows = <CollectionImportRow>[];
     for (final item in items) {
-      rows.add(await _classify(item));
+      rows.add(
+        _classify(item, linkedInstanceIds, unlinkedByRelease, tombstones),
+      );
     }
     return CollectionImportPreview(rows: rows);
   }
 
-  Future<CollectionImportRow> _classify(DiscogsCollectionItemDto item) async {
+  CollectionImportRow _classify(
+    DiscogsCollectionItemDto item,
+    Set<int> linkedInstanceIds,
+    Map<int, List<String>> unlinkedByRelease,
+    List<PendingDiscogsDeletion> tombstones,
+  ) {
     if (item.releaseId == 0) {
       return InvalidCollectionRow(
         releaseId: 0,
@@ -48,7 +74,14 @@ class BuildCollectionImportPreviewUseCase {
     }
     // A pending-deletion tombstone means the user deleted this locally and
     // asked to remove it from Discogs; re-importing would undo that (US-72).
-    if (await _hasPendingDeletion(item.releaseId)) {
+    // A tombstone with an instance id only covers that one copy.
+    final deleted = tombstones.any(
+      (t) =>
+          t.discogsReleaseId == item.releaseId &&
+          (t.discogsInstanceId == null ||
+              t.discogsInstanceId == item.instanceId),
+    );
+    if (deleted) {
       return ConflictCollectionRow(
         releaseId: item.releaseId,
         title: item.title,
@@ -58,7 +91,10 @@ class BuildCollectionImportPreviewUseCase {
         instanceId: item.instanceId,
       );
     }
-    if (await _repository.containsRelease(item.releaseId)) {
+    final alreadyLinked =
+        item.instanceId != 0 && linkedInstanceIds.contains(item.instanceId);
+    final unlinked = unlinkedByRelease[item.releaseId];
+    if (alreadyLinked || (unlinked != null && unlinked.isNotEmpty)) {
       return DuplicateCollectionRow(
         releaseId: item.releaseId,
         title: item.title,
@@ -66,6 +102,7 @@ class BuildCollectionImportPreviewUseCase {
         year: item.year,
         thumbUrl: item.thumbUrl,
         instanceId: item.instanceId,
+        linkTargetId: alreadyLinked ? null : unlinked!.removeAt(0),
       );
     }
     return NewCollectionRow(
@@ -76,11 +113,5 @@ class BuildCollectionImportPreviewUseCase {
       thumbUrl: item.thumbUrl,
       instanceId: item.instanceId,
     );
-  }
-
-  Future<bool> _hasPendingDeletion(int releaseId) async {
-    final repo = _deletionRepository;
-    if (repo == null) return false;
-    return repo.containsRelease(releaseId, DeletionEntityType.collection);
   }
 }

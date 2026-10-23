@@ -27,7 +27,20 @@ class FakeCollectionRepository implements CollectionRepository {
   }
 
   @override
-  Future<List<CollectionItem>> getAll() async => [];
+  Future<List<CollectionItem>> getAll() async => [
+    for (final id in _ids)
+      CollectionItem(
+        id: 'local-$id',
+        discogsReleaseId: id,
+        artist: 'A',
+        title: 'T',
+        mediaCondition: RecordCondition.notSet,
+        sleeveCondition: RecordCondition.notSet,
+        tags: const [],
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      ),
+  ];
   @override
   Future<CollectionItem?> getById(String id) async => null;
   @override
@@ -80,7 +93,18 @@ class _FakeDeletionRepository implements PendingDiscogsDeletionRepository {
   @override
   Future<List<PendingDiscogsDeletion>> getByType(
     DeletionEntityType type,
-  ) async => [];
+  ) async => [
+    if (type == DeletionEntityType.collection)
+      for (final id in _ids)
+        PendingDiscogsDeletion(
+          id: 'p-$id',
+          entityType: type,
+          discogsReleaseId: id,
+          artist: 'A',
+          title: 'T',
+          createdAt: DateTime(2026),
+        ),
+  ];
   @override
   Future<void> remove(String id) async {}
   @override
@@ -435,4 +459,96 @@ void main() {
       });
     });
   });
+
+  group('multiple copies of one release (US-129)', () {
+    CollectionItem local(String id, {int? instanceId}) => CollectionItem(
+      id: id,
+      discogsReleaseId: 7,
+      discogsInstanceId: instanceId,
+      artist: 'A',
+      title: 'T',
+      mediaCondition: RecordCondition.notSet,
+      sleeveCondition: RecordCondition.notSet,
+      tags: const [],
+      createdAt: DateTime(2026),
+      updatedAt: DateTime(2026),
+    );
+
+    test(
+      'two Discogs copies, one unlinked local copy → 1 link + 1 new',
+      () async {
+        final repo = _ItemsRepository([local('a')]);
+
+        final preview = await makeUseCase(repo).execute([
+          makeItem(releaseId: 7, instanceId: 1),
+          makeItem(releaseId: 7, instanceId: 2),
+        ]);
+
+        final dup = preview.rows[0] as DuplicateCollectionRow;
+        expect(dup.linkTargetId, 'a');
+        expect(preview.rows[1], isA<NewCollectionRow>());
+      },
+    );
+
+    test(
+      'an instance already linked locally is a duplicate without target',
+      () async {
+        final repo = _ItemsRepository([local('a', instanceId: 1)]);
+
+        final preview = await makeUseCase(repo).execute([
+          makeItem(releaseId: 7, instanceId: 1),
+          makeItem(releaseId: 7, instanceId: 2),
+        ]);
+
+        expect(
+          (preview.rows[0] as DuplicateCollectionRow).linkTargetId,
+          isNull,
+        );
+        expect(preview.rows[1], isA<NewCollectionRow>());
+      },
+    );
+
+    test('a tombstone with an instance id only blocks that copy', () async {
+      final repo = _ItemsRepository([local('a', instanceId: 2)]);
+      final deletions = _TombstoneRepository(releaseId: 7, instanceId: 1);
+
+      final preview = await makeUseCase(repo, deletionRepository: deletions)
+          .execute([
+            makeItem(releaseId: 7, instanceId: 1),
+            makeItem(releaseId: 7, instanceId: 2),
+          ]);
+
+      expect(preview.rows[0], isA<ConflictCollectionRow>());
+      expect(preview.rows[1], isA<DuplicateCollectionRow>());
+    });
+  });
+}
+
+class _ItemsRepository extends FakeCollectionRepository {
+  _ItemsRepository(this._items);
+  final List<CollectionItem> _items;
+
+  @override
+  Future<List<CollectionItem>> getAll() async => _items;
+}
+
+class _TombstoneRepository extends _FakeDeletionRepository {
+  _TombstoneRepository({required this.releaseId, required this.instanceId});
+  final int releaseId;
+  final int instanceId;
+
+  @override
+  Future<List<PendingDiscogsDeletion>> getByType(
+    DeletionEntityType type,
+  ) async => [
+    PendingDiscogsDeletion(
+      id: 'p',
+      entityType: type,
+      discogsReleaseId: releaseId,
+      discogsInstanceId: instanceId,
+      artist: 'A',
+      title: 'T',
+      createdAt: DateTime(2026),
+    ),
+  ];
 }

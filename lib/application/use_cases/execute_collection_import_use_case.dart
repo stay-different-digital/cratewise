@@ -88,16 +88,15 @@ class ExecuteCollectionImportUseCase {
       await _maybeTransaction(() async {
         await _jobRepository.add(job);
 
-        // Build release-ID lookup for duplicate-linking in one getAll() call.
-        final hasDuplicates = preview.rows.any(
-          (r) => r is DuplicateCollectionRow,
+        // Local items the preview chose as link targets (US-129).
+        final hasLinks = preview.rows.any(
+          (r) => r is DuplicateCollectionRow && r.linkTargetId != null,
         );
-        final Map<int, CollectionItem> existingByReleaseId = {};
-        if (hasDuplicates) {
-          for (final item in await _collectionRepository.getAll()) {
-            existingByReleaseId[item.discogsReleaseId] = item;
-          }
-        }
+        final existingById = {
+          if (hasLinks)
+            for (final item in await _collectionRepository.getAll())
+              item.id: item,
+        };
 
         for (var i = 0; i < preview.rows.length; i++) {
           final row = preview.rows[i];
@@ -125,9 +124,8 @@ class ExecuteCollectionImportUseCase {
                 failed++;
               }
             case DuplicateCollectionRow():
-              final existing = existingByReleaseId[row.releaseId];
-              if (existing != null &&
-                  existing.syncStatus != SyncStatus.synced) {
+              final existing = existingById[row.linkTargetId];
+              if (existing != null) {
                 try {
                   await _collectionRepository.update(
                     existing.copyWith(
