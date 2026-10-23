@@ -191,6 +191,8 @@ Gebruik geen nieuwe abstractielaag per entiteit. Maak per paar één generiek sc
 
 ### US-131: Lege scaffolding-mappen en dubbele DB-open in `main.dart` opruimen
 
+**Status: In Progress**
+
 **Priority: Low · 1 SP**
 
 > Als ontwikkelaar,
