@@ -10,6 +10,39 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.0.4] — 2026-10-23
+
+Robustness release from the phase 16 code review (US-124 – US-132).
+
+### Fixed
+
+- **App upgrade from very old installs (US-125)** — upgrading a database from
+  schema v1–v4 crashed with "duplicate column"; all upgrade paths v1 → v12 are
+  now covered by migration tests.
+- **Pending Discogs deletions (US-124)** — a record already removed on Discogs
+  (404) no longer stays in the list forever; deletions recorded without an
+  instance id now look it up instead of failing on every sync.
+- **Importing several copies of one release (US-129)** — a Discogs import now
+  links or imports each copy separately instead of collapsing them into one.
+- **Discogs rate limits (US-126)** — one shared API client, so the back-off
+  after a 429 (honouring `Retry-After`) applies across the whole app.
+- **Cover downloads (US-128)** — time out after 15 s and ignore non-image
+  responses (e.g. captive portals).
+
+### Security
+
+- **CSV export (US-127)** — cells that a spreadsheet would run as a formula
+  (`=`, `+`, `-`, `@`) are prefixed with `'`; Cratewise strips the prefix
+  again on import.
+
+### Changed
+
+- Collection and wishlist import/export preview screens share one
+  implementation each (US-130, −40 % code).
+- Unexpected errors in use cases are logged instead of silently reported as
+  network or save errors (US-132); unused scaffolding folders removed and a
+  second database connection at startup dropped (US-131).
+
 ## [1.0.3] — 2026-07-07
 
 ### Added
