@@ -26,6 +26,7 @@ Sla geen stap over; de volgorde is bewust.
 - [ ] Werk laag-voor-laag: domain → infrastructure → presentation
 - [ ] Voeg `getAll()` / nieuwe interface-methoden toe aan **alle** fake-implementaties in `test/`
 - [ ] Geen abstracties, scaffolding of features die de AC niet vereisen (ponytail)
+- [ ] `schemaVersion` opgehoogd? Dump het nieuwe schema en genereer de testhelpers (commando's bovenaan `test/infrastructure/local_database/migration_test.dart`); bestaande `drift_schemas/*.json` nooit aanpassen
 
 ## 5. Statische analyse
 

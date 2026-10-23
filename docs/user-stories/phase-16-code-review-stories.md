@@ -59,6 +59,7 @@ Volgorde: High → Medium → Low. Stories zijn onafhankelijk, behalve US-126 (b
 - Er is een test die van elke beschikbare oude versie naar v12 migreert en het resultaat valideert met `SchemaVerifier`.
 - Minimaal één test bewijst dat er geen data verloren gaat: een `collection_items`-rij die vóór v11 is aangemaakt, heeft na de upgrade nog dezelfde waarden en `bpm`/`musicalKey` = null.
 - `DatabaseTransactionRunner` heeft een test die bewijst dat een exceptie in `run()` alle writes terugdraait.
+- **Gevonden en gefixt:** upgrades vanaf v1–v4 crashten (`duplicate column name: sync_status` / `payload`), omdat `createTable()` de huidige tabelvorm gebruikt en een latere `addColumn` dezelfde kolom nog eens toevoegde. v5+ was niet geraakt. v11 is nooit los gecommit en is gereconstrueerd uit v12 zonder `saved_searches`.
 - `STORY_CHECKLIST.md` of `CONTRIBUTING`/ADR beschrijft dat een schemawijziging een nieuwe dump en migratietest vereist.
 
 ---

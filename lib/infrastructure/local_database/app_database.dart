@@ -395,9 +395,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 3) {
         await m.createTable(cachedReleases);
       }
+      // createTable() above uses the *current* table shape, so only add
+      // columns to tables that already existed before this upgrade (US-125).
       if (from < 4) {
         await m.addColumn(collectionItems, collectionItems.syncStatus);
-        await m.addColumn(wishlistItems, wishlistItems.syncStatus);
+        if (from >= 2) {
+          await m.addColumn(wishlistItems, wishlistItems.syncStatus);
+        }
       }
       if (from < 5) {
         await m.createTable(retryActions);
@@ -411,7 +415,7 @@ class AppDatabase extends _$AppDatabase {
         await customStatement('DROP TABLE IF EXISTS cached_releases');
         await m.createTable(cachedReleases);
       }
-      if (from < 8) {
+      if (from < 8 && from >= 5) {
         await m.addColumn(retryActions, retryActions.payload);
       }
       if (from < 9) {
