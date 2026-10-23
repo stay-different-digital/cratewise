@@ -9,6 +9,7 @@ import '../../domain/models/import_export_status.dart';
 import '../../domain/repositories/import_export_job_repository.dart';
 import '../../infrastructure/csv/csv_file_writer.dart';
 import '../../infrastructure/csv/wishlist_csv_mapper.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class ExecuteWishlistCsvExportResult {
   const ExecuteWishlistCsvExportResult();
@@ -104,7 +105,8 @@ class ExecuteWishlistCsvExportUseCase {
         filename: filename,
         filePath: filePath,
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecuteWishlistCsvExportUseCase');
       try {
         await _jobRepository.update(
           job.copyWith(
@@ -113,7 +115,9 @@ class ExecuteWishlistCsvExportUseCase {
             updatedAt: DateTime.now(),
           ),
         );
-      } catch (_) {}
+      } catch (_) {
+        // best-effort: a failure here must not mask the original outcome
+      }
       return const ExecuteWishlistCsvExportFailed(
         'CSV export could not be completed',
       );

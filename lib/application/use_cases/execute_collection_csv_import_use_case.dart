@@ -11,6 +11,7 @@ import '../../domain/models/sync_status.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/import_export_job_repository.dart';
 import '../../domain/repositories/import_export_row_result_repository.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class ExecuteCollectionCsvImportResult {
   const ExecuteCollectionCsvImportResult();
@@ -103,7 +104,8 @@ class ExecuteCollectionCsvImportUseCase {
             );
             imported++;
           }
-        } catch (_) {
+        } catch (e, st) {
+          logSwallowed(e, st, 'ExecuteCollectionCsvImportUseCase');
           await _rowResultRepository.addResult(
             jobId,
             FailedRow(
@@ -145,7 +147,8 @@ class ExecuteCollectionCsvImportUseCase {
         skipped: skipped,
         failed: failed,
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecuteCollectionCsvImportUseCase');
       try {
         await _jobRepository.update(
           job.copyWith(
@@ -154,7 +157,9 @@ class ExecuteCollectionCsvImportUseCase {
             updatedAt: DateTime.now(),
           ),
         );
-      } catch (_) {}
+      } catch (_) {
+        // best-effort: a failure here must not mask the original outcome
+      }
       return const ExecuteCollectionCsvImportFailed(
         'Import could not be completed',
       );

@@ -296,7 +296,7 @@ void main() {
     test('propagates NetworkError from API client', () async {
       final service = _makeService(
         'fake_token',
-        MockClient((_) async => throw Exception('no internet')),
+        MockClient((_) async => throw http.ClientException('no internet')),
       );
       expect(() => service.fetchDetail(1), throwsA(isA<NetworkError>()));
     });
@@ -588,7 +588,7 @@ void main() {
         final retryRepo = _SpyRetryRepo();
         final service = _makeService(
           'fake_token',
-          MockClient((_) async => throw Exception('no internet')),
+          MockClient((_) async => throw http.ClientException('no internet')),
           retryRecorder: CacheRetryRecorder(retryRepo),
         );
         await expectLater(
@@ -657,7 +657,7 @@ void main() {
       () async {
         final service = _makeService(
           'fake_token',
-          MockClient((_) async => throw Exception('no internet')),
+          MockClient((_) async => throw http.ClientException('no internet')),
         );
         await expectLater(
           () => service.fetchDetail(1),
@@ -771,7 +771,7 @@ void main() {
       final retryRepo = _SpyRetryRepo();
       final service = _makeService(
         sensitiveToken,
-        MockClient((_) async => throw Exception('no internet')),
+        MockClient((_) async => throw http.ClientException('no internet')),
         retryRecorder: CacheRetryRecorder(retryRepo),
       );
       await expectLater(
@@ -806,7 +806,9 @@ void main() {
       final service = DiscogsReleaseDetailService(
         storage: spy,
         apiClient: DiscogsApiClient(
-          httpClient: MockClient((_) async => throw Exception('network error')),
+          httpClient: MockClient(
+            (_) async => throw http.ClientException('network error'),
+          ),
         ),
       );
       await expectLater(

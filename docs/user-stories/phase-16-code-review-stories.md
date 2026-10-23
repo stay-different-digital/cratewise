@@ -228,3 +228,4 @@ Gebruik geen nieuwe abstractielaag per entiteit. Maak per paar één generiek sc
 - Best-effort `catch (_) {}` in cleanup-paden blijft staan, met een `// best-effort:`-comment.
 - `DiscogsApiClient` vangt alleen `TimeoutException`, `SocketException` en `http.ClientException` als `NetworkError`.
 - Bestaande tests blijven groen. Er is minimaal één test die laat zien dat een onverwachte fout niet meer als `NetworkError` terugkomt.
+- *Uitvoering:* gekozen voor loggen. In `lib/application` roepen 44 vangende `catch`-blokken `logSwallowed(e, st, '<UseCase>')` aan (in `app_error.dart`; slaat `AppError` over). 11 lege blokken zijn als `// best-effort:` gemarkeerd. `DiscogsApiClient` vangt alleen `TimeoutException`, `IOException` en `http.ClientException` (die in http 1.6 géén `IOException` is). Tests die een netwerkfout simuleerden met een kale `Exception` gebruiken nu `http.ClientException`. Presentatie-`catch`es vallen buiten scope.

@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../shared/errors/app_error.dart';
 
 class OnboardingService {
   const OnboardingService({FlutterSecureStorage? storage})
@@ -10,7 +11,8 @@ class OnboardingService {
   Future<bool> isComplete() async {
     try {
       return await _storage.read(key: _key) == 'true';
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'OnboardingService');
       return false;
     }
   }

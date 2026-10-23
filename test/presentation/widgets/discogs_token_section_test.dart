@@ -353,7 +353,7 @@ void main() {
       tester,
     ) async {
       final service = _makeService(
-        MockClient((_) async => throw Exception('no internet')),
+        MockClient((_) async => throw http.ClientException('no internet')),
       );
 
       await tester.pumpWidget(

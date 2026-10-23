@@ -1,6 +1,7 @@
 import '../../domain/models/csv_collection_import_preview.dart';
 import '../../infrastructure/csv/collection_csv_validator.dart';
 import '../../infrastructure/csv/csv_parser.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class BuildCollectionCsvImportPreviewResult {
   const BuildCollectionCsvImportPreviewResult();
@@ -51,7 +52,8 @@ class BuildCollectionCsvImportPreviewUseCase {
           reason,
         ),
       };
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'BuildCollectionCsvImportPreviewUseCase');
       return const CollectionCsvImportPreviewError();
     }
   }

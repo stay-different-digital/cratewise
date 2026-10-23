@@ -254,9 +254,11 @@ class DiscogsApiClient {
           .timeout(_timeout);
     } on TimeoutException {
       throw const NetworkError();
-    } on SocketException {
+    } on IOException {
+      // Socket and TLS failures.
       throw const NetworkError();
-    } on Exception {
+    } on http.ClientException {
+      // Anything else is a bug and propagates (US-132).
       throw const NetworkError();
     }
     _updateRateLimitState(response);
@@ -293,9 +295,11 @@ class DiscogsApiClient {
       response = await send(uri, _headers(token)).timeout(_timeout);
     } on TimeoutException {
       throw const NetworkError();
-    } on SocketException {
+    } on IOException {
+      // Socket and TLS failures.
       throw const NetworkError();
-    } on Exception {
+    } on http.ClientException {
+      // Anything else is a bug and propagates (US-132).
       throw const NetworkError();
     }
     _updateRateLimitState(response);

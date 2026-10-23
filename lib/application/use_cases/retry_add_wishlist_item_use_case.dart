@@ -2,6 +2,7 @@ import '../../domain/models/retry_action.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/retry_action_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
+import '../../shared/errors/app_error.dart';
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -64,7 +65,8 @@ class RetryAddWishlistItemUseCase {
       await wishlistRepo.add(item);
       await retryRepo.remove(action.id);
       return const RetryAddWishlistItemSuccess();
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'RetryAddWishlistItemUseCase');
       await _recordAttempt(action);
       return const RetryAddWishlistItemStorageError();
     }
@@ -79,7 +81,8 @@ class RetryAddWishlistItemUseCase {
           status: RetryActionStatus.failed,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'RetryAddWishlistItemUseCase');
       // update failure must never crash the caller
     }
   }

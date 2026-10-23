@@ -1,6 +1,7 @@
 import '../../domain/models/csv_collection_export_preview.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../infrastructure/csv/collection_csv_mapper.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class BuildCollectionCsvExportPreviewResult {
   const BuildCollectionCsvExportPreviewResult();
@@ -37,7 +38,8 @@ class BuildCollectionCsvExportPreviewUseCase {
           sampleRows: sampleRows,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'BuildCollectionCsvExportPreviewUseCase');
       return const CollectionCsvExportPreviewError();
     }
   }

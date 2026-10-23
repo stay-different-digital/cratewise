@@ -144,7 +144,7 @@ void main() {
 
     test('propagates NetworkError when HTTP client throws', () async {
       final service = _makeService(
-        MockClient((_) async => throw Exception('no internet')),
+        MockClient((_) async => throw http.ClientException('no internet')),
       );
       expect(() => service.connect('tok'), throwsA(isA<NetworkError>()));
     });

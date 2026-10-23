@@ -6,6 +6,7 @@ import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/retry_action_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
+import '../../shared/errors/app_error.dart';
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -75,7 +76,8 @@ class RetryThumbnailUseCase {
       await _thumbnailRepo.save(releaseId, bytes);
       await retryRepo.remove(action.id);
       return const RetryThumbnailSuccess();
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'RetryThumbnailUseCase');
       await _recordAttempt(action);
       return const RetryThumbnailFailed();
     }
@@ -90,7 +92,8 @@ class RetryThumbnailUseCase {
           status: RetryActionStatus.failed,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'RetryThumbnailUseCase');
       // update failure must never crash the caller
     }
   }

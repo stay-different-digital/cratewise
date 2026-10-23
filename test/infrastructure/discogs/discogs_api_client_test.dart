@@ -70,7 +70,9 @@ void main() {
 
     test('throws NetworkError when request throws', () async {
       final client = DiscogsApiClient(
-        httpClient: MockClient((_) async => throw Exception('no internet')),
+        httpClient: MockClient(
+          (_) async => throw http.ClientException('no internet'),
+        ),
       );
       expect(
         () => client.fetchIdentity(_fakeToken),
@@ -414,7 +416,9 @@ void main() {
 
     test('throws NetworkError when request throws', () async {
       final client = DiscogsApiClient(
-        httpClient: MockClient((_) async => throw Exception('no internet')),
+        httpClient: MockClient(
+          (_) async => throw http.ClientException('no internet'),
+        ),
       );
       expect(
         () => client.searchReleases('test', _fakeToken),
@@ -880,7 +884,9 @@ void main() {
 
     test('throws NetworkError when request throws', () async {
       final client = DiscogsApiClient(
-        httpClient: MockClient((_) async => throw Exception('no internet')),
+        httpClient: MockClient(
+          (_) async => throw http.ClientException('no internet'),
+        ),
       );
       expect(
         () => client.fetchCollectionPage(fakeUsername, _fakeToken),
@@ -1234,7 +1240,9 @@ void main() {
 
     test('throws NetworkError when request throws', () async {
       final client = DiscogsApiClient(
-        httpClient: MockClient((_) async => throw Exception('no internet')),
+        httpClient: MockClient(
+          (_) async => throw http.ClientException('no internet'),
+        ),
       );
       expect(
         () => client.fetchRelease(1, _fakeToken),
@@ -1630,7 +1638,9 @@ void main() {
 
     test('throws NetworkError when request throws', () async {
       final client = DiscogsApiClient(
-        httpClient: MockClient((_) async => throw Exception('no internet')),
+        httpClient: MockClient(
+          (_) async => throw http.ClientException('no internet'),
+        ),
       );
       expect(
         () => client.fetchWantlistPage(fakeUsername, _fakeToken),
@@ -1885,7 +1895,9 @@ void main() {
 
     test('throws NetworkError when request throws', () async {
       final client = DiscogsApiClient(
-        httpClient: MockClient((_) async => throw Exception('no internet')),
+        httpClient: MockClient(
+          (_) async => throw http.ClientException('no internet'),
+        ),
       );
       expect(
         () => client.addToCollection(fakeUsername, fakeReleaseId, _fakeToken),
@@ -2009,7 +2021,9 @@ void main() {
 
     test('throws NetworkError when request throws', () async {
       final client = DiscogsApiClient(
-        httpClient: MockClient((_) async => throw Exception('no internet')),
+        httpClient: MockClient(
+          (_) async => throw http.ClientException('no internet'),
+        ),
       );
       expect(
         () => client.addToWantlist(fakeUsername, fakeReleaseId, _fakeToken),
@@ -2209,5 +2223,16 @@ void main() {
 
       expect(delays, hasLength(2));
     });
+  });
+
+  test('US-132: a non-network bug is not reported as NetworkError', () async {
+    final client = DiscogsApiClient(
+      httpClient: MockClient((_) async => throw StateError('bug')),
+    );
+
+    await expectLater(
+      client.fetchIdentity(_fakeToken),
+      throwsA(isA<StateError>()),
+    );
   });
 }

@@ -8,6 +8,7 @@ import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/retry_action_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class AddToWishlistResult {
   const AddToWishlistResult();
@@ -64,7 +65,8 @@ class AddToWishlistUseCase {
     try {
       await _repository.add(item);
       return AddToWishlistSuccess(item);
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'AddToWishlistUseCase');
       await _recordRetry(item);
       return const AddToWishlistStorageError();
     }
@@ -94,7 +96,8 @@ class AddToWishlistUseCase {
           status: RetryActionStatus.pending,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'AddToWishlistUseCase');
       // recording failure must never crash the main flow
     }
   }

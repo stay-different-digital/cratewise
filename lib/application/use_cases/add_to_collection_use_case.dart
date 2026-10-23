@@ -8,6 +8,7 @@ import '../../domain/models/retry_action.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/retry_action_repository.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class AddToCollectionResult {
   const AddToCollectionResult();
@@ -66,7 +67,8 @@ class AddToCollectionUseCase {
     try {
       await _repository.add(item);
       return AddToCollectionSuccess(item);
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'AddToCollectionUseCase');
       await _recordRetry(item);
       return const AddToCollectionStorageError();
     }
@@ -96,7 +98,8 @@ class AddToCollectionUseCase {
           status: RetryActionStatus.pending,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'AddToCollectionUseCase');
       // recording failure must never crash the main flow
     }
   }

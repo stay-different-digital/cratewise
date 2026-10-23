@@ -105,7 +105,8 @@ class ExecuteCollectionExportUseCase {
       }
       token = t;
       username = u;
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecuteCollectionExportUseCase');
       return const ExecuteExportNoToken();
     }
 
@@ -180,7 +181,9 @@ class ExecuteCollectionExportUseCase {
                     ),
                   );
                 }
-              } catch (_) {}
+              } catch (_) {
+                // best-effort: a failure here must not mask the original outcome
+              }
               await _rowResultRepository.addResult(
                 jobId,
                 FailedRow(
@@ -225,7 +228,8 @@ class ExecuteCollectionExportUseCase {
         skipped: skipped,
         failed: failed,
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecuteCollectionExportUseCase');
       try {
         await _jobRepository.update(
           job.copyWith(
@@ -234,7 +238,9 @@ class ExecuteCollectionExportUseCase {
             updatedAt: DateTime.now(),
           ),
         );
-      } catch (_) {}
+      } catch (_) {
+        // best-effort: a failure here must not mask the original outcome
+      }
       return const ExecuteExportFailed('Export could not be completed');
     }
   }

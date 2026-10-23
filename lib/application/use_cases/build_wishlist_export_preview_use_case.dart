@@ -1,6 +1,7 @@
 import '../../domain/models/wishlist_export_preview.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import 'check_wishlist_export_capability_use_case.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class BuildWishlistExportPreviewResult {
   const BuildWishlistExportPreviewResult();
@@ -44,7 +45,8 @@ class BuildWishlistExportPreviewUseCase {
       final items = await _repository.getAll();
       final rows = items.map(classifyWishlistItemForExport).toList();
       return WishlistExportPreviewReady(WishlistExportPreview(rows: rows));
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'BuildWishlistExportPreviewUseCase');
       return const WishlistExportPreviewError();
     }
   }

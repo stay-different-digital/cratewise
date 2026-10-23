@@ -171,7 +171,7 @@ void main() {
       final repo = _FakeThumbnailRepository();
       final service = _makeService(
         repo,
-        MockClient((_) async => throw Exception('no internet')),
+        MockClient((_) async => throw http.ClientException('no internet')),
       );
       final path = await service.getOrFetch(
         249504,

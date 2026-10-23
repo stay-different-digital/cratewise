@@ -12,6 +12,7 @@ import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/import_export_job_repository.dart';
 import '../../domain/repositories/import_export_row_result_repository.dart';
 import '../../domain/repositories/transaction_runner.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class ExecuteCollectionImportResult {
   const ExecuteCollectionImportResult();
@@ -119,7 +120,8 @@ class ExecuteCollectionImportUseCase {
                   ),
                 );
                 imported++;
-              } catch (_) {
+              } catch (e, st) {
+                logSwallowed(e, st, 'ExecuteCollectionImportUseCase');
                 await _rowResultRepository.addResult(
                   jobId,
                   FailedRow(
@@ -148,7 +150,8 @@ class ExecuteCollectionImportUseCase {
                     ),
                   );
                   linked++;
-                } catch (_) {
+                } catch (e, st) {
+                  logSwallowed(e, st, 'ExecuteCollectionImportUseCase');
                   await _rowResultRepository.addResult(
                     jobId,
                     FailedRow(
@@ -205,7 +208,8 @@ class ExecuteCollectionImportUseCase {
         failed: failed,
         linked: linked,
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecuteCollectionImportUseCase');
       // The transaction rolled back, so nothing was persisted — record a
       // failed job (add, not update: the running record was rolled back too).
       try {
@@ -216,7 +220,9 @@ class ExecuteCollectionImportUseCase {
             updatedAt: DateTime.now(),
           ),
         );
-      } catch (_) {}
+      } catch (_) {
+        // best-effort: a failure here must not mask the original outcome
+      }
       return const ExecuteImportFailed('Import could not be completed');
     }
   }

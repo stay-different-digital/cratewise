@@ -11,6 +11,7 @@ import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/import_export_job_repository.dart';
 import '../../domain/repositories/import_export_row_result_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class ExecuteWishlistCsvImportResult {
   const ExecuteWishlistCsvImportResult();
@@ -98,7 +99,8 @@ class ExecuteWishlistCsvImportUseCase {
             );
             imported++;
           }
-        } catch (_) {
+        } catch (e, st) {
+          logSwallowed(e, st, 'ExecuteWishlistCsvImportUseCase');
           await _rowResultRepository.addResult(
             jobId,
             FailedRow(
@@ -140,7 +142,8 @@ class ExecuteWishlistCsvImportUseCase {
         skipped: skipped,
         failed: failed,
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecuteWishlistCsvImportUseCase');
       try {
         await _jobRepository.update(
           job.copyWith(
@@ -149,7 +152,9 @@ class ExecuteWishlistCsvImportUseCase {
             updatedAt: DateTime.now(),
           ),
         );
-      } catch (_) {}
+      } catch (_) {
+        // best-effort: a failure here must not mask the original outcome
+      }
       return const ExecuteWishlistCsvImportFailed(
         'Import could not be completed',
       );

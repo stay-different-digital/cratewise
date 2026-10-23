@@ -58,7 +58,8 @@ class ExecutePendingDeletionsUseCase {
       }
       token = t;
       username = u;
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecutePendingDeletionsUseCase');
       return const PendingDeletionsNoToken();
     }
 

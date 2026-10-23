@@ -1,6 +1,7 @@
 import '../../domain/models/csv_wishlist_import_preview.dart';
 import '../../infrastructure/csv/csv_parser.dart';
 import '../../infrastructure/csv/wishlist_csv_validator.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class BuildWishlistCsvImportPreviewResult {
   const BuildWishlistCsvImportPreviewResult();
@@ -51,7 +52,8 @@ class BuildWishlistCsvImportPreviewUseCase {
           reason,
         ),
       };
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'BuildWishlistCsvImportPreviewUseCase');
       return const WishlistCsvImportPreviewError();
     }
   }

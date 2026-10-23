@@ -76,7 +76,8 @@ class CacheRetryRecorder {
           status: RetryActionStatus.pending,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'CacheRetryRecorder');
       // failure to record must never crash the main flow
     }
   }

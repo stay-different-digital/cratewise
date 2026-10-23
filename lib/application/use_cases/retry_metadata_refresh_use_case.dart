@@ -89,7 +89,8 @@ class RetryMetadataRefreshUseCase {
     } on AppError {
       await _recordAttempt(action);
       return const RetryMetadataFailed();
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'RetryMetadataRefreshUseCase');
       await _recordAttempt(action);
       return const RetryMetadataFailed();
     }
@@ -104,7 +105,8 @@ class RetryMetadataRefreshUseCase {
           status: RetryActionStatus.failed,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'RetryMetadataRefreshUseCase');
       // update failure must never crash the caller
     }
   }

@@ -2,6 +2,7 @@ import '../../domain/models/collection_item.dart';
 import '../../domain/models/retry_action.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/retry_action_repository.dart';
+import '../../shared/errors/app_error.dart';
 
 // ---------------------------------------------------------------------------
 // Result type
@@ -65,7 +66,8 @@ class RetryAddCollectionItemUseCase {
       await collectionRepo.add(item);
       await retryRepo.remove(action.id);
       return const RetryAddCollectionItemSuccess();
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'RetryAddCollectionItemUseCase');
       await _recordAttempt(action);
       return const RetryAddCollectionItemStorageError();
     }
@@ -80,7 +82,8 @@ class RetryAddCollectionItemUseCase {
           status: RetryActionStatus.failed,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'RetryAddCollectionItemUseCase');
       // update failure must never crash the caller
     }
   }

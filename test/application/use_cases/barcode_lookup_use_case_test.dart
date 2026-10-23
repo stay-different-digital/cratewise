@@ -289,7 +289,7 @@ void main() {
       final useCase = _makeUseCase(
         token: 'fake_token',
         httpClient: MockClient(
-          (_) async => throw Exception('socket exception'),
+          (_) async => throw http.ClientException('socket exception'),
         ),
       );
       final result = await useCase.execute('1234567890');
@@ -331,7 +331,9 @@ void main() {
       final useCase = BarcodeLookupUseCase(
         storage: spy,
         apiClient: DiscogsApiClient(
-          httpClient: MockClient((_) async => throw Exception('network error')),
+          httpClient: MockClient(
+            (_) async => throw http.ClientException('network error'),
+          ),
         ),
       );
       final result = await useCase.execute('1234567890');

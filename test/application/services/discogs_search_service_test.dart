@@ -182,7 +182,7 @@ void main() {
     test('propagates NetworkError from API client', () async {
       final service = _makeService(
         'fake_token',
-        MockClient((_) async => throw Exception('no internet')),
+        MockClient((_) async => throw http.ClientException('no internet')),
       );
       expect(() => service.search('test'), throwsA(isA<NetworkError>()));
     });
@@ -223,7 +223,9 @@ void main() {
       final service = DiscogsSearchService(
         storage: spy,
         apiClient: DiscogsApiClient(
-          httpClient: MockClient((_) async => throw Exception('network error')),
+          httpClient: MockClient(
+            (_) async => throw http.ClientException('network error'),
+          ),
         ),
       );
       await expectLater(

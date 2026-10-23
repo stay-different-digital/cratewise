@@ -39,7 +39,8 @@ class DiscogsReleaseDetailService {
       final cached = await _cacheRepository?.getByReleaseId(releaseId);
       if (cached != null) return releaseDetailFromCachedMetadata(cached);
       return await fetchDetail(releaseId);
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'DiscogsReleaseDetailService');
       return null;
     }
   }
@@ -70,7 +71,8 @@ class DiscogsReleaseDetailService {
       if (path == null && imageUrl != null && imageUrl.isNotEmpty) {
         await _cacheRetryRecorder?.recordThumbnailFailure(releaseId);
       }
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'DiscogsReleaseDetailService');
       // thumbnail cache failure must not break the detail load
     }
   }
@@ -79,7 +81,8 @@ class DiscogsReleaseDetailService {
     if (_cacheRepository == null) return;
     try {
       await _cacheRepository.save(_toCachedMetadata(detail));
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'DiscogsReleaseDetailService');
       await _cacheRetryRecorder?.recordMetadataCacheWriteFailure(detail.id);
     }
   }

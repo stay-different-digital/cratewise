@@ -12,6 +12,7 @@ import '../../domain/repositories/import_export_job_repository.dart';
 import '../../domain/repositories/import_export_row_result_repository.dart';
 import '../../domain/repositories/transaction_runner.dart';
 import '../../domain/repositories/wishlist_repository.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class ExecuteWishlistImportResult {
   const ExecuteWishlistImportResult();
@@ -120,7 +121,8 @@ class ExecuteWishlistImportUseCase {
                   ),
                 );
                 imported++;
-              } catch (_) {
+              } catch (e, st) {
+                logSwallowed(e, st, 'ExecuteWishlistImportUseCase');
                 await _rowResultRepository.addResult(
                   jobId,
                   FailedRow(
@@ -149,7 +151,8 @@ class ExecuteWishlistImportUseCase {
                     ),
                   );
                   linked++;
-                } catch (_) {
+                } catch (e, st) {
+                  logSwallowed(e, st, 'ExecuteWishlistImportUseCase');
                   await _rowResultRepository.addResult(
                     jobId,
                     FailedRow(
@@ -206,7 +209,8 @@ class ExecuteWishlistImportUseCase {
         failed: failed,
         linked: linked,
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecuteWishlistImportUseCase');
       // The transaction rolled back, so nothing was persisted — record a
       // failed job (add, not update: the running record was rolled back too).
       try {
@@ -217,7 +221,9 @@ class ExecuteWishlistImportUseCase {
             updatedAt: DateTime.now(),
           ),
         );
-      } catch (_) {}
+      } catch (_) {
+        // best-effort: a failure here must not mask the original outcome
+      }
       return const ExecuteWishlistImportFailed('Import could not be completed');
     }
   }

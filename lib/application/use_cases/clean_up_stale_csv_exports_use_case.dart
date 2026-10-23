@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
+import '../../shared/errors/app_error.dart';
 
 class CleanUpStaleCsvExportsUseCase {
   CleanUpStaleCsvExportsUseCase({
@@ -19,7 +20,8 @@ class CleanUpStaleCsvExportsUseCase {
     final Directory dir;
     try {
       dir = await _getTempDir();
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'CleanUpStaleCsvExportsUseCase');
       return;
     }
 
@@ -28,7 +30,8 @@ class CleanUpStaleCsvExportsUseCase {
     List<FileSystemEntity> entities;
     try {
       entities = dir.listSync();
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'CleanUpStaleCsvExportsUseCase');
       return;
     }
 
@@ -43,7 +46,9 @@ class CleanUpStaleCsvExportsUseCase {
       if (exportedAt.isBefore(cutoff)) {
         try {
           entity.deleteSync();
-        } catch (_) {}
+        } catch (_) {
+          // best-effort: a failure here must not mask the original outcome
+        }
       }
     }
   }

@@ -1,6 +1,7 @@
 import '../../domain/models/csv_wishlist_export_preview.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../infrastructure/csv/wishlist_csv_mapper.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class BuildWishlistCsvExportPreviewResult {
   const BuildWishlistCsvExportPreviewResult();
@@ -37,7 +38,8 @@ class BuildWishlistCsvExportPreviewUseCase {
           sampleRows: sampleRows,
         ),
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'BuildWishlistCsvExportPreviewUseCase');
       return const WishlistCsvExportPreviewError();
     }
   }

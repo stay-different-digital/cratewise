@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../domain/repositories/thumbnail_repository.dart';
 import 'thumbnail_eviction_service.dart';
+import '../../shared/errors/app_error.dart';
 
 /// Downloads a cover image; null on network error, timeout, non-200 or a
 /// non-image response (US-128). A missing content-type is accepted.
@@ -52,7 +53,8 @@ class ThumbnailCacheService {
       await _repository.save(releaseId, bytes);
       unawaited(_evictionService.evictIfNeeded());
       return await _repository.getLocalPath(releaseId);
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ThumbnailCacheService');
       return null;
     }
   }

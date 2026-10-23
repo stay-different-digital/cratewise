@@ -27,7 +27,8 @@ class DiscogsConnectionService {
       return (token != null && username != null)
           ? ConnectionStatus.connected(username)
           : const ConnectionStatus.disconnected();
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'DiscogsConnectionService');
       return const ConnectionStatus.disconnected();
     }
   }

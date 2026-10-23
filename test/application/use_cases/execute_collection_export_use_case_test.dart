@@ -237,7 +237,9 @@ DiscogsApiClient _apiClientReturning(int statusCode) {
 DiscogsApiClient _apiClientThrowing() {
   return DiscogsApiClient(
     delay: (_) async {},
-    httpClient: MockClient((_) async => throw Exception('no internet')),
+    httpClient: MockClient(
+      (_) async => throw http.ClientException('no internet'),
+    ),
   );
 }
 

@@ -1,6 +1,7 @@
 import '../../domain/models/collection_export_preview.dart';
 import '../../domain/repositories/collection_repository.dart';
 import 'check_collection_export_capability_use_case.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class BuildCollectionExportPreviewResult {
   const BuildCollectionExportPreviewResult();
@@ -44,7 +45,8 @@ class BuildCollectionExportPreviewUseCase {
       final items = await _repository.getAll();
       final rows = items.map(classifyForExport).toList();
       return CollectionExportPreviewReady(CollectionExportPreview(rows: rows));
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'BuildCollectionExportPreviewUseCase');
       return const CollectionExportPreviewError();
     }
   }

@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 sealed class AppError implements Exception {
   const AppError();
 }
@@ -29,4 +31,18 @@ class StorageError extends AppError {
 
 class NoTokenError extends AppError {
   const NoTokenError();
+}
+
+/// Logs an error that a use case turns into a safe fallback (US-132), so
+/// bugs show up in the debug log instead of vanishing. [AppError]s are
+/// expected outcomes and are not logged.
+void logSwallowed(Object error, StackTrace stack, String where) {
+  if (error is AppError) return;
+  dev.log(
+    'Unexpected error in $where',
+    name: 'cratewise',
+    error: error,
+    stackTrace: stack,
+    level: 1000,
+  );
 }

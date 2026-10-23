@@ -105,7 +105,8 @@ class ExecuteWishlistExportUseCase {
       }
       token = t;
       username = u;
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecuteWishlistExportUseCase');
       return const ExecuteWishlistExportNoToken();
     }
 
@@ -175,7 +176,9 @@ class ExecuteWishlistExportUseCase {
                     ),
                   );
                 }
-              } catch (_) {}
+              } catch (_) {
+                // best-effort: a failure here must not mask the original outcome
+              }
               await _rowResultRepository.addResult(
                 jobId,
                 FailedRow(
@@ -220,7 +223,8 @@ class ExecuteWishlistExportUseCase {
         skipped: skipped,
         failed: failed,
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecuteWishlistExportUseCase');
       try {
         await _jobRepository.update(
           job.copyWith(
@@ -229,7 +233,9 @@ class ExecuteWishlistExportUseCase {
             updatedAt: DateTime.now(),
           ),
         );
-      } catch (_) {}
+      } catch (_) {
+        // best-effort: a failure here must not mask the original outcome
+      }
       return const ExecuteWishlistExportFailed('Export could not be completed');
     }
   }

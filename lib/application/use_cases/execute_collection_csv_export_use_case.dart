@@ -9,6 +9,7 @@ import '../../domain/models/import_export_status.dart';
 import '../../domain/repositories/import_export_job_repository.dart';
 import '../../infrastructure/csv/collection_csv_mapper.dart';
 import '../../infrastructure/csv/csv_file_writer.dart';
+import '../../shared/errors/app_error.dart';
 
 sealed class ExecuteCollectionCsvExportResult {
   const ExecuteCollectionCsvExportResult();
@@ -106,7 +107,8 @@ class ExecuteCollectionCsvExportUseCase {
         filename: filename,
         filePath: filePath,
       );
-    } catch (_) {
+    } catch (e, st) {
+      logSwallowed(e, st, 'ExecuteCollectionCsvExportUseCase');
       try {
         await _jobRepository.update(
           job.copyWith(
@@ -115,7 +117,9 @@ class ExecuteCollectionCsvExportUseCase {
             updatedAt: DateTime.now(),
           ),
         );
-      } catch (_) {}
+      } catch (_) {
+        // best-effort: a failure here must not mask the original outcome
+      }
       return const ExecuteCollectionCsvExportFailed(
         'CSV export could not be completed',
       );
