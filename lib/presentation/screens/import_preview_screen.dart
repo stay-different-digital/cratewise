@@ -1,17 +1,145 @@
 import 'package:flutter/material.dart';
 
-import '../../application/use_cases/build_collection_import_preview_use_case.dart';
-import '../../application/use_cases/execute_collection_import_use_case.dart';
-import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
-import '../../domain/models/collection_import_preview.dart';
 import '../../app/app_repositories.dart';
+import '../../application/use_cases/build_collection_import_preview_use_case.dart';
+import '../../application/use_cases/build_wishlist_import_preview_use_case.dart';
+import '../../application/use_cases/execute_collection_import_use_case.dart';
+import '../../application/use_cases/execute_wishlist_import_use_case.dart';
+import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
+import '../../application/use_cases/fetch_wishlist_import_preview_use_case.dart';
+import '../../domain/models/collection_import_preview.dart';
+import '../../domain/models/discogs_import_preview.dart';
+import '../../domain/models/wishlist_import_preview.dart';
 import '../../shared/import_notifier.dart';
 
 const _kWideBreakpoint = 700.0;
 
 // ---------------------------------------------------------------------------
+// Entry points: collection and wishlist share one screen (US-130)
+// ---------------------------------------------------------------------------
+
+class CollectionImportPreviewScreen extends StatelessWidget {
+  const CollectionImportPreviewScreen({
+    super.key,
+    this.useCase,
+    this.executeUseCase,
+  });
+
+  final FetchCollectionImportPreviewUseCase? useCase;
+  final ExecuteCollectionImportUseCase? executeUseCase;
+
+  @override
+  Widget build(BuildContext context) {
+    var fetch = useCase;
+    var execute = executeUseCase;
+    if (fetch == null) {
+      final repos = AppRepositoriesScope.of(context);
+      fetch = FetchCollectionImportPreviewUseCase(
+        previewBuilder: BuildCollectionImportPreviewUseCase(
+          repos.collection,
+          deletionRepository: repos.pendingDeletion,
+        ),
+      );
+      execute = ExecuteCollectionImportUseCase(
+        collectionRepository: repos.collection,
+        jobRepository: repos.importExportJob,
+        rowResultRepository: repos.importExportRowResult,
+        transactionRunner: repos.transactionRunner,
+      );
+    }
+    return _DiscogsImportPreviewScreen<CollectionImportPreview>(
+      title: 'Import from Discogs',
+      copy: (
+        noun: 'collection',
+        discogsNoun: 'collection',
+        previewHeading: 'Collection preview',
+      ),
+      loadPreview: () async => switch (await fetch!.execute()) {
+        FetchPreviewReady(:final preview) => _Loaded(preview),
+        FetchPreviewNoToken() => const _NoToken(),
+        FetchPreviewRateLimitExhausted() => const _RateLimited(),
+        FetchPreviewNetworkError() => const _NetworkError(),
+        FetchPreviewError() => const _Error(),
+      },
+      import: execute == null
+          ? null
+          : (p, onProgress) async {
+              switch (await execute!.execute(p, onProgress: onProgress)) {
+                case final ExecuteImportCompleted done:
+                  collectionImportNotifier.value++;
+                  return _ImportDone(done);
+                case ExecuteImportFailed(:final safeMessage):
+                  return _Failed(safeMessage);
+              }
+            },
+    );
+  }
+}
+
+class WishlistImportPreviewScreen extends StatelessWidget {
+  const WishlistImportPreviewScreen({
+    super.key,
+    this.useCase,
+    this.executeUseCase,
+  });
+
+  final FetchWishlistImportPreviewUseCase? useCase;
+  final ExecuteWishlistImportUseCase? executeUseCase;
+
+  @override
+  Widget build(BuildContext context) {
+    var fetch = useCase;
+    var execute = executeUseCase;
+    if (fetch == null) {
+      final repos = AppRepositoriesScope.of(context);
+      fetch = FetchWishlistImportPreviewUseCase(
+        previewBuilder: BuildWishlistImportPreviewUseCase(
+          repos.wishlist,
+          deletionRepository: repos.pendingDeletion,
+        ),
+      );
+      execute = ExecuteWishlistImportUseCase(
+        wishlistRepository: repos.wishlist,
+        jobRepository: repos.importExportJob,
+        rowResultRepository: repos.importExportRowResult,
+        transactionRunner: repos.transactionRunner,
+      );
+    }
+    return _DiscogsImportPreviewScreen<WishlistImportPreview>(
+      title: 'Import Wishlist from Discogs',
+      copy: (
+        noun: 'wishlist',
+        discogsNoun: 'wantlist',
+        previewHeading: 'Wishlist preview',
+      ),
+      loadPreview: () async => switch (await fetch!.execute()) {
+        FetchWishlistPreviewReady(:final preview) => _Loaded(preview),
+        FetchWishlistPreviewNoToken() => const _NoToken(),
+        FetchWishlistPreviewRateLimitExhausted() => const _RateLimited(),
+        FetchWishlistPreviewNetworkError() => const _NetworkError(),
+        FetchWishlistPreviewError() => const _Error(),
+      },
+      import: execute == null
+          ? null
+          : (p, onProgress) async {
+              switch (await execute!.execute(p, onProgress: onProgress)) {
+                case final ExecuteWishlistImportCompleted done:
+                  wishlistImportNotifier.value++;
+                  return _ImportDone(done);
+                case ExecuteWishlistImportFailed(:final safeMessage):
+                  return _Failed(safeMessage);
+              }
+            },
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // State machine
 // ---------------------------------------------------------------------------
+
+/// Copy that differs between collection and wishlist.
+typedef _Copy = ({String noun, String discogsNoun, String previewHeading});
 
 sealed class _PreviewState {
   const _PreviewState();
@@ -23,7 +151,7 @@ class _Loading extends _PreviewState {
 
 class _Loaded extends _PreviewState {
   const _Loaded(this.preview);
-  final CollectionImportPreview preview;
+  final DiscogsImportPreview preview;
 }
 
 class _NoToken extends _PreviewState {
@@ -51,122 +179,105 @@ class _Importing extends _PreviewState {
 
 class _ImportDone extends _PreviewState {
   const _ImportDone(this.result);
-  final ExecuteImportCompleted result;
+  final DiscogsImportDone result;
+}
+
+/// Transient: import failed; the screen returns to [_Loaded] with a snackbar.
+class _Failed extends _PreviewState {
+  const _Failed(this.safeMessage);
+  final String safeMessage;
 }
 
 // ---------------------------------------------------------------------------
-// Screen
+// Shared screen
 // ---------------------------------------------------------------------------
 
-class CollectionImportPreviewScreen extends StatefulWidget {
-  const CollectionImportPreviewScreen({
+typedef _OnProgress = void Function(int current, int total, String item);
+
+class _DiscogsImportPreviewScreen<P extends DiscogsImportPreview>
+    extends StatefulWidget {
+  const _DiscogsImportPreviewScreen({
     super.key,
-    this.useCase,
-    this.executeUseCase,
+    required this.title,
+    required this.copy,
+    required this.loadPreview,
+    this.import,
   });
 
-  final FetchCollectionImportPreviewUseCase? useCase;
-  final ExecuteCollectionImportUseCase? executeUseCase;
+  final String title;
+  final _Copy copy;
+
+  /// Resolves to [_Loaded] or one of the error states.
+  final Future<_PreviewState> Function() loadPreview;
+
+  /// Resolves to [_ImportDone] or [_Failed]. Null disables confirm.
+  final Future<_PreviewState> Function(P preview, _OnProgress onProgress)?
+  import;
 
   @override
-  State<CollectionImportPreviewScreen> createState() =>
-      _CollectionImportPreviewScreenState();
+  State<_DiscogsImportPreviewScreen<P>> createState() =>
+      _DiscogsImportPreviewScreenState<P>();
 }
 
-class _CollectionImportPreviewScreenState
-    extends State<CollectionImportPreviewScreen> {
-  late final FetchCollectionImportPreviewUseCase _useCase;
-  ExecuteCollectionImportUseCase? _executeUseCase;
+class _DiscogsImportPreviewScreenState<P extends DiscogsImportPreview>
+    extends State<_DiscogsImportPreviewScreen<P>> {
   _PreviewState _state = const _Loading();
 
   @override
   void initState() {
     super.initState();
-    if (widget.useCase != null) {
-      _useCase = widget.useCase!;
-      _executeUseCase = widget.executeUseCase;
-    } else {
-      final repos = AppRepositoriesScope.of(context);
-      _useCase = FetchCollectionImportPreviewUseCase(
-        previewBuilder: BuildCollectionImportPreviewUseCase(
-          repos.collection,
-          deletionRepository: repos.pendingDeletion,
-        ),
-      );
-      _executeUseCase = ExecuteCollectionImportUseCase(
-        collectionRepository: repos.collection,
-        jobRepository: repos.importExportJob,
-        rowResultRepository: repos.importExportRowResult,
-        transactionRunner: repos.transactionRunner,
-      );
-    }
     _load();
   }
 
   Future<void> _load() async {
     setState(() => _state = const _Loading());
-    final result = await _useCase.execute();
+    final next = await widget.loadPreview();
     if (!mounted) return;
-    setState(() {
-      _state = switch (result) {
-        FetchPreviewReady(:final preview) => _Loaded(preview),
-        FetchPreviewNoToken() => const _NoToken(),
-        FetchPreviewRateLimitExhausted() => const _RateLimited(),
-        FetchPreviewNetworkError() => const _NetworkError(),
-        FetchPreviewError() => const _Error(),
-      };
-    });
+    setState(() => _state = next);
   }
 
-  Future<void> _executeImport(CollectionImportPreview preview) async {
-    final uc = _executeUseCase;
-    if (uc == null) return;
+  Future<void> _executeImport(P preview) async {
+    final import = widget.import;
+    if (import == null) return;
     setState(() => _state = const _Importing());
-    final result = await uc.execute(
-      preview,
-      onProgress: (current, total, item) {
-        if (!mounted) return;
-        setState(
-          () => _state = _Importing(
-            current: current,
-            total: total,
-            currentItem: item,
-          ),
-        );
-      },
-    );
+    final next = await import(preview, (current, total, item) {
+      if (!mounted) return;
+      setState(
+        () => _state = _Importing(
+          current: current,
+          total: total,
+          currentItem: item,
+        ),
+      );
+    });
     if (!mounted) return;
-    switch (result) {
-      case ExecuteImportCompleted():
-        collectionImportNotifier.value++;
-        setState(() => _state = _ImportDone(result));
-      case ExecuteImportFailed():
-        setState(() => _state = _Loaded(preview));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(result.safeMessage)));
+    if (next is _Failed) {
+      setState(() => _state = _Loaded(preview));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(next.safeMessage)));
+    } else {
+      setState(() => _state = next);
     }
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final copy = widget.copy;
     return Scaffold(
-      appBar: AppBar(title: const Text('Import from Discogs')),
+      appBar: AppBar(title: Text(widget.title)),
       body: switch (_state) {
-        _Loading() => const Center(child: CircularProgressIndicator()),
+        _Loading() ||
+        _Failed() => const Center(child: CircularProgressIndicator()),
         _Loaded(:final preview) => _PreviewBody(
+          copy: copy,
           preview: preview,
           onRetry: _load,
-          onConfirm: _executeUseCase != null
-              ? () => _executeImport(preview)
+          onConfirm: widget.import != null
+              ? () => _executeImport(preview as P)
               : null,
         ),
-        _NoToken() => const _NoTokenState(),
+        _NoToken() => _NoTokenState(copy: copy),
         _RateLimited() => _RetriableErrorState(
           message:
               'Discogs rate-limited requests and all retries were exhausted. '
@@ -184,11 +295,13 @@ class _CollectionImportPreviewScreenState
         ),
         _Importing(:final current, :final total, :final currentItem) =>
           _ImportingBody(
+            copy: copy,
             current: current,
             total: total,
             currentItem: currentItem,
           ),
         _ImportDone(:final result) => _ImportSummaryBody(
+          copy: copy,
           result: result,
           onDone: () => Navigator.of(context).pop(),
         ),
@@ -203,12 +316,14 @@ class _CollectionImportPreviewScreenState
 
 class _PreviewBody extends StatelessWidget {
   const _PreviewBody({
+    required this.copy,
     required this.preview,
     required this.onRetry,
     this.onConfirm,
   });
 
-  final CollectionImportPreview preview;
+  final _Copy copy;
+  final DiscogsImportPreview preview;
   final VoidCallback onRetry;
   final VoidCallback? onConfirm;
 
@@ -231,19 +346,23 @@ class _PreviewBody extends StatelessWidget {
                     ? Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: _SummaryCard(preview: preview)),
+                          Expanded(
+                            child: _SummaryCard(copy: copy, preview: preview),
+                          ),
                           if (hasWarnings) ...[
                             const SizedBox(width: 16),
-                            Expanded(child: _WarningCard(preview: preview)),
+                            Expanded(
+                              child: _WarningCard(copy: copy, preview: preview),
+                            ),
                           ],
                         ],
                       )
                     : Column(
                         children: [
-                          _SummaryCard(preview: preview),
+                          _SummaryCard(copy: copy, preview: preview),
                           if (hasWarnings) ...[
                             const SizedBox(height: 12),
-                            _WarningCard(preview: preview),
+                            _WarningCard(copy: copy, preview: preview),
                           ],
                         ],
                       ),
@@ -266,9 +385,11 @@ class _PreviewBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.preview});
+  const _SummaryCard({required this.copy, required this.preview});
 
-  final CollectionImportPreview preview;
+  final _Copy copy;
+
+  final DiscogsImportPreview preview;
 
   @override
   Widget build(BuildContext context) {
@@ -280,7 +401,7 @@ class _SummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Collection preview', style: theme.textTheme.titleMedium),
+            Text(copy.previewHeading, style: theme.textTheme.titleMedium),
             const SizedBox(height: 16),
             _CountRow(label: 'Total found', value: '${preview.totalCount}'),
             const SizedBox(height: 10),
@@ -311,7 +432,7 @@ class _SummaryCard extends StatelessWidget {
             if (preview.totalCount == 0) ...[
               const SizedBox(height: 12),
               Text(
-                'Your Discogs collection appears to be empty.',
+                'Your Discogs ${copy.discogsNoun} appears to be empty.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -355,9 +476,11 @@ class _CountRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _WarningCard extends StatelessWidget {
-  const _WarningCard({required this.preview});
+  const _WarningCard({required this.copy, required this.preview});
 
-  final CollectionImportPreview preview;
+  final _Copy copy;
+
+  final DiscogsImportPreview preview;
 
   @override
   Widget build(BuildContext context) {
@@ -366,7 +489,7 @@ class _WarningCard extends StatelessWidget {
     if (preview.duplicateCount > 0) {
       final n = preview.duplicateCount;
       messages.add(
-        '$n ${n == 1 ? 'item is' : 'items are'} already in your collection and will be linked to Discogs.',
+        '$n ${n == 1 ? 'item is' : 'items are'} already in your ${copy.noun} and will be linked to Discogs.',
       );
     }
     if (preview.invalidCount > 0) {
@@ -468,11 +591,13 @@ class _ConfirmBar extends StatelessWidget {
 
 class _ImportingBody extends StatelessWidget {
   const _ImportingBody({
+    required this.copy,
     this.current = 0,
     this.total = 0,
     this.currentItem = '',
   });
 
+  final _Copy copy;
   final int current;
   final int total;
   final String currentItem;
@@ -495,7 +620,7 @@ class _ImportingBody extends StatelessWidget {
             Text(
               hasProgress
                   ? 'Importing item $current of $total…'
-                  : 'Saving your collection…',
+                  : 'Saving your ${copy.noun}…',
               style: theme.textTheme.bodyMedium,
             ),
             if (hasProgress && currentItem.isNotEmpty) ...[
@@ -522,9 +647,15 @@ class _ImportingBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ImportSummaryBody extends StatelessWidget {
-  const _ImportSummaryBody({required this.result, required this.onDone});
+  const _ImportSummaryBody({
+    required this.copy,
+    required this.result,
+    required this.onDone,
+  });
 
-  final ExecuteImportCompleted result;
+  final _Copy copy;
+
+  final DiscogsImportDone result;
   final VoidCallback onDone;
 
   @override
@@ -559,7 +690,7 @@ class _ImportSummaryBody extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _CountRow(
-                          label: 'Added to collection',
+                          label: 'Added to ${copy.noun}',
                           value: '${result.imported}',
                           color: result.imported > 0
                               ? theme.colorScheme.primary
@@ -613,7 +744,9 @@ class _ImportSummaryBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _NoTokenState extends StatelessWidget {
-  const _NoTokenState();
+  const _NoTokenState({required this.copy});
+
+  final _Copy copy;
 
   @override
   Widget build(BuildContext context) {
@@ -639,7 +772,7 @@ class _NoTokenState extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Connect your Discogs account in Settings to import your collection.',
+                'Connect your Discogs account in Settings to import your ${copy.noun}.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

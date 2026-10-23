@@ -1,3 +1,4 @@
+import '../../domain/models/csv_export_preview.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 
@@ -13,7 +14,8 @@ sealed class ExecuteWishlistCsvExportResult {
   const ExecuteWishlistCsvExportResult();
 }
 
-class ExecuteWishlistCsvExportCompleted extends ExecuteWishlistCsvExportResult {
+class ExecuteWishlistCsvExportCompleted extends ExecuteWishlistCsvExportResult
+    implements CsvExportDone {
   const ExecuteWishlistCsvExportCompleted({
     required this.jobId,
     required this.rowCount,
@@ -22,8 +24,11 @@ class ExecuteWishlistCsvExportCompleted extends ExecuteWishlistCsvExportResult {
   });
 
   final String jobId;
+  @override
   final int rowCount;
+  @override
   final String filename;
+  @override
   final String filePath;
 }
 

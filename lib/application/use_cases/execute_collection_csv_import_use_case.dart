@@ -2,6 +2,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../domain/models/collection_item.dart';
 import '../../domain/models/csv_collection_import_preview.dart';
+import '../../domain/models/csv_import_preview.dart';
 import '../../domain/models/import_export_job.dart';
 import '../../domain/models/import_export_job_type.dart';
 import '../../domain/models/import_export_row_result.dart';
@@ -16,7 +17,8 @@ sealed class ExecuteCollectionCsvImportResult {
 }
 
 class ExecuteCollectionCsvImportCompleted
-    extends ExecuteCollectionCsvImportResult {
+    extends ExecuteCollectionCsvImportResult
+    implements CsvImportDone {
   const ExecuteCollectionCsvImportCompleted({
     required this.jobId,
     required this.imported,
@@ -25,8 +27,11 @@ class ExecuteCollectionCsvImportCompleted
   });
 
   final String jobId;
+  @override
   final int imported;
+  @override
   final int skipped;
+  @override
   final int failed;
 }
 

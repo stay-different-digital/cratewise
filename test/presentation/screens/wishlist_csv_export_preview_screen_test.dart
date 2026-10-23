@@ -10,7 +10,7 @@ import 'package:cratewise/domain/repositories/import_export_job_repository.dart'
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/infrastructure/csv/csv_file_writer.dart';
 import 'package:cratewise/infrastructure/csv/wishlist_csv_mapper.dart';
-import 'package:cratewise/presentation/screens/wishlist_csv_export_preview_screen.dart';
+import 'package:cratewise/presentation/screens/csv_export_preview_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

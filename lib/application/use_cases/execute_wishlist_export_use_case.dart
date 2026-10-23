@@ -6,6 +6,7 @@ import '../../domain/models/import_export_row_result.dart';
 import '../../domain/models/import_export_status.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_export_preview.dart';
+import '../../domain/models/discogs_export_preview.dart';
 import '../../domain/repositories/import_export_job_repository.dart';
 import '../../domain/repositories/import_export_row_result_repository.dart';
 import '../../domain/repositories/token_storage.dart';
@@ -21,7 +22,8 @@ sealed class ExecuteWishlistExportResult {
   const ExecuteWishlistExportResult();
 }
 
-class ExecuteWishlistExportCompleted extends ExecuteWishlistExportResult {
+class ExecuteWishlistExportCompleted extends ExecuteWishlistExportResult
+    implements DiscogsExportDone {
   const ExecuteWishlistExportCompleted({
     required this.jobId,
     required this.exported,
@@ -30,8 +32,11 @@ class ExecuteWishlistExportCompleted extends ExecuteWishlistExportResult {
   });
 
   final String jobId;
+  @override
   final int exported;
+  @override
   final int skipped;
+  @override
   final int failed;
 }
 

@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 
 import '../../domain/models/csv_wishlist_import_preview.dart';
+import '../../domain/models/csv_import_preview.dart';
 import '../../domain/models/import_export_job.dart';
 import '../../domain/models/import_export_job_type.dart';
 import '../../domain/models/import_export_row_result.dart';
@@ -15,7 +16,8 @@ sealed class ExecuteWishlistCsvImportResult {
   const ExecuteWishlistCsvImportResult();
 }
 
-class ExecuteWishlistCsvImportCompleted extends ExecuteWishlistCsvImportResult {
+class ExecuteWishlistCsvImportCompleted extends ExecuteWishlistCsvImportResult
+    implements CsvImportDone {
   const ExecuteWishlistCsvImportCompleted({
     required this.jobId,
     required this.imported,
@@ -24,8 +26,11 @@ class ExecuteWishlistCsvImportCompleted extends ExecuteWishlistCsvImportResult {
   });
 
   final String jobId;
+  @override
   final int imported;
+  @override
   final int skipped;
+  @override
   final int failed;
 }
 

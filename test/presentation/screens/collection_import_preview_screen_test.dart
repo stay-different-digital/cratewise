@@ -8,7 +8,7 @@ import 'package:cratewise/domain/models/import_export_row_result.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/domain/repositories/import_export_job_repository.dart';
 import 'package:cratewise/domain/repositories/import_export_row_result_repository.dart';
-import 'package:cratewise/presentation/screens/collection_import_preview_screen.dart';
+import 'package:cratewise/presentation/screens/import_preview_screen.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

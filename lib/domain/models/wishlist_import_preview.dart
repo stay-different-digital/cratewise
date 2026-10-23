@@ -1,3 +1,5 @@
+import 'discogs_import_preview.dart';
+
 sealed class WishlistImportRow {
   const WishlistImportRow({
     required this.releaseId,
@@ -65,14 +67,19 @@ class ConflictWishlistRow extends WishlistImportRow {
   });
 }
 
-class WishlistImportPreview {
+class WishlistImportPreview implements DiscogsImportPreview {
   const WishlistImportPreview({required this.rows});
 
   final List<WishlistImportRow> rows;
 
+  @override
   int get totalCount => rows.length;
+  @override
   int get newCount => rows.whereType<NewWishlistRow>().length;
+  @override
   int get duplicateCount => rows.whereType<DuplicateWishlistRow>().length;
+  @override
   int get invalidCount => rows.whereType<InvalidWishlistRow>().length;
+  @override
   int get conflictCount => rows.whereType<ConflictWishlistRow>().length;
 }

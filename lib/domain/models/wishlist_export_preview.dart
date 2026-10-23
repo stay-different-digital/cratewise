@@ -1,3 +1,4 @@
+import 'discogs_export_preview.dart';
 import 'sync_status.dart';
 import 'wishlist_item.dart';
 
@@ -93,14 +94,18 @@ WishlistExportRow classifyWishlistItemForExport(WishlistItem item) {
   );
 }
 
-class WishlistExportPreview {
+class WishlistExportPreview implements DiscogsExportPreview {
   const WishlistExportPreview({required this.rows});
 
   final List<WishlistExportRow> rows;
 
+  @override
   int get totalCount => rows.length;
+  @override
   int get eligibleCount => rows.whereType<EligibleWishlistExportRow>().length;
+  @override
   int get alreadySyncedCount =>
       rows.whereType<AlreadySyncedWishlistExportRow>().length;
+  @override
   int get invalidCount => rows.whereType<InvalidWishlistExportRow>().length;
 }

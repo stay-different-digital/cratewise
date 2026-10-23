@@ -1,3 +1,5 @@
+import 'discogs_import_preview.dart';
+
 sealed class CollectionImportRow {
   const CollectionImportRow({
     required this.releaseId,
@@ -78,14 +80,19 @@ class ConflictCollectionRow extends CollectionImportRow {
   });
 }
 
-class CollectionImportPreview {
+class CollectionImportPreview implements DiscogsImportPreview {
   const CollectionImportPreview({required this.rows});
 
   final List<CollectionImportRow> rows;
 
+  @override
   int get totalCount => rows.length;
+  @override
   int get newCount => rows.whereType<NewCollectionRow>().length;
+  @override
   int get duplicateCount => rows.whereType<DuplicateCollectionRow>().length;
+  @override
   int get invalidCount => rows.whereType<InvalidCollectionRow>().length;
+  @override
   int get conflictCount => rows.whereType<ConflictCollectionRow>().length;
 }

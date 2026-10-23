@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 
 import '../../domain/models/collection_export_preview.dart';
+import '../../domain/models/discogs_export_preview.dart';
 import '../../domain/models/import_export_job.dart';
 import '../../domain/models/import_export_job_type.dart';
 import '../../domain/models/import_export_row_result.dart';
@@ -21,7 +22,8 @@ sealed class ExecuteCollectionExportResult {
   const ExecuteCollectionExportResult();
 }
 
-class ExecuteExportCompleted extends ExecuteCollectionExportResult {
+class ExecuteExportCompleted extends ExecuteCollectionExportResult
+    implements DiscogsExportDone {
   const ExecuteExportCompleted({
     required this.jobId,
     required this.exported,
@@ -30,8 +32,11 @@ class ExecuteExportCompleted extends ExecuteCollectionExportResult {
   });
 
   final String jobId;
+  @override
   final int exported;
+  @override
   final int skipped;
+  @override
   final int failed;
 }
 

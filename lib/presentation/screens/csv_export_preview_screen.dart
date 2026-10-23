@@ -3,50 +3,76 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../application/use_cases/build_wishlist_csv_export_preview_use_case.dart';
-import '../../application/use_cases/execute_wishlist_csv_export_use_case.dart';
-import '../../domain/models/csv_wishlist_export_preview.dart';
 import '../../app/app_repositories.dart';
+import '../../application/use_cases/build_collection_csv_export_preview_use_case.dart';
+import '../../application/use_cases/build_wishlist_csv_export_preview_use_case.dart';
+import '../../application/use_cases/execute_collection_csv_export_use_case.dart';
+import '../../application/use_cases/execute_wishlist_csv_export_use_case.dart';
+import '../../domain/models/csv_collection_export_preview.dart';
+import '../../domain/models/csv_export_preview.dart';
+import '../../domain/models/csv_wishlist_export_preview.dart';
 import '../../infrastructure/csv/csv_file_writer.dart';
 
 const _kWideBreakpoint = 700.0;
 const _kMaxSampleRows = 3;
 
 // ---------------------------------------------------------------------------
-// State machine
+// Entry points: collection and wishlist share one screen (US-130)
 // ---------------------------------------------------------------------------
 
-sealed class _State {
-  const _State();
+class CollectionCsvExportPreviewScreen extends StatelessWidget {
+  const CollectionCsvExportPreviewScreen({
+    super.key,
+    this.previewUseCase,
+    this.executeUseCase,
+    this.onShareFile,
+  });
+
+  /// Injected only for testing. Production code passes null.
+  final BuildCollectionCsvExportPreviewUseCase? previewUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final ExecuteCollectionCsvExportUseCase? executeUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final Future<void> Function(String filePath)? onShareFile;
+
+  @override
+  Widget build(BuildContext context) {
+    var preview = previewUseCase;
+    var execute = executeUseCase;
+    if (preview == null) {
+      final repos = AppRepositoriesScope.of(context);
+      preview = BuildCollectionCsvExportPreviewUseCase(
+        repository: repos.collection,
+      );
+      execute = ExecuteCollectionCsvExportUseCase(
+        jobRepository: repos.importExportJob,
+        fileWriter: const TempCsvFileWriter(),
+      );
+    }
+    return CsvExportPreviewScreen<CsvCollectionExportPreview>(
+      title: 'Export Collection to CSV',
+      emptyMessage: 'Your collection is empty. Add items before exporting.',
+      onShareFile: onShareFile,
+      loadPreview: () async => switch (await preview!.execute()) {
+        CollectionCsvExportPreviewReady(:final preview) => preview,
+        CollectionCsvExportPreviewError() => null,
+      },
+      export: execute == null
+          ? null
+          : (p) async => switch (await execute!.execute(p)) {
+              final ExecuteCollectionCsvExportCompleted done => (done, null),
+              ExecuteCollectionCsvExportFailed(:final safeMessage) => (
+                null,
+                safeMessage,
+              ),
+            },
+    );
+  }
 }
 
-class _Loading extends _State {
-  const _Loading();
-}
-
-class _Ready extends _State {
-  const _Ready(this.preview);
-  final CsvWishlistExportPreview preview;
-}
-
-class _Exporting extends _State {
-  const _Exporting();
-}
-
-class _Done extends _State {
-  const _Done(this.result);
-  final ExecuteWishlistCsvExportCompleted result;
-}
-
-class _Error extends _State {
-  const _Error();
-}
-
-// ---------------------------------------------------------------------------
-// Screen
-// ---------------------------------------------------------------------------
-
-class WishlistCsvExportPreviewScreen extends StatefulWidget {
+class WishlistCsvExportPreviewScreen extends StatelessWidget {
   const WishlistCsvExportPreviewScreen({
     super.key,
     this.previewUseCase,
@@ -64,61 +90,134 @@ class WishlistCsvExportPreviewScreen extends StatefulWidget {
   final Future<void> Function(String filePath)? onShareFile;
 
   @override
-  State<WishlistCsvExportPreviewScreen> createState() =>
-      _WishlistCsvExportPreviewScreenState();
+  Widget build(BuildContext context) {
+    var preview = previewUseCase;
+    var execute = executeUseCase;
+    if (preview == null) {
+      final repos = AppRepositoriesScope.of(context);
+      preview = BuildWishlistCsvExportPreviewUseCase(
+        repository: repos.wishlist,
+      );
+      execute = ExecuteWishlistCsvExportUseCase(
+        jobRepository: repos.importExportJob,
+        fileWriter: const TempCsvFileWriter(),
+      );
+    }
+    return CsvExportPreviewScreen<CsvWishlistExportPreview>(
+      title: 'Export Wishlist to CSV',
+      emptyMessage: 'Your wishlist is empty. Add items before exporting.',
+      onShareFile: onShareFile,
+      loadPreview: () async => switch (await preview!.execute()) {
+        WishlistCsvExportPreviewReady(:final preview) => preview,
+        WishlistCsvExportPreviewError() => null,
+      },
+      export: execute == null
+          ? null
+          : (p) async => switch (await execute!.execute(p)) {
+              final ExecuteWishlistCsvExportCompleted done => (done, null),
+              ExecuteWishlistCsvExportFailed(:final safeMessage) => (
+                null,
+                safeMessage,
+              ),
+            },
+    );
+  }
 }
 
-class _WishlistCsvExportPreviewScreenState
-    extends State<WishlistCsvExportPreviewScreen> {
-  late final BuildWishlistCsvExportPreviewUseCase _previewUseCase;
-  ExecuteWishlistCsvExportUseCase? _executeUseCase;
+// ---------------------------------------------------------------------------
+// State machine
+// ---------------------------------------------------------------------------
+
+sealed class _State {
+  const _State();
+}
+
+class _Loading extends _State {
+  const _Loading();
+}
+
+class _Ready extends _State {
+  const _Ready(this.preview);
+  final CsvExportPreview preview;
+}
+
+class _Exporting extends _State {
+  const _Exporting();
+}
+
+class _Done extends _State {
+  const _Done(this.result);
+  final CsvExportDone result;
+}
+
+class _Error extends _State {
+  const _Error();
+}
+
+// ---------------------------------------------------------------------------
+// Shared screen
+// ---------------------------------------------------------------------------
+
+/// Export outcome: the finished export, or a safe user-facing error message.
+typedef CsvExportOutcome = (CsvExportDone?, String?);
+
+class CsvExportPreviewScreen<P extends CsvExportPreview>
+    extends StatefulWidget {
+  const CsvExportPreviewScreen({
+    super.key,
+    required this.title,
+    required this.emptyMessage,
+    required this.loadPreview,
+    this.export,
+    this.onShareFile,
+  });
+
+  final String title;
+  final String emptyMessage;
+
+  /// Returns null when the preview could not be built.
+  final Future<P?> Function() loadPreview;
+
+  /// Null hides the export action.
+  final Future<CsvExportOutcome> Function(P preview)? export;
+
+  final Future<void> Function(String filePath)? onShareFile;
+
+  @override
+  State<CsvExportPreviewScreen<P>> createState() =>
+      _CsvExportPreviewScreenState<P>();
+}
+
+class _CsvExportPreviewScreenState<P extends CsvExportPreview>
+    extends State<CsvExportPreviewScreen<P>> {
   _State _state = const _Loading();
 
   @override
   void initState() {
     super.initState();
-    if (widget.previewUseCase != null) {
-      _previewUseCase = widget.previewUseCase!;
-      _executeUseCase = widget.executeUseCase;
-    } else {
-      final repos = AppRepositoriesScope.of(context);
-      _previewUseCase = BuildWishlistCsvExportPreviewUseCase(
-        repository: repos.wishlist,
-      );
-      _executeUseCase = ExecuteWishlistCsvExportUseCase(
-        jobRepository: repos.importExportJob,
-        fileWriter: const TempCsvFileWriter(),
-      );
-    }
     _load();
   }
 
   Future<void> _load() async {
     setState(() => _state = const _Loading());
-    final result = await _previewUseCase.execute();
+    final preview = await widget.loadPreview();
     if (!mounted) return;
-    setState(() {
-      _state = switch (result) {
-        WishlistCsvExportPreviewReady(:final preview) => _Ready(preview),
-        WishlistCsvExportPreviewError() => const _Error(),
-      };
-    });
+    setState(() => _state = preview != null ? _Ready(preview) : const _Error());
   }
 
-  Future<void> _executeExport(CsvWishlistExportPreview preview) async {
-    final uc = _executeUseCase;
-    if (uc == null) return;
+  Future<void> _executeExport(P preview) async {
+    final export = widget.export;
+    if (export == null) return;
     setState(() => _state = const _Exporting());
-    final result = await uc.execute(preview);
+    final (done, error) = await export(preview);
     if (!mounted) return;
-    switch (result) {
-      case ExecuteWishlistCsvExportCompleted():
-        setState(() => _state = _Done(result));
-      case ExecuteWishlistCsvExportFailed(:final safeMessage):
-        setState(() => _state = _Ready(preview));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(safeMessage)));
+    if (done != null) {
+      setState(() => _state = _Done(done));
+    } else {
+      setState(() => _state = _Ready(preview));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error ?? 'Export failed')));
     }
   }
 
@@ -141,20 +240,16 @@ class _WishlistCsvExportPreviewScreenState
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Export Wishlist to CSV')),
+      appBar: AppBar(title: Text(widget.title)),
       body: switch (_state) {
         _Loading() => const Center(child: CircularProgressIndicator()),
         _Ready(:final preview) => _PreviewBody(
           preview: preview,
-          onConfirm: _executeUseCase != null
-              ? () => _executeExport(preview)
+          emptyMessage: widget.emptyMessage,
+          onConfirm: widget.export != null
+              ? () => _executeExport(preview as P)
               : null,
         ),
         _Exporting() => const _ExportingBody(),
@@ -174,9 +269,14 @@ class _WishlistCsvExportPreviewScreenState
 // ---------------------------------------------------------------------------
 
 class _PreviewBody extends StatelessWidget {
-  const _PreviewBody({required this.preview, this.onConfirm});
+  const _PreviewBody({
+    required this.preview,
+    required this.emptyMessage,
+    this.onConfirm,
+  });
 
-  final CsvWishlistExportPreview preview;
+  final CsvExportPreview preview;
+  final String emptyMessage;
   final VoidCallback? onConfirm;
 
   @override
@@ -194,14 +294,22 @@ class _PreviewBody extends StatelessWidget {
                     ? Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(child: _SummaryCard(preview: preview)),
+                          Expanded(
+                            child: _SummaryCard(
+                              preview: preview,
+                              emptyMessage: emptyMessage,
+                            ),
+                          ),
                           const SizedBox(width: 16),
                           Expanded(child: _SampleCard(preview: preview)),
                         ],
                       )
                     : Column(
                         children: [
-                          _SummaryCard(preview: preview),
+                          _SummaryCard(
+                            preview: preview,
+                            emptyMessage: emptyMessage,
+                          ),
                           const SizedBox(height: 12),
                           _SampleCard(preview: preview),
                         ],
@@ -221,9 +329,10 @@ class _PreviewBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({required this.preview});
+  const _SummaryCard({required this.preview, required this.emptyMessage});
 
-  final CsvWishlistExportPreview preview;
+  final CsvExportPreview preview;
+  final String emptyMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -247,7 +356,7 @@ class _SummaryCard extends StatelessWidget {
             if (preview.rowCount == 0) ...[
               const SizedBox(height: 8),
               Text(
-                'Your wishlist is empty. Add items before exporting.',
+                emptyMessage,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -329,7 +438,7 @@ class _ColumnChip extends StatelessWidget {
 class _SampleCard extends StatelessWidget {
   const _SampleCard({required this.preview});
 
-  final CsvWishlistExportPreview preview;
+  final CsvExportPreview preview;
 
   @override
   Widget build(BuildContext context) {
@@ -462,7 +571,7 @@ class _DoneBody extends StatelessWidget {
     required this.onShareAgain,
   });
 
-  final ExecuteWishlistCsvExportCompleted result;
+  final CsvExportDone result;
   final VoidCallback onDone;
   final VoidCallback onShareAgain;
 

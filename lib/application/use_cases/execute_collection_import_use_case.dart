@@ -1,6 +1,7 @@
 import 'package:uuid/uuid.dart';
 
 import '../../domain/models/collection_import_preview.dart';
+import '../../domain/models/discogs_import_preview.dart';
 import '../../domain/models/collection_item.dart';
 import '../../domain/models/import_export_job.dart';
 import '../../domain/models/import_export_job_type.dart';
@@ -16,7 +17,8 @@ sealed class ExecuteCollectionImportResult {
   const ExecuteCollectionImportResult();
 }
 
-class ExecuteImportCompleted extends ExecuteCollectionImportResult {
+class ExecuteImportCompleted extends ExecuteCollectionImportResult
+    implements DiscogsImportDone {
   const ExecuteImportCompleted({
     required this.jobId,
     required this.imported,
@@ -26,9 +28,13 @@ class ExecuteImportCompleted extends ExecuteCollectionImportResult {
   });
 
   final String jobId;
+  @override
   final int imported;
+  @override
   final int skipped;
+  @override
   final int failed;
+  @override
   final int linked;
 }
 

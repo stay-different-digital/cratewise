@@ -184,6 +184,7 @@ Gebruik geen nieuwe abstractielaag per entiteit. Maak per paar één generiek sc
 - Per paar staat er nog maar één schermbestand in `lib/presentation/screens/`. Het totaal aantal regels van de acht schermen daalt met minimaal 40%.
 - Gedrag en UI blijven per variant hetzelfde. Alle bestaande widget-tests voor beide varianten blijven groen zonder inhoudelijke aanpassing van de asserts.
 - Routes en deep links veranderen niet.
+- *Uitvoering:* 5.348 → 3.178 regels (−40,6%). Per paar heeft het domein een klein interface (`CsvExportPreview`, `CsvImportPreview`, `DiscogsExportPreview`, `DiscogsImportPreview` + bijbehorende `…Done`), daarnaast één generiek scherm en twee dunne publieke wrappers met de oude klassenamen en constructors. Router en tests gebruiken dezelfde klassen; in de tests zijn alleen imports aangepast.
 - Niet in scope: de detailschermen (`collection_detail_screen.dart` 1.735 r., `wishlist_detail_screen.dart` 1.268 r.). Doe die in een aparte story als deze aanpak bevalt.
 
 ---

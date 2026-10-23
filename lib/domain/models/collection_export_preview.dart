@@ -1,3 +1,4 @@
+import 'discogs_export_preview.dart';
 import 'collection_item.dart';
 import 'sync_status.dart';
 
@@ -93,13 +94,17 @@ CollectionExportRow classifyForExport(CollectionItem item) {
   );
 }
 
-class CollectionExportPreview {
+class CollectionExportPreview implements DiscogsExportPreview {
   const CollectionExportPreview({required this.rows});
 
   final List<CollectionExportRow> rows;
 
+  @override
   int get totalCount => rows.length;
+  @override
   int get eligibleCount => rows.whereType<EligibleExportRow>().length;
+  @override
   int get alreadySyncedCount => rows.whereType<AlreadySyncedExportRow>().length;
+  @override
   int get invalidCount => rows.whereType<InvalidExportRow>().length;
 }

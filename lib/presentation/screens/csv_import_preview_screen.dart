@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../app/app_repositories.dart';
+import '../../application/use_cases/build_collection_csv_import_preview_use_case.dart';
 import '../../application/use_cases/build_wishlist_csv_import_preview_use_case.dart';
+import '../../application/use_cases/execute_collection_csv_import_use_case.dart';
 import '../../application/use_cases/execute_wishlist_csv_import_use_case.dart';
+import '../../domain/models/csv_collection_import_preview.dart';
+import '../../domain/models/csv_import_preview.dart';
 import '../../domain/models/csv_wishlist_import_preview.dart';
 import '../../domain/models/import_export_row_result.dart';
-import '../../app/app_repositories.dart';
 import '../../infrastructure/csv/csv_file_picker_service.dart';
 import '../../shared/import_notifier.dart';
 
@@ -12,46 +16,76 @@ const _kWideBreakpoint = 700.0;
 const _kMaxVisibleErrors = 5;
 
 // ---------------------------------------------------------------------------
-// State machine
+// Entry points: collection and wishlist share one screen (US-130)
 // ---------------------------------------------------------------------------
 
-sealed class _State {
-  const _State();
+class CollectionCsvImportPreviewScreen extends StatelessWidget {
+  const CollectionCsvImportPreviewScreen({
+    super.key,
+    this.previewUseCase,
+    this.executeUseCase,
+    this.onPickFile,
+  });
+
+  /// Injected only for testing. Production code passes null.
+  final BuildCollectionCsvImportPreviewUseCase? previewUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final ExecuteCollectionCsvImportUseCase? executeUseCase;
+
+  /// Injected only for testing. Production code passes null.
+  final Future<CsvPickedFile?> Function()? onPickFile;
+
+  @override
+  Widget build(BuildContext context) {
+    final preview =
+        previewUseCase ?? const BuildCollectionCsvImportPreviewUseCase();
+    var execute = executeUseCase;
+    if (onPickFile == null && previewUseCase == null) {
+      final repos = AppRepositoriesScope.maybeOf(context);
+      if (repos != null) {
+        execute = ExecuteCollectionCsvImportUseCase(
+          collectionRepository: repos.collection,
+          jobRepository: repos.importExportJob,
+          rowResultRepository: repos.importExportRowResult,
+        );
+      }
+    }
+    return CsvImportPreviewScreen<CsvCollectionImportPreview>(
+      title: 'Import Collection from CSV',
+      noun: 'collection',
+      onPickFile: onPickFile,
+      buildPreview: (filename, content) =>
+          switch (preview.execute(filename: filename, content: content)) {
+            CollectionCsvImportPreviewReady(:final filename, :final preview) =>
+              (filename: filename, preview: preview, parseFailure: null),
+            CollectionCsvImportPreviewParseFailed(:final reason) => (
+              filename: filename,
+              preview: null,
+              parseFailure: reason,
+            ),
+            CollectionCsvImportPreviewError() => (
+              filename: filename,
+              preview: null,
+              parseFailure: null,
+            ),
+          },
+      import: execute == null
+          ? null
+          : (p) async {
+              switch (await execute!.execute(p)) {
+                case final ExecuteCollectionCsvImportCompleted done:
+                  collectionImportNotifier.value++;
+                  return (done, null);
+                case ExecuteCollectionCsvImportFailed(:final safeMessage):
+                  return (null, safeMessage);
+              }
+            },
+    );
+  }
 }
 
-class _Idle extends _State {
-  const _Idle();
-}
-
-class _Preview extends _State {
-  const _Preview({required this.filename, required this.preview});
-  final String filename;
-  final CsvWishlistImportPreview preview;
-}
-
-class _ParseFailed extends _State {
-  const _ParseFailed(this.reason);
-  final String reason;
-}
-
-class _Error extends _State {
-  const _Error();
-}
-
-class _Importing extends _State {
-  const _Importing();
-}
-
-class _Done extends _State {
-  const _Done(this.result);
-  final ExecuteWishlistCsvImportCompleted result;
-}
-
-// ---------------------------------------------------------------------------
-// Screen
-// ---------------------------------------------------------------------------
-
-class WishlistCsvImportPreviewScreen extends StatefulWidget {
+class WishlistCsvImportPreviewScreen extends StatelessWidget {
   const WishlistCsvImportPreviewScreen({
     super.key,
     this.previewUseCase,
@@ -69,80 +103,172 @@ class WishlistCsvImportPreviewScreen extends StatefulWidget {
   final Future<CsvPickedFile?> Function()? onPickFile;
 
   @override
-  State<WishlistCsvImportPreviewScreen> createState() =>
-      _WishlistCsvImportPreviewScreenState();
-}
-
-class _WishlistCsvImportPreviewScreenState
-    extends State<WishlistCsvImportPreviewScreen> {
-  late final BuildWishlistCsvImportPreviewUseCase _previewUseCase;
-  late final Future<CsvPickedFile?> Function() _picker;
-  ExecuteWishlistCsvImportUseCase? _executeUseCase;
-  _State _state = const _Idle();
-
-  @override
-  void initState() {
-    super.initState();
-    _previewUseCase =
-        widget.previewUseCase ?? const BuildWishlistCsvImportPreviewUseCase();
-    _picker = widget.onPickFile ?? const CsvFilePickerService().pick;
-
-    if (widget.onPickFile != null || widget.previewUseCase != null) {
-      // Test mode — use injected execute use case (may be null = confirm disabled)
-      _executeUseCase = widget.executeUseCase;
-    } else {
+  Widget build(BuildContext context) {
+    final preview =
+        previewUseCase ?? const BuildWishlistCsvImportPreviewUseCase();
+    var execute = executeUseCase;
+    if (onPickFile == null && previewUseCase == null) {
       final repos = AppRepositoriesScope.maybeOf(context);
       if (repos != null) {
-        _executeUseCase = ExecuteWishlistCsvImportUseCase(
+        execute = ExecuteWishlistCsvImportUseCase(
           wishlistRepository: repos.wishlist,
           jobRepository: repos.importExportJob,
           rowResultRepository: repos.importExportRowResult,
         );
       }
     }
+    return CsvImportPreviewScreen<CsvWishlistImportPreview>(
+      title: 'Import Wishlist from CSV',
+      noun: 'wishlist',
+      onPickFile: onPickFile,
+      buildPreview: (filename, content) =>
+          switch (preview.execute(filename: filename, content: content)) {
+            WishlistCsvImportPreviewReady(:final filename, :final preview) => (
+              filename: filename,
+              preview: preview,
+              parseFailure: null,
+            ),
+            WishlistCsvImportPreviewParseFailed(:final reason) => (
+              filename: filename,
+              preview: null,
+              parseFailure: reason,
+            ),
+            WishlistCsvImportPreviewError() => (
+              filename: filename,
+              preview: null,
+              parseFailure: null,
+            ),
+          },
+      import: execute == null
+          ? null
+          : (p) async {
+              switch (await execute!.execute(p)) {
+                case final ExecuteWishlistCsvImportCompleted done:
+                  wishlistImportNotifier.value++;
+                  return (done, null);
+                case ExecuteWishlistCsvImportFailed(:final safeMessage):
+                  return (null, safeMessage);
+              }
+            },
+    );
   }
+}
+
+// ---------------------------------------------------------------------------
+// State machine
+// ---------------------------------------------------------------------------
+
+sealed class _State {
+  const _State();
+}
+
+class _Idle extends _State {
+  const _Idle();
+}
+
+class _Preview extends _State {
+  const _Preview({required this.filename, required this.preview});
+  final String filename;
+  final CsvImportPreview preview;
+}
+
+class _ParseFailed extends _State {
+  const _ParseFailed(this.reason);
+  final String reason;
+}
+
+class _Error extends _State {
+  const _Error();
+}
+
+class _Importing extends _State {
+  const _Importing();
+}
+
+class _Done extends _State {
+  const _Done(this.result);
+  final CsvImportDone result;
+}
+
+// ---------------------------------------------------------------------------
+// Shared screen
+// ---------------------------------------------------------------------------
+
+/// Preview build outcome: a preview, a parse-failure reason, or neither
+/// (unexpected error).
+typedef CsvImportBuild<P> = ({
+  String filename,
+  P? preview,
+  String? parseFailure,
+});
+
+/// Import outcome: the finished import, or a safe user-facing error message.
+typedef CsvImportOutcome = (CsvImportDone?, String?);
+
+class CsvImportPreviewScreen<P extends CsvImportPreview>
+    extends StatefulWidget {
+  const CsvImportPreviewScreen({
+    super.key,
+    required this.title,
+    required this.noun,
+    required this.buildPreview,
+    this.import,
+    this.onPickFile,
+  });
+
+  final String title;
+
+  /// "collection" or "wishlist", used in body copy.
+  final String noun;
+
+  final CsvImportBuild<P> Function(String filename, String content)
+  buildPreview;
+
+  /// Null disables the confirm action.
+  final Future<CsvImportOutcome> Function(P preview)? import;
+
+  final Future<CsvPickedFile?> Function()? onPickFile;
 
   @override
-  void dispose() {
-    super.dispose();
-  }
+  State<CsvImportPreviewScreen<P>> createState() =>
+      _CsvImportPreviewScreenState<P>();
+}
+
+class _CsvImportPreviewScreenState<P extends CsvImportPreview>
+    extends State<CsvImportPreviewScreen<P>> {
+  _State _state = const _Idle();
 
   Future<void> _pickAndPreview() async {
-    final file = await _picker();
+    final pick = widget.onPickFile ?? const CsvFilePickerService().pick;
+    final file = await pick();
     if (!mounted) return;
     if (file == null) return;
 
-    final result = _previewUseCase.execute(
-      filename: file.filename,
-      content: file.content,
-    );
+    final built = widget.buildPreview(file.filename, file.content);
     setState(() {
-      _state = switch (result) {
-        WishlistCsvImportPreviewReady(:final filename, :final preview) =>
+      _state = switch (built) {
+        (:final filename, preview: final P preview, parseFailure: _) =>
           _Preview(filename: filename, preview: preview),
-        WishlistCsvImportPreviewParseFailed(:final reason) => _ParseFailed(
-          reason,
-        ),
-        WishlistCsvImportPreviewError() => const _Error(),
+        (filename: _, preview: null, :final String parseFailure) =>
+          _ParseFailed(parseFailure),
+        _ => const _Error(),
       };
     });
   }
 
-  Future<void> _executeImport(CsvWishlistImportPreview preview) async {
-    final uc = _executeUseCase;
-    if (uc == null) return;
+  Future<void> _executeImport(P preview) async {
+    final import = widget.import;
+    if (import == null) return;
     setState(() => _state = const _Importing());
-    final result = await uc.execute(preview);
+    final (done, error) = await import(preview);
     if (!mounted) return;
-    switch (result) {
-      case ExecuteWishlistCsvImportCompleted():
-        wishlistImportNotifier.value++;
-        setState(() => _state = _Done(result));
-      case ExecuteWishlistCsvImportFailed():
-        setState(() => _state = _Preview(filename: '', preview: preview));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(result.safeMessage)));
+    if (done != null) {
+      setState(() => _state = _Done(done));
+    } else {
+      setState(() => _state = _Preview(filename: '', preview: preview));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error ?? 'Import failed')));
     }
   }
 
@@ -151,15 +277,15 @@ class _WishlistCsvImportPreviewScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Import Wishlist from CSV')),
+      appBar: AppBar(title: Text(widget.title)),
       body: switch (_state) {
-        _Idle() => _IdleBody(onPickFile: _pickAndPreview),
+        _Idle() => _IdleBody(noun: widget.noun, onPickFile: _pickAndPreview),
         _Preview(:final filename, :final preview) => _PreviewBody(
           filename: filename,
           preview: preview,
           onPickDifferentFile: _reset,
-          onConfirm: _executeUseCase != null && preview.validCount > 0
-              ? () => _executeImport(preview)
+          onConfirm: widget.import != null && preview.validCount > 0
+              ? () => _executeImport(preview as P)
               : null,
         ),
         _ParseFailed(:final reason) => _ParseFailedBody(
@@ -167,8 +293,9 @@ class _WishlistCsvImportPreviewScreenState
           onTryAgain: _reset,
         ),
         _Error() => _ErrorBody(onTryAgain: _reset),
-        _Importing() => const _ImportingBody(),
+        _Importing() => _ImportingBody(noun: widget.noun),
         _Done(:final result) => _DoneBody(
+          noun: widget.noun,
           result: result,
           onDone: () => Navigator.of(context).pop(),
         ),
@@ -182,8 +309,9 @@ class _WishlistCsvImportPreviewScreenState
 // ---------------------------------------------------------------------------
 
 class _IdleBody extends StatelessWidget {
-  const _IdleBody({required this.onPickFile});
+  const _IdleBody({required this.noun, required this.onPickFile});
 
+  final String noun;
   final VoidCallback onPickFile;
 
   @override
@@ -210,7 +338,7 @@ class _IdleBody extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Choose a CSV file exported from Cratewise or Discogs to preview your wishlist import.',
+                'Choose a CSV file exported from Cratewise or Discogs to preview your $noun import.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -243,7 +371,7 @@ class _PreviewBody extends StatelessWidget {
   });
 
   final String filename;
-  final CsvWishlistImportPreview preview;
+  final CsvImportPreview preview;
   final VoidCallback onPickDifferentFile;
   final VoidCallback? onConfirm;
 
@@ -311,7 +439,7 @@ class _SummaryCard extends StatelessWidget {
   const _SummaryCard({required this.filename, required this.preview});
 
   final String filename;
-  final CsvWishlistImportPreview preview;
+  final CsvImportPreview preview;
 
   @override
   Widget build(BuildContext context) {
@@ -508,7 +636,9 @@ class _ConfirmBar extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _ImportingBody extends StatelessWidget {
-  const _ImportingBody();
+  const _ImportingBody({required this.noun});
+
+  final String noun;
 
   @override
   Widget build(BuildContext context) {
@@ -519,7 +649,7 @@ class _ImportingBody extends StatelessWidget {
           const CircularProgressIndicator(),
           const SizedBox(height: 16),
           Text(
-            'Saving your wishlist…',
+            'Saving your $noun…',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
         ],
@@ -533,9 +663,15 @@ class _ImportingBody extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _DoneBody extends StatelessWidget {
-  const _DoneBody({required this.result, required this.onDone});
+  const _DoneBody({
+    required this.noun,
+    required this.result,
+    required this.onDone,
+  });
 
-  final ExecuteWishlistCsvImportCompleted result;
+  final String noun;
+
+  final CsvImportDone result;
   final VoidCallback onDone;
 
   @override
@@ -570,7 +706,7 @@ class _DoneBody extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _CountRow(
-                          label: 'Added to wishlist',
+                          label: 'Added to $noun',
                           value: '${result.imported}',
                           color: result.imported > 0
                               ? theme.colorScheme.primary

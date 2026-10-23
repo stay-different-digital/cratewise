@@ -1,14 +1,143 @@
 import 'package:flutter/material.dart';
 
-import '../../application/use_cases/build_collection_export_preview_use_case.dart';
-import '../../application/use_cases/check_collection_export_capability_use_case.dart';
-import '../../application/use_cases/execute_collection_export_use_case.dart';
-import '../../domain/models/collection_export_preview.dart';
 import '../../app/app_repositories.dart';
+import '../../application/use_cases/build_collection_export_preview_use_case.dart';
+import '../../application/use_cases/build_wishlist_export_preview_use_case.dart';
+import '../../application/use_cases/check_collection_export_capability_use_case.dart';
+import '../../application/use_cases/check_wishlist_export_capability_use_case.dart';
+import '../../application/use_cases/execute_collection_export_use_case.dart';
+import '../../application/use_cases/execute_wishlist_export_use_case.dart';
+import '../../domain/models/collection_export_preview.dart';
+import '../../domain/models/discogs_export_preview.dart';
+import '../../domain/models/wishlist_export_preview.dart';
 import '../../infrastructure/discogs/discogs_api_client.dart';
 import '../../infrastructure/secure_storage/discogs_token_storage.dart';
 
 const _kWideBreakpoint = 700.0;
+
+// ---------------------------------------------------------------------------
+// Entry points: collection and wishlist share one screen (US-130)
+// ---------------------------------------------------------------------------
+
+class CollectionExportPreviewScreen extends StatelessWidget {
+  const CollectionExportPreviewScreen({
+    super.key,
+    this.useCase,
+    this.executeUseCase,
+  });
+
+  /// Injected only for testing. Production code passes null.
+  final BuildCollectionExportPreviewUseCase? useCase;
+
+  /// Injected only for testing. Production code passes null.
+  final ExecuteCollectionExportUseCase? executeUseCase;
+
+  @override
+  Widget build(BuildContext context) {
+    var preview = useCase;
+    var execute = executeUseCase;
+    if (preview == null) {
+      final repos = AppRepositoriesScope.of(context);
+      preview = BuildCollectionExportPreviewUseCase(
+        repository: repos.collection,
+        capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
+      );
+      execute = ExecuteCollectionExportUseCase(
+        capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
+        tokenStorage: DiscogsTokenStorage(),
+        apiClient: DiscogsApiClient.shared,
+        collectionRepository: repos.collection,
+        jobRepository: repos.importExportJob,
+        rowResultRepository: repos.importExportRowResult,
+      );
+    }
+    return _DiscogsExportPreviewScreen<CollectionExportPreview>(
+      title: 'Export Collection to Discogs',
+      noun: 'collection',
+      alreadySyncedPhrase: 'already linked to your Discogs collection',
+      loadPreview: () async => switch (await preview!.execute()) {
+        CollectionExportPreviewReady(:final preview) => _Ready(preview),
+        CollectionExportPreviewNotSupported(:final reason) => _NotSupported(
+          reason,
+        ),
+        CollectionExportPreviewError() => const _Error(),
+      },
+      export: execute == null
+          ? null
+          : (p, onProgress) async => switch (await execute!.execute(
+              p,
+              onProgress: onProgress,
+            )) {
+              final ExecuteExportCompleted done => _ExportDone(done),
+              ExecuteExportNotSupported(:final reason) => _NotSupported(reason),
+              ExecuteExportNoToken() => const _NoToken(),
+              ExecuteExportFailed(:final safeMessage) => _Failed(safeMessage),
+            },
+    );
+  }
+}
+
+class WishlistExportPreviewScreen extends StatelessWidget {
+  const WishlistExportPreviewScreen({
+    super.key,
+    this.useCase,
+    this.executeUseCase,
+  });
+
+  /// Injected only for testing. Production code passes null.
+  final BuildWishlistExportPreviewUseCase? useCase;
+
+  /// Injected only for testing. Production code passes null.
+  final ExecuteWishlistExportUseCase? executeUseCase;
+
+  @override
+  Widget build(BuildContext context) {
+    var preview = useCase;
+    var execute = executeUseCase;
+    if (preview == null) {
+      final repos = AppRepositoriesScope.of(context);
+      preview = BuildWishlistExportPreviewUseCase(
+        repository: repos.wishlist,
+        capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
+      );
+      execute = ExecuteWishlistExportUseCase(
+        capabilityUseCase: const CheckWishlistExportCapabilityUseCase(),
+        tokenStorage: DiscogsTokenStorage(),
+        apiClient: DiscogsApiClient.shared,
+        wishlistRepository: repos.wishlist,
+        jobRepository: repos.importExportJob,
+        rowResultRepository: repos.importExportRowResult,
+      );
+    }
+    return _DiscogsExportPreviewScreen<WishlistExportPreview>(
+      title: 'Export Wishlist to Discogs',
+      noun: 'wishlist',
+      alreadySyncedPhrase: 'already in your Discogs wantlist',
+      loadPreview: () async => switch (await preview!.execute()) {
+        WishlistExportPreviewReady(:final preview) => _Ready(preview),
+        WishlistExportPreviewNotSupported(:final reason) => _NotSupported(
+          reason,
+        ),
+        WishlistExportPreviewError() => const _Error(),
+      },
+      export: execute == null
+          ? null
+          : (p, onProgress) async => switch (await execute!.execute(
+              p,
+              onProgress: onProgress,
+            )) {
+              final ExecuteWishlistExportCompleted done => _ExportDone(done),
+              ExecuteWishlistExportNotSupported(:final reason) => _NotSupported(
+                reason,
+              ),
+              ExecuteWishlistExportNoToken() => const _NoToken(),
+              ExecuteWishlistExportFailed(:final safeMessage) => _Failed(
+                safeMessage,
+              ),
+            },
+    );
+  }
+}
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -24,7 +153,7 @@ class _Loading extends _PreviewState {
 
 class _Ready extends _PreviewState {
   const _Ready(this.preview);
-  final CollectionExportPreview preview;
+  final DiscogsExportPreview preview;
 }
 
 class _NotSupported extends _PreviewState {
@@ -49,119 +178,103 @@ class _Exporting extends _PreviewState {
 
 class _ExportDone extends _PreviewState {
   const _ExportDone(this.result);
-  final ExecuteExportCompleted result;
+  final DiscogsExportDone result;
+}
+
+/// Transient: export failed; the screen returns to [_Ready] with a snackbar.
+class _Failed extends _PreviewState {
+  const _Failed(this.safeMessage);
+  final String safeMessage;
 }
 
 // ---------------------------------------------------------------------------
-// Screen
+// Shared screen
 // ---------------------------------------------------------------------------
 
-class CollectionExportPreviewScreen extends StatefulWidget {
-  const CollectionExportPreviewScreen({
+typedef _OnProgress = void Function(int current, int total, String item);
+
+class _DiscogsExportPreviewScreen<P extends DiscogsExportPreview>
+    extends StatefulWidget {
+  const _DiscogsExportPreviewScreen({
     super.key,
-    this.useCase,
-    this.executeUseCase,
+    required this.title,
+    required this.noun,
+    required this.alreadySyncedPhrase,
+    required this.loadPreview,
+    this.export,
   });
 
-  /// Injected only for testing. Production code passes null.
-  final BuildCollectionExportPreviewUseCase? useCase;
+  final String title;
+  final String noun;
+  final String alreadySyncedPhrase;
 
-  /// Injected only for testing. Production code passes null.
-  final ExecuteCollectionExportUseCase? executeUseCase;
+  /// Resolves to [_Ready], [_NotSupported] or [_Error].
+  final Future<_PreviewState> Function() loadPreview;
+
+  /// Resolves to [_ExportDone], [_NotSupported], [_NoToken] or [_Failed].
+  /// Null disables the confirm action.
+  final Future<_PreviewState> Function(P preview, _OnProgress onProgress)?
+  export;
 
   @override
-  State<CollectionExportPreviewScreen> createState() =>
-      _CollectionExportPreviewScreenState();
+  State<_DiscogsExportPreviewScreen<P>> createState() =>
+      _DiscogsExportPreviewScreenState<P>();
 }
 
-class _CollectionExportPreviewScreenState
-    extends State<CollectionExportPreviewScreen> {
-  late final BuildCollectionExportPreviewUseCase _useCase;
-  ExecuteCollectionExportUseCase? _executeUseCase;
+class _DiscogsExportPreviewScreenState<P extends DiscogsExportPreview>
+    extends State<_DiscogsExportPreviewScreen<P>> {
   _PreviewState _state = const _Loading();
 
   @override
   void initState() {
     super.initState();
-    if (widget.useCase != null) {
-      _useCase = widget.useCase!;
-      _executeUseCase = widget.executeUseCase;
-    } else {
-      final repos = AppRepositoriesScope.of(context);
-      _useCase = BuildCollectionExportPreviewUseCase(
-        repository: repos.collection,
-        capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
-      );
-      _executeUseCase = ExecuteCollectionExportUseCase(
-        capabilityUseCase: const CheckCollectionExportCapabilityUseCase(),
-        tokenStorage: DiscogsTokenStorage(),
-        apiClient: DiscogsApiClient.shared,
-        collectionRepository: repos.collection,
-        jobRepository: repos.importExportJob,
-        rowResultRepository: repos.importExportRowResult,
-      );
-    }
     _load();
   }
 
   Future<void> _load() async {
     setState(() => _state = const _Loading());
-    final result = await _useCase.execute();
+    final next = await widget.loadPreview();
     if (!mounted) return;
-    setState(() {
-      _state = switch (result) {
-        CollectionExportPreviewReady(:final preview) => _Ready(preview),
-        CollectionExportPreviewNotSupported(:final reason) => _NotSupported(
-          reason,
-        ),
-        CollectionExportPreviewError() => const _Error(),
-      };
-    });
+    setState(() => _state = next);
   }
 
-  Future<void> _executeExport(CollectionExportPreview preview) async {
-    final uc = _executeUseCase;
-    if (uc == null) return;
+  Future<void> _executeExport(P preview) async {
+    final export = widget.export;
+    if (export == null) return;
     setState(() => _state = const _Exporting());
-    final result = await uc.execute(
-      preview,
-      onProgress: (current, total, item) {
-        if (!mounted) return;
-        setState(
-          () => _state = _Exporting(
-            current: current,
-            total: total,
-            currentItem: item,
-          ),
-        );
-      },
-    );
+    final next = await export(preview, (current, total, item) {
+      if (!mounted) return;
+      setState(
+        () => _state = _Exporting(
+          current: current,
+          total: total,
+          currentItem: item,
+        ),
+      );
+    });
     if (!mounted) return;
-    switch (result) {
-      case ExecuteExportCompleted():
-        setState(() => _state = _ExportDone(result));
-      case ExecuteExportNotSupported(:final reason):
-        setState(() => _state = _NotSupported(reason));
-      case ExecuteExportNoToken():
-        setState(() => _state = const _NoToken());
-      case ExecuteExportFailed(:final safeMessage):
-        setState(() => _state = _Ready(preview));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(safeMessage)));
+    if (next is _Failed) {
+      setState(() => _state = _Ready(preview));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(next.safeMessage)));
+    } else {
+      setState(() => _state = next);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Export Collection to Discogs')),
+      appBar: AppBar(title: Text(widget.title)),
       body: switch (_state) {
-        _Loading() => const Center(child: CircularProgressIndicator()),
+        _Loading() ||
+        _Failed() => const Center(child: CircularProgressIndicator()),
         _Ready(:final preview) => _PreviewBody(
           preview: preview,
-          onConfirm: _executeUseCase != null
-              ? () => _executeExport(preview)
+          alreadySyncedPhrase: widget.alreadySyncedPhrase,
+          onConfirm: widget.export != null
+              ? () => _executeExport(preview as P)
               : null,
         ),
         _NotSupported(:final reason) => _NotSupportedState(reason: reason),
@@ -169,9 +282,10 @@ class _CollectionExportPreviewScreenState
           message: 'Something went wrong. Check your connection and try again.',
           onRetry: _load,
         ),
-        _NoToken() => const _NoTokenState(),
+        _NoToken() => _NoTokenState(noun: widget.noun),
         _Exporting(:final current, :final total, :final currentItem) =>
           _ExportingBody(
+            noun: widget.noun,
             current: current,
             total: total,
             currentItem: currentItem,
@@ -190,9 +304,14 @@ class _CollectionExportPreviewScreenState
 // ---------------------------------------------------------------------------
 
 class _PreviewBody extends StatelessWidget {
-  const _PreviewBody({required this.preview, this.onConfirm});
+  const _PreviewBody({
+    required this.preview,
+    required this.alreadySyncedPhrase,
+    this.onConfirm,
+  });
 
-  final CollectionExportPreview preview;
+  final DiscogsExportPreview preview;
+  final String alreadySyncedPhrase;
   final VoidCallback? onConfirm;
 
   @override
@@ -215,7 +334,12 @@ class _PreviewBody extends StatelessWidget {
                           Expanded(child: _SummaryCard(preview: preview)),
                           if (hasNotes) ...[
                             const SizedBox(width: 16),
-                            Expanded(child: _NotesCard(preview: preview)),
+                            Expanded(
+                              child: _NotesCard(
+                                preview: preview,
+                                alreadySyncedPhrase: alreadySyncedPhrase,
+                              ),
+                            ),
                           ],
                         ],
                       )
@@ -224,7 +348,10 @@ class _PreviewBody extends StatelessWidget {
                           _SummaryCard(preview: preview),
                           if (hasNotes) ...[
                             const SizedBox(height: 12),
-                            _NotesCard(preview: preview),
+                            _NotesCard(
+                              preview: preview,
+                              alreadySyncedPhrase: alreadySyncedPhrase,
+                            ),
                           ],
                         ],
                       ),
@@ -248,7 +375,7 @@ class _PreviewBody extends StatelessWidget {
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({required this.preview});
 
-  final CollectionExportPreview preview;
+  final DiscogsExportPreview preview;
 
   @override
   Widget build(BuildContext context) {
@@ -323,9 +450,12 @@ class _CountRow extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _NotesCard extends StatelessWidget {
-  const _NotesCard({required this.preview});
+  const _NotesCard({required this.preview, required this.alreadySyncedPhrase});
 
-  final CollectionExportPreview preview;
+  final DiscogsExportPreview preview;
+
+  /// e.g. "already linked to your Discogs collection".
+  final String alreadySyncedPhrase;
 
   @override
   Widget build(BuildContext context) {
@@ -334,7 +464,7 @@ class _NotesCard extends StatelessWidget {
     if (preview.alreadySyncedCount > 0) {
       final n = preview.alreadySyncedCount;
       messages.add(
-        '$n ${n == 1 ? 'item is' : 'items are'} already linked to your Discogs collection and will be skipped.',
+        '$n ${n == 1 ? 'item is' : 'items are'} $alreadySyncedPhrase and will be skipped.',
       );
     }
     if (preview.invalidCount > 0) {
@@ -408,11 +538,13 @@ class _ConfirmBar extends StatelessWidget {
 
 class _ExportingBody extends StatelessWidget {
   const _ExportingBody({
+    required this.noun,
     this.current = 0,
     this.total = 0,
     this.currentItem = '',
   });
 
+  final String noun;
   final int current;
   final int total;
   final String currentItem;
@@ -435,7 +567,7 @@ class _ExportingBody extends StatelessWidget {
             Text(
               hasProgress
                   ? 'Exporting item $current of $total…'
-                  : 'Exporting your collection…',
+                  : 'Exporting your $noun…',
               style: theme.textTheme.bodyMedium,
             ),
             if (hasProgress && currentItem.isNotEmpty) ...[
@@ -464,7 +596,7 @@ class _ExportingBody extends StatelessWidget {
 class _ExportSummaryBody extends StatelessWidget {
   const _ExportSummaryBody({required this.result, required this.onDone});
 
-  final ExecuteExportCompleted result;
+  final DiscogsExportDone result;
   final VoidCallback onDone;
 
   @override
@@ -592,7 +724,9 @@ class _NotSupportedState extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _NoTokenState extends StatelessWidget {
-  const _NoTokenState();
+  const _NoTokenState({required this.noun});
+
+  final String noun;
 
   @override
   Widget build(BuildContext context) {
@@ -618,7 +752,7 @@ class _NoTokenState extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Connect your Discogs account in Settings to export your collection.',
+                'Connect your Discogs account in Settings to export your $noun.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

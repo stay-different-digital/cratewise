@@ -1,3 +1,4 @@
+import 'csv_import_preview.dart';
 import 'import_export_row_result.dart';
 import 'wishlist_item.dart';
 
@@ -38,7 +39,7 @@ class CsvWishlistImportRow {
 ///
 /// [validRows] are ready to import, [skippedRows] had duplicate release IDs
 /// within the file, and [failedRows] had validation errors.
-class CsvWishlistImportPreview {
+class CsvWishlistImportPreview implements CsvImportPreview {
   const CsvWishlistImportPreview({
     required this.validRows,
     required this.skippedRows,
@@ -47,10 +48,15 @@ class CsvWishlistImportPreview {
 
   final List<CsvWishlistImportRow> validRows;
   final List<SkippedRow> skippedRows;
+  @override
   final List<FailedRow> failedRows;
 
+  @override
   int get validCount => validRows.length;
+  @override
   int get skippedCount => skippedRows.length;
+  @override
   int get failedCount => failedRows.length;
+  @override
   int get totalCount => validCount + skippedCount + failedCount;
 }

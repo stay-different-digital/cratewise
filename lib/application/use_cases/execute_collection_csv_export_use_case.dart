@@ -1,3 +1,4 @@
+import '../../domain/models/csv_export_preview.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:uuid/uuid.dart';
 
@@ -14,7 +15,8 @@ sealed class ExecuteCollectionCsvExportResult {
 }
 
 class ExecuteCollectionCsvExportCompleted
-    extends ExecuteCollectionCsvExportResult {
+    extends ExecuteCollectionCsvExportResult
+    implements CsvExportDone {
   const ExecuteCollectionCsvExportCompleted({
     required this.jobId,
     required this.rowCount,
@@ -23,8 +25,11 @@ class ExecuteCollectionCsvExportCompleted
   });
 
   final String jobId;
+  @override
   final int rowCount;
+  @override
   final String filename;
+  @override
   final String filePath;
 }
 
