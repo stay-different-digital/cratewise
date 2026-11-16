@@ -487,7 +487,9 @@ Afgesplitst uit US-144. Na US-144 blijft een item waarvan de call mislukte op `o
 
 ### US-149: Automatisch importeren van Discogs
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
+
+**Uitkomst:** de automatische import hergebruikt de stappen van de handmatige import (ophalen, classificeren, uitvoeren), dus dezelfde regels voor duplicaten, koppelen en openstaande verwijderingen. Alleen nieuwe releases en koppelingen gaan mee; al aanwezige platen leveren geen geschiedenisregels op. Automatische imports staan in de geschiedenis als "Import collection/wishlist from Discogs", zonder onderscheid met handmatige imports.
 
 **Priority: Medium · 5 SP**
 
