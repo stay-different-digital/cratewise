@@ -25,6 +25,10 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # Pinned to the version the app is developed and released with.
+          # Unpinned, CI picked up 3.50 (material.dart deprecated) on
+          # 2026-11-16 and failed analyze; bump together with local Flutter.
+          flutter-version: 3.44.7
           cache: true
 
       - name: Show Flutter version
@@ -57,6 +61,10 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # Pinned to the version the app is developed and released with.
+          # Unpinned, CI picked up 3.50 (material.dart deprecated) on
+          # 2026-11-16 and failed analyze; bump together with local Flutter.
+          flutter-version: 3.44.7
           cache: true
 
       - name: Install dependencies
