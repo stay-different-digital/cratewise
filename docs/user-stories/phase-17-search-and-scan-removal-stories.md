@@ -142,6 +142,8 @@ De Scan-bestemming staat in [app_bottom_nav.dart](lib/presentation/widgets/app_b
 
 ### US-136: Barcodescanner-code en dependency verwijderen
 
+**Status: In Progress**
+
 **Priority: Medium · 2 SP**
 
 > Als ontwikkelaar,
@@ -425,7 +427,7 @@ Afgesplitst uit US-137 en US-138. Dit kan alleen in de consoles en hoort bij het
 
 ### US-147: Verlanglijst filteren op formaattype
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
 
 **Priority: Low · 1 SP**
 
