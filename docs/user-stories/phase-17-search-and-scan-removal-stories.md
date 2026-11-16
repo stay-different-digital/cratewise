@@ -86,6 +86,8 @@ Versie: sprint 1 levert 1.1.0 (Minor per ADR-0003: featurebatch plus een verwijd
 
 ### US-134: Vanuit een release naar het label gaan
 
+**Status: In Progress**
+
 **Priority: High · 3 SP**
 
 > Als verzamelaar,
@@ -284,7 +286,7 @@ Twee dingen veranderen doordat het scherm een tab wordt:
 
 ### US-142: Zoeken beperken tot vinyl
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
 
 **Priority: High · 3 SP**
 
