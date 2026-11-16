@@ -170,69 +170,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get actionClear => 'Effacer';
 
   @override
-  String get barcodeEnterManually => 'Saisir le code-barres manuellement…';
-
-  @override
-  String get barcodeScanButton => 'Scanner un code-barres';
-
-  @override
-  String get barcodeSearchButton => 'Rechercher';
-
-  @override
-  String get barcodeScanPrompt =>
-      'Appuyez sur « Scanner un code-barres » pour ouvrir l\'appareil photo';
-
-  @override
-  String get barcodePermissionDenied => 'Accès à la caméra refusé';
-
-  @override
-  String get barcodePermissionDeniedHint =>
-      'Autorisez l\'accès à la caméra dans les Paramètres pour scanner des codes-barres.';
-
-  @override
-  String get barcodeScanOrEnter => 'Scanner ou saisir un code-barres';
-
-  @override
-  String get barcodeScanOrEnterHint =>
-      'Pointez votre caméra sur un code-barres ou saisissez-en un ci-dessus.';
-
-  @override
-  String get barcodeNoReleases => 'Aucune release trouvée';
-
-  @override
-  String get barcodeNoReleasesHint =>
-      'Aucune release Discogs ne correspond à ce code-barres. Essayez un autre code-barres ou vérifiez le numéro.';
-
-  @override
-  String get barcodeNoToken => 'Compte Discogs non connecté';
-
-  @override
-  String get barcodeNoTokenHint =>
-      'Accédez aux Paramètres pour connecter votre compte Discogs.';
-
-  @override
-  String get barcodeRateLimited => 'Trop de requêtes';
-
-  @override
-  String get barcodeRateLimitedHint =>
-      'Discogs limite les requêtes en ce moment. Attendez un instant et réessayez.';
-
-  @override
-  String get barcodeSomethingWrong => 'Quelque chose s\'est mal passé';
-
-  @override
-  String get barcodeSomethingWrongHint =>
-      'Impossible de contacter Discogs. Une connexion Internet est nécessaire pour les recherches par code-barres.';
-
-  @override
-  String get barcodeValidationNotBarcode =>
-      'Cela ne ressemble pas à un code-barres';
-
-  @override
-  String get barcodeValidationWrongLength =>
-      'Le code-barres doit comporter 8, 12 ou 13 chiffres';
-
-  @override
   String get languageEnglish => 'English';
 
   @override

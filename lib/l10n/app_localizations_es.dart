@@ -168,69 +168,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get actionClear => 'Borrar';
 
   @override
-  String get barcodeEnterManually => 'Introducir código de barras manualmente…';
-
-  @override
-  String get barcodeScanButton => 'Escanear código de barras';
-
-  @override
-  String get barcodeSearchButton => 'Buscar';
-
-  @override
-  String get barcodeScanPrompt =>
-      'Toca «Escanear código de barras» para abrir la cámara';
-
-  @override
-  String get barcodePermissionDenied => 'Permiso de cámara denegado';
-
-  @override
-  String get barcodePermissionDeniedHint =>
-      'Permite el acceso a la cámara en Ajustes para escanear códigos de barras.';
-
-  @override
-  String get barcodeScanOrEnter => 'Escanear o introducir un código de barras';
-
-  @override
-  String get barcodeScanOrEnterHint =>
-      'Apunta la cámara a un código de barras o escríbelo arriba.';
-
-  @override
-  String get barcodeNoReleases => 'No se encontraron lanzamientos';
-
-  @override
-  String get barcodeNoReleasesHint =>
-      'Ningún lanzamiento de Discogs coincide con este código de barras. Prueba otro código o verifica el número.';
-
-  @override
-  String get barcodeNoToken => 'Cuenta de Discogs no conectada';
-
-  @override
-  String get barcodeNoTokenHint =>
-      'Ve a Ajustes para conectar tu cuenta de Discogs.';
-
-  @override
-  String get barcodeRateLimited => 'Demasiadas solicitudes';
-
-  @override
-  String get barcodeRateLimitedHint =>
-      'Discogs está limitando las solicitudes ahora. Espera un momento e inténtalo de nuevo.';
-
-  @override
-  String get barcodeSomethingWrong => 'Algo salió mal';
-
-  @override
-  String get barcodeSomethingWrongHint =>
-      'No se pudo contactar con Discogs. Se necesita conexión a Internet para buscar por código de barras.';
-
-  @override
-  String get barcodeValidationNotBarcode =>
-      'Esto no parece un código de barras';
-
-  @override
-  String get barcodeValidationWrongLength =>
-      'El código de barras debe tener 8, 12 o 13 dígitos';
-
-  @override
   String get languageEnglish => 'English';
 
   @override

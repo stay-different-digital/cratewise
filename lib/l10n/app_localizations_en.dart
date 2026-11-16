@@ -168,67 +168,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionClear => 'Clear';
 
   @override
-  String get barcodeEnterManually => 'Enter barcode manually…';
-
-  @override
-  String get barcodeScanButton => 'Scan barcode';
-
-  @override
-  String get barcodeSearchButton => 'Search';
-
-  @override
-  String get barcodeScanPrompt => 'Tap \'Scan barcode\' to open your camera';
-
-  @override
-  String get barcodePermissionDenied => 'Camera permission denied';
-
-  @override
-  String get barcodePermissionDeniedHint =>
-      'Allow camera access in Settings to scan barcodes.';
-
-  @override
-  String get barcodeScanOrEnter => 'Scan or enter a barcode';
-
-  @override
-  String get barcodeScanOrEnterHint =>
-      'Point your camera at a barcode or type one above.';
-
-  @override
-  String get barcodeNoReleases => 'No releases found';
-
-  @override
-  String get barcodeNoReleasesHint =>
-      'No Discogs releases match this barcode. Try a different barcode or check the number.';
-
-  @override
-  String get barcodeNoToken => 'Discogs account not connected';
-
-  @override
-  String get barcodeNoTokenHint =>
-      'Go to Settings to connect your Discogs account.';
-
-  @override
-  String get barcodeRateLimited => 'Too many requests';
-
-  @override
-  String get barcodeRateLimitedHint =>
-      'Discogs is limiting requests right now. Wait a moment and try again.';
-
-  @override
-  String get barcodeSomethingWrong => 'Something went wrong';
-
-  @override
-  String get barcodeSomethingWrongHint =>
-      'Could not reach Discogs. An internet connection is needed for barcode lookups.';
-
-  @override
-  String get barcodeValidationNotBarcode => 'This doesn\'t look like a barcode';
-
-  @override
-  String get barcodeValidationWrongLength =>
-      'Barcode must be 8, 12, or 13 digits';
-
-  @override
   String get languageEnglish => 'English';
 
   @override

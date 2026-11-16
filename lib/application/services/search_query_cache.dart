@@ -20,11 +20,10 @@ class SearchQueryCache {
   // Insertion-order map; reinserting on access gives LRU semantics.
   final _store = <String, _CacheEntry>{};
 
-  /// Normalises a raw query/barcode to a stable cache key, scoped by [filter]
+  /// Normalises a raw query to a stable cache key, scoped by [filter]
   /// (US-85), [sort] (US-133) and [vinylOnly] (US-142) so results for the same
   /// text under another scope, order or format never show up as a cache hit.
-  /// Defaults to All / relevance / any format (e.g. barcode lookups, which are
-  /// never filtered or sorted).
+  /// Defaults to All / relevance / any format.
   static String normalizeKey(
     String query, [
     SearchFilter filter = SearchFilter.all,

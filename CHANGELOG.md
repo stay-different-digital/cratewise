@@ -10,6 +10,14 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [Unreleased]
+
+### Removed
+
+- **Barcode scanner (US-135, US-136)** — the Scan tab, the scanner screen,
+  manual barcode lookup and the `mobile_scanner` dependency are gone; the
+  feature was rarely used. Releases are found through Search.
+
 ## [1.0.4] — 2026-10-23
 
 Robustness release from the phase 16 code review (US-124 – US-132).

@@ -170,69 +170,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get actionClear => 'Löschen';
 
   @override
-  String get barcodeEnterManually => 'Barcode manuell eingeben…';
-
-  @override
-  String get barcodeScanButton => 'Barcode scannen';
-
-  @override
-  String get barcodeSearchButton => 'Suchen';
-
-  @override
-  String get barcodeScanPrompt =>
-      'Tippe auf \'Barcode scannen\', um die Kamera zu öffnen';
-
-  @override
-  String get barcodePermissionDenied => 'Kamerazugriff verweigert';
-
-  @override
-  String get barcodePermissionDeniedHint =>
-      'Erlaube den Kamerazugriff in den Einstellungen, um Barcodes zu scannen.';
-
-  @override
-  String get barcodeScanOrEnter => 'Barcode scannen oder eingeben';
-
-  @override
-  String get barcodeScanOrEnterHint =>
-      'Halte die Kamera auf einen Barcode oder tippe ihn oben ein.';
-
-  @override
-  String get barcodeNoReleases => 'Keine Releases gefunden';
-
-  @override
-  String get barcodeNoReleasesHint =>
-      'Kein Discogs-Release passt zu diesem Barcode. Versuche einen anderen Barcode oder überprüfe die Nummer.';
-
-  @override
-  String get barcodeNoToken => 'Discogs-Konto nicht verbunden';
-
-  @override
-  String get barcodeNoTokenHint =>
-      'Gehe zu den Einstellungen, um dein Discogs-Konto zu verbinden.';
-
-  @override
-  String get barcodeRateLimited => 'Zu viele Anfragen';
-
-  @override
-  String get barcodeRateLimitedHint =>
-      'Discogs begrenzt gerade die Anfragen. Warte einen Moment und versuche es erneut.';
-
-  @override
-  String get barcodeSomethingWrong => 'Etwas ist schiefgelaufen';
-
-  @override
-  String get barcodeSomethingWrongHint =>
-      'Discogs konnte nicht erreicht werden. Für Barcode-Suchen ist eine Internetverbindung erforderlich.';
-
-  @override
-  String get barcodeValidationNotBarcode =>
-      'Das sieht nicht wie ein Barcode aus';
-
-  @override
-  String get barcodeValidationWrongLength =>
-      'Der Barcode muss 8, 12 oder 13 Stellen haben';
-
-  @override
   String get languageEnglish => 'English';
 
   @override

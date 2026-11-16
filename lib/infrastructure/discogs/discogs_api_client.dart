@@ -147,29 +147,6 @@ class DiscogsApiClient {
     return DiscogsWantlistPageDto.fromJson(json);
   }
 
-  /// Searches Discogs releases by [barcode] identifier.
-  ///
-  /// [page] is 1-based. [perPage] defaults to 50.
-  Future<DiscogsSearchPageDto> searchByBarcode(
-    String barcode,
-    String token, {
-    int page = 1,
-    int perPage = 50,
-  }) async {
-    final response = await _get(
-      '/database/search',
-      token,
-      queryParameters: {
-        'barcode': barcode,
-        'type': 'release',
-        'page': '$page',
-        'per_page': '$perPage',
-      },
-    );
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
-    return DiscogsSearchPageDto.fromJson(json);
-  }
-
   /// Adds [releaseId] to the authenticated user's Discogs collection folder 1.
   ///
   /// Folder 1 is the default "Uncategorized" folder. Returns the new
