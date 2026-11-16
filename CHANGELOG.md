@@ -10,6 +10,34 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.2.0] — 2026-11-16
+
+Automatic sync with Discogs (phase 17, sprint 2). Off by default.
+
+### Added
+
+- **Sync automatically with Discogs (US-144)** — a switch in Settings, usable
+  once a Discogs account is linked. With it on, a record you add to your
+  collection or wishlist goes to your Discogs account straight away, without
+  slowing down adding. A release already in your Discogs collection is linked,
+  never added twice.
+- **Catch-up for records not sent yet (US-148)** — records added offline, or
+  that were only local before you turned the switch on, are sent when the app
+  opens or comes back to the foreground (at most every 15 minutes). Turning
+  the switch on tells you how many records that will be and asks once.
+- **Records added on Discogs come in by themselves (US-149)** — in the same
+  run, releases added on the Discogs website appear in the app. It only adds:
+  your notes, conditions, tags and DJ fields are never overwritten, nothing is
+  deleted, and records you deleted locally stay out.
+- Settings shows when a sync is running and the time and result of the last
+  one; each run that changed something is in the Import/Export history.
+
+### Changed
+
+- If Discogs rejects your token, automatic sync switches itself off and
+  Settings says why. Deletions are still only sent to Discogs when you choose
+  to (unchanged).
+
 ## [1.1.0] — 2026-11-16
 
 Search and navigation release (phase 17, sprint 1). The barcode scanner is
