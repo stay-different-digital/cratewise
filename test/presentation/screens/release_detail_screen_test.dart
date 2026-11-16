@@ -941,29 +941,26 @@ void main() {
         expect(find.text('Add to Collection'), findsNothing);
       });
 
-      testWidgets(
-        'tapping button shows added snackbar',
-        (tester) async {
-          final repo = _TrackingCollectionRepository();
-          await tester.pumpWidget(
-            _wrap(
-              ReleaseDetailScreen(
-                releaseId: 249504,
-                detailService: _LoadedService(detail: _kindOfBlue),
-                addToCollectionUseCase: AddToCollectionUseCase(repo),
-                addToWishlistUseCase: _newWishlistUseCase(),
-                collectionRepository: repo,
-              ),
+      testWidgets('tapping button shows added snackbar', (tester) async {
+        final repo = _TrackingCollectionRepository();
+        await tester.pumpWidget(
+          _wrap(
+            ReleaseDetailScreen(
+              releaseId: 249504,
+              detailService: _LoadedService(detail: _kindOfBlue),
+              addToCollectionUseCase: AddToCollectionUseCase(repo),
+              addToWishlistUseCase: _newWishlistUseCase(),
+              collectionRepository: repo,
             ),
-          );
-          await tester.pumpAndSettle();
+          ),
+        );
+        await tester.pumpAndSettle();
 
-          await tester.tap(find.text('Add to Collection'));
-          await tester.pumpAndSettle();
+        await tester.tap(find.text('Add to Collection'));
+        await tester.pumpAndSettle();
 
-          expect(find.text('Added to your collection'), findsOneWidget);
-        },
-      );
+        expect(find.text('Added to your collection'), findsOneWidget);
+      });
 
       testWidgets(
         'tapping button when already in collection shows duplicate snackbar',
@@ -2249,9 +2246,7 @@ void main() {
       ),
     );
 
-    testWidgets('no bottom sheet opens after a successful add', (
-      tester,
-    ) async {
+    testWidgets('no bottom sheet opens after a successful add', (tester) async {
       await tester.pumpWidget(
         buildScreen(repo: _TrackingCollectionRepository()),
       );
