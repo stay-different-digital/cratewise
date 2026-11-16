@@ -10,6 +10,16 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.3.0] — 2026-11-16
+
+Cratewise on Flutter 3.50 (phases 17–18 wrapped up). Bundles 1.2.1 – 1.2.4:
+the move to Flutter 3.50 with Material from `material_ui`, go_router 18, the
+Android toolchain (Gradle 9.5, AGP 9.3, JDK 21) and updated plugins
+(`share_plus` 13, `package_info_plus` 10, `file_picker` 13,
+`flutter_secure_storage` 10, `drift` 2.35, `csv` 8). Your Discogs token,
+settings and collection are kept when updating from an older version
+(checked on Android and iOS). No new features.
+
 ## [1.2.4] — 2026-11-16
 
 ### Changed
