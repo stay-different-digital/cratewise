@@ -222,7 +222,9 @@ class _CsvExportPreviewScreenState<P extends CsvExportPreview>
   }
 
   static Future<void> _defaultShareFile(String filePath) async {
-    await Share.shareXFiles([XFile(filePath, mimeType: 'text/csv')]);
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(filePath, mimeType: 'text/csv')]),
+    );
   }
 
   Future<void> _shareAgain(String filePath) async {

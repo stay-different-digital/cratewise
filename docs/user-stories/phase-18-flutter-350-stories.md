@@ -28,9 +28,10 @@ Geen store-releases (zie besluit 2026-11-16): versie en CHANGELOG per story volg
 | US-156 | `sqlite3_flutter_libs` (eol) vervangen; drift naar 2.35 | Medium | 3 | US-150 |
 | US-157 | Overige updates: `csv` 8, `cupertino_icons` 2, minors | Low | 2 | US-150 |
 | US-159 | App naar Built-in Kotlin (`android.builtInKotlin=true`) | High | 1 | US-151–154 |
+| US-160 | `flutter_secure_storage` 10 → 11 | Low | 1 | US-155 + elke installatie heeft een 10-build gedraaid |
 | US-158 | Volledige controle op Flutter 3.50 op toestel en simulator | Medium | 2 | US-151–157, US-159 |
 
-Totaal: 20 SP.
+Totaal: 21 SP.
 
 ---
 
@@ -57,7 +58,7 @@ CI bouwt nu alleen een Android-debug-APK en een unsigned iOS-debugbuild. De rele
 
 ### US-151: `share_plus` 10 → 13
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)** — `share_plus` 13.3.1; aanroepen naar `SharePlus.instance.share(ShareParams(...))`. Deelvenster met CSV gecontroleerd op Android-emulator. Opgeleverd samen met US-151, US-152, US-154 en US-155: die vier hangen via `win32` 6 aan elkaar en lossen alleen samen op.
 
 **Priority: High · 2 SP**
 
@@ -77,6 +78,8 @@ Gebruikt bij delen van CSV-exports. Tussen 10 en 13 is de API gewijzigd (o.a. `S
 ---
 
 ### US-152: `package_info_plus` 8 → 10
+
+**Status: ✅ Resolved (2026-11-16)** — `package_info_plus` 10.2.2; API ongewijzigd. Opgeleverd samen met US-151, US-152, US-154 en US-155: die vier hangen via `win32` 6 aan elkaar en lossen alleen samen op.
 
 **Priority: High · 1 SP**
 
@@ -114,6 +117,8 @@ Gebruikt voor de versieweergave (US-72). Changelog 9 en 10 lezen.
 
 ### US-154: `file_picker` 10 → 13
 
+**Status: ✅ Resolved (2026-11-16)** — `file_picker` 13.3.3; `FilePicker.pickFile()` + `readAsBytes()`. Systeemkiezer gecontroleerd op Android-emulator. Versie 13 gebruikt op iOS `PHPickerViewController` en niet meer `DKImagePickerController`; of `NSPhotoLibraryUsageDescription` daardoor weg kan, wordt in US-158 bekeken. Opgeleverd samen met US-151, US-152, US-154 en US-155: die vier hangen via `win32` 6 aan elkaar en lossen alleen samen op.
+
 **Priority: High · 3 SP**
 
 > Als gebruiker,
@@ -132,6 +137,8 @@ Gebruikt bij CSV-import. Drie majors overslaan: changelog 11–13 lezen op API-w
 ---
 
 ### US-155: `flutter_secure_storage` 9 → 11 zonder verlies van token
+
+**Status: ✅ Resolved (2026-11-16)** — bewust op **10.3.4**, niet 11. Versie 11 leest data van vóór 10 niet meer; 10 migreert die automatisch. Upgrade-test (`integration_test/secure_storage_upgrade_test.dart`: schrijven met de oude build, verifiëren met de nieuwe eroverheen) slaagt op Android-emulator en iOS-simulator voor token, gebruikersnaam, taal, onboarding, "Alleen vinyl" en auto-sync. Live Discogs-test groen. De stap naar 11: US-160. Opgeleverd samen met US-151, US-152, US-154 en US-155: die vier hangen via `win32` 6 aan elkaar en lossen alleen samen op.
 
 **Priority: High · 3 SP**
 
@@ -200,6 +207,23 @@ Toegevoegd tijdens US-151 (2026-11-16). Plugins als `share_plus` 13.3 passen de 
 - `android.builtInKotlin=true` in `android/gradle.properties`; de ongebruikte `org.jetbrains.kotlin.android`-pluginverklaring in `settings.gradle.kts` verwijderd als de build zonder kan.
 - Debug- en release-APK bouwen zonder KGP-waarschuwing.
 - De CI-stap uit US-150 draait zonder `continue-on-error`.
+
+---
+
+### US-160: `flutter_secure_storage` 10 → 11
+
+**Priority: Low · 1 SP**
+
+> Als ontwikkelaar,
+> wil ik op de nieuwste `flutter_secure_storage`,
+> zonder dat iemand zijn token of instellingen kwijtraakt.
+
+**Context:**
+Toegevoegd bij US-155. Versie 11 kan alleen data lezen die al door versie 10 is gemigreerd. Pas oppakken als elke installatie (zonder store-releases: in de praktijk Freds toestellen) minstens één keer een build met versie 10 heeft gestart.
+
+**Acceptance criteria:**
+- `flutter_secure_storage` ^11; `checkUpgradeStatus()` meldt geen dataverlies.
+- Upgrade-test (schrijven met een 10-build, verifiëren met de 11-build) slaagt op Android en iOS.
 
 ---
 

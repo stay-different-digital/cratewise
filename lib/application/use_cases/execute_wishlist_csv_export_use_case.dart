@@ -52,7 +52,9 @@ class ExecuteWishlistCsvExportUseCase {
   static String _newUuid() => const Uuid().v4();
 
   static Future<void> _defaultShare(String filePath) async {
-    await Share.shareXFiles([XFile(filePath, mimeType: 'text/csv')]);
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(filePath, mimeType: 'text/csv')]),
+    );
   }
 
   final ImportExportJobRepository _jobRepository;

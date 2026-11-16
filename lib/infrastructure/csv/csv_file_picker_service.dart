@@ -12,15 +12,13 @@ class CsvFilePickerService {
   const CsvFilePickerService();
 
   Future<CsvPickedFile?> pick() async {
-    final result = await FilePicker.platform.pickFiles(
+    // file_picker 13: single-file picker; data is read on demand.
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: ['csv'],
-      withData: true,
     );
-    if (result == null) return null;
-    final file = result.files.first;
-    final bytes = file.bytes;
-    if (bytes == null) return null;
+    if (file == null) return null;
+    final bytes = await file.readAsBytes();
     final content = utf8.decode(bytes, allowMalformed: true);
     return CsvPickedFile(filename: file.name, content: content);
   }

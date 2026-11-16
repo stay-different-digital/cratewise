@@ -10,6 +10,19 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.2.2] — 2026-11-16
+
+Plugin updates for Flutter 3.50 (phase 18); no new features.
+
+### Changed
+
+- `share_plus` 13, `package_info_plus` 10, `file_picker` 13 and
+  `flutter_secure_storage` 10 (US-151, US-152, US-154, US-155). Sharing a CSV
+  export and picking a CSV for import use the new plugin APIs.
+- Stored settings and the Discogs token are migrated automatically by
+  `flutter_secure_storage` 10; checked by upgrading over an older build on
+  Android and iOS.
+
 ## [1.2.1] — 2026-11-16
 
 Toolchain update; no new features.
