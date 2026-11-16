@@ -37,7 +37,7 @@ Totaal: 21 SP.
 
 ### US-150: Vangnet: build-checks voor Android, iOS en de Kotlin-waarschuwing
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)** — CI bouwt release-APK en controleert de KGP-waarschuwing (`continue-on-error` tot US-159); `tool/run_ios_simulator.sh` voor de simulator. CI groen.
 
 **Priority: High · 2 SP**
 
@@ -98,6 +98,8 @@ Gebruikt voor de versieweergave (US-72). Changelog 9 en 10 lezen.
 ---
 
 ### US-153: `sensors_plus` 7.1 met Built-in Kotlin
+
+**Status: In Progress**
 
 **Priority: High · 1 SP**
 
