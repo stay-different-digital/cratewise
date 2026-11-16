@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:uuid/uuid.dart';
 
@@ -10,6 +11,8 @@ import '../../domain/models/collection_item.dart';
 import '../../domain/models/cached_release_metadata.dart';
 import '../../domain/models/pending_discogs_deletion.dart';
 import '../../domain/models/release_detail.dart';
+import '../../domain/models/search_filter.dart';
+import '../../domain/models/search_sort.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
@@ -18,11 +21,13 @@ import '../../domain/repositories/pending_discogs_deletion_repository.dart';
 import '../../domain/repositories/thumbnail_repository.dart';
 import '../../domain/repositories/wishlist_repository.dart';
 import '../../app/app_repositories.dart';
+import '../../app/router.dart';
 import '../../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../../shared/errors/app_error.dart';
 import '../../shared/utils/date_format_utils.dart';
 import '../widgets/rate_limit_retry_button.dart';
 import '../widgets/release_image_gallery.dart';
+import 'search_screen.dart';
 
 // ---------------------------------------------------------------------------
 // State machine
@@ -1165,12 +1170,7 @@ class _InfoRows extends StatelessWidget {
     return Column(
       children: [
         if (detail.label.isNotEmpty)
-          _InfoRow(
-            'Label',
-            detail.catno.isNotEmpty
-                ? '${detail.label} — ${detail.catno}'
-                : detail.label,
-          ),
+          _LabelInfoRow(label: detail.label, catno: detail.catno),
         if (detail.format.isNotEmpty) _InfoRow('Format', detail.format),
         if (detail.country.isNotEmpty) _InfoRow('Country', detail.country),
         if (detail.year != null) _InfoRow('Released', '${detail.year}'),
@@ -1295,6 +1295,95 @@ class _InfoRow extends StatelessWidget {
           Expanded(child: Text(value, style: theme.textTheme.bodyMedium)),
         ],
       ),
+    );
+  }
+}
+
+/// The Label info row, with the label name as a link to all its releases
+/// (US-134). Only the name is the search term; the catalogue number stays
+/// plain text after it.
+class _LabelInfoRow extends StatelessWidget {
+  const _LabelInfoRow({required this.label, required this.catno});
+
+  final String label;
+  final String catno;
+
+  /// Shows every release of [label] in the Search tab, newest first. `go`
+  /// (not `push`) replaces the search branch's stack, so a pushed detail is
+  /// popped instead of piling up; on a wide layout, where this detail is
+  /// embedded in the search screen, it just hands over the new search. The
+  /// full name is the search term: a Discogs suffix like "(2)" narrows the
+  /// match to that exact label.
+  void _openLabel(BuildContext context) {
+    context.go(
+      AppRoutes.search,
+      extra: SearchRequest(
+        query: label,
+        filter: SearchFilter.label,
+        sort: SearchSort.newestFirst,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final link = theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.primary,
+      decoration: TextDecoration.underline,
+      decorationColor: theme.colorScheme.primary,
+    );
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 88,
+          child: Text(
+            'Label',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Semantics(
+            button: true,
+            label: 'Show releases of $label',
+            excludeSemantics: true,
+            child: InkWell(
+              key: const Key('release-label-link'),
+              onTap: () => _openLabel(context),
+              borderRadius: BorderRadius.circular(4),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text.rich(
+                        TextSpan(
+                          children: [
+                            TextSpan(text: label, style: link),
+                            if (catno.isNotEmpty)
+                              TextSpan(
+                                text: ' — $catno',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 20,
+                      color: theme.colorScheme.primary,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

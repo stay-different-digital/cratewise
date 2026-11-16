@@ -2233,6 +2233,58 @@ void main() {
     );
   });
 
+  group('ReleaseDetailScreen — label link (US-134)', () {
+    Widget buildScreen(ReleaseDetail detail) => _wrap(
+      ReleaseDetailScreen(
+        releaseId: detail.id,
+        detailService: _LoadedService(detail: detail),
+        addToCollectionUseCase: _newUseCase(),
+        addToWishlistUseCase: _newWishlistUseCase(),
+      ),
+    );
+
+    testWidgets('label name is a link; catno is shown but not the link text', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(buildScreen(_kindOfBlue));
+      await tester.pumpAndSettle();
+
+      final link = find.byKey(const Key('release-label-link'));
+      expect(link, findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Show releases of Columbia'),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: link, matching: find.textContaining('CL 1355')),
+        findsOneWidget,
+      );
+      expect(tester.getSize(link).height, greaterThanOrEqualTo(48));
+      semantics.dispose();
+    });
+
+    testWidgets('no label → no link', (tester) async {
+      const noLabel = ReleaseDetail(
+        id: 1,
+        title: 'Untitled',
+        artist: 'Unknown',
+        label: '',
+        catno: '',
+        format: 'Vinyl',
+        country: '',
+        genres: [],
+        styles: [],
+        tracklist: [],
+        identifiers: [],
+      );
+      await tester.pumpWidget(buildScreen(noLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('release-label-link')), findsNothing);
+    });
+  });
+
   // US-141: adding no longer opens a "Set condition" sheet; the item keeps
   // the use case's default conditions and can be edited from the collection.
   group('ReleaseDetailScreen — add without condition prompt (US-141)', () {

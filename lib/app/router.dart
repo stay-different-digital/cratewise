@@ -96,7 +96,8 @@ GoRouter createAppRouter({bool showOnboarding = false}) => GoRouter(
           routes: [
             GoRoute(
               path: AppRoutes.search,
-              builder: (_, _) => const SearchScreen(),
+              builder: (_, state) =>
+                  SearchScreen(request: state.extra as SearchRequest?),
               routes: [
                 GoRoute(
                   path: 'release/:releaseId',

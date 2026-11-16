@@ -2,6 +2,9 @@ import 'dart:async';
 
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:cratewise/application/services/discogs_search_service.dart';
+import 'package:cratewise/domain/models/release_detail.dart';
+import 'package:cratewise/application/use_cases/add_to_collection_use_case.dart';
+import 'package:cratewise/application/services/discogs_release_detail_service.dart';
 import 'package:cratewise/application/services/search_query_cache.dart';
 import 'package:cratewise/presentation/screens/release_detail_screen.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
@@ -93,6 +96,15 @@ class _CountingSearchService extends DiscogsSearchService {
 
 /// Records the filter (and page) of every search call so US-85 tests can assert
 /// the filter is plumbed through and preserved across pagination.
+class _DetailService extends DiscogsReleaseDetailService {
+  _DetailService(this.detail)
+    : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
+  final ReleaseDetail detail;
+
+  @override
+  Future<ReleaseDetail> fetchDetail(int _) async => detail;
+}
+
 class _RecordingSearchService extends DiscogsSearchService {
   _RecordingSearchService({required this.page1, required this.page2})
     : super(storage: _FakeTokenStorage(), apiClient: DiscogsApiClient());
@@ -274,7 +286,7 @@ class _FakeCollectionRepository implements CollectionRepository {
   @override
   Future<CollectionItem?> getById(String id) async => null;
   @override
-  Future<void> add(CollectionItem item) async {}
+  Future<void> add(CollectionItem item) async => ids.add(item.discogsReleaseId);
   @override
   Future<void> update(CollectionItem item) async {}
   @override
@@ -1765,6 +1777,172 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Alleen vinyl'), findsOneWidget);
+    });
+  });
+
+  group('SearchScreen — open a label from a release (US-134)', () {
+    const columbiaRelease = ReleaseDetail(
+      id: 249504,
+      title: 'Kind Of Blue',
+      artist: 'Miles Davis',
+      label: 'Columbia',
+      catno: 'CL 1355',
+      format: 'Vinyl, LP, Album',
+      country: 'US',
+      year: 1959,
+      genres: ['Jazz'],
+      styles: [],
+      tracklist: [],
+      identifiers: [],
+    );
+
+    ({GoRouter router, Widget app}) buildApp({
+      required DiscogsSearchService service,
+      required _FakeCollectionRepository collection,
+      String initialLocation = '/search/release/249504',
+    }) {
+      // Phone layout: the detail is its own route on top of the search screen.
+      final view =
+          TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+      view.physicalSize = const Size(390, 844);
+      view.devicePixelRatio = 1.0;
+      addTearDown(view.resetPhysicalSize);
+      addTearDown(view.resetDevicePixelRatio);
+      final wishlist = _FakeWishlistRepository();
+      final router = GoRouter(
+        initialLocation: initialLocation,
+        // As in the app's search branch: lets the screen refresh membership
+        // icons when a detail is popped.
+        observers: [searchRouteObserver],
+        routes: [
+          GoRoute(
+            path: '/search',
+            builder: (_, state) => Scaffold(
+              body: SearchScreen(
+                request: state.extra as SearchRequest?,
+                searchService: service,
+                collectionRepository: collection,
+                wishlistRepository: wishlist,
+                loadVinylOnly: () async => false,
+                saveVinylOnly: (_) async {},
+              ),
+            ),
+            routes: [
+              GoRoute(
+                path: 'release/:releaseId',
+                builder: (_, state) => ReleaseDetailScreen(
+                  releaseId: int.parse(state.pathParameters['releaseId']!),
+                  detailService: _DetailService(columbiaRelease),
+                  collectionRepository: collection,
+                  wishlistRepository: wishlist,
+                  addToCollectionUseCase: AddToCollectionUseCase(collection),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+      return (
+        router: router,
+        app: MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      );
+    }
+
+    testWidgets('tapping the label opens its releases, newest first, with '
+        'the Label filter, and pops the detail', (tester) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      final (:router, :app) = buildApp(
+        service: service,
+        collection: _FakeCollectionRepository(),
+      );
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byKey(const Key('release-label-link')));
+      await tester.tap(find.byKey(const Key('release-label-link')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ReleaseDetailScreen), findsNothing);
+      expect(router.canPop(), isFalse, reason: 'no stack of detail screens');
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.controller!.text, 'Columbia');
+      expect(
+        tester
+            .widget<FilterChip>(
+              find.byKey(const Key('search-filter-chip-label')),
+            )
+            .selected,
+        isTrue,
+      );
+      expect(find.text('Newest first'), findsOneWidget);
+      expect(service.filters.last, SearchFilter.label);
+      expect(service.sorts.last, SearchSort.newestFirst);
+    });
+
+    testWidgets('label results show collection membership, and adding from '
+        'there updates it on return', (tester) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      final collection = _FakeCollectionRepository();
+      final (:router, :app) = buildApp(
+        service: service,
+        collection: collection,
+      );
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('release-label-link')));
+      await tester.tap(find.byKey(const Key('release-label-link')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('in-collection-icon')), findsNothing);
+
+      // Open the release from the label results, add it, go back.
+      await tester.tap(find.byType(ReleaseSearchResultCard).first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add to Collection'));
+      await tester.pumpAndSettle();
+      router.pop();
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('in-collection-icon')), findsOneWidget);
+    });
+
+    testWidgets('an unrelated rebuild does not re-apply the request', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      final (:router, :app) = buildApp(
+        service: service,
+        collection: _FakeCollectionRepository(),
+      );
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('release-label-link')));
+      await tester.tap(find.byKey(const Key('release-label-link')));
+      await tester.pumpAndSettle();
+
+      // The user types a new search; opening and closing a release rebuilds
+      // the /search route with the same extra — that must not undo it.
+      await submitSearch(tester, 'impulse');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(ReleaseSearchResultCard).first);
+      await tester.pumpAndSettle();
+      router.pop();
+      await tester.pumpAndSettle();
+
+      final field = tester.widget<TextField>(find.byType(TextField));
+      expect(field.controller!.text, 'impulse');
     });
   });
 

@@ -106,9 +106,26 @@ class _SearchError extends _SearchState {
 // Screen
 // ---------------------------------------------------------------------------
 
+/// A search to run when the Search tab opens, e.g. "all releases of this
+/// label" from a release detail (US-134). Passed as the route's `extra`.
+/// Compared by identity: every tap creates a new request, so tapping the same
+/// label twice still re-runs the search.
+class SearchRequest {
+  const SearchRequest({
+    required this.query,
+    this.filter = SearchFilter.all,
+    this.sort = SearchSort.relevance,
+  });
+
+  final String query;
+  final SearchFilter filter;
+  final SearchSort sort;
+}
+
 class SearchScreen extends StatefulWidget {
   const SearchScreen({
     super.key,
+    this.request,
     this.searchService,
     this.addToCollectionUseCase,
     this.addToWishlistUseCase,
@@ -122,6 +139,7 @@ class SearchScreen extends StatefulWidget {
     this.saveVinylOnly,
   });
 
+  final SearchRequest? request;
   final DiscogsSearchService? searchService;
   final AddToCollectionUseCase? addToCollectionUseCase;
   final AddToWishlistUseCase? addToWishlistUseCase;
@@ -195,6 +213,29 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     _loadVinylOnly();
     _shakeSub = (widget.accelerometerStream ?? accelerometerEventStream())
         .listen(_onAccelerometer);
+    if (widget.request != null) _applyRequest(widget.request!);
+  }
+
+  @override
+  void didUpdateWidget(SearchScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The tab keeps its state, so a new request arrives as a widget update.
+    final request = widget.request;
+    if (request != null && !identical(request, oldWidget.request)) {
+      _applyRequest(request);
+    }
+  }
+
+  /// Replaces the current search with [request] (US-134): text, scope and
+  /// order all come from the request; the vinyl-only preference is kept.
+  void _applyRequest(SearchRequest request) {
+    _controller.text = request.query;
+    setState(() {
+      _filter = request.filter;
+      _sort = request.sort;
+      _selectedResult = null;
+    });
+    _onSubmit(request.query);
   }
 
   @override
