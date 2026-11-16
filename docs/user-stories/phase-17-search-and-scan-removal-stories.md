@@ -209,7 +209,7 @@ Na US-135 is het scherm onbereikbaar. Wat overblijft:
 
 ### US-139: Opnieuw op "Zoeken" tikken maakt de zoekbalk leeg
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
 
 **Priority: Medium · 2 SP**
 
@@ -320,6 +320,8 @@ Twee dingen veranderen doordat het scherm een tab wordt:
 ---
 
 ### US-143: Collectie filteren op formaattype
+
+**Status: In Progress**
 
 **Priority: Medium · 2 SP**
 
