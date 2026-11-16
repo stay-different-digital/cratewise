@@ -1,5 +1,15 @@
 import 'package:cratewise/application/services/discogs_auto_sync_service.dart';
+import 'package:cratewise/application/use_cases/build_collection_import_preview_use_case.dart';
+import 'package:cratewise/application/use_cases/build_wishlist_import_preview_use_case.dart';
+import 'package:cratewise/application/use_cases/execute_collection_import_use_case.dart';
+import 'package:cratewise/application/use_cases/execute_wishlist_import_use_case.dart';
+import 'package:cratewise/application/use_cases/fetch_collection_import_preview_use_case.dart';
+import 'package:cratewise/application/use_cases/fetch_wishlist_import_preview_use_case.dart';
 import 'package:cratewise/application/use_cases/run_discogs_auto_sync_use_case.dart';
+import 'package:cratewise/domain/models/pending_discogs_deletion.dart';
+import 'package:cratewise/domain/repositories/pending_discogs_deletion_repository.dart';
+import 'package:cratewise/infrastructure/discogs/dto/discogs_collection_item.dart';
+import 'package:cratewise/infrastructure/discogs/dto/discogs_wantlist_item.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/import_export_job.dart';
 import 'package:cratewise/domain/models/import_export_job_type.dart';
@@ -50,18 +60,24 @@ class _ScriptedSync extends DiscogsAutoSyncService {
 }
 
 class _Collection implements CollectionRepository {
-  _Collection(this.items);
+  _Collection(List<CollectionItem> items) : items = List.of(items);
   final List<CollectionItem> items;
   @override
-  Future<List<CollectionItem>> getAll() async => items;
+  Future<List<CollectionItem>> getAll() async => List.of(items);
   @override
-  Future<CollectionItem?> getById(String id) async => null;
+  Future<CollectionItem?> getById(String id) async =>
+      items.where((i) => i.id == id).firstOrNull;
   @override
-  Future<bool> containsRelease(int id) async => false;
+  Future<bool> containsRelease(int id) async =>
+      items.any((i) => i.discogsReleaseId == id);
   @override
-  Future<void> add(CollectionItem item) async {}
+  Future<void> add(CollectionItem item) async => items.add(item);
   @override
-  Future<void> update(CollectionItem item) async {}
+  Future<void> update(CollectionItem item) async {
+    final i = items.indexWhere((x) => x.id == item.id);
+    if (i >= 0) items[i] = item;
+  }
+
   @override
   Future<void> remove(String id) async {}
   @override
@@ -69,16 +85,18 @@ class _Collection implements CollectionRepository {
 }
 
 class _Wishlist implements WishlistRepository {
-  _Wishlist(this.items);
+  _Wishlist(List<WishlistItem> items) : items = List.of(items);
   final List<WishlistItem> items;
   @override
-  Future<List<WishlistItem>> getAll() async => items;
+  Future<List<WishlistItem>> getAll() async => List.of(items);
   @override
-  Future<WishlistItem?> getById(String id) async => null;
+  Future<WishlistItem?> getById(String id) async =>
+      items.where((i) => i.id == id).firstOrNull;
   @override
-  Future<bool> containsRelease(int id) async => false;
+  Future<bool> containsRelease(int id) async =>
+      items.any((i) => i.discogsReleaseId == id);
   @override
-  Future<void> add(WishlistItem item) async {}
+  Future<void> add(WishlistItem item) async => items.add(item);
   @override
   Future<void> update(WishlistItem item) async {}
   @override
@@ -121,6 +139,87 @@ class _Rows implements ImportExportRowResultRepository {
   Future<void> removeAllForJob(String jobId) async => rows.remove(jobId);
 }
 
+class _Deletions implements PendingDiscogsDeletionRepository {
+  final tombstones = <PendingDiscogsDeletion>[];
+  @override
+  Future<List<PendingDiscogsDeletion>> getByType(DeletionEntityType t) async =>
+      tombstones.where((d) => d.entityType == t).toList();
+  @override
+  Future<bool> containsRelease(
+    int discogsReleaseId,
+    DeletionEntityType entityType,
+  ) async => tombstones.any(
+    (d) => d.entityType == entityType && d.discogsReleaseId == discogsReleaseId,
+  );
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+/// "Discogs" for the import step: a remote collection classified by the real
+/// preview builder, so duplicate/link/tombstone rules are the production ones.
+class _FetchCollection extends FetchCollectionImportPreviewUseCase {
+  _FetchCollection(CollectionRepository repo, _Deletions deletions)
+    : super(
+        previewBuilder: BuildCollectionImportPreviewUseCase(
+          repo,
+          deletionRepository: deletions,
+        ),
+      );
+  List<DiscogsCollectionItemDto> remote = [];
+  FetchCollectionImportPreviewResult? fixed;
+  int calls = 0;
+  void Function()? onCall;
+
+  @override
+  Future<FetchCollectionImportPreviewResult> execute() async {
+    calls++;
+    onCall?.call();
+    return fixed ?? FetchPreviewReady(await previewBuilder.execute(remote));
+  }
+}
+
+class _FetchWishlist extends FetchWishlistImportPreviewUseCase {
+  _FetchWishlist(WishlistRepository repo, _Deletions deletions)
+    : super(
+        previewBuilder: BuildWishlistImportPreviewUseCase(
+          repo,
+          deletionRepository: deletions,
+        ),
+      );
+  List<DiscogsWantlistItemDto> remote = [];
+
+  @override
+  Future<FetchWishlistImportPreviewResult> execute() async =>
+      FetchWishlistPreviewReady(await previewBuilder.execute(remote));
+}
+
+DiscogsCollectionItemDto _remote(int releaseId, {int? instanceId}) =>
+    DiscogsCollectionItemDto(
+      releaseId: releaseId,
+      instanceId: instanceId ?? releaseId * 10,
+      dateAdded: '2026-11-01T10:00:00-07:00',
+      rating: 0,
+      folderId: 1,
+      title: 'Remote $releaseId',
+      artist: 'Artist $releaseId',
+      label: 'Label',
+      catno: 'CAT',
+      format: 'Vinyl, LP',
+      genres: const ['Jazz'],
+    );
+
+DiscogsWantlistItemDto _remoteWant(int releaseId) => DiscogsWantlistItemDto(
+  releaseId: releaseId,
+  dateAdded: '2026-11-01T10:00:00-07:00',
+  rating: 0,
+  title: 'Wanted $releaseId',
+  artist: 'Artist $releaseId',
+  label: 'Label',
+  catno: 'CAT',
+  format: 'Vinyl, LP',
+  genres: const ['Jazz'],
+);
+
 CollectionItem _c(int releaseId, SyncStatus status) => CollectionItem(
   id: 'c$releaseId',
   discogsReleaseId: releaseId,
@@ -150,24 +249,54 @@ void main() {
   late _Jobs jobs;
   late _Rows rows;
   late DateTime now;
+  late _Deletions deletions;
+  late _Collection localCollection;
+  late _Wishlist localWishlist;
+  late _FetchCollection fetchCollection;
+  late _FetchWishlist fetchWishlist;
 
   RunDiscogsAutoSyncUseCase useCase({
     List<CollectionItem> collection = const [],
     List<WishlistItem> wishlist = const [],
-  }) => RunDiscogsAutoSyncUseCase(
-    autoSync: sync,
-    collection: _Collection(collection),
-    wishlist: _Wishlist(wishlist),
-    jobs: jobs,
-    rowResults: rows,
-    clock: () => now,
-  );
+  }) {
+    localCollection = _Collection(collection);
+    localWishlist = _Wishlist(wishlist);
+    final remoteCollection = fetchCollection.remote;
+    final remoteWishlist = fetchWishlist.remote;
+    fetchCollection = _FetchCollection(localCollection, deletions)
+      ..remote = remoteCollection;
+    fetchWishlist = _FetchWishlist(localWishlist, deletions)
+      ..remote = remoteWishlist;
+    return RunDiscogsAutoSyncUseCase(
+      autoSync: sync,
+      collection: localCollection,
+      wishlist: localWishlist,
+      jobs: jobs,
+      rowResults: rows,
+      fetchCollection: fetchCollection,
+      importCollection: ExecuteCollectionImportUseCase(
+        collectionRepository: localCollection,
+        jobRepository: jobs,
+        rowResultRepository: rows,
+      ),
+      fetchWishlist: fetchWishlist,
+      importWishlist: ExecuteWishlistImportUseCase(
+        wishlistRepository: localWishlist,
+        jobRepository: jobs,
+        rowResultRepository: rows,
+      ),
+      clock: () => now,
+    );
+  }
 
   setUp(() {
     sync = _ScriptedSync();
     jobs = _Jobs();
     rows = _Rows();
     now = DateTime(2026, 11, 16, 12);
+    deletions = _Deletions();
+    fetchCollection = _FetchCollection(_Collection(const []), deletions);
+    fetchWishlist = _FetchWishlist(_Wishlist(const []), deletions);
   });
 
   test('sends only items that are not on Discogs yet', () async {
@@ -298,4 +427,117 @@ void main() {
       expect(count, 2);
     },
   );
+
+  group('import from Discogs (US-149)', () {
+    test('adds releases that are on Discogs but not in the app', () async {
+      fetchCollection.remote = [_remote(10), _remote(11)];
+      fetchWishlist.remote = [_remoteWant(20)];
+      final result = await useCase(
+        collection: [_c(10, SyncStatus.synced)],
+      ).run();
+
+      expect(result!.added, 2);
+      expect(
+        localCollection.items.map((i) => i.discogsReleaseId),
+        containsAll([10, 11]),
+      );
+      expect(localCollection.items, hasLength(2));
+      expect(localWishlist.items.single.discogsReleaseId, 20);
+    });
+
+    test('never overwrites a local item or its fields', () async {
+      final mine = _c(10, SyncStatus.synced).copyWith(
+        notes: 'my notes',
+        mediaCondition: RecordCondition.nearMint,
+        discogsInstanceId: 100,
+      );
+      fetchCollection.remote = [_remote(10, instanceId: 100)];
+      await useCase(collection: [mine]).run();
+
+      final after = localCollection.items.single;
+      expect(after.notes, 'my notes');
+      expect(after.mediaCondition, RecordCondition.nearMint);
+    });
+
+    test(
+      'a release deleted locally (pending Discogs deletion) stays out',
+      () async {
+        deletions.tombstones.add(
+          PendingDiscogsDeletion(
+            id: 't',
+            entityType: DeletionEntityType.collection,
+            discogsReleaseId: 12,
+            discogsInstanceId: 120,
+            artist: 'Artist 12',
+            title: 'Remote 12',
+            createdAt: now,
+          ),
+        );
+        fetchCollection.remote = [_remote(12)];
+        final result = await useCase().run();
+
+        expect(result!.added, 0);
+        expect(localCollection.items, isEmpty);
+      },
+    );
+
+    test(
+      'running again adds no duplicates and writes no empty history',
+      () async {
+        fetchCollection.remote = [_remote(10)];
+        final uc = useCase();
+        await uc.run();
+        final historyAfterFirst = jobs.jobs.length;
+
+        final again = await uc.run(force: true);
+
+        expect(again!.added, 0);
+        expect(localCollection.items, hasLength(1));
+        expect(jobs.jobs.length, historyAfterFirst);
+      },
+    );
+
+    test(
+      'sends before importing, so a just-added item is not re-imported',
+      () async {
+        final order = <String>[];
+        final uc = useCase(collection: [_c(10, SyncStatus.localOnly)]);
+        fetchCollection.remote = [_remote(10)];
+        fetchCollection.onCall = () => order.add('import');
+        sync.outcome[10] = SyncStatus.synced;
+        final pushSpy = sync.sent;
+        await uc.run();
+        order.insertAll(0, pushSpy.map((_) => 'send'));
+
+        expect(order, ['send', 'import']);
+        expect(localCollection.items, hasLength(1));
+      },
+    );
+
+    test(
+      'no import when auto-sync switched itself off while sending',
+      () async {
+        sync.outcome[10] = null;
+        final uc = useCase(collection: [_c(10, SyncStatus.localOnly)]);
+        await uc.run();
+        expect(fetchCollection.calls, 0);
+      },
+    );
+
+    test('no connection is reported, sending results are kept', () async {
+      final uc = useCase(collection: [_c(10, SyncStatus.localOnly)]);
+      fetchCollection.fixed = const FetchPreviewNetworkError();
+      final result = await uc.run();
+
+      expect(result!.sent, 1);
+      expect(result.problem, AutoSyncProblem.noConnection);
+    });
+
+    test('off → no import either', () async {
+      sync.enabled = false;
+      fetchCollection.remote = [_remote(10)];
+      await useCase().run();
+      expect(fetchCollection.calls, 0);
+    });
+  });
 }

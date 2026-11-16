@@ -362,6 +362,42 @@ abstract class AppLocalizations {
   /// **'Turn on'**
   String get settingsAutoSyncConfirmAction;
 
+  /// No description provided for @settingsAutoSyncRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing with Discogs…'**
+  String get settingsAutoSyncRunning;
+
+  /// No description provided for @settingsAutoSyncLastRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sync {time}: {sent} sent, {added} added.'**
+  String settingsAutoSyncLastRun(String time, int sent, int added);
+
+  /// No description provided for @settingsAutoSyncLastRunProblem.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sync {time}: {problem} It will try again.'**
+  String settingsAutoSyncLastRunProblem(String time, String problem);
+
+  /// No description provided for @settingsAutoSyncProblemNoConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection.'**
+  String get settingsAutoSyncProblemNoConnection;
+
+  /// No description provided for @settingsAutoSyncProblemDiscogsBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Discogs was busy.'**
+  String get settingsAutoSyncProblemDiscogsBusy;
+
+  /// No description provided for @settingsAutoSyncProblemFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong.'**
+  String get settingsAutoSyncProblemFailed;
+
   /// No description provided for @settingsImportExport.
   ///
   /// In en, this message translates to:

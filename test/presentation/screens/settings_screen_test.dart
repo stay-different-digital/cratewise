@@ -15,6 +15,8 @@ import 'package:cratewise/domain/models/connection_status.dart';
 import 'package:cratewise/infrastructure/secure_storage/secure_key_value_store.dart';
 import 'package:cratewise/shared/auto_sync_request_notifier.dart';
 import 'package:cratewise/shared/discogs_credentials_notifier.dart';
+import 'package:cratewise/application/use_cases/run_discogs_auto_sync_use_case.dart';
+import 'package:cratewise/presentation/widgets/discogs_auto_sync_runner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -673,6 +675,44 @@ void main() {
 
       expect(find.byType(AlertDialog), findsNothing);
       expect(await service.isEnabled(), isTrue);
+    });
+
+    testWidgets('shows a running sync and then the last result (US-149)', (
+      tester,
+    ) async {
+      addTearDown(() => autoSyncStatusNotifier.value = const AutoSyncStatus());
+      final prefs = _Prefs()..values['discogs_auto_sync'] = 'true';
+      await tester.pumpWidget(
+        _wrap(
+          _settings(
+            autoSync: DiscogsAutoSyncService(preferences: prefs),
+            connection: _Connection(connected: true),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      autoSyncStatusNotifier.value = const AutoSyncStatus(running: true);
+      await tester.pump();
+      expect(find.text('Syncing with Discogs…'), findsOneWidget);
+
+      autoSyncStatusNotifier.value = AutoSyncStatus(
+        lastRunAt: DateTime(2026, 11, 16, 14, 30),
+        lastResult: const AutoSyncRunResult(sent: 1, failed: 0, added: 2),
+      );
+      await tester.pump();
+      expect(find.textContaining('1 sent, 2 added'), findsOneWidget);
+
+      autoSyncStatusNotifier.value = AutoSyncStatus(
+        lastRunAt: DateTime(2026, 11, 16, 14, 45),
+        lastResult: const AutoSyncRunResult(
+          sent: 0,
+          failed: 0,
+          problem: AutoSyncProblem.noConnection,
+        ),
+      );
+      await tester.pump();
+      expect(find.textContaining('No connection.'), findsOneWidget);
     });
 
     testWidgets('explains when Discogs rejected the token', (tester) async {

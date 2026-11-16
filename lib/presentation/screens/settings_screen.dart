@@ -11,6 +11,8 @@ import '../../application/services/discogs_connection_service.dart';
 import '../../application/services/thumbnail_eviction_service.dart';
 import '../../application/use_cases/run_discogs_auto_sync_use_case.dart';
 import '../../shared/auto_sync_request_notifier.dart';
+import '../../shared/utils/date_format_utils.dart';
+import '../widgets/discogs_auto_sync_runner.dart';
 import '../../shared/discogs_credentials_notifier.dart';
 import '../../domain/models/pending_discogs_deletion.dart';
 import '../../domain/repositories/collection_repository.dart';
@@ -515,13 +517,39 @@ class _AutoSyncTileState extends State<_AutoSyncTile> {
   void initState() {
     super.initState();
     discogsCredentialsNotifier.addListener(_load);
+    autoSyncStatusNotifier.addListener(_onStatus);
     _load();
   }
 
   @override
   void dispose() {
     discogsCredentialsNotifier.removeListener(_load);
+    autoSyncStatusNotifier.removeListener(_onStatus);
     super.dispose();
+  }
+
+  void _onStatus() {
+    if (mounted) setState(() {});
+  }
+
+  /// Progress or outcome of the latest run (US-149), when sync is on.
+  String? _statusLine(AppLocalizations l10n) {
+    final status = autoSyncStatusNotifier.value;
+    if (status.running) return l10n.settingsAutoSyncRunning;
+    final result = status.lastResult;
+    final at = status.lastRunAt;
+    if (result == null || at == null) return null;
+    final time = formatDateTime(at, Localizations.localeOf(context));
+    final problem = result.problem;
+    if (problem != null) {
+      return l10n.settingsAutoSyncLastRunProblem(time, switch (problem) {
+        AutoSyncProblem.noConnection =>
+          l10n.settingsAutoSyncProblemNoConnection,
+        AutoSyncProblem.discogsBusy => l10n.settingsAutoSyncProblemDiscogsBusy,
+        AutoSyncProblem.failed => l10n.settingsAutoSyncProblemFailed,
+      });
+    }
+    return l10n.settingsAutoSyncLastRun(time, result.sent, result.added);
   }
 
   Future<void> _load() async {
@@ -579,9 +607,11 @@ class _AutoSyncTileState extends State<_AutoSyncTile> {
     final l10n = AppLocalizations.of(context)!;
     final subtitle = _turnedOffByDiscogs
         ? l10n.settingsAutoSyncTurnedOff
-        : _connected
-        ? l10n.settingsAutoSyncSubtitle
-        : l10n.settingsAutoSyncNeedsAccount;
+        : !_connected
+        ? l10n.settingsAutoSyncNeedsAccount
+        : _enabled
+        ? (_statusLine(l10n) ?? l10n.settingsAutoSyncSubtitle)
+        : l10n.settingsAutoSyncSubtitle;
     return SwitchListTile(
       key: const Key('auto-sync-switch'),
       contentPadding: EdgeInsets.zero,

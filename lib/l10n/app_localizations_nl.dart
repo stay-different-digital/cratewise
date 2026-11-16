@@ -160,6 +160,28 @@ class AppLocalizationsNl extends AppLocalizations {
   String get settingsAutoSyncConfirmAction => 'Aanzetten';
 
   @override
+  String get settingsAutoSyncRunning => 'Bezig met synchroniseren met Discogs…';
+
+  @override
+  String settingsAutoSyncLastRun(String time, int sent, int added) {
+    return 'Laatst gesynchroniseerd $time: $sent verstuurd, $added toegevoegd.';
+  }
+
+  @override
+  String settingsAutoSyncLastRunProblem(String time, String problem) {
+    return 'Laatste synchronisatie $time: $problem Er wordt opnieuw geprobeerd.';
+  }
+
+  @override
+  String get settingsAutoSyncProblemNoConnection => 'Geen verbinding.';
+
+  @override
+  String get settingsAutoSyncProblemDiscogsBusy => 'Discogs had het te druk.';
+
+  @override
+  String get settingsAutoSyncProblemFailed => 'Er ging iets mis.';
+
+  @override
   String get settingsImportExport => 'Importeren en exporteren';
 
   @override

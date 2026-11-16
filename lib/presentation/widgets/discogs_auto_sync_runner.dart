@@ -4,9 +4,29 @@ import 'package:flutter/widgets.dart';
 
 import '../../app/app_repositories.dart';
 import '../../application/services/discogs_auto_sync_service.dart';
+import '../../application/use_cases/build_collection_import_preview_use_case.dart';
+import '../../application/use_cases/build_wishlist_import_preview_use_case.dart';
+import '../../application/use_cases/execute_collection_import_use_case.dart';
+import '../../application/use_cases/execute_wishlist_import_use_case.dart';
+import '../../application/use_cases/fetch_collection_import_preview_use_case.dart';
+import '../../application/use_cases/fetch_wishlist_import_preview_use_case.dart';
 import '../../application/use_cases/run_discogs_auto_sync_use_case.dart';
 import '../../shared/auto_sync_request_notifier.dart';
 import '../../shared/import_notifier.dart';
+
+/// What Settings shows about automatic sync (US-149): whether a run is going
+/// on, and how the last one in this session ended.
+class AutoSyncStatus {
+  const AutoSyncStatus({this.running = false, this.lastRunAt, this.lastResult});
+
+  final bool running;
+  final DateTime? lastRunAt;
+  final AutoSyncRunResult? lastResult;
+}
+
+final autoSyncStatusNotifier = ValueNotifier<AutoSyncStatus>(
+  const AutoSyncStatus(),
+);
 
 /// Starts automatic Discogs sync runs (US-148): when the app opens, when it
 /// returns to the foreground, and on request (auto-sync just turned on). The
@@ -41,6 +61,31 @@ class _DiscogsAutoSyncRunnerState extends State<DiscogsAutoSyncRunner>
           wishlist: repos.wishlist,
           jobs: repos.importExportJob,
           rowResults: repos.importExportRowResult,
+          // Built exactly like the manual import screens build them.
+          fetchCollection: FetchCollectionImportPreviewUseCase(
+            previewBuilder: BuildCollectionImportPreviewUseCase(
+              repos.collection,
+              deletionRepository: repos.pendingDeletion,
+            ),
+          ),
+          importCollection: ExecuteCollectionImportUseCase(
+            collectionRepository: repos.collection,
+            jobRepository: repos.importExportJob,
+            rowResultRepository: repos.importExportRowResult,
+            transactionRunner: repos.transactionRunner,
+          ),
+          fetchWishlist: FetchWishlistImportPreviewUseCase(
+            previewBuilder: BuildWishlistImportPreviewUseCase(
+              repos.wishlist,
+              deletionRepository: repos.pendingDeletion,
+            ),
+          ),
+          importWishlist: ExecuteWishlistImportUseCase(
+            wishlistRepository: repos.wishlist,
+            jobRepository: repos.importExportJob,
+            rowResultRepository: repos.importExportRowResult,
+            transactionRunner: repos.transactionRunner,
+          ),
         );
     WidgetsBinding.instance.addObserver(this);
     autoSyncRequestNotifier.addListener(_onRequest);
@@ -62,9 +107,23 @@ class _DiscogsAutoSyncRunnerState extends State<DiscogsAutoSyncRunner>
   void _onRequest() => unawaited(_run(force: true));
 
   Future<void> _run({bool force = false}) async {
-    final result = await _useCase.run(force: force);
-    if (result == null || result.sent + result.failed == 0) return;
-    // Sync status icons changed: let the collection and wishlist reload.
+    final previous = autoSyncStatusNotifier.value;
+    final result = await _useCase.run(
+      force: force,
+      onStart: () => autoSyncStatusNotifier.value = AutoSyncStatus(
+        running: true,
+        lastRunAt: previous.lastRunAt,
+        lastResult: previous.lastResult,
+      ),
+    );
+    if (result == null) return; // skipped: off, throttled or busy
+    autoSyncStatusNotifier.value = AutoSyncStatus(
+      lastRunAt: DateTime.now(),
+      lastResult: result,
+    );
+    if (result.sent + result.failed + result.added == 0) return;
+    // Items were added or changed status: let the collection and wishlist
+    // reload so new records and sync icons show up.
     collectionImportNotifier.value++;
     wishlistImportNotifier.value++;
   }

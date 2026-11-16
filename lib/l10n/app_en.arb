@@ -60,6 +60,25 @@
   },
   "settingsAutoSyncConfirmBody": "Records in your collection or wishlist that are not on Discogs yet will be added to your Discogs account. Records already there are not added twice.",
   "settingsAutoSyncConfirmAction": "Turn on",
+  "settingsAutoSyncRunning": "Syncing with Discogs…",
+  "settingsAutoSyncLastRun": "Last sync {time}: {sent} sent, {added} added.",
+  "@settingsAutoSyncLastRun": {
+    "placeholders": {
+      "time": {"type": "String"},
+      "sent": {"type": "int"},
+      "added": {"type": "int"}
+    }
+  },
+  "settingsAutoSyncLastRunProblem": "Last sync {time}: {problem} It will try again.",
+  "@settingsAutoSyncLastRunProblem": {
+    "placeholders": {
+      "time": {"type": "String"},
+      "problem": {"type": "String"}
+    }
+  },
+  "settingsAutoSyncProblemNoConnection": "No connection.",
+  "settingsAutoSyncProblemDiscogsBusy": "Discogs was busy.",
+  "settingsAutoSyncProblemFailed": "Something went wrong.",
   "settingsImportExport": "Import & Export",
   "settingsImportExportSubtitle": "Move records to and from Discogs or CSV files",
   "settingsFailedActions": "Failed Actions",
