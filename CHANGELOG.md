@@ -10,13 +10,52 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
-## [Unreleased]
+## [1.1.0] — 2026-11-16
+
+Search and navigation release (phase 17, sprint 1). The barcode scanner is
+gone; its place in the main menu goes to collection statistics.
+
+### Added
+
+- **Sort search results by year (US-133)** — Relevance, Newest first or
+  Oldest first, next to the filter chips. Sorting happens at Discogs, so
+  scrolling to later pages keeps the order.
+- **Vinyl only (US-142)** — a chip in Search that hides CD, cassette and
+  digital ("File") releases. Releases that combine vinyl with another format
+  stay. The choice is remembered on the device.
+- **From a release to its label (US-134)** — the label name in the release
+  info is a link to all the label's releases, newest first, with the usual
+  in-collection and wishlist icons.
+- **Statistics tab (US-140)** — collection statistics are a main-menu tab and
+  refresh every time you open it.
+- **Fresh search with one tap (US-139)** — tapping Search again while on the
+  results clears the search box; filter and sort stay.
+- **Filter by format type (US-143, US-147)** — the collection and wishlist
+  filters show one chip per format type (Vinyl, CD, File…) instead of one per
+  format variant. Saved filters keep working.
+
+### Changed
+
+- **No "Set condition" sheet when adding to the collection (US-141)** — the
+  record is added straight away with condition Very Good; change it later
+  from the collection item.
 
 ### Removed
 
-- **Barcode scanner (US-135, US-136)** — the Scan tab, the scanner screen,
-  manual barcode lookup and the `mobile_scanner` dependency are gone; the
-  feature was rarely used. Releases are found through Search.
+- **Barcode scanner (US-135 – US-138)** — the Scan tab, the scanner screen,
+  manual barcode lookup, the `mobile_scanner` dependency and the camera
+  permission on Android and iOS. The feature was rarely used.
+
+### Fixed
+
+- **Android network permission (US-137)** — the app now declares `INTERNET`
+  itself. It previously came only through the scanner's ML Kit dependency.
+- **Search filter chip lost on focus** — picking Label (or Artist / Release)
+  and then tapping into the empty search box reset the chip to All.
+- **Search messages on short screens** — the empty and error messages scroll
+  instead of overflowing in the iPad search pane.
+- **Statistics "By format"** — a record whose first format has no
+  description no longer shows its full format text as a category.
 
 ## [1.0.4] — 2026-10-23
 
