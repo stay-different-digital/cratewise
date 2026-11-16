@@ -10,6 +10,19 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.2.1] — 2026-11-16
+
+Toolchain update; no new features.
+
+### Changed
+
+- **Flutter 3.50** — Material now comes from the standalone `material_ui`
+  package; go_router 18 keeps the normal screen transitions and the iOS
+  swipe-back gesture; built-in Material texts (tooltips, dialog buttons) stay
+  translated in Dutch, German, French and Spanish.
+- **Android build** — Gradle 9.5, Android Gradle Plugin 9.3, Kotlin 2.4; the
+  build needs JDK 21 (the app itself still targets Java 17).
+
 ## [1.2.0] — 2026-11-16
 
 Automatic sync with Discogs (phase 17, sprint 2). Off by default.
