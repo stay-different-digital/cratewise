@@ -163,7 +163,7 @@ Opslag van het Discogs-token, de taalkeuze, onboarding-status, "Alleen vinyl" en
 
 ### US-156: `sqlite3_flutter_libs` (eol) vervangen; drift naar 2.35
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)** — het project gebruikte al `sqlite3` 3.3.3, waarbij `sqlite3_flutter_libs` 0.6 niets meer doet; verwijderd. `drift`/`drift_dev` 2.35, `build_runner` 2.17, code opnieuw gegenereerd. Migratietests groen. Upgrade-test (`integration_test/app_upgrade_test.dart`, nu ook met een collectie-item) slaagt op Android en iOS.
 
 **Priority: Medium · 3 SP**
 

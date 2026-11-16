@@ -10,6 +10,14 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.2.3] — 2026-11-16
+
+### Changed
+
+- Database libraries updated (US-156): `drift` 2.35; the end-of-life
+  `sqlite3_flutter_libs` is removed (unused since `sqlite3` 3). Existing
+  collections stay readable after the update, checked on Android and iOS.
+
 ## [1.2.2] — 2026-11-16
 
 Plugin updates for Flutter 3.50 (phase 18); no new features.

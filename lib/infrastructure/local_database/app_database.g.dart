@@ -6517,7 +6517,16 @@ class $$CollectionItemsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$CollectionItemsTable, CollectionRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $CollectionItemsTable,
+                    CollectionRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -6935,7 +6944,16 @@ class $$WishlistItemsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$WishlistItemsTable, WishlistRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $WishlistItemsTable,
+                    WishlistRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -7383,7 +7401,16 @@ class $$CachedReleasesTableTableManager
                 syncStatus: syncStatus,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$CachedReleasesTable, CachedReleaseRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $CachedReleasesTable,
+                    CachedReleaseRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -7697,7 +7724,16 @@ class $$RetryActionsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$RetryActionsTable, RetryActionRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $RetryActionsTable,
+                    RetryActionRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -8052,7 +8088,18 @@ class $$ImportExportJobsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$ImportExportJobsTable, ImportExportJobRow>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ImportExportJobsTable,
+                    ImportExportJobRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -8309,7 +8356,19 @@ class $$ImportExportRowResultsTableTableManager
                 safeErrorMessage: safeErrorMessage,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<
+                    $ImportExportRowResultsTable,
+                    ImportExportRowResultRow
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ImportExportRowResultsTable,
+                    ImportExportRowResultRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -8572,7 +8631,19 @@ class $$PendingDiscogsDeletionsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<
+                    $PendingDiscogsDeletionsTable,
+                    PendingDiscogsDeletionRow
+                  >(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PendingDiscogsDeletionsTable,
+                    PendingDiscogsDeletionRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -8821,7 +8892,16 @@ class $$SavedSearchesTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$SavedSearchesTable, SavedSearchRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $SavedSearchesTable,
+                    SavedSearchRow
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
