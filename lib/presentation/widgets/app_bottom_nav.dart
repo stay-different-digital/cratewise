@@ -35,6 +35,11 @@ class AppBottomNav extends StatelessWidget {
           label: l10n.navWishlist,
         ),
         NavigationDestination(
+          icon: const Icon(Icons.bar_chart_outlined),
+          selectedIcon: const Icon(Icons.bar_chart),
+          label: l10n.navStatistics,
+        ),
+        NavigationDestination(
           icon: const Icon(Icons.settings_outlined),
           selectedIcon: const Icon(Icons.settings),
           label: l10n.navSettings,

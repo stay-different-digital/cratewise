@@ -3,6 +3,7 @@
   "navSearch": "Search",
   "navCollection": "Collection",
   "navWishlist": "Wishlist",
+  "navStatistics": "Statistics",
   "navSettings": "Settings",
   "searchHint": "Artist, album, or label…",
   "searchClearTooltip": "Clear search",

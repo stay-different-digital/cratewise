@@ -132,10 +132,62 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
-    testWidgets('shows app bar title after loading', (tester) async {
+    testWidgets('is a tab: no app bar and no back button (US-140)', (
+      tester,
+    ) async {
       await tester.pumpWidget(_screen());
       await tester.pumpAndSettle();
-      expect(find.text('Collection statistics'), findsOneWidget);
+      expect(find.byType(AppBar), findsNothing);
+      expect(find.byType(BackButton), findsNothing);
+      expect(find.text('Collection statistics'), findsNothing);
+    });
+
+    testWidgets('reloads when the tab becomes visible again (US-140)', (
+      tester,
+    ) async {
+      final items = [_item(id: 'a', discogsReleaseId: 1)];
+      final repo = _FakeCollectionRepository(items);
+      final visible = ValueNotifier(true);
+      addTearDown(visible.dispose);
+      // go_router hides inactive tabs with TickerMode(enabled: false).
+      await tester.pumpWidget(
+        _wrap(
+          ValueListenableBuilder<bool>(
+            valueListenable: visible,
+            builder: (_, on, child) => TickerMode(enabled: on, child: child!),
+            child: CollectionStatisticsScreen(
+              repository: repo,
+              metadataRepository: _FakeMetadataRepository(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(repo.getAllCallCount, 1);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('stat-total')),
+          matching: find.text('1'),
+        ),
+        findsOneWidget,
+      );
+
+      // Leave the tab, add a record elsewhere, come back.
+      visible.value = false;
+      await tester.pump();
+      items.add(_item(id: 'b', discogsReleaseId: 2));
+      expect(repo.getAllCallCount, 1, reason: 'no reload while hidden');
+      visible.value = true;
+      await tester.pumpAndSettle();
+
+      expect(repo.getAllCallCount, 2);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('stat-total')),
+          matching: find.text('2'),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows total records count', (tester) async {

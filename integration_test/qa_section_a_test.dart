@@ -25,7 +25,7 @@ void main() {
     runApp(const CratewiseApp());
     await tester.pumpAndSettle();
 
-    // A4 — all four tabs are reachable.
+    // A4 — all five tabs are reachable.
     expect(find.text('Search'), findsWidgets);
     await tester.tap(find.text('Collection'));
     await tester.pumpAndSettle();
@@ -34,6 +34,10 @@ void main() {
     await tester.tap(find.text('Wishlist'));
     await tester.pumpAndSettle();
     await shoot(tester, 'a4_wishlist_tab');
+
+    await tester.tap(find.text('Statistics'));
+    await tester.pumpAndSettle();
+    await shoot(tester, 'a4_statistics_tab');
 
     await tester.tap(find.text('Settings'));
     await tester.pumpAndSettle();

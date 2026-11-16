@@ -18,6 +18,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navWishlist => 'Liste de souhaits';
 
   @override
+  String get navStatistics => 'Statistiques';
+
+  @override
   String get navSettings => 'Paramètres';
 
   @override

@@ -22,11 +22,22 @@ class CollectionStatisticsScreen extends StatefulWidget {
 
 class _CollectionStatisticsScreenState
     extends State<CollectionStatisticsScreen> {
-  late final Future<CollectionStats> _statsFuture;
+  Future<CollectionStats>? _statsFuture;
+  bool _visible = false;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // US-140: this is a tab. go_router keeps every tab alive in an
+    // IndexedStack and disables tickers on hidden ones, so TickerMode turning
+    // on means "the tab just became visible" — reload so the numbers reflect
+    // collection changes made on other tabs.
+    final visible = TickerMode.valuesOf(context).enabled;
+    if (visible && !_visible) _statsFuture = _loadStats();
+    _visible = visible;
+  }
+
+  Future<CollectionStats> _loadStats() async {
     final repo =
         widget.repository ?? AppRepositoriesScope.of(context).collection;
     final metaRepo =
@@ -34,35 +45,31 @@ class _CollectionStatisticsScreenState
         AppRepositoriesScope.of(context).cachedRelease;
     final itemsFuture = repo.getAll();
     final metaFuture = metaRepo.getAll();
-    _statsFuture = () async {
-      return CollectionStats.from(
-        await itemsFuture,
-        metadata: await metaFuture,
-      );
-    }();
+    return CollectionStats.from(await itemsFuture, metadata: await metaFuture);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Collection statistics')),
-      body: FutureBuilder<CollectionStats>(
-        future: _statsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Text('Could not load statistics.'),
-              ),
-            );
-          }
-          return _StatsBody(stats: snapshot.data!);
-        },
-      ),
+    // No AppBar: like the other tabs, content starts directly under the
+    // shell's SafeArea (US-83), and a tab has no back button.
+    return FutureBuilder<CollectionStats>(
+      future: _statsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(32),
+              child: Text('Could not load statistics.'),
+            ),
+          );
+        }
+        // On a reload the previous numbers stay visible until the new ones
+        // arrive, so revisiting the tab does not flash a spinner.
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        return _StatsBody(stats: snapshot.data!);
+      },
     );
   }
 }

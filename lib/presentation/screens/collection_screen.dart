@@ -307,12 +307,6 @@ class _CollectionScreenState extends State<CollectionScreen> with RouteAware {
                 tooltip: 'Saved filters',
                 onPressed: _openSavedSearches,
               ),
-              IconButton(
-                key: const Key('collection-stats-button'),
-                icon: const Icon(Icons.bar_chart_outlined),
-                tooltip: 'View statistics',
-                onPressed: () => context.push(AppRoutes.collectionStatistics),
-              ),
             ],
           ),
         ),

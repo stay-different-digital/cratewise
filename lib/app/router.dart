@@ -32,6 +32,7 @@ abstract final class AppRoutes {
   static const search = '/search';
   static const collection = '/collection';
   static const wishlist = '/wishlist';
+  static const statistics = '/statistics';
   static const settings = '/settings';
   static const importExport = '/settings/import-export';
   static const importExportHistory = '/settings/import-export/history';
@@ -65,7 +66,6 @@ abstract final class AppRoutes {
   static const onboarding = '/onboarding';
 
   static const savedSearches = '/saved-searches';
-  static const collectionStatistics = '/collection/statistics';
   static String collectionDetail(String itemId) => '/collection/$itemId';
   static String wishlistDetail(String itemId) => '/wishlist/$itemId';
 }
@@ -120,10 +120,6 @@ GoRouter createAppRouter({bool showOnboarding = false}) => GoRouter(
               builder: (_, _) => const CollectionScreen(),
               routes: [
                 GoRoute(
-                  path: 'statistics',
-                  builder: (_, _) => const CollectionStatisticsScreen(),
-                ),
-                GoRoute(
                   path: ':itemId',
                   builder: (_, state) => CollectionDetailScreen(
                     itemId: state.pathParameters['itemId']!,
@@ -153,7 +149,17 @@ GoRouter createAppRouter({bool showOnboarding = false}) => GoRouter(
           ],
         ),
 
-        // ── Tab 3: Settings ──────────────────────────────────────────────
+        // ── Tab 3: Statistics (US-140) ───────────────────────────────────
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.statistics,
+              builder: (_, _) => const CollectionStatisticsScreen(),
+            ),
+          ],
+        ),
+
+        // ── Tab 4: Settings ──────────────────────────────────────────────
         StatefulShellBranch(
           routes: [
             GoRoute(

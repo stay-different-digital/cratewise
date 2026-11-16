@@ -18,6 +18,9 @@ class AppLocalizationsNl extends AppLocalizations {
   String get navWishlist => 'Verlanglijst';
 
   @override
+  String get navStatistics => 'Statistieken';
+
+  @override
   String get navSettings => 'Instellingen';
 
   @override
