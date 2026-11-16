@@ -195,7 +195,9 @@ Na US-135 is het scherm onbereikbaar. Wat overblijft:
 
 ### US-138: iOS — cameratoestemming verwijderen
 
-**Status: In Progress**
+**Status: ⛔ Blocked (2026-11-16)** — code klaar, buildverificatie geblokkeerd
+
+**Stand:** `NSCameraUsageDescription` is verwijderd en `pod install` is gedraaid; `Podfile.lock` bevatte de scanner nooit (die kwam via Swift Package Manager). De release-build lukt niet, om een reden die los staat van deze story: de geïnstalleerde Xcode (SDK 27.2) ondersteunt alleen iOS-deployment-targets vanaf 15.0, het project en de pods staan op 13.0 (`flutter_secure_storage` op 9.0). Daarnaast faalt `flutter build ipa` op signing: het lokale provisioning-profiel "cratewise" hoort bij app-ID `cratewise`, niet bij `app.cratewise`. **Nodig van [Fred]:** besluit over minimum iOS 15 (iOS 13/14-gebruikers krijgen dan geen updates meer) en een kloppend provisioning-profiel. Daarna: build, start op iPhone en iPad, tabs in onderbalk en zijbalk.
 
 **Priority: Medium · 1 SP**
 
