@@ -114,6 +114,8 @@ Versie: sprint 1 levert 1.1.0 (Minor per ADR-0003: featurebatch plus een verwijd
 
 ### US-135: Scannen uit het hoofdmenu halen
 
+**Status: In Progress**
+
 **Priority: High · 2 SP**
 
 > Als gebruiker,
