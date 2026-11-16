@@ -1,5 +1,6 @@
 import '../../domain/models/search_filter.dart';
 import '../../domain/models/search_result_page.dart';
+import '../../domain/models/search_sort.dart';
 
 /// In-memory LRU cache for search result pages.
 ///
@@ -20,13 +21,15 @@ class SearchQueryCache {
   final _store = <String, _CacheEntry>{};
 
   /// Normalises a raw query/barcode to a stable cache key, scoped by [filter]
-  /// (US-85) so an "All" search and an "Artist" search for the same text don't
-  /// collide. Defaults to [SearchFilter.all] (e.g. barcode lookups, which are
-  /// release-only and never filtered).
+  /// (US-85) and [sort] (US-133) so results for the same text under another
+  /// scope or order never show up as a cache hit. Defaults to [SearchFilter.all]
+  /// and [SearchSort.relevance] (e.g. barcode lookups, which are release-only
+  /// and never filtered or sorted).
   static String normalizeKey(
     String query, [
     SearchFilter filter = SearchFilter.all,
-  ]) => '${filter.name}:${query.trim().toLowerCase()}';
+    SearchSort sort = SearchSort.relevance,
+  ]) => '${filter.name}:${sort.name}:${query.trim().toLowerCase()}';
 
   /// Returns the cached page for [key], or `null` if absent or expired.
   SearchResultPage? get(String key) {

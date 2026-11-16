@@ -59,6 +59,18 @@ class AppLocalizationsNl extends AppLocalizations {
   String get searchFilterLabel => 'Label';
 
   @override
+  String get searchSortTooltip => 'Sorteren';
+
+  @override
+  String get searchSortRelevance => 'Relevantie';
+
+  @override
+  String get searchSortNewestFirst => 'Nieuwste eerst';
+
+  @override
+  String get searchSortOldestFirst => 'Oudste eerst';
+
+  @override
   String get cachedResultsBanner => 'Opgeslagen resultaten worden weergegeven';
 
   @override

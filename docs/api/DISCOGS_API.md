@@ -44,6 +44,27 @@ The Discogs API client should handle:
 - JSON parsing
 - Friendly errors
 
+## Search parameters (verified)
+
+`GET /database/search` accepts these parameters although the public API docs
+don't list them. Verified 2026-11-16 with real requests (`label=Blue Note`,
+`type=release`):
+
+| Parameter | Effect | Used by |
+|---|---|---|
+| `sort=year&sort_order=desc` | Newest first (2026 at the top); later pages continue the same order | US-133 |
+| `sort=year&sort_order=asc` | Oldest first (1939 at the top) | US-133 |
+| `format=Vinyl` | Only releases with a vinyl format: 13,790 of 32,777 results, no `File` releases | US-142 |
+
+Without `sort` Discogs orders by relevance. Combined with a field filter
+(`label`, `artist`, `release_title`) the parameters still work. Search results
+are public data: the endpoint also answers without a token, but the app always
+sends one.
+
+If Discogs ever drops these parameters the results come back in relevance
+order or unfiltered instead of failing, so check them again when search
+results look wrong.
+
 ## Rate limiting
 
 The app should:

@@ -18,6 +18,7 @@ import '../../application/use_cases/add_to_wishlist_use_case.dart';
 import '../../domain/models/release_search_result.dart';
 import '../../domain/models/saved_search.dart';
 import '../../domain/models/search_filter.dart';
+import '../../domain/models/search_sort.dart';
 import '../../domain/repositories/cached_release_metadata_repository.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/saved_search_repository.dart';
@@ -139,6 +140,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   WishlistRepository? _wishlistRepository;
   SavedSearchRepository? _savedSearchRepository;
   final _controller = TextEditingController();
+  String _listenedText = '';
   _SearchState _state = const _Idle();
   Timer? _debounce;
   String _lastQuery = '';
@@ -148,6 +150,10 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   // Filter of the search currently shown — paired with [_lastQuery] so the
   // skip-guard and pagination/background refresh stay on the same filter (US-85).
   SearchFilter _lastFilter = SearchFilter.all;
+  // Result order (US-133), paired with [_lastSort] the same way. Unlike the
+  // filter it survives clearing the field: it is a preference, not a scope.
+  SearchSort _sort = SearchSort.relevance;
+  SearchSort _lastSort = SearchSort.relevance;
   ReleaseSearchResult? _selectedResult;
   int _searchGeneration = 0;
   // Discogs release ids the user already has locally. Loaded once and refreshed
@@ -216,6 +222,11 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   }
 
   void _onQueryChanged() {
+    // The controller also notifies on cursor/selection changes — e.g. focusing
+    // the empty field places the cursor. Only text edits may reset the scope,
+    // otherwise tapping into the field after picking a chip drops the chip.
+    if (_controller.text == _listenedText) return;
+    _listenedText = _controller.text;
     _debounce?.cancel();
     final query = _controller.text.trim();
     if (query.isEmpty) {
@@ -241,24 +252,29 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return;
     final filter = _filter;
+    final sort = _sort;
     // Only skip if we already have fresh (non-cached) results for this exact
-    // query *and* filter — a filter change with identical text must re-search.
+    // query, filter *and* sort — changing either with identical text must
+    // re-search.
     final alreadyHasFreshResults =
         _state is _Results &&
         !(_state as _Results).isLoadingMore &&
         !(_state as _Results).fromCache;
     if (trimmed == _lastQuery &&
         filter == _lastFilter &&
+        sort == _lastSort &&
         (_state is _Loading || alreadyHasFreshResults)) {
       return;
     }
     _lastQuery = trimmed;
     _lastFilter = filter;
+    _lastSort = sort;
     final gen = ++_searchGeneration;
 
     // Check cache first — show immediately and refresh in background. The key
-    // is scoped by filter so "All" and "Artist" results don't collide (US-85).
-    final cacheKey = SearchQueryCache.normalizeKey(trimmed, filter);
+    // is scoped by filter and sort so "All" and "Artist" results, or the same
+    // results in another order, don't collide (US-85, US-133).
+    final cacheKey = SearchQueryCache.normalizeKey(trimmed, filter, sort);
     final cached = _cache.get(cacheKey);
     if (cached != null) {
       setState(() {
@@ -271,7 +287,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
         );
         _selectedResult = null;
       });
-      _searchInBackground(trimmed, cacheKey, gen, filter);
+      _searchInBackground(trimmed, cacheKey, gen, filter, sort);
       return;
     }
 
@@ -280,7 +296,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
       _selectedResult = null;
     });
     try {
-      final page = await _service.search(trimmed, filter: filter);
+      final page = await _service.search(trimmed, filter: filter, sort: sort);
       if (!mounted || gen != _searchGeneration) return;
       _cache.put(cacheKey, page);
       setState(
@@ -302,9 +318,10 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     String cacheKey,
     int gen,
     SearchFilter filter,
+    SearchSort sort,
   ) async {
     try {
-      final page = await _service.search(query, filter: filter);
+      final page = await _service.search(query, filter: filter, sort: sort);
       if (!mounted || gen != _searchGeneration) return;
       _cache.put(cacheKey, page);
       setState(
@@ -338,6 +355,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
         _lastQuery,
         page: current.currentPage + 1,
         filter: _lastFilter,
+        sort: _lastSort,
       );
       if (!mounted || gen != _searchGeneration) return;
       setState(
@@ -507,16 +525,34 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
             ],
           ),
         ),
-        _SearchFilterChips(
-          selected: _filter,
-          onChanged: (f) {
-            setState(() => _filter = f);
-            // Re-run the current search immediately under the new scope (US-85)
-            // — the user shouldn't have to re-type. The skip-guard compares the
-            // filter, so identical text still re-searches.
-            final text = _controller.text.trim();
-            if (text.isNotEmpty) _onSubmit(text);
-          },
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _SearchFilterChips(
+                selected: _filter,
+                onChanged: (f) {
+                  setState(() => _filter = f);
+                  // Re-run the current search immediately under the new scope
+                  // (US-85) — the user shouldn't have to re-type. The
+                  // skip-guard compares the filter, so identical text still
+                  // re-searches.
+                  final text = _controller.text.trim();
+                  if (text.isNotEmpty) _onSubmit(text);
+                },
+              ),
+            ),
+            _SearchSortMenu(
+              selected: _sort,
+              onChanged: (s) {
+                setState(() => _sort = s);
+                // Same as a filter change: re-run from page 1 in the new
+                // order (US-133).
+                final text = _controller.text.trim();
+                if (text.isNotEmpty) _onSubmit(text);
+              },
+            ),
+          ],
         ),
         Expanded(child: _buildBody(isWide: isWide)),
       ],
@@ -641,6 +677,74 @@ class _SearchFilterChips extends StatelessWidget {
                   onChanged(isSelected ? filter : SearchFilter.all),
             ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sort menu (US-133)
+// ---------------------------------------------------------------------------
+
+/// Compact menu next to the filter chips that picks the result order. Shows
+/// the current order as text so a non-default sort is visible at a glance.
+class _SearchSortMenu extends StatelessWidget {
+  const _SearchSortMenu({required this.selected, required this.onChanged});
+
+  final SearchSort selected;
+  final ValueChanged<SearchSort> onChanged;
+
+  static String label(AppLocalizations l10n, SearchSort sort) => switch (sort) {
+    SearchSort.relevance => l10n.searchSortRelevance,
+    SearchSort.newestFirst => l10n.searchSortNewestFirst,
+    SearchSort.oldestFirst => l10n.searchSortOldestFirst,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: PopupMenuButton<SearchSort>(
+        key: const Key('search-sort-button'),
+        tooltip: l10n.searchSortTooltip,
+        initialValue: selected,
+        onSelected: (s) {
+          if (s != selected) onChanged(s);
+        },
+        itemBuilder: (_) => [
+          for (final sort in SearchSort.values)
+            CheckedPopupMenuItem(
+              key: Key('search-sort-option-${sort.name}'),
+              value: sort,
+              checked: sort == selected,
+              child: Text(label(l10n, sort)),
+            ),
+        ],
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.swap_vert,
+                  size: 20,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  label(l10n, selected),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

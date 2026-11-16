@@ -7,6 +7,7 @@ import 'package:cratewise/infrastructure/discogs/dto/discogs_release.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_search_result.dart';
 import 'package:cratewise/infrastructure/discogs/dto/discogs_wantlist_item.dart';
 import 'package:cratewise/domain/models/search_filter.dart';
+import 'package:cratewise/domain/models/search_sort.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -388,6 +389,41 @@ void main() {
       expect(captured.url.queryParameters['label'], 'blue');
       expect(captured.url.queryParameters.containsKey('q'), isFalse);
       expect(captured.url.queryParameters['type'], 'release');
+    });
+
+    test('sends sort=year with the right order, nothing for relevance '
+        '(US-133)', () async {
+      late http.Request captured;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(searchBody([]), 200);
+        }),
+      );
+
+      await client.searchReleases('blue note', _fakeToken);
+      expect(captured.url.queryParameters.containsKey('sort'), isFalse);
+      expect(captured.url.queryParameters.containsKey('sort_order'), isFalse);
+
+      await client.searchReleases(
+        'blue note',
+        _fakeToken,
+        filter: SearchFilter.label,
+        sort: SearchSort.newestFirst,
+        page: 2,
+      );
+      expect(captured.url.queryParameters['sort'], 'year');
+      expect(captured.url.queryParameters['sort_order'], 'desc');
+      expect(captured.url.queryParameters['label'], 'blue note');
+      expect(captured.url.queryParameters['page'], '2');
+
+      await client.searchReleases(
+        'blue note',
+        _fakeToken,
+        sort: SearchSort.oldestFirst,
+      );
+      expect(captured.url.queryParameters['sort'], 'year');
+      expect(captured.url.queryParameters['sort_order'], 'asc');
     });
 
     test('throws InvalidTokenError on 401', () async {

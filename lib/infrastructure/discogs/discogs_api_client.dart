@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../../domain/models/search_filter.dart';
+import '../../domain/models/search_sort.dart';
 import '../../shared/errors/app_error.dart';
 import 'dto/discogs_collection_item.dart';
 import 'dto/discogs_identity.dart';
@@ -67,13 +68,15 @@ class DiscogsApiClient {
   /// a single field (US-85): `all` uses the general `q` parameter (default,
   /// matches every field); `release`/`artist`/`label` use the field-scoped
   /// `release_title`/`artist`/`label` parameters. `type=release` is always sent
-  /// so the response shape is unchanged.
+  /// so the response shape is unchanged. [sort] adds `sort=year` with a
+  /// `sort_order` for the year orders and nothing for relevance (US-133).
   Future<DiscogsSearchPageDto> searchReleases(
     String query,
     String token, {
     int page = 1,
     int perPage = 50,
     SearchFilter filter = SearchFilter.all,
+    SearchSort sort = SearchSort.relevance,
   }) async {
     final textParam = switch (filter) {
       SearchFilter.all => 'q',
@@ -89,6 +92,14 @@ class DiscogsApiClient {
         'type': 'release',
         'page': '$page',
         'per_page': '$perPage',
+        ...switch (sort) {
+          SearchSort.relevance => const <String, String>{},
+          SearchSort.newestFirst => const {
+            'sort': 'year',
+            'sort_order': 'desc',
+          },
+          SearchSort.oldestFirst => const {'sort': 'year', 'sort_order': 'asc'},
+        },
       },
     );
     final json = jsonDecode(response.body) as Map<String, dynamic>;

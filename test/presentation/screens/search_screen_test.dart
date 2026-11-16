@@ -7,6 +7,7 @@ import 'package:cratewise/presentation/screens/release_detail_screen.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
 import 'package:cratewise/domain/models/search_filter.dart';
+import 'package:cratewise/domain/models/search_sort.dart';
 import 'package:cratewise/domain/models/search_result_page.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
@@ -61,6 +62,7 @@ class _FakeSearchService extends DiscogsSearchService {
     String query, {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
+    SearchSort sort = SearchSort.relevance,
   }) async {
     if (throws != null) throw throws!;
     return _singlePage(results ?? []);
@@ -79,6 +81,7 @@ class _CountingSearchService extends DiscogsSearchService {
     String query, {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
+    SearchSort sort = SearchSort.relevance,
   }) async {
     callCount++;
     return _singlePage(results);
@@ -94,6 +97,7 @@ class _RecordingSearchService extends DiscogsSearchService {
   final List<ReleaseSearchResult> page1;
   final List<ReleaseSearchResult> page2;
   final List<SearchFilter> filters = [];
+  final List<SearchSort> sorts = [];
   final List<int> pages = [];
 
   @override
@@ -101,8 +105,10 @@ class _RecordingSearchService extends DiscogsSearchService {
     String query, {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
+    SearchSort sort = SearchSort.relevance,
   }) async {
     filters.add(filter);
+    sorts.add(sort);
     pages.add(page);
     final items = page == 1 ? page1 : page2;
     // Only advertise a second page when one exists, so tests that don't want
@@ -130,6 +136,7 @@ class _FlippingSearchService extends DiscogsSearchService {
     String query, {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
+    SearchSort sort = SearchSort.relevance,
   }) async {
     _callCount++;
     if (_callCount == 1) throw firstError;
@@ -148,6 +155,7 @@ class _DelayedSearchService extends DiscogsSearchService {
     String query, {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
+    SearchSort sort = SearchSort.relevance,
   }) => _completer.future;
 }
 
@@ -163,6 +171,7 @@ class _SequencedDelayedSearchService extends DiscogsSearchService {
     String query, {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
+    SearchSort sort = SearchSort.relevance,
   }) => _completers[_callIndex++].future;
 }
 
@@ -181,6 +190,7 @@ class _PaginatingSearchService extends DiscogsSearchService {
     String query, {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
+    SearchSort sort = SearchSort.relevance,
   }) async {
     if (page == 1) {
       return SearchResultPage(
@@ -1587,6 +1597,156 @@ void main() {
       expect(find.text('Zoek op Discogs'), findsOneWidget);
     });
   });
+
+  group('SearchScreen — sort (US-133)', () {
+    Future<void> pickSort(WidgetTester tester, SearchSort sort) async {
+      await tester.tap(find.byKey(const Key('search-sort-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(Key('search-sort-option-${sort.name}')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('defaults to relevance and offers three orders', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'blue note');
+      expect(service.sorts, [SearchSort.relevance]);
+      expect(find.text('Relevance'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('search-sort-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Newest first'), findsOneWidget);
+      expect(find.text('Oldest first'), findsOneWidget);
+    });
+
+    testWidgets('changing the sort re-runs the search from page 1', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'blue note');
+
+      await pickSort(tester, SearchSort.newestFirst);
+
+      expect(service.sorts, [SearchSort.relevance, SearchSort.newestFirst]);
+      expect(service.pages.last, 1);
+      expect(find.text('Newest first'), findsOneWidget);
+    });
+
+    testWidgets('a chip picked before typing survives focusing the field', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
+      await tester.pump();
+      // Tapping the empty field moves the cursor but changes no text.
+      await tester.tap(find.byType(TextField));
+      await tester.pump();
+      await submitSearch(tester, 'blue note');
+
+      expect(service.filters, [SearchFilter.label]);
+    });
+
+    testWidgets('combines with the Label filter', (tester) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
+      await tester.pump();
+      await submitSearch(tester, 'blue note');
+      await pickSort(tester, SearchSort.oldestFirst);
+
+      expect(service.filters.last, SearchFilter.label);
+      expect(service.sorts.last, SearchSort.oldestFirst);
+    });
+
+    testWidgets('pagination keeps the sort of the originating search', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: [_abbeyRoad],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'blue note');
+      await tester.pumpAndSettle();
+      await pickSort(tester, SearchSort.newestFirst);
+
+      // Page 1 then the auto-prefetched page 2, both newest-first.
+      expect(service.pages.last, 2);
+      expect(service.sorts.last, SearchSort.newestFirst);
+    });
+
+    testWidgets('results cached under another sort are not shown', (
+      tester,
+    ) async {
+      final cache = SearchQueryCache();
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service, queryCache: cache));
+      await submitSearch(tester, 'blue note');
+      final callsBefore = service.sorts.length;
+
+      await pickSort(tester, SearchSort.newestFirst);
+
+      // No cache hit for the new order: a real search ran for it, and each
+      // order now has its own entry.
+      expect(service.sorts.length, callsBefore + 1);
+      expect(cache.get(SearchQueryCache.normalizeKey('blue note')), isNotNull);
+      expect(
+        cache.get(
+          SearchQueryCache.normalizeKey(
+            'blue note',
+            SearchFilter.all,
+            SearchSort.newestFirst,
+          ),
+        ),
+        isNotNull,
+      );
+    });
+
+    testWidgets('clearing the field keeps the chosen sort', (tester) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'blue note');
+      await pickSort(tester, SearchSort.oldestFirst);
+
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pump();
+      await submitSearch(tester, 'impulse');
+
+      expect(service.sorts.last, SearchSort.oldestFirst);
+    });
+
+    testWidgets('sort labels are translated (nl)', (tester) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreenNl(service));
+      await tester.pump();
+      expect(find.text('Relevantie'), findsOneWidget);
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1613,6 +1773,7 @@ class _BlockingPaginationService extends DiscogsSearchService {
     String query, {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
+    SearchSort sort = SearchSort.relevance,
   }) async {
     if (page == 1) {
       return SearchResultPage(

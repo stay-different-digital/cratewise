@@ -2,6 +2,7 @@ import 'package:cratewise/application/services/search_query_cache.dart';
 import 'package:cratewise/domain/models/release_search_result.dart';
 import 'package:cratewise/domain/models/search_filter.dart';
 import 'package:cratewise/domain/models/search_result_page.dart';
+import 'package:cratewise/domain/models/search_sort.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 SearchResultPage _page(List<String> titles) {
@@ -71,19 +72,21 @@ void main() {
       expect(cache.get('c'), isNotNull);
     });
 
-    test('normalizeKey trims, lowercases, and defaults to the All scope', () {
+    test('normalizeKey trims, lowercases, and defaults to All / relevance', () {
       expect(
         SearchQueryCache.normalizeKey('  Miles Davis  '),
-        equals('all:miles davis'),
+        equals('all:relevance:miles davis'),
       );
-      expect(SearchQueryCache.normalizeKey('BEATLES'), equals('all:beatles'));
-      expect(SearchQueryCache.normalizeKey('nirvana'), equals('all:nirvana'));
+      expect(
+        SearchQueryCache.normalizeKey('BEATLES'),
+        equals('all:relevance:beatles'),
+      );
     });
 
     test('normalizeKey scopes the key by filter (US-85)', () {
       expect(
         SearchQueryCache.normalizeKey('blue', SearchFilter.artist),
-        equals('artist:blue'),
+        equals('artist:relevance:blue'),
       );
       // Same text under different filters must not collide.
       expect(
@@ -92,8 +95,27 @@ void main() {
       );
       expect(
         SearchQueryCache.normalizeKey('blue', SearchFilter.label),
-        equals('label:blue'),
+        equals('label:relevance:blue'),
       );
+    });
+
+    test('normalizeKey scopes the key by sort (US-133)', () {
+      final relevance = SearchQueryCache.normalizeKey(
+        'blue note',
+        SearchFilter.label,
+      );
+      final newest = SearchQueryCache.normalizeKey(
+        'blue note',
+        SearchFilter.label,
+        SearchSort.newestFirst,
+      );
+      final oldest = SearchQueryCache.normalizeKey(
+        'blue note',
+        SearchFilter.label,
+        SearchSort.oldestFirst,
+      );
+      expect(newest, 'label:newestFirst:blue note');
+      expect({relevance, newest, oldest}, hasLength(3));
     });
 
     test('put overwrites an existing entry and resets its TTL', () {

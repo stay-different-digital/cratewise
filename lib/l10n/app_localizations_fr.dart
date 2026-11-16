@@ -59,6 +59,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get searchFilterLabel => 'Label';
 
   @override
+  String get searchSortTooltip => 'Trier';
+
+  @override
+  String get searchSortRelevance => 'Pertinence';
+
+  @override
+  String get searchSortNewestFirst => 'Plus récents d’abord';
+
+  @override
+  String get searchSortOldestFirst => 'Plus anciens d’abord';
+
+  @override
   String get cachedResultsBanner => 'Affichage des résultats enregistrés';
 
   @override

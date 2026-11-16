@@ -200,6 +200,30 @@ abstract class AppLocalizations {
   /// **'Label'**
   String get searchFilterLabel;
 
+  /// No description provided for @searchSortTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get searchSortTooltip;
+
+  /// No description provided for @searchSortRelevance.
+  ///
+  /// In en, this message translates to:
+  /// **'Relevance'**
+  String get searchSortRelevance;
+
+  /// No description provided for @searchSortNewestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get searchSortNewestFirst;
+
+  /// No description provided for @searchSortOldestFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get searchSortOldestFirst;
+
   /// No description provided for @cachedResultsBanner.
   ///
   /// In en, this message translates to:

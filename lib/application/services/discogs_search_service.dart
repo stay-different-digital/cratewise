@@ -1,6 +1,7 @@
 import '../../domain/models/release_search_result.dart';
 import '../../domain/models/search_filter.dart';
 import '../../domain/models/search_result_page.dart';
+import '../../domain/models/search_sort.dart';
 import '../../domain/repositories/token_storage.dart';
 import '../../infrastructure/discogs/discogs_api_client.dart';
 import '../../infrastructure/discogs/dto/discogs_search_result.dart';
@@ -19,12 +20,14 @@ class DiscogsSearchService {
   ///
   /// [page] is 1-based; defaults to the first page. [filter] scopes the match
   /// to a single field (US-85); defaults to [SearchFilter.all] (general query).
+  /// [sort] orders the results server-side (US-133); defaults to relevance.
   /// Throws [NoTokenError] if no token is stored.
   /// Propagates [AppError] subtypes from the API client.
   Future<SearchResultPage> search(
     String query, {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
+    SearchSort sort = SearchSort.relevance,
   }) async {
     final token = await _storage.loadToken();
     if (token == null) throw const NoTokenError();
@@ -34,6 +37,7 @@ class DiscogsSearchService {
         token,
         page: page,
         filter: filter,
+        sort: sort,
       );
       return SearchResultPage(
         items: dto.results.map(_toResult).toList(),
