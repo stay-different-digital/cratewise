@@ -173,3 +173,12 @@ Done criteria:
 - Een gebruiker kan de taal overschrijven in de instellingen zonder app-herstart.
 - Alle kernsschermen zijn vertaald; geen hardcoded Engelse strings meer zichtbaar voor eindgebruikers.
 - `flutter analyze` geeft 0 issues en `flutter test` blijft groen.
+
+## Phase 18: Cratewise op de nieuwste Flutter
+
+Goal: Cratewise draait schoon en toekomstbestendig op Flutter 3.50. De basis-upgrade (material_ui, go_router 18, Gradle 9.5/AGP 9.3, JDK 21) zit in 1.2.1; deze fase ruimt plugins met de losse Kotlin-plugin, verouderde majors en de eol-SQLite-bibliotheek op.
+
+Deliverables: US-150 t/m US-158, zie `docs/user-stories/phase-18-flutter-350-stories.md`.
+
+Done criteria: geen KGP-waarschuwing in de Android-build, `flutter pub outdated` zonder onverklaarde achterstand, CI groen met release-build, live Discogs-test groen op Android en iOS.
+
