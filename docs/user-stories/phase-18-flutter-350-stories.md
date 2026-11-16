@@ -11,7 +11,7 @@ Uitgangssituatie (2026-11-16, Flutter 3.50.0):
 - `sqlite3_flutter_libs: ^0.6.0+eol` is end-of-life.
 - `flutter build ios --simulator` faalt in Flutters framework-kopieerstap (architectuurvolgorde).
 
-Volgorde: US-150 (vangnet) eerst. Daarna de plugins per stuk (US-151 t/m US-154), dan de overige updates (US-155 t/m US-157), en als laatste US-158 (controle op toestel). Elke story levert een groene build en een groene CI op.
+Volgorde: US-150 (vangnet) eerst. Daarna de plugins per stuk (US-151 t/m US-154), dan US-159 (app op Built-in Kotlin), dan de overige updates (US-155 t/m US-157), en als laatste US-158 (controle op toestel). Elke story levert een groene build en een groene CI op.
 
 Geen store-releases (zie besluit 2026-11-16): versie en CHANGELOG per story volgens ADR-0003, zonder indiening.
 
@@ -27,9 +27,10 @@ Geen store-releases (zie besluit 2026-11-16): versie en CHANGELOG per story volg
 | US-155 | `flutter_secure_storage` 9 → 11 zonder verlies van token | High | 3 | US-150 |
 | US-156 | `sqlite3_flutter_libs` (eol) vervangen; drift naar 2.35 | Medium | 3 | US-150 |
 | US-157 | Overige updates: `csv` 8, `cupertino_icons` 2, minors | Low | 2 | US-150 |
-| US-158 | Volledige controle op Flutter 3.50 op toestel en simulator | Medium | 2 | US-151–157 |
+| US-159 | App naar Built-in Kotlin (`android.builtInKotlin=true`) | High | 1 | US-151–154 |
+| US-158 | Volledige controle op Flutter 3.50 op toestel en simulator | Medium | 2 | US-151–157, US-159 |
 
-Totaal: 19 SP.
+Totaal: 20 SP.
 
 ---
 
@@ -55,6 +56,8 @@ CI bouwt nu alleen een Android-debug-APK en een unsigned iOS-debugbuild. De rele
 ---
 
 ### US-151: `share_plus` 10 → 13
+
+**Status: In Progress**
 
 **Priority: High · 2 SP**
 
@@ -179,6 +182,24 @@ Opslag van het Discogs-token, de taalkeuze, onboarding-status, "Alleen vinyl" en
 - `cupertino_icons` ^2 (of verwijderd als er geen Cupertino-iconen gebruikt worden).
 - `url_launcher`, `uuid` en overige minors op de nieuwste versie.
 - `flutter pub outdated` toont geen achterstand meer bij directe dependencies, of elke overgebleven regel heeft een vastgelegde reden.
+
+---
+
+### US-159: App naar Built-in Kotlin (`android.builtInKotlin=true`)
+
+**Priority: High · 1 SP**
+
+> Als ontwikkelaar,
+> wil ik dat de app Built-in Kotlin gebruikt,
+> zodat de KGP-waarschuwing verdwijnt en een volgende Flutter-versie blijft bouwen.
+
+**Context:**
+Toegevoegd tijdens US-151 (2026-11-16). Plugins als `share_plus` 13.3 passen de Kotlin Gradle-plugin alleen toe "unless built-in Kotlin is enabled": de waarschuwing verdwijnt pas als ook de app omschakelt. De app is al grotendeels gemigreerd (geen `kotlin-android`, wel `kotlin { compilerOptions }`); `android/gradle.properties` staat nog op `android.builtInKotlin=false`. Bron: docs.flutter.dev/release/breaking-changes/migrate-to-built-in-kotlin/for-app-developers.
+
+**Acceptance criteria:**
+- `android.builtInKotlin=true` in `android/gradle.properties`; de ongebruikte `org.jetbrains.kotlin.android`-pluginverklaring in `settings.gradle.kts` verwijderd als de build zonder kan.
+- Debug- en release-APK bouwen zonder KGP-waarschuwing.
+- De CI-stap uit US-150 draait zonder `continue-on-error`.
 
 ---
 
