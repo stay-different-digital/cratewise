@@ -195,9 +195,11 @@ class _FakeCollectionRepository implements CollectionRepository {
 }
 
 class _TrackingCollectionRepository extends _FakeCollectionRepository {
-  _TrackingCollectionRepository({super.alreadyContains = false});
-
+  final List<CollectionItem> added = [];
   final List<CollectionItem> updates = [];
+
+  @override
+  Future<void> add(CollectionItem item) async => added.add(item);
 
   @override
   Future<void> update(CollectionItem item) async => updates.add(item);
@@ -940,7 +942,7 @@ void main() {
       });
 
       testWidgets(
-        'tapping button shows added snackbar after dismissing prompt',
+        'tapping button shows added snackbar',
         (tester) async {
           final repo = _TrackingCollectionRepository();
           await tester.pumpWidget(
@@ -957,9 +959,6 @@ void main() {
           await tester.pumpAndSettle();
 
           await tester.tap(find.text('Add to Collection'));
-          await tester.pumpAndSettle();
-          // Condition prompt is open; dismiss it.
-          await tester.tap(find.byKey(const Key('condition-skip-button')));
           await tester.pumpAndSettle();
 
           expect(find.text('Added to your collection'), findsOneWidget);
@@ -2237,7 +2236,9 @@ void main() {
     );
   });
 
-  group('ReleaseDetailScreen — condition prompt', () {
+  // US-141: adding no longer opens a "Set condition" sheet; the item keeps
+  // the use case's default conditions and can be edited from the collection.
+  group('ReleaseDetailScreen — add without condition prompt (US-141)', () {
     Widget buildScreen({required CollectionRepository repo}) => _wrap(
       ReleaseDetailScreen(
         releaseId: 249504,
@@ -2248,7 +2249,7 @@ void main() {
       ),
     );
 
-    testWidgets('condition prompt sheet appears after successful add', (
+    testWidgets('no bottom sheet opens after a successful add', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -2259,110 +2260,27 @@ void main() {
       await tester.tap(find.text('Add to Collection'));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('condition-prompt-sheet')), findsOneWidget);
-    });
-
-    testWidgets('condition prompt does not appear when item is a duplicate', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildScreen(repo: _TrackingCollectionRepository(alreadyContains: true)),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const Key('add-to-collection-button')));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('condition-prompt-sheet')), findsNothing);
-    });
-
-    testWidgets('condition prompt shows default media and sleeve conditions', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildScreen(repo: _TrackingCollectionRepository()),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Add to Collection'));
-      await tester.pumpAndSettle();
-
-      // AddToCollectionUseCase defaults both to VeryGood.
-      expect(find.text(RecordCondition.veryGood.label), findsNWidgets(2));
-    });
-
-    testWidgets('tapping Skip closes prompt and shows snackbar', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildScreen(repo: _TrackingCollectionRepository()),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Add to Collection'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const Key('condition-skip-button')));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('condition-prompt-sheet')), findsNothing);
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.text('Set condition'), findsNothing);
+      expect(find.text('In Collection'), findsOneWidget);
       expect(find.text('Added to your collection'), findsOneWidget);
     });
 
-    testWidgets('tapping Skip does not call repository.update', (tester) async {
+    testWidgets('item is saved once with default conditions, never updated', (
+      tester,
+    ) async {
       final repo = _TrackingCollectionRepository();
       await tester.pumpWidget(buildScreen(repo: repo));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Add to Collection'));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('condition-skip-button')));
-      await tester.pumpAndSettle();
 
+      expect(repo.added, hasLength(1));
+      expect(repo.added.first.mediaCondition, RecordCondition.veryGood);
+      expect(repo.added.first.sleeveCondition, RecordCondition.veryGood);
       expect(repo.updates, isEmpty);
     });
-
-    testWidgets('tapping Save closes prompt and shows snackbar', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        buildScreen(repo: _TrackingCollectionRepository()),
-      );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Add to Collection'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('condition-save-button')));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('condition-prompt-sheet')), findsNothing);
-      expect(find.text('Added to your collection'), findsOneWidget);
-    });
-
-    testWidgets(
-      'tapping Save calls repository.update with selected conditions',
-      (tester) async {
-        final repo = _TrackingCollectionRepository();
-        await tester.pumpWidget(buildScreen(repo: repo));
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.text('Add to Collection'));
-        await tester.pumpAndSettle();
-
-        // Change media condition to Near Mint via the dropdown.
-        await tester.tap(find.byKey(const Key('media-condition-dropdown')));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text(RecordCondition.nearMint.label).last);
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.byKey(const Key('condition-save-button')));
-        await tester.pumpAndSettle();
-
-        expect(repo.updates, hasLength(1));
-        expect(repo.updates.first.mediaCondition, RecordCondition.nearMint);
-        expect(repo.updates.first.sleeveCondition, RecordCondition.veryGood);
-      },
-    );
   });
 
   group('ReleaseDetailScreen — remove from collection/wishlist (US-81)', () {
