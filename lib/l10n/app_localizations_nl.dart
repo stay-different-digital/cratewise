@@ -71,6 +71,16 @@ class AppLocalizationsNl extends AppLocalizations {
   String get searchSortOldestFirst => 'Oudste eerst';
 
   @override
+  String get searchVinylOnly => 'Alleen vinyl';
+
+  @override
+  String get searchNoResultsVinylOnlyBody =>
+      'Geen vinylreleases gevonden voor deze zoekopdracht.';
+
+  @override
+  String get searchShowAllFormats => 'Alle formaten tonen';
+
+  @override
   String get cachedResultsBanner => 'Opgeslagen resultaten worden weergegeven';
 
   @override

@@ -21,6 +21,7 @@ class DiscogsSearchService {
   /// [page] is 1-based; defaults to the first page. [filter] scopes the match
   /// to a single field (US-85); defaults to [SearchFilter.all] (general query).
   /// [sort] orders the results server-side (US-133); defaults to relevance.
+  /// [vinylOnly] limits results to vinyl releases server-side (US-142).
   /// Throws [NoTokenError] if no token is stored.
   /// Propagates [AppError] subtypes from the API client.
   Future<SearchResultPage> search(
@@ -28,6 +29,7 @@ class DiscogsSearchService {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
+    bool vinylOnly = false,
   }) async {
     final token = await _storage.loadToken();
     if (token == null) throw const NoTokenError();
@@ -38,6 +40,7 @@ class DiscogsSearchService {
         page: page,
         filter: filter,
         sort: sort,
+        vinylOnly: vinylOnly,
       );
       return SearchResultPage(
         items: dto.results.map(_toResult).toList(),

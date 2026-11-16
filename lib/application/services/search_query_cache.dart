@@ -21,15 +21,18 @@ class SearchQueryCache {
   final _store = <String, _CacheEntry>{};
 
   /// Normalises a raw query/barcode to a stable cache key, scoped by [filter]
-  /// (US-85) and [sort] (US-133) so results for the same text under another
-  /// scope or order never show up as a cache hit. Defaults to [SearchFilter.all]
-  /// and [SearchSort.relevance] (e.g. barcode lookups, which are release-only
-  /// and never filtered or sorted).
+  /// (US-85), [sort] (US-133) and [vinylOnly] (US-142) so results for the same
+  /// text under another scope, order or format never show up as a cache hit.
+  /// Defaults to All / relevance / any format (e.g. barcode lookups, which are
+  /// never filtered or sorted).
   static String normalizeKey(
     String query, [
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
-  ]) => '${filter.name}:${sort.name}:${query.trim().toLowerCase()}';
+    bool vinylOnly = false,
+  ]) =>
+      '${filter.name}:${sort.name}:${vinylOnly ? 'vinyl' : 'any'}:'
+      '${query.trim().toLowerCase()}';
 
   /// Returns the cached page for [key], or `null` if absent or expired.
   SearchResultPage? get(String key) {

@@ -71,6 +71,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchSortOldestFirst => 'Más antiguos primero';
 
   @override
+  String get searchVinylOnly => 'Solo vinilo';
+
+  @override
+  String get searchNoResultsVinylOnlyBody =>
+      'Ningún vinilo coincide con esta búsqueda.';
+
+  @override
+  String get searchShowAllFormats => 'Mostrar todos los formatos';
+
+  @override
   String get cachedResultsBanner => 'Mostrando resultados guardados';
 
   @override

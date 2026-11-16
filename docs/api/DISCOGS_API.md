@@ -56,6 +56,10 @@ don't list them. Verified 2026-11-16 with real requests (`label=Blue Note`,
 | `sort=year&sort_order=asc` | Oldest first (1939 at the top) | US-133 |
 | `format=Vinyl` | Only releases with a vinyl format: 13,790 of 32,777 results, no `File` releases | US-142 |
 
+`format=Vinyl` matches a release when any of its formats is vinyl: all 14
+mixed releases (LP + CD box sets) on the first page of `q=super deluxe edition`
+were still there with the filter on.
+
 Without `sort` Discogs orders by relevance. Combined with a field filter
 (`label`, `artist`, `release_title`) the parameters still work. Search results
 are public data: the endpoint also answers without a token, but the app always

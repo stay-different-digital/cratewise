@@ -426,6 +426,30 @@ void main() {
       expect(captured.url.queryParameters['sort_order'], 'asc');
     });
 
+    test('sends format=Vinyl only when vinylOnly is on (US-142)', () async {
+      late http.Request captured;
+      final client = DiscogsApiClient(
+        httpClient: MockClient((request) async {
+          captured = request;
+          return http.Response(searchBody([]), 200);
+        }),
+      );
+
+      await client.searchReleases('blue note', _fakeToken);
+      expect(captured.url.queryParameters.containsKey('format'), isFalse);
+
+      await client.searchReleases(
+        'blue note',
+        _fakeToken,
+        filter: SearchFilter.label,
+        sort: SearchSort.newestFirst,
+        vinylOnly: true,
+      );
+      expect(captured.url.queryParameters['format'], 'Vinyl');
+      expect(captured.url.queryParameters['label'], 'blue note');
+      expect(captured.url.queryParameters['sort'], 'year');
+    });
+
     test('throws InvalidTokenError on 401', () async {
       final client = DiscogsApiClient(httpClient: _mockClient(401));
       expect(

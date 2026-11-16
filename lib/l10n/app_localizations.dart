@@ -224,6 +224,24 @@ abstract class AppLocalizations {
   /// **'Oldest first'**
   String get searchSortOldestFirst;
 
+  /// No description provided for @searchVinylOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Vinyl only'**
+  String get searchVinylOnly;
+
+  /// No description provided for @searchNoResultsVinylOnlyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No vinyl releases match this search.'**
+  String get searchNoResultsVinylOnlyBody;
+
+  /// No description provided for @searchShowAllFormats.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all formats'**
+  String get searchShowAllFormats;
+
   /// No description provided for @cachedResultsBanner.
   ///
   /// In en, this message translates to:

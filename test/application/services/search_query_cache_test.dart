@@ -72,21 +72,24 @@ void main() {
       expect(cache.get('c'), isNotNull);
     });
 
-    test('normalizeKey trims, lowercases, and defaults to All / relevance', () {
-      expect(
-        SearchQueryCache.normalizeKey('  Miles Davis  '),
-        equals('all:relevance:miles davis'),
-      );
-      expect(
-        SearchQueryCache.normalizeKey('BEATLES'),
-        equals('all:relevance:beatles'),
-      );
-    });
+    test(
+      'normalizeKey trims, lowercases, defaults to All / relevance / any',
+      () {
+        expect(
+          SearchQueryCache.normalizeKey('  Miles Davis  '),
+          equals('all:relevance:any:miles davis'),
+        );
+        expect(
+          SearchQueryCache.normalizeKey('BEATLES'),
+          equals('all:relevance:any:beatles'),
+        );
+      },
+    );
 
     test('normalizeKey scopes the key by filter (US-85)', () {
       expect(
         SearchQueryCache.normalizeKey('blue', SearchFilter.artist),
-        equals('artist:relevance:blue'),
+        equals('artist:relevance:any:blue'),
       );
       // Same text under different filters must not collide.
       expect(
@@ -95,7 +98,7 @@ void main() {
       );
       expect(
         SearchQueryCache.normalizeKey('blue', SearchFilter.label),
-        equals('label:relevance:blue'),
+        equals('label:relevance:any:blue'),
       );
     });
 
@@ -114,8 +117,23 @@ void main() {
         SearchFilter.label,
         SearchSort.oldestFirst,
       );
-      expect(newest, 'label:newestFirst:blue note');
+      expect(newest, 'label:newestFirst:any:blue note');
       expect({relevance, newest, oldest}, hasLength(3));
+    });
+
+    test('normalizeKey scopes the key by the vinyl-only toggle (US-142)', () {
+      final any = SearchQueryCache.normalizeKey(
+        'blue note',
+        SearchFilter.label,
+      );
+      final vinyl = SearchQueryCache.normalizeKey(
+        'blue note',
+        SearchFilter.label,
+        SearchSort.relevance,
+        true,
+      );
+      expect(vinyl, 'label:relevance:vinyl:blue note');
+      expect(vinyl, isNot(any));
     });
 
     test('put overwrites an existing entry and resets its TTL', () {

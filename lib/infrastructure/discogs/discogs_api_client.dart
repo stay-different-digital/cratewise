@@ -70,6 +70,8 @@ class DiscogsApiClient {
   /// `release_title`/`artist`/`label` parameters. `type=release` is always sent
   /// so the response shape is unchanged. [sort] adds `sort=year` with a
   /// `sort_order` for the year orders and nothing for relevance (US-133).
+  /// [vinylOnly] adds `format=Vinyl`; Discogs then also keeps releases that
+  /// combine vinyl with another format, e.g. LP + download (US-142).
   Future<DiscogsSearchPageDto> searchReleases(
     String query,
     String token, {
@@ -77,6 +79,7 @@ class DiscogsApiClient {
     int perPage = 50,
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
+    bool vinylOnly = false,
   }) async {
     final textParam = switch (filter) {
       SearchFilter.all => 'q',
@@ -92,6 +95,7 @@ class DiscogsApiClient {
         'type': 'release',
         'page': '$page',
         'per_page': '$perPage',
+        if (vinylOnly) 'format': 'Vinyl',
         ...switch (sort) {
           SearchSort.relevance => const <String, String>{},
           SearchSort.newestFirst => const {

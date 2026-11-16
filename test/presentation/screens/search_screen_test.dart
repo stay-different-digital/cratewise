@@ -20,6 +20,7 @@ import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:cratewise/shared/route_observer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -63,6 +64,7 @@ class _FakeSearchService extends DiscogsSearchService {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
+    bool vinylOnly = false,
   }) async {
     if (throws != null) throw throws!;
     return _singlePage(results ?? []);
@@ -82,6 +84,7 @@ class _CountingSearchService extends DiscogsSearchService {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
+    bool vinylOnly = false,
   }) async {
     callCount++;
     return _singlePage(results);
@@ -98,6 +101,7 @@ class _RecordingSearchService extends DiscogsSearchService {
   final List<ReleaseSearchResult> page2;
   final List<SearchFilter> filters = [];
   final List<SearchSort> sorts = [];
+  final List<bool> vinylOnlys = [];
   final List<int> pages = [];
 
   @override
@@ -106,9 +110,11 @@ class _RecordingSearchService extends DiscogsSearchService {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
+    bool vinylOnly = false,
   }) async {
     filters.add(filter);
     sorts.add(sort);
+    vinylOnlys.add(vinylOnly);
     pages.add(page);
     final items = page == 1 ? page1 : page2;
     // Only advertise a second page when one exists, so tests that don't want
@@ -137,6 +143,7 @@ class _FlippingSearchService extends DiscogsSearchService {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
+    bool vinylOnly = false,
   }) async {
     _callCount++;
     if (_callCount == 1) throw firstError;
@@ -156,6 +163,7 @@ class _DelayedSearchService extends DiscogsSearchService {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
+    bool vinylOnly = false,
   }) => _completer.future;
 }
 
@@ -172,6 +180,7 @@ class _SequencedDelayedSearchService extends DiscogsSearchService {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
+    bool vinylOnly = false,
   }) => _completers[_callIndex++].future;
 }
 
@@ -191,6 +200,7 @@ class _PaginatingSearchService extends DiscogsSearchService {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
+    bool vinylOnly = false,
   }) async {
     if (page == 1) {
       return SearchResultPage(
@@ -1598,6 +1608,166 @@ void main() {
     });
   });
 
+  group('SearchScreen — vinyl only (US-142)', () {
+    final vinylChip = find.byKey(const Key('search-vinyl-only-chip'));
+    bool isOn(WidgetTester tester) =>
+        tester.widget<FilterChip>(vinylChip).selected;
+
+    setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+
+    testWidgets('is off by default and searches all formats', (tester) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await tester.pumpAndSettle();
+      await submitSearch(tester, 'blue note');
+
+      expect(isOn(tester), isFalse);
+      expect(service.vinylOnlys, [false]);
+    });
+
+    testWidgets('toggling re-runs the search from page 1 with the filter', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await tester.pumpAndSettle();
+      await submitSearch(tester, 'blue note');
+
+      await tester.tap(vinylChip);
+      await tester.pumpAndSettle();
+
+      expect(isOn(tester), isTrue);
+      expect(service.vinylOnlys, [false, true]);
+      expect(service.pages.last, 1);
+    });
+
+    testWidgets('combines with a scope chip and a sort; pagination keeps it', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: [_abbeyRoad],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
+      await tester.tap(vinylChip);
+      await tester.pump();
+      await submitSearch(tester, 'blue note');
+      await tester.pumpAndSettle();
+
+      // Page 1 then the auto-prefetched page 2, both vinyl-only + Label.
+      expect(service.pages.last, 2);
+      expect(service.vinylOnlys.last, isTrue);
+      expect(service.filters.last, SearchFilter.label);
+    });
+
+    testWidgets('no vinyl results: names the filter and offers to drop it', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(page1: const [], page2: const []);
+      await tester.pumpWidget(_buildScreen(service));
+      await tester.pumpAndSettle();
+      await tester.tap(vinylChip);
+      await tester.pump();
+      await submitSearch(tester, 'obscure');
+      await tester.pumpAndSettle();
+
+      expect(find.text('No vinyl releases match this search.'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('search-show-all-formats-button')));
+      await tester.pumpAndSettle();
+
+      expect(isOn(tester), isFalse);
+      expect(service.vinylOnlys.last, isFalse);
+    });
+
+    testWidgets('a plain empty result does not mention vinyl', (tester) async {
+      final service = _RecordingSearchService(page1: const [], page2: const []);
+      await tester.pumpWidget(_buildScreen(service));
+      await tester.pumpAndSettle();
+      await submitSearch(tester, 'obscure');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Try a different search term.'), findsOneWidget);
+      expect(
+        find.byKey(const Key('search-show-all-formats-button')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('the choice is remembered for the next session', (
+      tester,
+    ) async {
+      final first = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(first));
+      await tester.pumpAndSettle();
+      await tester.tap(vinylChip);
+      await tester.pumpAndSettle();
+
+      // "Restart": tear the screen down and build a fresh one.
+      await tester.pumpWidget(const SizedBox());
+      final second = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(second));
+      await tester.pumpAndSettle();
+      await submitSearch(tester, 'blue note');
+
+      expect(isOn(tester), isTrue);
+      expect(second.vinylOnlys, [true]);
+    });
+
+    testWidgets('results cached without the filter are not shown with it', (
+      tester,
+    ) async {
+      final cache = SearchQueryCache();
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service, queryCache: cache));
+      await tester.pumpAndSettle();
+      await submitSearch(tester, 'blue note');
+      final callsBefore = service.vinylOnlys.length;
+
+      await tester.tap(vinylChip);
+      await tester.pumpAndSettle();
+
+      expect(service.vinylOnlys.length, callsBefore + 1);
+      expect(
+        cache.get(
+          SearchQueryCache.normalizeKey(
+            'blue note',
+            SearchFilter.all,
+            SearchSort.relevance,
+            true,
+          ),
+        ),
+        isNotNull,
+      );
+    });
+
+    testWidgets('label is translated (nl)', (tester) async {
+      await tester.pumpWidget(
+        _buildScreenNl(
+          _RecordingSearchService(page1: const [], page2: const []),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Alleen vinyl'), findsOneWidget);
+    });
+  });
+
   group('SearchScreen — sort (US-133)', () {
     Future<void> pickSort(WidgetTester tester, SearchSort sort) async {
       await tester.tap(find.byKey(const Key('search-sort-button')));
@@ -1774,6 +1944,7 @@ class _BlockingPaginationService extends DiscogsSearchService {
     int page = 1,
     SearchFilter filter = SearchFilter.all,
     SearchSort sort = SearchSort.relevance,
+    bool vinylOnly = false,
   }) async {
     if (page == 1) {
       return SearchResultPage(

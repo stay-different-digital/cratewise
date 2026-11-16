@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../app/app_repositories.dart';
 import '../../app/router.dart';
+import '../../app/search_preferences.dart';
 import '../../application/services/discogs_search_service.dart';
 import '../../application/services/search_query_cache.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
@@ -117,6 +118,8 @@ class SearchScreen extends StatefulWidget {
     this.wishlistRepository,
     this.accelerometerStream,
     this.savedSearchRepository,
+    this.loadVinylOnly,
+    this.saveVinylOnly,
   });
 
   final DiscogsSearchService? searchService;
@@ -128,6 +131,9 @@ class SearchScreen extends StatefulWidget {
   final WishlistRepository? wishlistRepository;
   final Stream<AccelerometerEvent>? accelerometerStream;
   final SavedSearchRepository? savedSearchRepository;
+  // Injected only in tests; production reads/writes the stored preference.
+  final Future<bool> Function()? loadVinylOnly;
+  final Future<void> Function(bool)? saveVinylOnly;
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -154,6 +160,12 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   // filter it survives clearing the field: it is a preference, not a scope.
   SearchSort _sort = SearchSort.relevance;
   SearchSort _lastSort = SearchSort.relevance;
+  // Limit results to vinyl (US-142). A persisted preference, so like the sort
+  // it survives clearing the field. [_vinylOnlyTouched] stops the async
+  // preference load from overriding a toggle the user already made.
+  bool _vinylOnly = false;
+  bool _lastVinylOnly = false;
+  bool _vinylOnlyTouched = false;
   ReleaseSearchResult? _selectedResult;
   int _searchGeneration = 0;
   // Discogs release ids the user already has locally. Loaded once and refreshed
@@ -180,6 +192,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     _savedSearchRepository = widget.savedSearchRepository ?? repos?.savedSearch;
     _controller.addListener(_onQueryChanged);
     _loadMembership();
+    _loadVinylOnly();
     _shakeSub = (widget.accelerometerStream ?? accelerometerEventStream())
         .listen(_onAccelerometer);
   }
@@ -198,6 +211,23 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   void didPopNext() {
     _shakeActive = true;
     _loadMembership();
+  }
+
+  Future<void> _loadVinylOnly() async {
+    final vinylOnly = await (widget.loadVinylOnly ?? loadVinylOnlyPreference)();
+    if (!mounted || _vinylOnlyTouched || vinylOnly == _vinylOnly) return;
+    setState(() => _vinylOnly = vinylOnly);
+    final text = _controller.text.trim();
+    if (text.isNotEmpty) _onSubmit(text);
+  }
+
+  void _setVinylOnly(bool vinylOnly) {
+    _vinylOnlyTouched = true;
+    setState(() => _vinylOnly = vinylOnly);
+    (widget.saveVinylOnly ?? saveVinylOnlyPreference)(vinylOnly);
+    // Re-run from page 1 like a filter or sort change.
+    final text = _controller.text.trim();
+    if (text.isNotEmpty) _onSubmit(text);
   }
 
   /// Resolves which results are already in the collection / on the wishlist.
@@ -253,6 +283,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     if (trimmed.isEmpty) return;
     final filter = _filter;
     final sort = _sort;
+    final vinylOnly = _vinylOnly;
     // Only skip if we already have fresh (non-cached) results for this exact
     // query, filter *and* sort — changing either with identical text must
     // re-search.
@@ -263,18 +294,25 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     if (trimmed == _lastQuery &&
         filter == _lastFilter &&
         sort == _lastSort &&
+        vinylOnly == _lastVinylOnly &&
         (_state is _Loading || alreadyHasFreshResults)) {
       return;
     }
     _lastQuery = trimmed;
     _lastFilter = filter;
     _lastSort = sort;
+    _lastVinylOnly = vinylOnly;
     final gen = ++_searchGeneration;
 
     // Check cache first — show immediately and refresh in background. The key
     // is scoped by filter and sort so "All" and "Artist" results, or the same
     // results in another order, don't collide (US-85, US-133).
-    final cacheKey = SearchQueryCache.normalizeKey(trimmed, filter, sort);
+    final cacheKey = SearchQueryCache.normalizeKey(
+      trimmed,
+      filter,
+      sort,
+      vinylOnly,
+    );
     final cached = _cache.get(cacheKey);
     if (cached != null) {
       setState(() {
@@ -287,7 +325,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
         );
         _selectedResult = null;
       });
-      _searchInBackground(trimmed, cacheKey, gen, filter, sort);
+      _searchInBackground(trimmed, cacheKey, gen, filter, sort, vinylOnly);
       return;
     }
 
@@ -296,7 +334,12 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
       _selectedResult = null;
     });
     try {
-      final page = await _service.search(trimmed, filter: filter, sort: sort);
+      final page = await _service.search(
+        trimmed,
+        filter: filter,
+        sort: sort,
+        vinylOnly: vinylOnly,
+      );
       if (!mounted || gen != _searchGeneration) return;
       _cache.put(cacheKey, page);
       setState(
@@ -319,9 +362,15 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     int gen,
     SearchFilter filter,
     SearchSort sort,
+    bool vinylOnly,
   ) async {
     try {
-      final page = await _service.search(query, filter: filter, sort: sort);
+      final page = await _service.search(
+        query,
+        filter: filter,
+        sort: sort,
+        vinylOnly: vinylOnly,
+      );
       if (!mounted || gen != _searchGeneration) return;
       _cache.put(cacheKey, page);
       setState(
@@ -356,6 +405,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
         page: current.currentPage + 1,
         filter: _lastFilter,
         sort: _lastSort,
+        vinylOnly: _lastVinylOnly,
       );
       if (!mounted || gen != _searchGeneration) return;
       setState(
@@ -530,6 +580,8 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
           children: [
             Expanded(
               child: _SearchFilterChips(
+                vinylOnly: _vinylOnly,
+                onVinylOnlyChanged: _setVinylOnly,
                 selected: _filter,
                 onChanged: (f) {
                   setState(() => _filter = f);
@@ -587,7 +639,9 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     return switch (_state) {
       _Idle() => const _EmptyState(),
       _Loading() => const _LoadingIndicator(),
-      _Results(:final items) when items.isEmpty => const _NoResultsState(),
+      _Results(:final items) when items.isEmpty => _NoResultsState(
+        onShowAllFormats: _lastVinylOnly ? () => _setVinylOnly(false) : null,
+      ),
       _Results(
         :final items,
         :final totalResults,
@@ -639,10 +693,18 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
 /// to "All" (no chip selected). The row wraps rather than overflowing on a
 /// narrow phone or in the 320dp wide-layout search pane.
 class _SearchFilterChips extends StatelessWidget {
-  const _SearchFilterChips({required this.selected, required this.onChanged});
+  const _SearchFilterChips({
+    required this.selected,
+    required this.onChanged,
+    required this.vinylOnly,
+    required this.onVinylOnlyChanged,
+  });
 
   final SearchFilter selected;
   final ValueChanged<SearchFilter> onChanged;
+  // Independent on/off toggle (US-142), combinable with any scope chip.
+  final bool vinylOnly;
+  final ValueChanged<bool> onVinylOnlyChanged;
 
   static const _choices = [
     SearchFilter.release,
@@ -676,6 +738,13 @@ class _SearchFilterChips extends StatelessWidget {
               onSelected: (isSelected) =>
                   onChanged(isSelected ? filter : SearchFilter.all),
             ),
+          FilterChip(
+            key: const Key('search-vinyl-only-chip'),
+            avatar: vinylOnly ? null : const Icon(Icons.album, size: 18),
+            label: Text(AppLocalizations.of(context)!.searchVinylOnly),
+            selected: vinylOnly,
+            onSelected: onVinylOnlyChanged,
+          ),
         ],
       ),
     );
@@ -760,8 +829,10 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Scrollable so the message never overflows when the chip rows wrap in
+    // the narrow wide-layout pane on a short screen.
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -801,13 +872,19 @@ class _LoadingIndicator extends StatelessWidget {
 }
 
 class _NoResultsState extends StatelessWidget {
-  const _NoResultsState();
+  const _NoResultsState({this.onShowAllFormats});
+
+  /// Set when the empty result came from a vinyl-only search (US-142): the
+  /// message names the filter and offers to switch it off.
+  final VoidCallback? onShowAllFormats;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Scrollable so the message never overflows when the chip rows wrap in
+    // the narrow wide-layout pane on a short screen.
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -824,12 +901,22 @@ class _NoResultsState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              AppLocalizations.of(context)!.searchNoResultsBody,
+              onShowAllFormats != null
+                  ? AppLocalizations.of(context)!.searchNoResultsVinylOnlyBody
+                  : AppLocalizations.of(context)!.searchNoResultsBody,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            if (onShowAllFormats != null) ...[
+              const SizedBox(height: 16),
+              OutlinedButton(
+                key: const Key('search-show-all-formats-button'),
+                onPressed: onShowAllFormats,
+                child: Text(AppLocalizations.of(context)!.searchShowAllFormats),
+              ),
+            ],
           ],
         ),
       ),
@@ -858,8 +945,10 @@ class _SearchErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Scrollable so the message never overflows when the chip rows wrap in
+    // the narrow wide-layout pane on a short screen.
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
