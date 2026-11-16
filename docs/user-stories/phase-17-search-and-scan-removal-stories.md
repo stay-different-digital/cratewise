@@ -362,7 +362,7 @@ Het filterblad heeft al een sectie "Format" ([collection_filter_sheet.dart:268-2
 
 ### US-144: Instelling voor automatisch synchroniseren en direct versturen naar Discogs
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
 
 **Priority: Medium · 3 SP**
 
@@ -459,6 +459,8 @@ Afgesplitst uit US-143. De verlanglijst vergelijkt net als de collectie op de vo
 ---
 
 ### US-148: Niet-verstuurde items automatisch opnieuw proberen
+
+**Status: In Progress**
 
 **Priority: Medium · 2 SP**
 
