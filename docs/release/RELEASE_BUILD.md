@@ -147,3 +147,11 @@ need `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.bareRepository GIT_CONFIG_VALUE_0
 - iOS/iPadOS: upload the IPA with Transporter, wait until the build appears in
   TestFlight, then install it on a connected iPhone and iPad for the smoke test.
 - Smoke test per `RELEASE_CHECKLIST.md` before uploading.
+
+## iOS simulator build (Flutter 3.50)
+
+`flutter build ios --simulator` fails with this Xcode in Flutter's framework-copy
+step (architecture order "arm64 x86_64" vs "x86_64 arm64"). Use
+`tool/run_ios_simulator.sh [udid]`: it builds for one simulator with
+`ONLY_ACTIVE_ARCH=YES`, installs and launches the app.
+
