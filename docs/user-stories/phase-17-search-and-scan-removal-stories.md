@@ -171,7 +171,9 @@ Na US-135 is het scherm onbereikbaar. Wat overblijft:
 
 ### US-137: Android — camerapermissie verwijderen
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
+
+**Uitkomst:** release-APK vraagt alleen `INTERNET` (gecontroleerd met `aapt dump permissions`). Gevonden en opgelost: `INTERNET` kwam tot en met 1.0.4 alleen binnen via de ML Kit-dependency van de scanner (`transport-backend-cct`); zonder die dependency zou de release-build Discogs niet meer bereiken. De app declareert `INTERNET` nu zelf. Op een Pixel 10-emulator start de release-build en bereikt token-validatie Discogs. **Nog open voor [Fred]:** de tabs op een echt toestel doorlopen met een gekoppeld account (onboarding vraagt een echt token); hoort bij de toesteltest van de sprint.
 
 **Priority: Medium · 1 SP**
 
@@ -192,6 +194,8 @@ Na US-135 is het scherm onbereikbaar. Wat overblijft:
 ---
 
 ### US-138: iOS — cameratoestemming verwijderen
+
+**Status: In Progress**
 
 **Priority: Medium · 1 SP**
 
