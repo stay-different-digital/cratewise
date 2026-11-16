@@ -6,7 +6,10 @@ import '../../app/locale_preference.dart';
 import '../../app/app.dart';
 import '../../app/router.dart';
 import '../../l10n/app_localizations.dart';
+import '../../application/services/discogs_auto_sync_service.dart';
+import '../../application/services/discogs_connection_service.dart';
 import '../../application/services/thumbnail_eviction_service.dart';
+import '../../shared/discogs_credentials_notifier.dart';
 import '../../domain/models/pending_discogs_deletion.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/repositories/pending_discogs_deletion_repository.dart';
@@ -20,6 +23,8 @@ class SettingsScreen extends StatelessWidget {
   const SettingsScreen({
     super.key,
     this.evictionService,
+    this.autoSyncService,
+    this.connectionService,
     this.collectionRepository,
     this.wishlistRepository,
     this.deletionRepository,
@@ -27,6 +32,9 @@ class SettingsScreen extends StatelessWidget {
   });
 
   final ThumbnailEvictionService? evictionService;
+  // Injected only in tests (US-144).
+  final DiscogsAutoSyncService? autoSyncService;
+  final DiscogsConnectionService? connectionService;
 
   // Injected only in tests; in production the Local data section constructs its
   // own repositories from the shared on-device database.
@@ -42,7 +50,12 @@ class SettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       children: [
         const DiscogsTokenSection(),
-        const SizedBox(height: 24),
+        const SizedBox(height: 8),
+        _AutoSyncTile(
+          service: autoSyncService ?? DiscogsAutoSyncService.shared,
+          connection: connectionService ?? DiscogsConnectionService(),
+        ),
+        const SizedBox(height: 16),
         ListTile(
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.import_export),
@@ -461,6 +474,76 @@ class _LanguageSectionState extends State<_LanguageSection> {
         ],
         onChanged: _onChanged,
       ),
+    );
+  }
+}
+
+/// The "Sync automatically with Discogs" switch (US-144). Usable only with a
+/// linked account; reloads when the account is linked or unlinked above.
+class _AutoSyncTile extends StatefulWidget {
+  const _AutoSyncTile({required this.service, required this.connection});
+
+  final DiscogsAutoSyncService service;
+  final DiscogsConnectionService connection;
+
+  @override
+  State<_AutoSyncTile> createState() => _AutoSyncTileState();
+}
+
+class _AutoSyncTileState extends State<_AutoSyncTile> {
+  bool _connected = false;
+  bool _enabled = false;
+  bool _turnedOffByDiscogs = false;
+
+  @override
+  void initState() {
+    super.initState();
+    discogsCredentialsNotifier.addListener(_load);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    discogsCredentialsNotifier.removeListener(_load);
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final status = await widget.connection.loadStatus();
+    final enabled = await widget.service.isEnabled();
+    final turnedOff = await widget.service.wasTurnedOffByDiscogs();
+    if (!mounted) return;
+    setState(() {
+      _connected = status.isConnected;
+      _enabled = enabled;
+      _turnedOffByDiscogs = turnedOff;
+    });
+  }
+
+  Future<void> _toggle(bool value) async {
+    setState(() {
+      _enabled = value;
+      if (value) _turnedOffByDiscogs = false;
+    });
+    await widget.service.setEnabled(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final subtitle = _turnedOffByDiscogs
+        ? l10n.settingsAutoSyncTurnedOff
+        : _connected
+        ? l10n.settingsAutoSyncSubtitle
+        : l10n.settingsAutoSyncNeedsAccount;
+    return SwitchListTile(
+      key: const Key('auto-sync-switch'),
+      contentPadding: EdgeInsets.zero,
+      secondary: const Icon(Icons.sync),
+      title: Text(l10n.settingsAutoSync),
+      subtitle: Text(subtitle),
+      value: _connected && _enabled,
+      onChanged: _connected ? _toggle : null,
     );
   }
 }

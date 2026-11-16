@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:uuid/uuid.dart';
 
+import '../../application/services/discogs_auto_sync_service.dart';
 import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/services/thumbnail_cache_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
@@ -127,13 +128,19 @@ class _ReleaseDetailScreenState extends State<ReleaseDetailScreen> {
     _addUseCase =
         widget.addToCollectionUseCase ??
         (_collectionRepository != null
-            ? AddToCollectionUseCase(_collectionRepository!)
+            ? AddToCollectionUseCase(
+                _collectionRepository!,
+                autoSync: DiscogsAutoSyncService.shared,
+              )
             : null);
     _wishlistRepository = widget.wishlistRepository ?? repos?.wishlist;
     _addWishlistUseCase =
         widget.addToWishlistUseCase ??
         (_wishlistRepository != null
-            ? AddToWishlistUseCase(_wishlistRepository!)
+            ? AddToWishlistUseCase(
+                _wishlistRepository!,
+                autoSync: DiscogsAutoSyncService.shared,
+              )
             : null);
     _cacheRepository = widget.cacheRepository ?? repos?.cachedRelease;
     _deletionRepository = widget.deletionRepository ?? repos?.pendingDeletion;

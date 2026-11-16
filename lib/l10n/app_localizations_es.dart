@@ -127,6 +127,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get calculating => 'Calculando…';
 
   @override
+  String get settingsAutoSync => 'Sincronizar automáticamente con Discogs';
+
+  @override
+  String get settingsAutoSyncSubtitle =>
+      'Los discos que añadas a tu colección o lista de deseos se envían de inmediato a tu cuenta de Discogs.';
+
+  @override
+  String get settingsAutoSyncNeedsAccount =>
+      'Conecta tu cuenta de Discogs arriba para usar esta opción.';
+
+  @override
+  String get settingsAutoSyncTurnedOff =>
+      'Desactivado porque Discogs rechazó tu token. Vuelve a conectar y actívalo de nuevo.';
+
+  @override
   String get settingsImportExport => 'Importar y exportar';
 
   @override

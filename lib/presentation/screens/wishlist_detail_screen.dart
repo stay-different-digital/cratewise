@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:uuid/uuid.dart';
 
+import '../../application/services/discogs_auto_sync_service.dart';
 import '../../application/services/discogs_release_detail_service.dart';
 import '../../application/services/thumbnail_cache_service.dart';
 import '../../application/use_cases/add_to_collection_use_case.dart';
@@ -114,7 +115,10 @@ class _WishlistDetailScreenState extends State<WishlistDetailScreen> {
       _deletionRepository = widget.deletionRepository ?? repos.pendingDeletion;
       _addToCollectionUseCase =
           widget.addToCollectionUseCase ??
-          AddToCollectionUseCase(repos.collection);
+          AddToCollectionUseCase(
+            repos.collection,
+            autoSync: DiscogsAutoSyncService.shared,
+          );
     }
     _load();
   }

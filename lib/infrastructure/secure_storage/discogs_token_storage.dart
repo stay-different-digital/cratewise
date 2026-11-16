@@ -2,31 +2,15 @@ import 'dart:developer' as dev;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../../domain/repositories/token_storage.dart';
+import '../../shared/discogs_credentials_notifier.dart';
 import '../../shared/errors/app_error.dart';
 import 'secure_key_value_store.dart';
 
-class _FlutterSecureStorageAdapter implements SecureKeyValueStore {
-  _FlutterSecureStorageAdapter() : _storage = const FlutterSecureStorage();
-
-  final FlutterSecureStorage _storage;
-
-  @override
-  Future<String?> read({required String key}) => _storage.read(key: key);
-
-  @override
-  Future<void> write({required String key, required String value}) =>
-      _storage.write(key: key, value: value);
-
-  @override
-  Future<void> delete({required String key}) => _storage.delete(key: key);
-}
-
 class DiscogsTokenStorage implements TokenStorage {
   DiscogsTokenStorage({SecureKeyValueStore? store})
-    : _store = store ?? _FlutterSecureStorageAdapter();
+    : _store = store ?? const FlutterSecureKeyValueStore();
 
   static const _tokenKey = 'discogs_token';
   static const _usernameKey = 'discogs_username';
@@ -67,6 +51,7 @@ class DiscogsTokenStorage implements TokenStorage {
       if (savedToken != token || savedUsername != username) {
         throw const StorageError();
       }
+      discogsCredentialsNotifier.value++;
     } catch (e) {
       // Clean up any partial write so neither key is left behind.
       try {
@@ -91,6 +76,7 @@ class DiscogsTokenStorage implements TokenStorage {
     try {
       await _store.delete(key: _tokenKey);
       await _store.delete(key: _usernameKey);
+      discogsCredentialsNotifier.value++;
     } catch (_) {
       throw const StorageError();
     }

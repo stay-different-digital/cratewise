@@ -9,6 +9,11 @@ import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/l10n/app_localizations.dart';
 import 'package:cratewise/presentation/screens/settings_screen.dart';
+import 'package:cratewise/application/services/discogs_auto_sync_service.dart';
+import 'package:cratewise/application/services/discogs_connection_service.dart';
+import 'package:cratewise/domain/models/connection_status.dart';
+import 'package:cratewise/infrastructure/secure_storage/secure_key_value_store.dart';
+import 'package:cratewise/shared/discogs_credentials_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -171,8 +176,30 @@ Widget _wrapNl(Widget child) => MaterialApp(
 
 // Builds a SettingsScreen with hermetic local-data fakes so the "Local data"
 // section never opens a real on-device database during tests.
+class _Prefs implements SecureKeyValueStore {
+  final values = <String, String>{};
+  @override
+  Future<String?> read({required String key}) async => values[key];
+  @override
+  Future<void> write({required String key, required String value}) async =>
+      values[key] = value;
+  @override
+  Future<void> delete({required String key}) async => values.remove(key);
+}
+
+class _Connection extends DiscogsConnectionService {
+  _Connection({this.connected = false});
+  bool connected;
+  @override
+  Future<ConnectionStatus> loadStatus() async => connected
+      ? ConnectionStatus.connected('digger')
+      : const ConnectionStatus.disconnected();
+}
+
 SettingsScreen _settings({
   ThumbnailEvictionService? evictionService,
+  DiscogsAutoSyncService? autoSync,
+  DiscogsConnectionService? connection,
   CollectionRepository? collection,
   WishlistRepository? wishlist,
   PendingDiscogsDeletionRepository? deletions,
@@ -183,6 +210,8 @@ SettingsScreen _settings({
   wishlistRepository: wishlist ?? _FakeWishlistRepo(),
   deletionRepository: deletions ?? _FakeDeletionRepo(),
   appVersionLoader: appVersionLoader,
+  autoSyncService: autoSync ?? DiscogsAutoSyncService(preferences: _Prefs()),
+  connectionService: connection ?? _Connection(),
 );
 
 Finder _clearIn(String tileTitle) => find.descendant(
@@ -207,6 +236,21 @@ Future<void> _tapClearIn(WidgetTester tester, String tileTitle) async {
 // ---------------------------------------------------------------------------
 
 void main() {
+  // The tests find tiles without scrolling; a tall viewport keeps the whole
+  // lazily built Settings list on screen as tiles are added above (US-144).
+  setUp(() {
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    view.physicalSize = const Size(800, 2400);
+    view.devicePixelRatio = 1.0;
+  });
+  tearDown(() {
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+    view.resetPhysicalSize();
+    view.resetDevicePixelRatio();
+  });
+
   group('SettingsScreen — thumbnail cache section', () {
     testWidgets('shows Thumbnail Cache tile when eviction service provided', (
       tester,
@@ -515,6 +559,82 @@ void main() {
 
       expect(find.text('Importeren en exporteren'), findsOneWidget);
       expect(find.text('Lokale gegevens'), findsOneWidget);
+    });
+  });
+
+  group('SettingsScreen — auto-sync switch (US-144)', () {
+    SwitchListTile tile(WidgetTester tester) => tester.widget<SwitchListTile>(
+      find.byKey(const Key('auto-sync-switch')),
+    );
+
+    testWidgets('without a linked account: off, disabled, points to linking', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(_settings()));
+      await tester.pumpAndSettle();
+
+      expect(tile(tester).value, isFalse);
+      expect(tile(tester).onChanged, isNull);
+      expect(
+        find.text('Connect your Discogs account above to use this.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('with an account: off by default, turning it on persists', (
+      tester,
+    ) async {
+      final prefs = _Prefs();
+      final service = DiscogsAutoSyncService(preferences: prefs);
+      await tester.pumpWidget(
+        _wrap(
+          _settings(
+            autoSync: service,
+            connection: _Connection(connected: true),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tile(tester).value, isFalse);
+
+      await tester.tap(find.byKey(const Key('auto-sync-switch')));
+      await tester.pumpAndSettle();
+
+      expect(tile(tester).value, isTrue);
+      expect(await service.isEnabled(), isTrue);
+    });
+
+    testWidgets('becomes usable as soon as an account is linked', (
+      tester,
+    ) async {
+      final connection = _Connection();
+      await tester.pumpWidget(_wrap(_settings(connection: connection)));
+      await tester.pumpAndSettle();
+      expect(tile(tester).onChanged, isNull);
+
+      connection.connected = true;
+      discogsCredentialsNotifier.value++;
+      await tester.pumpAndSettle();
+
+      expect(tile(tester).onChanged, isNotNull);
+    });
+
+    testWidgets('explains when Discogs rejected the token', (tester) async {
+      final prefs = _Prefs()..values['discogs_auto_sync_revoked'] = 'true';
+      await tester.pumpWidget(
+        _wrap(
+          _settings(
+            autoSync: DiscogsAutoSyncService(preferences: prefs),
+            connection: _Connection(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Discogs rejected your token'),
+        findsOneWidget,
+      );
     });
   });
 }

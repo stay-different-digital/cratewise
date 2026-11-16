@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cratewise/application/services/discogs_auto_sync_service.dart';
 import 'package:cratewise/application/use_cases/add_to_collection_use_case.dart';
 import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/models/release_detail.dart';
@@ -371,4 +374,52 @@ void main() {
       });
     });
   });
+
+  group('AddToCollectionUseCase — auto-sync (US-144)', () {
+    test(
+      'a saved item is handed to auto-sync without waiting for Discogs',
+      () async {
+        final repo = FakeCollectionRepository();
+        final sync = _NeverFinishingSync();
+        final useCase = AddToCollectionUseCase(repo, autoSync: sync);
+
+        final result = await useCase.execute(kindOfBlue());
+
+        expect(result, isA<AddToCollectionSuccess>());
+        expect(sync.pushed.single.discogsReleaseId, kindOfBlue().id);
+      },
+    );
+
+    test(
+      'nothing is pushed when the local save fails or is a duplicate',
+      () async {
+        final repo = FakeCollectionRepository();
+        final sync = _NeverFinishingSync();
+        final useCase = AddToCollectionUseCase(repo, autoSync: sync);
+        await useCase.execute(kindOfBlue());
+        sync.pushed.clear();
+
+        final again = await useCase.execute(kindOfBlue());
+
+        expect(again, isA<AddToCollectionDuplicate>());
+        expect(sync.pushed, isEmpty);
+      },
+    );
+  });
+}
+
+/// Auto-sync whose Discogs call never completes: if adding awaited it, the
+/// test would hang.
+class _NeverFinishingSync extends DiscogsAutoSyncService {
+  _NeverFinishingSync() : super(tokenStorage: null);
+  final pushed = <CollectionItem>[];
+
+  @override
+  Future<void> pushCollectionItem(
+    CollectionItem item,
+    CollectionRepository repository,
+  ) {
+    pushed.add(item);
+    return Completer<void>().future;
+  }
 }

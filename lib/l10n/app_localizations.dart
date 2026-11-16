@@ -320,6 +320,30 @@ abstract class AppLocalizations {
   /// **'Calculating…'**
   String get calculating;
 
+  /// No description provided for @settingsAutoSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync automatically with Discogs'**
+  String get settingsAutoSync;
+
+  /// No description provided for @settingsAutoSyncSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Records you add to your collection or wishlist are sent to your Discogs account right away.'**
+  String get settingsAutoSyncSubtitle;
+
+  /// No description provided for @settingsAutoSyncNeedsAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect your Discogs account above to use this.'**
+  String get settingsAutoSyncNeedsAccount;
+
+  /// No description provided for @settingsAutoSyncTurnedOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turned off because Discogs rejected your token. Reconnect, then turn it on again.'**
+  String get settingsAutoSyncTurnedOff;
+
   /// No description provided for @settingsImportExport.
   ///
   /// In en, this message translates to:

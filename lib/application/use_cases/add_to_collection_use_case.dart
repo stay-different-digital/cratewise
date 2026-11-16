@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:uuid/uuid.dart';
 
 import '../../domain/models/collection_item.dart';
+import '../services/discogs_auto_sync_service.dart';
 import '../../domain/models/release_detail.dart';
 import '../../domain/models/retry_action.dart';
 import '../../domain/models/sync_status.dart';
@@ -33,6 +35,7 @@ class AddToCollectionUseCase {
     this._repository, {
     String Function()? idGenerator,
     this._retryRepository,
+    this._autoSync,
   }) : _idGenerator = idGenerator ?? _newUuid;
 
   static String _newUuid() => const Uuid().v4();
@@ -40,6 +43,9 @@ class AddToCollectionUseCase {
   final CollectionRepository _repository;
   final String Function() _idGenerator;
   final RetryActionRepository? _retryRepository;
+  // US-144: when set, a successfully saved item is also sent to Discogs (if
+  // the user turned auto-sync on). Not awaited: adding stays local-speed.
+  final DiscogsAutoSyncService? _autoSync;
 
   Future<AddToCollectionResult> execute(ReleaseDetail release) async {
     if (await _repository.containsRelease(release.id)) {
@@ -66,6 +72,10 @@ class AddToCollectionUseCase {
     );
     try {
       await _repository.add(item);
+      final autoSync = _autoSync;
+      if (autoSync != null) {
+        unawaited(autoSync.pushCollectionItem(item, _repository));
+      }
       return AddToCollectionSuccess(item);
     } catch (e, st) {
       logSwallowed(e, st, 'AddToCollectionUseCase');
