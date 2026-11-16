@@ -86,7 +86,7 @@ Versie: sprint 1 levert 1.1.0 (Minor per ADR-0003: featurebatch plus een verwijd
 
 ### US-134: Vanuit een release naar het label gaan
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
 
 **Priority: High · 3 SP**
 
@@ -208,6 +208,8 @@ Na US-135 is het scherm onbereikbaar. Wat overblijft:
 ---
 
 ### US-139: Opnieuw op "Zoeken" tikken maakt de zoekbalk leeg
+
+**Status: In Progress**
 
 **Priority: Medium · 2 SP**
 
