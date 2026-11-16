@@ -254,6 +254,8 @@ Twee dingen veranderen doordat het scherm een tab wordt:
 
 ### US-141: Geen "Set condition"-venster meer bij toevoegen aan collectie
 
+**Status: In Progress**
+
 **Priority: High · 1 SP**
 
 > Als verzamelaar,
