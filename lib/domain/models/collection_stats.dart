@@ -1,5 +1,6 @@
 import 'cached_release_metadata.dart';
 import 'collection_item.dart';
+import 'format_types.dart';
 
 class CollectionStats {
   const CollectionStats({
@@ -53,7 +54,7 @@ class CollectionStats {
           : 'Unknown';
       decades[decade] = (decades[decade] ?? 0) + 1;
 
-      final format = item.format?.split(',').first.trim() ?? 'Unknown';
+      final format = formatTypes(item.format).firstOrNull ?? 'Unknown';
       formats[format] = (formats[format] ?? 0) + 1;
 
       if (item.coverUrl == null) missingCover++;

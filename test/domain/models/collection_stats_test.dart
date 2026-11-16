@@ -110,6 +110,18 @@ void main() {
       expect(s.byFormat['CD'], 1);
     });
 
+    test(
+      'primary format of a multi-format item is its first type (US-143)',
+      () {
+        final s = CollectionStats.from([
+          _item(id: '1', format: 'File\nVinyl, LP'),
+          _item(id: '2', format: 'Vinyl, LP, Album\nFile, MP3'),
+        ]);
+        // Previously a first line without a comma leaked the whole string.
+        expect(s.byFormat, {'File': 1, 'Vinyl': 1});
+      },
+    );
+
     test('groups null format as Unknown', () {
       final s = CollectionStats.from([_item(id: '1', format: null)]);
       expect(s.byFormat['Unknown'], 1);

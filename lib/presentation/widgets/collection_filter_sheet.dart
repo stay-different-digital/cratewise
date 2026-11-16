@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../domain/models/cached_release_metadata.dart';
 import '../../domain/models/collection_filter_set.dart';
 import '../../domain/models/collection_item.dart';
+import '../../domain/models/format_types.dart';
 import '../../domain/models/saved_search.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/repositories/saved_search_repository.dart';
@@ -85,12 +86,10 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
             .toSet()
             .toList()
           ..sort();
+    // One chip per format type (Vinyl, CD, File…), not per full format
+    // string (US-143).
     _availableFormats =
-        widget.items
-            .where((i) => i.format != null)
-            .map((i) => i.format!)
-            .toSet()
-            .toList()
+        widget.items.expand((i) => formatTypes(i.format)).toSet().toList()
           ..sort();
     _availableLabels =
         widget.items

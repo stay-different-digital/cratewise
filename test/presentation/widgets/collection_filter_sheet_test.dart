@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 CollectionItem _item({
   String id = '1',
+  String? format,
   int? bpm,
   MusicalKey? musicalKey,
   int? energyLevel,
@@ -15,6 +16,7 @@ CollectionItem _item({
   discogsReleaseId: 1,
   artist: 'A',
   title: 'T',
+  format: format,
   mediaCondition: RecordCondition.veryGood,
   sleeveCondition: RecordCondition.veryGood,
   tags: const [],
@@ -79,6 +81,27 @@ void main() {
       await tester.pumpAndSettle();
       return (await result)!;
     }
+
+    testWidgets('Format shows one chip per type; Vinyl lands in the filter '
+        '(US-143)', (tester) async {
+      await openSheet(tester, [
+        _item(id: '1', format: 'Vinyl, 12", 33 ⅓ RPM'),
+        _item(id: '2', format: 'Vinyl, LP, Album'),
+        _item(id: '3', format: 'File, MP3, 320 kbps'),
+        _item(id: '4', format: 'Vinyl, LP\nCD, Album'),
+      ]);
+      await scrollSheetTo(tester, find.text('Vinyl'));
+
+      expect(find.text('Vinyl'), findsOneWidget);
+      expect(find.text('File'), findsOneWidget);
+      expect(find.text('CD'), findsOneWidget);
+      expect(find.textContaining('33 ⅓ RPM'), findsNothing);
+
+      await tester.tap(find.text('Vinyl'));
+      await tester.pump();
+      final filter = await apply(tester);
+      expect(filter.formats, {'Vinyl'});
+    });
 
     testWidgets('DJ sections hidden when no item has DJ data', (tester) async {
       await openSheet(tester, [_item()]);

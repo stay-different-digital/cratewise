@@ -380,4 +380,56 @@ void main() {
       });
     });
   });
+
+  group('CollectionFilterSet — format types (US-143)', () {
+    final vinyl = _item(id: 'v', format: 'Vinyl, 12", 33 ⅓ RPM');
+    final file = _item(id: 'f', format: 'File, MP3, 320 kbps');
+    final mixed = _item(id: 'm', format: 'Vinyl, LP, Album\nFile, MP3');
+    final none = _item(id: 'n');
+
+    test('"Vinyl" keeps every vinyl item and hides File-only items', () {
+      final result = const CollectionFilterSet(
+        formats: {'Vinyl'},
+      ).apply([vinyl, file, mixed, none]);
+      expect(result.map((i) => i.id), ['v', 'm']);
+    });
+
+    test('an item with several formats counts for each type', () {
+      final result = const CollectionFilterSet(
+        formats: {'File'},
+      ).apply([vinyl, file, mixed]);
+      expect(result.map((i) => i.id), ['f', 'm']);
+    });
+
+    test('combines with other filters', () {
+      final result =
+          CollectionFilterSet(
+            formats: const {'Vinyl'},
+            labels: const {'Warp'},
+          ).apply([
+            _item(id: '1', format: 'Vinyl, LP', label: 'Warp'),
+            _item(id: '2', format: 'Vinyl, LP', label: 'Ninja Tune'),
+            _item(id: '3', format: 'File, FLAC', label: 'Warp'),
+          ]);
+      expect(result.map((i) => i.id), ['1']);
+    });
+
+    test('saved sets with full format strings load as types', () {
+      final old = {
+        ...const CollectionFilterSet().toJson(),
+        'formats': ['Vinyl, 12", 33 ⅓ RPM', 'Vinyl, LP, Album', 'CD'],
+      };
+      final loaded = CollectionFilterSet.fromJson(old);
+      expect(loaded.formats, {'Vinyl', 'CD'});
+      expect(loaded.apply([vinyl, file]).map((i) => i.id), ['v']);
+    });
+
+    test('new sets round-trip unchanged', () {
+      const set = CollectionFilterSet(formats: {'Vinyl', 'File'});
+      expect(CollectionFilterSet.fromJson(set.toJson()).formats, {
+        'Vinyl',
+        'File',
+      });
+    });
+  });
 }
