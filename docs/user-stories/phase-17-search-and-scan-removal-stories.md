@@ -195,9 +195,9 @@ Na US-135 is het scherm onbereikbaar. Wat overblijft:
 
 ### US-138: iOS — cameratoestemming verwijderen
 
-**Status: ⛔ Blocked (2026-11-16)** — code klaar, buildverificatie geblokkeerd
+**Status: ✅ Resolved (2026-11-16)**
 
-**Stand:** `NSCameraUsageDescription` is verwijderd en `pod install` is gedraaid; `Podfile.lock` bevatte de scanner nooit (die kwam via Swift Package Manager). De release-build lukt niet, om een reden die los staat van deze story: de geïnstalleerde Xcode (SDK 27.2) ondersteunt alleen iOS-deployment-targets vanaf 15.0, het project en de pods staan op 13.0 (`flutter_secure_storage` op 9.0). Daarnaast faalt `flutter build ipa` op signing: het lokale provisioning-profiel "cratewise" hoort bij app-ID `cratewise`, niet bij `app.cratewise`. **Nodig van [Fred]:** besluit over minimum iOS 15 (iOS 13/14-gebruikers krijgen dan geen updates meer) en een kloppend provisioning-profiel. Daarna: build, start op iPhone en iPad, tabs in onderbalk en zijbalk.
+**Uitkomst:** `NSCameraUsageDescription` verwijderd, `pod install` gedraaid (`Podfile.lock` bevatte de scanner nooit; die kwam via Swift Package Manager). Op besluit van Fred is de minimale iOS-versie naar 15.0 gegaan: de geïnstalleerde Xcode (SDK 27.2) bouwt niet meer voor 13.0. `flutter build ios --release --no-codesign` slaagt; de gebouwde app heeft geen camerasleutel, geen scanner-frameworks en `MinimumOSVersion` 15.0. De build start op een iPhone 17 Pro- en een iPad-simulator. **Nog open voor [Fred]:** `flutter build ipa` faalt op signing (lokaal provisioning-profiel "cratewise" hoort bij app-ID `cratewise`, de bundle is `app.cratewise`), en de tabs op een echt toestel doorlopen met een gekoppeld account. Bekend gereedschapsprobleem: `flutter build ios --simulator` (beide architecturen) faalt in Flutters framework-kopieerstap; bouwen voor één simulatortoestel werkt.
 
 **Priority: Medium · 1 SP**
 
