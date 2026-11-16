@@ -27,6 +27,7 @@ import '../../domain/repositories/wishlist_repository.dart';
 import '../../l10n/app_localizations.dart';
 import '../../shared/errors/app_error.dart';
 import '../../shared/route_observer.dart';
+import '../../shared/tab_reselect_notifier.dart';
 import '../widgets/rate_limit_retry_button.dart';
 import '../widgets/release_search_result_card.dart';
 import 'release_detail_screen.dart';
@@ -164,6 +165,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
   WishlistRepository? _wishlistRepository;
   SavedSearchRepository? _savedSearchRepository;
   final _controller = TextEditingController();
+  final _focusNode = FocusNode();
   String _listenedText = '';
   _SearchState _state = const _Idle();
   Timer? _debounce;
@@ -209,6 +211,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     _wishlistRepository = widget.wishlistRepository ?? repos?.wishlist;
     _savedSearchRepository = widget.savedSearchRepository ?? repos?.savedSearch;
     _controller.addListener(_onQueryChanged);
+    searchTabReselectedNotifier.addListener(_onTabReselected);
     _loadMembership();
     _loadVinylOnly();
     _shakeSub = (widget.accelerometerStream ?? accelerometerEventStream())
@@ -224,6 +227,32 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     if (request != null && !identical(request, oldWidget.request)) {
       _applyRequest(request);
     }
+  }
+
+  void _onTabReselected() {
+    if (!mounted) return;
+    // A release detail is still on top: this tap only takes the user back to
+    // the results (the shell pops it), nothing is cleared yet.
+    if (ModalRoute.of(context)?.isCurrent == false) return;
+    _resetSearch();
+  }
+
+  /// Starts a fresh search (US-139): empty box, idle state, keyboard focus.
+  /// Unlike the clear button this keeps the scope chip and the sort, and it
+  /// drops any search still in flight.
+  void _resetSearch() {
+    _debounce?.cancel();
+    _searchGeneration++; // results of an in-flight search are discarded
+    // Mark '' as already seen so the controller listener doesn't treat this
+    // as a user edit (which would reset the scope to All).
+    _listenedText = '';
+    _controller.clear();
+    _lastQuery = '';
+    setState(() {
+      _state = const _Idle();
+      _selectedResult = null;
+    });
+    _focusNode.requestFocus();
   }
 
   /// Replaces the current search with [request] (US-134): text, scope and
@@ -471,6 +500,8 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     searchRouteObserver.unsubscribe(this);
     _debounce?.cancel();
     _shakeSub?.cancel();
+    searchTabReselectedNotifier.removeListener(_onTabReselected);
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -571,6 +602,7 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
               Expanded(
                 child: TextField(
                   controller: _controller,
+                  focusNode: _focusNode,
                   autocorrect: false,
                   enableSuggestions: false,
                   textInputAction: TextInputAction.search,

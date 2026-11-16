@@ -22,6 +22,7 @@ import 'package:cratewise/presentation/screens/search_screen.dart';
 import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:cratewise/shared/route_observer.dart';
+import 'package:cratewise/shared/tab_reselect_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -1943,6 +1944,126 @@ void main() {
 
       final field = tester.widget<TextField>(find.byType(TextField));
       expect(field.controller!.text, 'impulse');
+    });
+  });
+
+  group('SearchScreen — re-tapping the Search tab clears it (US-139)', () {
+    void reselectSearchTab() => searchTabReselectedNotifier.value++;
+    String fieldText(WidgetTester tester) =>
+        tester.widget<TextField>(find.byType(TextField)).controller!.text;
+
+    testWidgets('on the results: empties the box, idles, focuses the field', (
+      tester,
+    ) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await submitSearch(tester, 'blue note');
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pump();
+      expect(find.byType(ReleaseSearchResultCard), findsWidgets);
+
+      reselectSearchTab();
+      await tester.pumpAndSettle();
+
+      expect(fieldText(tester), isEmpty);
+      expect(find.byType(ReleaseSearchResultCard), findsNothing);
+      expect(
+        tester.widget<TextField>(find.byType(TextField)).focusNode!.hasFocus,
+        isTrue,
+      );
+    });
+
+    testWidgets('keeps the scope chip and the sort', (tester) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      await tester.pumpWidget(_buildScreen(service));
+      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
+      await tester.pump();
+      await submitSearch(tester, 'blue note');
+      await tester.tap(find.byKey(const Key('search-sort-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('search-sort-option-oldestFirst')));
+      await tester.pumpAndSettle();
+
+      reselectSearchTab();
+      await tester.pumpAndSettle();
+      await submitSearch(tester, 'impulse');
+
+      expect(service.filters.last, SearchFilter.label);
+      expect(service.sorts.last, SearchSort.oldestFirst);
+    });
+
+    testWidgets('a search still in flight cannot bring results back', (
+      tester,
+    ) async {
+      final completer = Completer<SearchResultPage>();
+      await tester.pumpWidget(_buildScreen(_DelayedSearchService(completer)));
+      await submitSearch(tester, 'blue note');
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      reselectSearchTab();
+      await tester.pump();
+      completer.complete(
+        const SearchResultPage(
+          items: [_kindOfBlue],
+          currentPage: 1,
+          totalPages: 1,
+          totalResults: 1,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(fieldText(tester), isEmpty);
+      expect(find.byType(ReleaseSearchResultCard), findsNothing);
+    });
+
+    testWidgets('with a release open, the tap clears nothing', (tester) async {
+      final service = _RecordingSearchService(
+        page1: [_kindOfBlue],
+        page2: const [],
+      );
+      final router = GoRouter(
+        initialLocation: '/search',
+        routes: [
+          GoRoute(
+            path: '/search',
+            builder: (_, _) =>
+                Scaffold(body: SearchScreen(searchService: service)),
+            routes: [
+              GoRoute(
+                path: 'release/:id',
+                builder: (_, _) => const Scaffold(body: Text('detail')),
+              ),
+            ],
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          routerConfig: router,
+        ),
+      );
+      await submitSearch(tester, 'blue note');
+      await tester.pumpAndSettle();
+      router.push('/search/release/249504');
+      await tester.pumpAndSettle();
+
+      // The shell's first tap pops back to the results; the screen must not
+      // clear anything while the detail is still on top.
+      reselectSearchTab();
+      router.pop();
+      await tester.pumpAndSettle();
+
+      expect(fieldText(tester), 'blue note');
+      expect(find.byType(ReleaseSearchResultCard), findsWidgets);
     });
   });
 

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../shared/tab_reselect_notifier.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/app_nav_rail.dart';
 
 const _kWideBreakpoint = 700.0;
+const _kSearchTab = 0;
 
 class HomeShellScreen extends StatelessWidget {
   const HomeShellScreen({super.key, required this.navigationShell});
@@ -12,10 +14,14 @@ class HomeShellScreen extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
   void _onTabSelected(int index) {
-    navigationShell.goBranch(
-      index,
-      initialLocation: index == navigationShell.currentIndex,
-    );
+    final reselected = index == navigationShell.currentIndex;
+    // Notify before navigating: the search screen tells "detail still on top"
+    // (this tap only returns to the results) from "already on the results"
+    // (this tap clears the search) by whether its route is current (US-139).
+    if (reselected && index == _kSearchTab) {
+      searchTabReselectedNotifier.value++;
+    }
+    navigationShell.goBranch(index, initialLocation: reselected);
   }
 
   @override
