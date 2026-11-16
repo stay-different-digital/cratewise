@@ -254,7 +254,7 @@ Twee dingen veranderen doordat het scherm een tab wordt:
 
 ### US-141: Geen "Set condition"-venster meer bij toevoegen aan collectie
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
 
 **Priority: High · 1 SP**
 
