@@ -184,7 +184,7 @@ Opslag van het Discogs-token, de taalkeuze, onboarding-status, "Alleen vinyl" en
 
 ### US-157: Overige updates: `csv` 8, `cupertino_icons` 2, minors
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)** — `csv` 8 (nieuwe `Csv`-API; parser met `autoDetect: false` zodat alleen komma's scheiden zoals voorheen). Golden test (`test/infrastructure/csv/csv_golden_test.dart`) legt de uitvoer van csv 6 vast; één bewust geaccepteerd verschil: een cel met spaties aan begin of eind krijgt nu aanhalingstekens, zodat spreadsheets die spaties behouden (opnieuw importeren geeft hetzelfde resultaat). `cupertino_icons` verwijderd (nergens gebruikt). Overige packages via `flutter pub upgrade`. `flutter pub outdated`: alleen `flutter_secure_storage` 11 staat nog open, bewust (US-160).
 
 **Priority: Low · 2 SP**
 

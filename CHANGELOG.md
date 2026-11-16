@@ -10,6 +10,15 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.2.4] — 2026-11-16
+
+### Changed
+
+- **CSV library `csv` 8 (US-157)** — exports and imports are unchanged, with
+  one difference: a cell that starts or ends with a space is now written in
+  quotes, so spreadsheets keep the space.
+- Remaining dependencies updated; unused `cupertino_icons` removed.
+
 ## [1.2.3] — 2026-11-16
 
 ### Changed

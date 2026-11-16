@@ -43,11 +43,13 @@ class CsvParser {
     }
 
     try {
-      const converter = CsvToListConverter(
-        eol: '\n',
-        shouldParseNumbers: false,
-      );
-      final rawRows = converter.convert(normalised);
+      // csv 8: keep the csv 6 behaviour — only commas separate fields (no
+      // delimiter auto-detection) and every cell stays text.
+      final rawRows = Csv(
+        lineDelimiter: '\n',
+        autoDetect: false,
+        dynamicTyping: false,
+      ).decode(normalised);
 
       if (rawRows.isEmpty) {
         return const CsvParseSuccess(headers: [], rows: []);

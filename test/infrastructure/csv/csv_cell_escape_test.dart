@@ -27,7 +27,7 @@ void main() {
       "it's",
       '128',
     ];
-    final csv = const ListToCsvConverter().convert([
+    final csv = Csv().encode([
       ['title'],
       for (final v in values) [escapeCsvCell(v)],
     ]);
