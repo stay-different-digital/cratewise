@@ -21,6 +21,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      # The Android release build plus Gradle caches need more disk than the
+      # runner has free by default; drop preinstalled tooling we don't use.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h /
+
       # Android Gradle Plugin 9.3 (Flutter 3.50 template) runs lint with
       # Java 21 APIs; the app itself still targets Java 17.
       - name: Set up Java
@@ -53,11 +60,9 @@ jobs:
       - name: Run tests
         run: flutter test
 
-      - name: Build Android debug
-        run: flutter build apk --debug --build-number=${{ github.run_number }}
-
-      # Release build runs Android lint (lintVitalRelease), which the debug
-      # build skips; signs with the debug key when no key.properties exists.
+      # The release build covers everything the debug build did, plus lint
+      # (lintVitalRelease); it signs with the debug key when there's no
+      # key.properties. Building both ran the runner out of disk space.
       - name: Build Android release
         run: |
           flutter build apk --release --build-number=${{ github.run_number }} 2>&1 | tee build-release.log
