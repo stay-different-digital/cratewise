@@ -40,8 +40,9 @@ On at least one physical Android device and one physical iOS device, using the
 release artefacts (not a debug build):
 
 - [ ] Cold start lands on the Search tab; correct app icon and branded splash.
-- [ ] Search a release; open its detail page.
-- [ ] Scan one barcode.
+- [ ] Search a release; open its detail page; tap the label and check the
+      label's releases appear newest first.
+- [ ] Toggle "Vinyl only" in Search; open the Statistics tab.
 - [ ] Add to collection and to wantlist; relaunch — data persisted.
 - [ ] Settings: connect Discogs token, validate, disconnect.
 - [ ] CSV export completes.

@@ -20,11 +20,13 @@ either store form._
 > Keep your entire record collection and wantlist in your pocket — fully
 > offline, always available, no account required.
 >
-> **Scan to add.** Point the camera at a record's barcode and Cratewise looks
-> it up in the Discogs database, the world's largest music catalogue.
+> **Search millions of releases.** Find any pressing, edition, or repress in
+> the Discogs database, the world's largest music catalogue, and add it to
+> your collection or wantlist in two taps. Show vinyl only, sort newest or
+> oldest first, and jump from any release to everything on its label.
 >
-> **Search millions of releases.** Find any pressing, edition, or repress and
-> add it to your collection or wantlist in two taps.
+> **Know your collection.** Statistics by decade, format, genre and style are
+> one tap away, and you can filter your collection down to vinyl only.
 >
 > **Your data, your device.** Everything is stored locally. No ads, no
 > tracking, no analytics. Connect your own Discogs account with a personal
@@ -45,7 +47,7 @@ either store form._
 | Field | Value | Limit |
 |---|---|---|
 | App title | Cratewise — Vinyl Collection | 30 chars |
-| Short description | Catalogue your vinyl: scan barcodes, search Discogs, track your wantlist. | 80 chars |
+| Short description | Catalogue your vinyl: search Discogs, browse labels, track your wantlist. | 80 chars |
 | Full description | Shared description above | 4000 chars |
 | Category | Music & Audio |
 | Tags | music, collection, vinyl |
@@ -68,8 +70,8 @@ stored in Android Keystore-backed secure storage; it is user-provided
 credential material for a third-party service, not data collected by the
 developer.
 
-Camera permission: used only for on-device barcode scanning; no images are
-stored or transmitted.
+Permissions: internet only (Discogs API). The app requests no camera,
+location, contacts or other sensitive permissions.
 
 ### Screenshot shot-list (Android)
 
@@ -79,10 +81,11 @@ realistic collection (~30 records with cover art):
 
 1. Search — results for a well-known record.
 2. Collection — grid/list with cover art.
-3. Release detail — full release info.
-4. Scanner — camera view with barcode overlay (mock/staged).
-5. Wantlist.
-6. Settings — Discogs connected state (token obscured — **never show a real
+3. Release detail — full release info, label link visible.
+4. Label search — a label's releases, newest first, vinyl only.
+5. Statistics tab.
+6. Wantlist.
+7. Settings — Discogs connected state (token obscured — **never show a real
    token**).
 
 ---
@@ -92,10 +95,10 @@ realistic collection (~30 records with cover art):
 | Field | Value | Limit |
 |---|---|---|
 | App name | Cratewise — Vinyl Collection | 30 chars |
-| Subtitle | Catalogue, scan & dig records | 30 chars |
-| Promotional text | Your record collection in your pocket: scan barcodes, search Discogs, and never buy the same pressing twice. | 170 chars |
+| Subtitle | Catalogue & dig your records | 30 chars |
+| Promotional text | Your record collection in your pocket: search Discogs for vinyl only, browse every release on a label, and never buy the same pressing twice. | 170 chars |
 | Description | Shared description above |
-| Keywords | vinyl,records,discogs,collection,crate,wantlist,barcode,scanner,dj,music | 100 chars |
+| Keywords | vinyl,records,discogs,collection,crate,wantlist,label,lp,dj,music,statistics | 100 chars |
 | Category | Music (primary), Utilities (secondary) |
 | Support URL | _TODO — can be the GitHub repo or cratewise.app_ |
 | Privacy policy URL | _TODO (see top)_ |
@@ -123,8 +126,8 @@ question per build.
 ### Screenshot shot-list (iOS)
 
 Required sizes: 6.9" iPhone (1320×2868) and 13" iPad (2064×2752). Apple
-scales down for smaller devices. Same six scenes as Android, plus:
+scales down for smaller devices. Same seven scenes as Android, plus:
 
-7. iPad landscape — demonstrating the tablet layout.
-8. iPad Split View — Cratewise side-by-side with another app (iPad
+8. iPad landscape — demonstrating the tablet layout.
+9. iPad Split View — Cratewise side-by-side with another app (iPad
    multitasking is a first-class scenario for in-store wantlist checks).

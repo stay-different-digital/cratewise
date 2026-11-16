@@ -1,7 +1,7 @@
 # Cratewise
 
-Cratewise is a Flutter app for vinyl collectors and DJs — search Discogs, scan
-barcodes, and manage your record collection and wishlist, online or offline.
+Cratewise is a Flutter app for vinyl collectors and DJs — search Discogs and
+manage your record collection and wishlist, online or offline.
 
 It is an independent Discogs companion app. It uses the Discogs API, but it is
 not affiliated with or endorsed by Discogs.
@@ -21,10 +21,11 @@ not affiliated with or endorsed by Discogs.
 
 ## Features
 
-- **Search** Discogs for releases, artists, and labels (with filter chips).
-- **Barcode scanning** to look up a release straight from its sleeve.
-- **Collection & wishlist** management with membership indicators across search,
-  barcode, and detail screens.
+- **Search** Discogs for releases, artists, and labels (with filter chips), sort
+  newest or oldest first, limit to vinyl, and jump from a release to its label.
+- **Collection & wishlist** management with membership indicators across search
+  and detail screens; filters by format type, decade, label, genre and more.
+- **Collection statistics** in their own tab.
 - **Discogs import/export** — sync your collection and wantlist both ways,
   including opt-in deletion sync.
 - **CSV import/export** for moving data in and out.
@@ -50,8 +51,7 @@ Desktop and web targets are out of scope.
   `infrastructure` implementing `domain` contracts.
 - **Drift (SQLite)** for local persistence.
 - **GoRouter** for navigation, **flutter_secure_storage** for the Discogs token,
-  **mobile_scanner** for barcodes, **http** for the Discogs API, and **csv** for
-  import/export.
+  **http** for the Discogs API, and **csv** for import/export.
 
 See [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) for the
 full layer breakdown, data model, and the architecture decision records under

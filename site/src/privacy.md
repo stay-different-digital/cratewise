@@ -6,7 +6,7 @@ description: Cratewise privacy policy — your data stays on your device, and we
 
 # Cratewise Privacy Policy
 
-<p class="effective-date"><strong>Effective date:</strong> 12 June 2026</p>
+<p class="effective-date"><strong>Effective date:</strong> 16 November 2026</p>
 
 Cratewise is a vinyl collection app for collectors and DJs. This policy
 describes what data the app handles and where it goes.
@@ -37,8 +37,7 @@ token at any time via Settings → Disconnect.
 
 Cratewise connects to exactly one external service: the **Discogs API**
 (`api.discogs.com`), and only when you use Discogs features (searching the
-Discogs database, looking up a scanned barcode, or syncing your collection or
-wantlist). These requests are made over HTTPS, on your behalf, authenticated
+Discogs database, or syncing your collection or wantlist). These requests are made over HTTPS, on your behalf, authenticated
 with your own token.
 
 Discogs is an independent service with its own terms and privacy policy:
@@ -49,11 +48,11 @@ If you never connect a Discogs account, Cratewise makes no network requests
 on your behalf other than unauthenticated Discogs database searches you
 initiate.
 
-## Camera
+## Device permissions
 
-The camera is used solely to scan record barcodes, on-device. No photos or
-video are stored, and no images ever leave your device. Camera access is
-requested only when you open the scanner, and the app works without it.
+Cratewise only needs internet access, to reach the Discogs API. It does not
+use the camera, microphone, location or contacts. Importing a CSV file opens
+the system file picker; the app reads only the file you choose.
 
 ## Children
 

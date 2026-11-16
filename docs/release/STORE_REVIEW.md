@@ -7,16 +7,16 @@ in `../store/STORE_LISTINGS.md`; build steps in `RELEASE_CHECKLIST.md`.
 ## Both stores
 
 - [ ] **App works without an account.** Launch with no Discogs token: search,
-  release detail, barcode scan, collection, and wantlist must all function.
+  release detail, collection, wantlist and statistics must all function.
   Apple guideline 5.1.1 forbids requiring registration for non-account
   features — Cratewise's token is genuinely optional, verify it stays that
   way in the submitted build.
 - [ ] **Privacy policy URL is live** and its content matches the Play data
   safety form and the App Store nutrition labels exactly (all three say:
   nothing collected).
-- [ ] **Camera permission has a clear purpose.** iOS
-  `NSCameraUsageDescription` and the Android permission are only requested
-  when the scanner is opened, and the string says why ("scan barcodes").
+- [ ] **No unused permissions.** Since 1.1.0 the app asks for no camera
+  access on either platform; the release APK requests only `INTERNET` and
+  `Info.plist` has no `NSCameraUsageDescription`.
 - [ ] **Metadata is accurate.** Screenshots show the real app; the
   description claims no feature that doesn't exist (no "sync" wording that
   implies automatic background sync — it's manual import/export).
@@ -52,13 +52,13 @@ in `../store/STORE_LISTINGS.md`; build steps in `RELEASE_CHECKLIST.md`.
 > Optionally, users can connect their own Discogs account (discogs.com, the
 > largest music database/marketplace) by pasting a personal access token in
 > Settings. This only adds import/export of their Discogs collection. You do
-> not need a token to review the app: search, barcode scanning (any CD or
-> vinyl barcode works), collection and wantlist all work without it.
+> not need a token to review the app: search, collection, wantlist and
+> statistics all work without it.
 > Without a token, Discogs-account features simply show a
 > message pointing to Settings.
 >
-> The camera is used only for barcode scanning, on-device. The app collects
-> no data (see privacy policy).
+> The app requests no camera, location or other sensitive permissions and
+> collects no data (see privacy policy).
 
 ## If rejected
 

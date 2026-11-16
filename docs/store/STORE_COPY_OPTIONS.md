@@ -35,12 +35,13 @@ needed.
 
 | # | Short description | Count |
 |---|---|---|
-| A | Catalogue your vinyl: scan barcodes, search Discogs, track your wantlist. | (73/80) |
-| B | Scan, search and catalogue your records. Fully offline, no account needed. | (74/80) |
-| C | Your vinyl collection and wantlist in your pocket — scan, search, dig. | (69/80) |
+| A | Catalogue your vinyl: search Discogs, browse labels, track your wantlist. | (73/80) |
+| B | Search, sort and catalogue your records. Fully offline, no account needed. | (74/80) |
+| C | Your vinyl collection and wantlist in your pocket — search, sort, dig. | (70/80) |
 
-**Recommendation:** A (current). It front-loads the three core verbs and names
-Discogs, which collectors recognise.
+**Recommendation:** A (current, since 1.1.0 without the scanner). It names
+Discogs, which collectors recognise, and the label browsing that replaced
+scanning as the headline action.
 
 ---
 
@@ -50,12 +51,12 @@ Shown under the app name on the product page and in some search results.
 
 | # | Subtitle | Count |
 |---|---|---|
-| A | Catalogue, scan & dig records | (29/30) |
-| B | Scan & track your vinyl | (23/30) |
+| A | Catalogue & dig your records | (28/30) |
+| B | Track your vinyl & wantlist | (27/30) |
 | C | Vinyl collection & wantlist | (27/30) |
 
-**Recommendation:** A (current) — it captures cataloguing, the scanner, and the
-crate-digging identity in three words.
+**Recommendation:** A (current) — cataloguing plus the crate-digging identity;
+the old "scan" wording went with the scanner in 1.1.0.
 
 ---
 
@@ -66,13 +67,13 @@ the current hook or a seasonal line. Appears above the description.
 
 | # | Promotional text | Count |
 |---|---|---|
-| A | Your record collection in your pocket: scan barcodes, search Discogs, and never buy the same pressing twice. | (107/170) |
-| B | Dig smarter. Scan a barcode to identify any record, check your wantlist in the shop, and know before you buy. No account, no ads, fully offline. | (143/170) |
-| C | Every record you own and every one you want — in your pocket, fully offline. Scan a barcode, search millions of Discogs releases, add in two taps. | (146/170) |
-| D | Never buy a double again. Scan any record's barcode, see instantly if it's already in your collection, and keep your wantlist with you everywhere. | (145/170) |
+| A | Your record collection in your pocket: search Discogs for vinyl only, browse every release on a label, and never buy the same pressing twice. | (141/170) |
+| B | Dig smarter. Find every vinyl release on a label, newest first, check your wantlist in the shop, and know before you buy. No account, no ads. | (141/170) |
+| C | Every record you own and every one you want — in your pocket, fully offline. Search millions of Discogs releases, add in two taps. | (130/170) |
+| D | Never buy a double again. See instantly if a release is already in your collection, and keep your wantlist with you everywhere. | (127/170) |
 
-**Recommendation:** C for launch — it states the core value (own + want,
-offline) and the two key actions in one breath. Swap to D later as a
+**Recommendation:** A for 1.1.0 (matches `STORE_LISTINGS.md`) — it leads with
+this release's new search features. C remains the evergreen fallback; D is the
 "problem/solution" hook once you have reviews.
 
 ---
@@ -88,8 +89,8 @@ sentence — currently:
 
 Alternative opener if you want more punch:
 
-> Catalogue your entire record collection and wantlist in your pocket — scan a
-> barcode, search millions of Discogs releases, fully offline.
+> Catalogue your entire record collection and wantlist in your pocket — search
+> millions of Discogs releases, vinyl only if you like, fully offline.
 
 ---
 

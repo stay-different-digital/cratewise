@@ -65,9 +65,14 @@ Keys currently declared in `ios/Runner/Info.plist`:
 
 | Key | Why it is needed |
 |-----|-----------------|
-| `NSCameraUsageDescription` | Barcode scanning via `mobile_scanner`. |
 | `NSPhotoLibraryUsageDescription` | `file_picker` references the photo library API when presenting the file picker on iOS. |
 | `NSLocationWhenInUseUsageDescription` | Referenced by a transitive SDK dependency; Cratewise does not use location, and the string says so. |
+
+`NSCameraUsageDescription` was removed in 1.1.0 together with the barcode
+scanner (US-138). On Android the app declares `INTERNET` itself in
+`AndroidManifest.xml` (US-137): before 1.1.0 it only arrived through the
+scanner's ML Kit dependency, so check the merged release manifest whenever a
+dependency is removed.
 
 **When adding a new package:** check whether it lists any `NS*UsageDescription`
 requirements in its README or `podspec`. If so, add the key to `Info.plist`
