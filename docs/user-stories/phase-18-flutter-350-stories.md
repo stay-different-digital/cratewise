@@ -35,6 +35,8 @@ Totaal: 19 SP.
 
 ### US-150: Vangnet: build-checks voor Android, iOS en de Kotlin-waarschuwing
 
+**Status: In Progress**
+
 **Priority: High · 2 SP**
 
 > Als ontwikkelaar,
