@@ -21,14 +21,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      # Android Gradle Plugin 9.3 (Flutter 3.50 template) runs lint with
+      # Java 21 APIs; the app itself still targets Java 17.
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          # Pinned to the version the app is developed and released with.
-          # Unpinned, CI picked up 3.50 (material.dart deprecated) on
-          # 2026-11-16 and failed analyze; bump together with local Flutter.
-          flutter-version: 3.44.7
+          # Pinned to the version the app is developed with; bump together
+          # with local Flutter (unpinned 'stable' moving ahead broke CI once).
+          flutter-version: 3.50.0
           cache: true
 
       - name: Show Flutter version
@@ -61,10 +68,9 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          # Pinned to the version the app is developed and released with.
-          # Unpinned, CI picked up 3.50 (material.dart deprecated) on
-          # 2026-11-16 and failed analyze; bump together with local Flutter.
-          flutter-version: 3.44.7
+          # Pinned to the version the app is developed with; bump together
+          # with local Flutter (unpinned 'stable' moving ahead broke CI once).
+          flutter-version: 3.50.0
           cache: true
 
       - name: Install dependencies

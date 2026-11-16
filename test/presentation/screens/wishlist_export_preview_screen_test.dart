@@ -11,7 +11,7 @@ import 'package:cratewise/domain/models/import_export_job.dart';
 import 'package:cratewise/domain/models/import_export_row_result.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/presentation/screens/export_preview_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';

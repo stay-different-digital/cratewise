@@ -7,7 +7,7 @@ import 'package:cratewise/domain/repositories/pending_discogs_deletion_repositor
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
 import 'package:cratewise/presentation/screens/wishlist_detail_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ---------------------------------------------------------------------------

@@ -22,7 +22,7 @@ import 'package:cratewise/presentation/screens/export_preview_screen.dart';
 import 'package:cratewise/presentation/screens/import_preview_screen.dart';
 import 'package:cratewise/presentation/screens/import_export_history_screen.dart';
 import 'package:cratewise/presentation/screens/import_export_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 

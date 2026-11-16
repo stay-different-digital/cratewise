@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Default countdown applied after a Discogs 429 (rate-limited) response.
 const kRateLimitCountdownSeconds = 60;

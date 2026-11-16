@@ -1,9 +1,10 @@
 import 'package:cratewise/l10n/app_localizations.dart';
 import 'package:cratewise/presentation/screens/home_shell_screen.dart';
 import 'package:cratewise/shared/tab_reselect_notifier.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cratewise/app/localization_delegates.dart';
 
 /// Shell with five lightweight branches in the app's tab order, so tab taps
 /// can be tested without the real screens (US-139).
@@ -27,7 +28,7 @@ Widget _app() {
     ],
   );
   return MaterialApp.router(
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     routerConfig: router,
   );

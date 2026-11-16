@@ -23,10 +23,11 @@ import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:cratewise/shared/route_observer.dart';
 import 'package:cratewise/shared/tab_reselect_notifier.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cratewise/app/localization_delegates.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -336,7 +337,7 @@ Widget _buildScreen(
   WishlistRepository? wishlistRepository,
 }) {
   return MaterialApp(
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     home: Scaffold(
       body: SearchScreen(
@@ -350,7 +351,7 @@ Widget _buildScreen(
 }
 
 Widget _buildScreenNl(DiscogsSearchService service) => MaterialApp(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   locale: const Locale('nl'),
   home: Scaffold(body: SearchScreen(searchService: service)),
@@ -377,7 +378,7 @@ Widget _buildScreenWithRouter(DiscogsSearchService service) {
     ],
   );
   return MaterialApp.router(
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     routerConfig: router,
   );
@@ -1141,7 +1142,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           theme: ThemeData(useMaterial3: true, brightness: Brightness.light),
           home: Scaffold(
@@ -1157,7 +1158,7 @@ void main() {
     testWidgets('no suffix icon in dark mode with empty query', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           theme: ThemeData(useMaterial3: true, brightness: Brightness.dark),
           home: Scaffold(
@@ -1175,7 +1176,7 @@ void main() {
     ) async {
       await tester.pumpWidget(
         MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           theme: ThemeData(useMaterial3: true, brightness: Brightness.dark),
           home: Scaffold(
@@ -1343,7 +1344,7 @@ void main() {
       );
       await tester.pumpWidget(
         MaterialApp.router(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: router,
         ),
@@ -1565,7 +1566,7 @@ void main() {
         ],
       );
       return MaterialApp.router(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: router,
       );
@@ -1846,7 +1847,7 @@ void main() {
       return (
         router: router,
         app: MaterialApp.router(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: router,
         ),
@@ -2046,7 +2047,7 @@ void main() {
       );
       await tester.pumpWidget(
         MaterialApp.router(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           routerConfig: router,
         ),

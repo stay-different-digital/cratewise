@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 ThemeData buildCratewiseTheme(Brightness brightness) {
   const seedColor = Color(0xFFFA003F);

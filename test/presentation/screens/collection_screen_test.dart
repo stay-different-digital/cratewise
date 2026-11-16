@@ -10,9 +10,10 @@ import 'package:cratewise/presentation/screens/collection_screen.dart';
 import 'package:cratewise/presentation/widgets/collection_item_card.dart';
 import 'package:cratewise/l10n/app_localizations.dart';
 import 'package:cratewise/shared/route_observer.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cratewise/app/localization_delegates.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -185,13 +186,13 @@ CollectionItem _makeItem({
 );
 
 Widget _wrap(Widget child) => MaterialApp(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   home: Scaffold(body: child),
 );
 
 Widget _wrapNl(Widget child) => MaterialApp(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   locale: const Locale('nl'),
   home: Scaffold(body: child),
@@ -228,7 +229,7 @@ GoRouter _makeCollectionRouter({
 }
 
 Widget _wrapNavigable(GoRouter router) => MaterialApp.router(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   routerConfig: router,
 );
@@ -1001,7 +1002,7 @@ void main() {
         ],
       );
       return MaterialApp.router(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: router,
       );

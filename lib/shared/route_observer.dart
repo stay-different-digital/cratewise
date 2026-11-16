@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 final appRouteObserver = RouteObserver<ModalRoute<dynamic>>();
 final wishlistRouteObserver = RouteObserver<ModalRoute<dynamic>>();

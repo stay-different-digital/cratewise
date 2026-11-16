@@ -15,7 +15,7 @@ import 'package:cratewise/domain/models/collection_item.dart';
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/presentation/screens/failed_actions_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ---------------------------------------------------------------------------

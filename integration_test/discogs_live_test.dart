@@ -13,7 +13,7 @@
 import 'package:cratewise/app/app.dart';
 import 'package:cratewise/infrastructure/secure_storage/discogs_token_storage.dart';
 import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -37,86 +37,79 @@ Future<void> _pumpUntil(
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets(
-    'live: link account, walk the tabs, search vinyl on a label',
-    (tester) async {
-      // Start disconnected so onboarding shows the token field.
-      await DiscogsTokenStorage().deleteCredentials();
+  testWidgets('live: link account, walk the tabs, search vinyl on a label', (
+    tester,
+  ) async {
+    // Start disconnected so onboarding shows the token field.
+    await DiscogsTokenStorage().deleteCredentials();
 
-      await tester.pumpWidget(const CratewiseApp(showOnboarding: true));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(const CratewiseApp(showOnboarding: true));
+    await tester.pumpAndSettle();
 
-      // Onboarding: welcome → token → skip import.
-      await tester.tap(find.text('Aan de slag'));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Personal access token'),
-        _token,
-      );
-      // Let the field's listener enable the button before tapping it.
+    // Onboarding: welcome → token → skip import.
+    await tester.tap(find.text('Aan de slag'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Personal access token'),
+      _token,
+    );
+    // Let the field's listener enable the button before tapping it.
+    await tester.pump();
+    await tester.tap(find.text('Validate token'));
+    final next = find.byKey(const Key('onboarding-next-token'));
+    await _pumpUntil(
+      tester,
+      find.byWidgetPredicate(
+        (w) =>
+            w.key == const Key('onboarding-next-token') &&
+            w is FilledButton &&
+            w.onPressed != null,
+      ),
+    );
+    await tester.tap(next);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('onboarding-skip')));
+    // Finishing onboarding is saved first, then the app navigates.
+    await _pumpUntil(
+      tester,
+      find.byWidgetPredicate((w) => w is NavigationBar || w is NavigationRail),
+    );
+
+    // All five tabs open, by position (selected tabs swap their icon, so
+    // icons are not a stable handle). Bar on phones, rail on wide screens.
+    final bar = find.byType(NavigationBar);
+    final tabs = bar.evaluate().isNotEmpty
+        ? find.descendant(of: bar, matching: find.byType(NavigationDestination))
+        : find.descendant(
+            of: find.byType(NavigationRail),
+            matching: find.byType(InkResponse),
+          );
+    expect(tabs, findsNWidgets(5));
+    for (final index in [1, 2, 3, 4, 0]) {
+      await tester.tap(tabs.at(index));
+      await tester.pump(const Duration(seconds: 1));
+    }
+    expect(find.byKey(const Key('search-filter-chip-label')), findsOneWidget);
+
+    // Search: Label scope, vinyl only, newest first — real results.
+    await tester.tap(find.byKey(const Key('search-filter-chip-label')));
+    await tester.pump();
+    final vinyl = find.byKey(const Key('search-vinyl-only-chip'));
+    if (!tester.widget<FilterChip>(vinyl).selected) {
+      await tester.tap(vinyl);
       await tester.pump();
-      await tester.tap(find.text('Validate token'));
-      final next = find.byKey(const Key('onboarding-next-token'));
-      await _pumpUntil(
-        tester,
-        find.byWidgetPredicate(
-          (w) =>
-              w.key == const Key('onboarding-next-token') &&
-              w is FilledButton &&
-              w.onPressed != null,
-        ),
-      );
-      await tester.tap(next);
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('onboarding-skip')));
-      // Finishing onboarding is saved first, then the app navigates.
-      await _pumpUntil(
-        tester,
-        find.byWidgetPredicate(
-          (w) => w is NavigationBar || w is NavigationRail,
-        ),
-      );
+    }
+    await tester.tap(find.byKey(const Key('search-sort-button')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('search-sort-option-newestFirst')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Blue Note');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await _pumpUntil(tester, find.byType(ReleaseSearchResultCard));
+    expect(find.byType(ReleaseSearchResultCard), findsWidgets);
 
-      // All five tabs open, by position (selected tabs swap their icon, so
-      // icons are not a stable handle). Bar on phones, rail on wide screens.
-      final bar = find.byType(NavigationBar);
-      final tabs = bar.evaluate().isNotEmpty
-          ? find.descendant(
-              of: bar,
-              matching: find.byType(NavigationDestination),
-            )
-          : find.descendant(
-              of: find.byType(NavigationRail),
-              matching: find.byType(InkResponse),
-            );
-      expect(tabs, findsNWidgets(5));
-      for (final index in [1, 2, 3, 4, 0]) {
-        await tester.tap(tabs.at(index));
-        await tester.pump(const Duration(seconds: 1));
-      }
-      expect(find.byKey(const Key('search-filter-chip-label')), findsOneWidget);
-
-      // Search: Label scope, vinyl only, newest first — real results.
-      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
-      await tester.pump();
-      final vinyl = find.byKey(const Key('search-vinyl-only-chip'));
-      if (!tester.widget<FilterChip>(vinyl).selected) {
-        await tester.tap(vinyl);
-        await tester.pump();
-      }
-      await tester.tap(find.byKey(const Key('search-sort-button')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('search-sort-option-newestFirst')));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, 'Blue Note');
-      await tester.testTextInput.receiveAction(TextInputAction.search);
-      await _pumpUntil(tester, find.byType(ReleaseSearchResultCard));
-      expect(find.byType(ReleaseSearchResultCard), findsWidgets);
-
-      // A release detail offers the label link (US-134).
-      await tester.tap(find.byType(ReleaseSearchResultCard).first);
-      await _pumpUntil(tester, find.byKey(const Key('release-label-link')));
-    },
-    skip: _token.isEmpty,
-  );
+    // A release detail offers the label link (US-134).
+    await tester.tap(find.byType(ReleaseSearchResultCard).first);
+    await _pumpUntil(tester, find.byKey(const Key('release-label-link')));
+  }, skip: _token.isEmpty);
 }

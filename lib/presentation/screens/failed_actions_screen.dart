@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../application/use_cases/retry_add_collection_item_use_case.dart';
 import '../../application/use_cases/retry_add_wishlist_item_use_case.dart';

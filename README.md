@@ -47,7 +47,8 @@ Desktop and web targets are out of scope.
 
 ## Tech stack & architecture
 
-- **Flutter 3.44 / Dart 3.12** (`sdk: ^3.12.0`).
+- **Flutter 3.50 / Dart 3.14** (`sdk: ^3.12.0`), with Material from the
+  standalone **material_ui** package.
 - **Clean architecture** with a strict dependency rule — outer layers depend
   inward only: `presentation` → `application` → `domain`, with
   `infrastructure` implementing `domain` contracts.
@@ -91,7 +92,7 @@ The `docs/` tree holds the supporting documentation:
 
 Prerequisites:
 
-- The **Flutter SDK** (Dart `^3.12.0`; developed on Flutter 3.44).
+- The **Flutter SDK** (Dart `^3.12.0`; developed on Flutter 3.50).
 - **CocoaPods** for iOS builds (e.g. via Homebrew: `brew install cocoapods`).
 
 Then:

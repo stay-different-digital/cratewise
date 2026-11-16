@@ -17,8 +17,9 @@ import 'package:cratewise/shared/auto_sync_request_notifier.dart';
 import 'package:cratewise/shared/discogs_credentials_notifier.dart';
 import 'package:cratewise/application/use_cases/run_discogs_auto_sync_use_case.dart';
 import 'package:cratewise/presentation/widgets/discogs_auto_sync_runner.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cratewise/app/localization_delegates.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes
@@ -165,13 +166,13 @@ class _FakeDeletionRepo implements PendingDiscogsDeletionRepository {
 }
 
 Widget _wrap(Widget child) => MaterialApp(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   home: Scaffold(body: child),
 );
 
 Widget _wrapNl(Widget child) => MaterialApp(
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  localizationsDelegates: appLocalizationsDelegates,
   supportedLocales: AppLocalizations.supportedLocales,
   locale: const Locale('nl'),
   home: Scaffold(body: child),

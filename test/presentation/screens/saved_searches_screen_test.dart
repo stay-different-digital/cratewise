@@ -1,7 +1,7 @@
 import 'package:cratewise/domain/models/saved_search.dart';
 import 'package:cratewise/domain/repositories/saved_search_repository.dart';
 import 'package:cratewise/presentation/screens/saved_searches_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeRepo implements SavedSearchRepository {

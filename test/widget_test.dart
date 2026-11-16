@@ -1,7 +1,7 @@
 import 'package:cratewise/app/app.dart';
 import 'package:cratewise/presentation/widgets/app_bottom_nav.dart';
 import 'package:cratewise/presentation/widgets/app_nav_rail.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

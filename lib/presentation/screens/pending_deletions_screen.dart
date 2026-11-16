@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../application/use_cases/execute_pending_deletions_use_case.dart';
 import '../../domain/models/pending_discogs_deletion.dart';

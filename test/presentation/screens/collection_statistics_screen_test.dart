@@ -4,7 +4,7 @@ import 'package:cratewise/domain/models/sync_status.dart';
 import 'package:cratewise/domain/repositories/cached_release_metadata_repository.dart';
 import 'package:cratewise/domain/repositories/collection_repository.dart';
 import 'package:cratewise/presentation/screens/collection_statistics_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../application/services/thumbnail_cache_service.dart';
 import '../../domain/models/collection_item.dart';

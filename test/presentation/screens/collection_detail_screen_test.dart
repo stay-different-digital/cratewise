@@ -5,7 +5,7 @@ import 'package:cratewise/domain/models/thumbnail_entry.dart';
 import 'package:cratewise/domain/repositories/thumbnail_repository.dart';
 import 'package:cratewise/presentation/screens/collection_detail_screen.dart';
 import 'package:cratewise/shared/route_observer.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ---------------------------------------------------------------------------

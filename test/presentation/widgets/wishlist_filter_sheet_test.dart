@@ -1,7 +1,7 @@
 import 'package:cratewise/domain/models/wishlist_filter_set.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/presentation/widgets/wishlist_filter_sheet.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 WishlistItem _item(String id, String format) => WishlistItem(

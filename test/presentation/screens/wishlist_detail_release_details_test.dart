@@ -7,7 +7,7 @@ import 'package:cratewise/domain/repositories/cached_release_metadata_repository
 import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/presentation/screens/wishlist_detail_screen.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ---------------------------------------------------------------------------

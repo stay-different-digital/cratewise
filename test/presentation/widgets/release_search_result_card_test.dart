@@ -1,6 +1,6 @@
 import 'package:cratewise/domain/models/release_search_result.dart';
 import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _kindOfBlue = ReleaseSearchResult(

@@ -3,7 +3,7 @@ import 'package:cratewise/domain/models/import_export_job_type.dart';
 import 'package:cratewise/domain/models/import_export_status.dart';
 import 'package:cratewise/domain/repositories/import_export_job_repository.dart';
 import 'package:cratewise/presentation/screens/import_export_history_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // ---------------------------------------------------------------------------

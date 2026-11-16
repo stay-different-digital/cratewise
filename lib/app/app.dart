@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:go_router/go_router.dart';
 
 import 'dart:async';
@@ -11,6 +11,7 @@ import 'locale_preference.dart';
 import 'router.dart';
 import 'theme.dart';
 import '../presentation/widgets/discogs_auto_sync_runner.dart';
+import 'localization_delegates.dart';
 
 class LocaleScope extends InheritedNotifier<ValueNotifier<Locale?>> {
   const LocaleScope({
@@ -83,7 +84,7 @@ class _CratewiseAppState extends State<CratewiseApp> {
             debugShowCheckedModeBanner: false,
             theme: buildCratewiseTheme(Brightness.light),
             darkTheme: buildCratewiseTheme(Brightness.dark),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             locale: _localeNotifier.value,
             routerConfig: _router,
