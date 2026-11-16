@@ -36,6 +36,8 @@ gone; its place in the main menu goes to collection statistics.
 
 ### Changed
 
+- **Minimum iOS version is now 15.0 (US-138)** — current Xcode no longer
+  builds for iOS 13/14. iPhones and iPads on iOS 13 or 14 keep version 1.0.4.
 - **No "Set condition" sheet when adding to the collection (US-141)** — the
   record is added straight away with condition Very Good; change it later
   from the collection item.

@@ -68,6 +68,10 @@ Keys currently declared in `ios/Runner/Info.plist`:
 | `NSPhotoLibraryUsageDescription` | `file_picker` references the photo library API when presenting the file picker on iOS. |
 | `NSLocationWhenInUseUsageDescription` | Referenced by a transitive SDK dependency; Cratewise does not use location, and the string says so. |
 
+Minimum iOS is 15.0 since 1.1.0 (Runner project and `ios/Podfile`; the
+Podfile's `post_install` lifts pods that still declare an older target).
+Current Xcode (SDK 27.x) refuses anything lower.
+
 `NSCameraUsageDescription` was removed in 1.1.0 together with the barcode
 scanner (US-138). On Android the app declares `INTERNET` itself in
 `AndroidManifest.xml` (US-137): before 1.1.0 it only arrived through the
