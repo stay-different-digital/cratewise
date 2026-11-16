@@ -323,6 +323,7 @@ class _JobCard extends StatelessWidget {
     ImportExportJobType.importWishlistFromDiscogs => 'Added',
     ImportExportJobType.csvCollectionImport => 'Added',
     ImportExportJobType.csvWishlistImport => 'Added',
+    ImportExportJobType.autoSyncWithDiscogs => 'Sent',
     _ => 'Exported',
   };
 

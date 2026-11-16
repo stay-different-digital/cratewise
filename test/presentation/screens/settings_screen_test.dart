@@ -13,6 +13,7 @@ import 'package:cratewise/application/services/discogs_auto_sync_service.dart';
 import 'package:cratewise/application/services/discogs_connection_service.dart';
 import 'package:cratewise/domain/models/connection_status.dart';
 import 'package:cratewise/infrastructure/secure_storage/secure_key_value_store.dart';
+import 'package:cratewise/shared/auto_sync_request_notifier.dart';
 import 'package:cratewise/shared/discogs_credentials_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -617,6 +618,61 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tile(tester).onChanged, isNotNull);
+    });
+
+    testWidgets(
+      'turning on asks to confirm sending existing records (US-148)',
+      (tester) async {
+        final service = DiscogsAutoSyncService(preferences: _Prefs());
+        await tester.pumpWidget(
+          _wrap(
+            _settings(
+              autoSync: service,
+              connection: _Connection(connected: true),
+              collection: _FakeCollectionRepo(count: 2),
+              wishlist: _FakeWishlistRepo(count: 1),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        // Cancel: stays off.
+        await tester.tap(find.byKey(const Key('auto-sync-switch')));
+        await tester.pumpAndSettle();
+        expect(find.text('Send 3 records to Discogs?'), findsOneWidget);
+        await tester.tap(find.text('Cancel'));
+        await tester.pumpAndSettle();
+        expect(tile(tester).value, isFalse);
+        expect(await service.isEnabled(), isFalse);
+
+        // Confirm: on, and a run is requested right away.
+        final requestsBefore = autoSyncRequestNotifier.value;
+        await tester.tap(find.byKey(const Key('auto-sync-switch')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('auto-sync-confirm-button')));
+        await tester.pumpAndSettle();
+        expect(tile(tester).value, isTrue);
+        expect(await service.isEnabled(), isTrue);
+        expect(autoSyncRequestNotifier.value, requestsBefore + 1);
+      },
+    );
+
+    testWidgets('nothing unsent → turns on without asking', (tester) async {
+      final service = DiscogsAutoSyncService(preferences: _Prefs());
+      await tester.pumpWidget(
+        _wrap(
+          _settings(
+            autoSync: service,
+            connection: _Connection(connected: true),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('auto-sync-switch')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(await service.isEnabled(), isTrue);
     });
 
     testWidgets('explains when Discogs rejected the token', (tester) async {

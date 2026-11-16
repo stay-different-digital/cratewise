@@ -55,12 +55,15 @@ class DiscogsAutoSyncService {
   /// Sends [item] to the Discogs collection when auto-sync is on. A release
   /// already in the Discogs collection is linked, not added again — Discogs
   /// allows several copies, so a blind add would create a duplicate.
-  Future<void> pushCollectionItem(
+  ///
+  /// Returns the item's new status (`synced`, `offline` or `failed`), or null
+  /// when nothing was sent (auto-sync off, or no linked account).
+  Future<SyncStatus?> pushCollectionItem(
     CollectionItem item,
     CollectionRepository repository,
   ) async {
     final credentials = await _credentialsIfEnabled();
-    if (credentials == null) return;
+    if (credentials == null) return null;
     final (:token, :username) = credentials;
     final status = await _send(() async {
       final existing = await _apiClient.fetchCollectionInstanceIds(
@@ -96,16 +99,18 @@ class DiscogsAutoSyncService {
         ),
       );
     }
+    return status ?? SyncStatus.synced;
   }
 
   /// Sends [item] to the Discogs wantlist when auto-sync is on. Adding to the
   /// wantlist is idempotent on Discogs, so no duplicate check is needed.
-  Future<void> pushWishlistItem(
+  /// Returns like [pushCollectionItem].
+  Future<SyncStatus?> pushWishlistItem(
     WishlistItem item,
     WishlistRepository repository,
   ) async {
     final credentials = await _credentialsIfEnabled();
-    if (credentials == null) return;
+    if (credentials == null) return null;
     final (:token, :username) = credentials;
     final status = await _send(() async {
       await _withRateLimitRetry(
@@ -129,6 +134,7 @@ class DiscogsAutoSyncService {
         ),
       );
     }
+    return status ?? SyncStatus.synced;
   }
 
   Future<({String token, String username})?> _credentialsIfEnabled() async {

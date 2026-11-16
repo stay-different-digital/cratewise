@@ -144,6 +144,24 @@ class AppLocalizationsDe extends AppLocalizations {
       'Ausgeschaltet, weil Discogs dein Token abgelehnt hat. Verbinde dich neu und schalte es dann wieder ein.';
 
   @override
+  String settingsAutoSyncConfirmTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Platten an Discogs senden?',
+      one: '1 Platte an Discogs senden?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsAutoSyncConfirmBody =>
+      'Platten aus deiner Sammlung oder Wunschliste, die noch nicht auf Discogs sind, werden deinem Discogs-Konto hinzugefügt. Platten, die schon dort sind, werden nicht doppelt hinzugefügt.';
+
+  @override
+  String get settingsAutoSyncConfirmAction => 'Einschalten';
+
+  @override
   String get settingsImportExport => 'Import & Export';
 
   @override

@@ -50,6 +50,16 @@
   "settingsAutoSyncSubtitle": "Records you add to your collection or wishlist are sent to your Discogs account right away.",
   "settingsAutoSyncNeedsAccount": "Connect your Discogs account above to use this.",
   "settingsAutoSyncTurnedOff": "Turned off because Discogs rejected your token. Reconnect, then turn it on again.",
+  "settingsAutoSyncConfirmTitle": "{count, plural, =1{Send 1 record to Discogs?} other{Send {count} records to Discogs?}}",
+  "@settingsAutoSyncConfirmTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAutoSyncConfirmBody": "Records in your collection or wishlist that are not on Discogs yet will be added to your Discogs account. Records already there are not added twice.",
+  "settingsAutoSyncConfirmAction": "Turn on",
   "settingsImportExport": "Import & Export",
   "settingsImportExportSubtitle": "Move records to and from Discogs or CSV files",
   "settingsFailedActions": "Failed Actions",

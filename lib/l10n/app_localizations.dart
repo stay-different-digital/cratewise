@@ -344,6 +344,24 @@ abstract class AppLocalizations {
   /// **'Turned off because Discogs rejected your token. Reconnect, then turn it on again.'**
   String get settingsAutoSyncTurnedOff;
 
+  /// No description provided for @settingsAutoSyncConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Send 1 record to Discogs?} other{Send {count} records to Discogs?}}'**
+  String settingsAutoSyncConfirmTitle(int count);
+
+  /// No description provided for @settingsAutoSyncConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Records in your collection or wishlist that are not on Discogs yet will be added to your Discogs account. Records already there are not added twice.'**
+  String get settingsAutoSyncConfirmBody;
+
+  /// No description provided for @settingsAutoSyncConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get settingsAutoSyncConfirmAction;
+
   /// No description provided for @settingsImportExport.
   ///
   /// In en, this message translates to:

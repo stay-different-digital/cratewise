@@ -10,6 +10,7 @@ import 'app_repositories.dart';
 import 'locale_preference.dart';
 import 'router.dart';
 import 'theme.dart';
+import '../presentation/widgets/discogs_auto_sync_runner.dart';
 
 class LocaleScope extends InheritedNotifier<ValueNotifier<Locale?>> {
   const LocaleScope({
@@ -76,15 +77,17 @@ class _CratewiseAppState extends State<CratewiseApp> {
       notifier: _localeNotifier,
       child: AppRepositoriesScope(
         repositories: _repositories,
-        child: MaterialApp.router(
-          title: 'Cratewise',
-          debugShowCheckedModeBanner: false,
-          theme: buildCratewiseTheme(Brightness.light),
-          darkTheme: buildCratewiseTheme(Brightness.dark),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          locale: _localeNotifier.value,
-          routerConfig: _router,
+        child: DiscogsAutoSyncRunner(
+          child: MaterialApp.router(
+            title: 'Cratewise',
+            debugShowCheckedModeBanner: false,
+            theme: buildCratewiseTheme(Brightness.light),
+            darkTheme: buildCratewiseTheme(Brightness.dark),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: _localeNotifier.value,
+            routerConfig: _router,
+          ),
         ),
       ),
     );

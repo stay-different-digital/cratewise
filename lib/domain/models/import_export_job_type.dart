@@ -6,7 +6,9 @@ enum ImportExportJobType {
   csvCollectionExport,
   csvWishlistExport,
   csvCollectionImport,
-  csvWishlistImport;
+  csvWishlistImport,
+  // Stored by name, so adding a value needs no schema change.
+  autoSyncWithDiscogs;
 
   String get label => switch (this) {
     importCollectionFromDiscogs => 'Import collection from Discogs',
@@ -17,5 +19,6 @@ enum ImportExportJobType {
     csvWishlistExport => 'Export wishlist to CSV',
     csvCollectionImport => 'Import collection from CSV',
     csvWishlistImport => 'Import wishlist from CSV',
+    autoSyncWithDiscogs => 'Automatic sync with Discogs',
   };
 }

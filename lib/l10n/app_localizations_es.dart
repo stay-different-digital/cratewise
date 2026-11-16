@@ -142,6 +142,24 @@ class AppLocalizationsEs extends AppLocalizations {
       'Desactivado porque Discogs rechazó tu token. Vuelve a conectar y actívalo de nuevo.';
 
   @override
+  String settingsAutoSyncConfirmTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '¿Enviar $count discos a Discogs?',
+      one: '¿Enviar 1 disco a Discogs?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsAutoSyncConfirmBody =>
+      'Los discos de tu colección o lista de deseos que aún no están en Discogs se añadirán a tu cuenta de Discogs. Los que ya están no se añaden dos veces.';
+
+  @override
+  String get settingsAutoSyncConfirmAction => 'Activar';
+
+  @override
   String get settingsImportExport => 'Importar y exportar';
 
   @override

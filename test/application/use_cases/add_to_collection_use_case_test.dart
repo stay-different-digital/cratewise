@@ -415,11 +415,11 @@ class _NeverFinishingSync extends DiscogsAutoSyncService {
   final pushed = <CollectionItem>[];
 
   @override
-  Future<void> pushCollectionItem(
+  Future<SyncStatus?> pushCollectionItem(
     CollectionItem item,
     CollectionRepository repository,
   ) {
     pushed.add(item);
-    return Completer<void>().future;
+    return Completer<SyncStatus?>().future;
   }
 }

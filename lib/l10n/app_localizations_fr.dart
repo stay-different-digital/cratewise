@@ -144,6 +144,24 @@ class AppLocalizationsFr extends AppLocalizations {
       'Désactivé car Discogs a refusé ton jeton. Reconnecte-toi, puis réactive l’option.';
 
   @override
+  String settingsAutoSyncConfirmTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Envoyer $count disques vers Discogs ?',
+      one: 'Envoyer 1 disque vers Discogs ?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsAutoSyncConfirmBody =>
+      'Les disques de ta collection ou de ta liste de souhaits qui ne sont pas encore sur Discogs seront ajoutés à ton compte Discogs. Ceux qui y sont déjà ne sont pas ajoutés deux fois.';
+
+  @override
+  String get settingsAutoSyncConfirmAction => 'Activer';
+
+  @override
   String get settingsImportExport => 'Import & Export';
 
   @override

@@ -9,6 +9,8 @@ import '../../l10n/app_localizations.dart';
 import '../../application/services/discogs_auto_sync_service.dart';
 import '../../application/services/discogs_connection_service.dart';
 import '../../application/services/thumbnail_eviction_service.dart';
+import '../../application/use_cases/run_discogs_auto_sync_use_case.dart';
+import '../../shared/auto_sync_request_notifier.dart';
 import '../../shared/discogs_credentials_notifier.dart';
 import '../../domain/models/pending_discogs_deletion.dart';
 import '../../domain/repositories/collection_repository.dart';
@@ -54,6 +56,13 @@ class SettingsScreen extends StatelessWidget {
         _AutoSyncTile(
           service: autoSyncService ?? DiscogsAutoSyncService.shared,
           connection: connectionService ?? DiscogsConnectionService(),
+          countUnsent: () async {
+            final repos = AppRepositoriesScope.maybeOf(context);
+            final collection = collectionRepository ?? repos?.collection;
+            final wishlist = wishlistRepository ?? repos?.wishlist;
+            if (collection == null || wishlist == null) return 0;
+            return RunDiscogsAutoSyncUseCase.countUnsent(collection, wishlist);
+          },
         ),
         const SizedBox(height: 16),
         ListTile(
@@ -481,10 +490,17 @@ class _LanguageSectionState extends State<_LanguageSection> {
 /// The "Sync automatically with Discogs" switch (US-144). Usable only with a
 /// linked account; reloads when the account is linked or unlinked above.
 class _AutoSyncTile extends StatefulWidget {
-  const _AutoSyncTile({required this.service, required this.connection});
+  const _AutoSyncTile({
+    required this.service,
+    required this.connection,
+    required this.countUnsent,
+  });
 
   final DiscogsAutoSyncService service;
   final DiscogsConnectionService connection;
+
+  /// Items that turning auto-sync on would send right away (US-148).
+  final Future<int> Function() countUnsent;
 
   @override
   State<_AutoSyncTile> createState() => _AutoSyncTileState();
@@ -521,11 +537,41 @@ class _AutoSyncTileState extends State<_AutoSyncTile> {
   }
 
   Future<void> _toggle(bool value) async {
+    // Turning on also sends records that were only local until now: say how
+    // many and let the user confirm once (US-148).
+    if (value && !await _confirmSendingExisting()) return;
+    if (!mounted) return;
     setState(() {
       _enabled = value;
       if (value) _turnedOffByDiscogs = false;
     });
     await widget.service.setEnabled(value);
+    if (value) autoSyncRequestNotifier.value++;
+  }
+
+  Future<bool> _confirmSendingExisting() async {
+    final count = await widget.countUnsent();
+    if (count == 0 || !mounted) return true;
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.settingsAutoSyncConfirmTitle(count)),
+        content: Text(l10n.settingsAutoSyncConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(l10n.actionCancel),
+          ),
+          FilledButton(
+            key: const Key('auto-sync-confirm-button'),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(l10n.settingsAutoSyncConfirmAction),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 
   @override

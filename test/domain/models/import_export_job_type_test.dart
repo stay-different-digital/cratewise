@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('ImportExportJobType', () {
-    test('has all eight expected values', () {
+    test('has all nine expected values', () {
       expect(
         ImportExportJobType.values,
         unorderedEquals([
@@ -15,6 +15,7 @@ void main() {
           ImportExportJobType.csvWishlistExport,
           ImportExportJobType.csvCollectionImport,
           ImportExportJobType.csvWishlistImport,
+          ImportExportJobType.autoSyncWithDiscogs,
         ]),
       );
     });
@@ -40,6 +41,7 @@ void main() {
           ImportExportJobType.csvWishlistExport => 'csvWishlistExport',
           ImportExportJobType.csvCollectionImport => 'csvCollectionImport',
           ImportExportJobType.csvWishlistImport => 'csvWishlistImport',
+          ImportExportJobType.autoSyncWithDiscogs => 'autoSyncWithDiscogs',
         };
         expect(label, isNotEmpty);
       }

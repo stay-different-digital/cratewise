@@ -142,6 +142,24 @@ class AppLocalizationsNl extends AppLocalizations {
       'Uitgezet omdat Discogs je token weigerde. Koppel opnieuw en zet het daarna weer aan.';
 
   @override
+  String settingsAutoSyncConfirmTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count platen naar Discogs sturen?',
+      one: '1 plaat naar Discogs sturen?',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settingsAutoSyncConfirmBody =>
+      'Platen in je collectie of verlanglijst die nog niet op Discogs staan, worden aan je Discogs-account toegevoegd. Platen die er al staan worden niet dubbel toegevoegd.';
+
+  @override
+  String get settingsAutoSyncConfirmAction => 'Aanzetten';
+
+  @override
   String get settingsImportExport => 'Importeren en exporteren';
 
   @override
