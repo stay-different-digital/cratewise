@@ -421,6 +421,10 @@ Afgesplitst uit US-136, US-137 en US-138. De scanner en het cameragebruik worden
 
 ### US-146: [Fred] Store-vermeldingen bijwerken in Play Console en App Store Connect
 
+**Status: ⛔ Gesloten — vervallen (2026-11-16)**
+
+**Reden:** besluit van Fred: er gaan geen nieuwe releases meer naar de App Store en Google Play. Daarmee hoeven de store-vermeldingen niet meer bijgewerkt te worden.
+
 **Priority: Medium · [Fred]**
 
 > Als uitgever van de app,
