@@ -397,6 +397,8 @@ Dit is de eerste van drie stories: US-148 (opnieuw proberen) en US-149 (importer
 
 ### US-145: Documentatie en store-teksten zonder scanner
 
+**Status: In Progress**
+
 **Priority: Medium · 1 SP**
 
 > Als gebruiker die de store-pagina of het privacybeleid leest,
