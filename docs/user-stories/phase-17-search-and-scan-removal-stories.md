@@ -362,6 +362,8 @@ Het filterblad heeft al een sectie "Format" ([collection_filter_sheet.dart:268-2
 
 ### US-144: Instelling voor automatisch synchroniseren en direct versturen naar Discogs
 
+**Status: In Progress**
+
 **Priority: Medium · 3 SP**
 
 > Als verzamelaar met een gekoppeld Discogs-account,
