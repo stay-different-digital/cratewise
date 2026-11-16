@@ -18,8 +18,9 @@ in `../store/STORE_LISTINGS.md`; build steps in `RELEASE_CHECKLIST.md`.
   access on either platform; the release APK requests only `INTERNET` and
   `Info.plist` has no `NSCameraUsageDescription`.
 - [ ] **Metadata is accurate.** Screenshots show the real app; the
-  description claims no feature that doesn't exist (no "sync" wording that
-  implies automatic background sync — it's manual import/export).
+  description claims no feature that doesn't exist. Since 1.2.0 automatic
+  sync exists but is opt-in and runs only while the app is open (launch and
+  return to foreground) — don't describe it as background sync.
 - [ ] **Support contact works.** The listed email is monitored
   (hellowerecratewise@gmail.com).
 - [ ] **No placeholder content** anywhere in the build (lorem ipsum, TODO

@@ -28,6 +28,8 @@ not affiliated with or endorsed by Discogs.
 - **Collection statistics** in their own tab.
 - **Discogs import/export** — sync your collection and wantlist both ways,
   including opt-in deletion sync.
+- **Automatic sync (opt-in)** — new records go to Discogs as you add them, and
+  records added on Discogs come in when the app opens.
 - **CSV import/export** for moving data in and out.
 - **Offline-first** local storage — browse and edit without a connection.
 - **Thumbnail caching** for fast, low-bandwidth artwork.
