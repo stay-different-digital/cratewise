@@ -18,9 +18,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get navWishlist => 'Wunschliste';
 
   @override
-  String get navScan => 'Scannen';
-
-  @override
   String get navSettings => 'Einstellungen';
 
   @override

@@ -36,11 +36,6 @@ class AppNavRail extends StatelessWidget {
           label: Text(l10n.navWishlist),
         ),
         NavigationRailDestination(
-          icon: const Icon(Icons.qr_code_scanner),
-          selectedIcon: const Icon(Icons.qr_code_scanner),
-          label: Text(l10n.navScan),
-        ),
-        NavigationRailDestination(
           icon: const Icon(Icons.settings_outlined),
           selectedIcon: const Icon(Icons.settings),
           label: Text(l10n.navSettings),

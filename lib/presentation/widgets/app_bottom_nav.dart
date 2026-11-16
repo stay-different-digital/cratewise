@@ -35,11 +35,6 @@ class AppBottomNav extends StatelessWidget {
           label: l10n.navWishlist,
         ),
         NavigationDestination(
-          icon: const Icon(Icons.qr_code_scanner),
-          selectedIcon: const Icon(Icons.qr_code_scanner),
-          label: l10n.navScan,
-        ),
-        NavigationDestination(
           icon: const Icon(Icons.settings_outlined),
           selectedIcon: const Icon(Icons.settings),
           label: l10n.navSettings,

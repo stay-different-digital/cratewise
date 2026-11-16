@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../application/services/thumbnail_eviction_service.dart';
 import '../infrastructure/local_database/local_thumbnail_repository.dart';
 import '../domain/models/saved_search.dart';
-import '../presentation/screens/barcode_scan_screen.dart';
 import '../presentation/screens/onboarding_screen.dart';
 import '../presentation/screens/csv_export_preview_screen.dart';
 import '../presentation/screens/csv_import_preview_screen.dart';
@@ -33,7 +32,6 @@ abstract final class AppRoutes {
   static const search = '/search';
   static const collection = '/collection';
   static const wishlist = '/wishlist';
-  static const barcode = '/barcode';
   static const settings = '/settings';
   static const importExport = '/settings/import-export';
   static const importExportHistory = '/settings/import-export/history';
@@ -155,17 +153,7 @@ GoRouter createAppRouter({bool showOnboarding = false}) => GoRouter(
           ],
         ),
 
-        // ── Tab 3: Barcode ───────────────────────────────────────────────
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: AppRoutes.barcode,
-              builder: (_, _) => const BarcodeScanScreen(),
-            ),
-          ],
-        ),
-
-        // ── Tab 4: Settings ──────────────────────────────────────────────
+        // ── Tab 3: Settings ──────────────────────────────────────────────
         StatefulShellBranch(
           routes: [
             GoRoute(

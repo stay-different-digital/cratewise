@@ -122,12 +122,6 @@ abstract class AppLocalizations {
   /// **'Wishlist'**
   String get navWishlist;
 
-  /// No description provided for @navScan.
-  ///
-  /// In en, this message translates to:
-  /// **'Scan'**
-  String get navScan;
-
   /// No description provided for @navSettings.
   ///
   /// In en, this message translates to:

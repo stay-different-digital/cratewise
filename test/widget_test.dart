@@ -30,6 +30,39 @@ void main() {
     expect(find.byType(AppBottomNav), findsNothing);
   });
 
+  // US-135: Scan is gone from the main menu; bar and rail list the same tabs
+  // in the same order, so the index → branch mapping stays aligned.
+  for (final (name, size) in [
+    ('bottom bar', const Size(375, 812)),
+    ('nav rail', const Size(1024, 768)),
+  ]) {
+    testWidgets('$name shows Search, Collection, Wishlist, Settings only', (
+      tester,
+    ) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(const CratewiseApp());
+
+      final labels = size.width < 700
+          ? tester
+                .widget<NavigationBar>(find.byType(NavigationBar))
+                .destinations
+                .cast<NavigationDestination>()
+                .map((d) => d.label)
+                .toList()
+          : tester
+                .widget<NavigationRail>(find.byType(NavigationRail))
+                .destinations
+                .map((d) => (d.label as Text).data)
+                .toList();
+      expect(labels, ['Search', 'Collection', 'Wishlist', 'Settings']);
+      expect(find.byIcon(Icons.qr_code_scanner), findsNothing);
+    });
+  }
+
   testWidgets('narrow layout shows NavigationBar and no NavigationRail', (
     tester,
   ) async {
@@ -44,7 +77,7 @@ void main() {
     expect(find.byType(AppNavRail), findsNothing);
   });
 
-  testWidgets('all five nav sections are reachable on narrow layout', (
+  testWidgets('all four nav sections are reachable on narrow layout', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(375, 812);
@@ -58,7 +91,6 @@ void main() {
       'Search',
       'Collection',
       'Wishlist',
-      'Scan',
       'Settings',
     ]) {
       await tester.tap(find.text(label).first);
