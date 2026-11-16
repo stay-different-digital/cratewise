@@ -184,6 +184,8 @@ Opslag van het Discogs-token, de taalkeuze, onboarding-status, "Alleen vinyl" en
 
 ### US-157: Overige updates: `csv` 8, `cupertino_icons` 2, minors
 
+**Status: In Progress**
+
 **Priority: Low · 2 SP**
 
 > Als ontwikkelaar,
