@@ -460,7 +460,9 @@ Afgesplitst uit US-143. De verlanglijst vergelijkt net als de collectie op de vo
 
 ### US-148: Niet-verstuurde items automatisch opnieuw proberen
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
+
+**Afwijking van de AC (bewust):** een item dat blijft mislukken staat met de reden in de geschiedenisregel van die run (Import/Export-geschiedenis), niet bij "Mislukte acties". Dat scherm is voor mislukte lokale opslag; de knop Opnieuw proberen slaat daar opnieuw lokaal op, wat voor een verzending naar Discogs de verkeerde actie is. Het item zelf blijft `failed`/`offline` en gaat bij de volgende run opnieuw mee.
 
 **Priority: Medium · 2 SP**
 
@@ -484,6 +486,8 @@ Afgesplitst uit US-144. Na US-144 blijft een item waarvan de call mislukte op `o
 ---
 
 ### US-149: Automatisch importeren van Discogs
+
+**Status: In Progress**
 
 **Priority: Medium · 5 SP**
 
