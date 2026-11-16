@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/models/cached_release_metadata.dart';
+import '../../domain/models/format_types.dart';
 import '../../domain/models/saved_search.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_filter_set.dart';
@@ -121,12 +122,9 @@ class _WishlistFilterSheetState extends State<WishlistFilterSheet> {
             .toSet()
             .toList()
           ..sort();
+    // One chip per format type (US-147), as in the collection filter.
     _availableFormats =
-        widget.items
-            .where((i) => i.format != null)
-            .map((i) => i.format!)
-            .toSet()
-            .toList()
+        widget.items.expand((i) => formatTypes(i.format)).toSet().toList()
           ..sort();
     _availableLabels =
         widget.items

@@ -170,4 +170,33 @@ void main() {
       expect(restored.hasCover, original.hasCover);
     });
   });
+
+  group('WishlistFilterSet — format types (US-147)', () {
+    final vinyl = _item(id: 'v', format: 'Vinyl, LP, Album');
+    final file = _item(id: 'f', format: 'File, FLAC');
+    final mixed = _item(id: 'm', format: 'Vinyl, LP\nFile, MP3');
+
+    test('"Vinyl" hides File-only items; mixed items count for each type', () {
+      expect(
+        const WishlistFilterSet(
+          formats: {'Vinyl'},
+        ).apply([vinyl, file, mixed]).map((i) => i.id),
+        ['v', 'm'],
+      );
+      expect(
+        const WishlistFilterSet(
+          formats: {'File'},
+        ).apply([vinyl, file, mixed]).map((i) => i.id),
+        ['f', 'm'],
+      );
+    });
+
+    test('saved sets with full format strings load as types', () {
+      final old = {
+        ...const WishlistFilterSet().toJson(),
+        'formats': ['Vinyl, 12", 33 ⅓ RPM'],
+      };
+      expect(WishlistFilterSet.fromJson(old).formats, {'Vinyl'});
+    });
+  });
 }

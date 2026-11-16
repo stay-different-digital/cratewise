@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'cached_release_metadata.dart';
+import 'format_types.dart';
 import 'sync_status.dart';
 import 'wishlist_item.dart';
 
@@ -60,8 +61,9 @@ class WishlistFilterSet {
         final decade = item.year != null ? (item.year! ~/ 10) * 10 : null;
         if (decade == null || !decades.contains(decade)) return false;
       }
+      // Format types, as in the collection filter (US-143 / US-147).
       if (formats.isNotEmpty &&
-          (item.format == null || !formats.contains(item.format))) {
+          !formatTypes(item.format).any(formats.contains)) {
         return false;
       }
       if (labels.isNotEmpty &&
@@ -109,7 +111,11 @@ class WishlistFilterSet {
   static WishlistFilterSet fromJson(Map<String, dynamic> json) =>
       WishlistFilterSet(
         decades: (json['decades'] as List).cast<int>().toSet(),
-        formats: (json['formats'] as List).cast<String>().toSet(),
+        // Older sets hold full format strings; reduce them to their type.
+        formats: (json['formats'] as List)
+            .cast<String>()
+            .expand(formatTypes)
+            .toSet(),
         labels: (json['labels'] as List).cast<String>().toSet(),
         genres: (json['genres'] as List).cast<String>().toSet(),
         styles: (json['styles'] as List).cast<String>().toSet(),
