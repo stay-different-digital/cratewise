@@ -142,7 +142,7 @@ De Scan-bestemming staat in [app_bottom_nav.dart](lib/presentation/widgets/app_b
 
 ### US-136: Barcodescanner-code en dependency verwijderen
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
 
 **Priority: Medium · 2 SP**
 
@@ -170,6 +170,8 @@ Na US-135 is het scherm onbereikbaar. Wat overblijft:
 ---
 
 ### US-137: Android — camerapermissie verwijderen
+
+**Status: In Progress**
 
 **Priority: Medium · 1 SP**
 
