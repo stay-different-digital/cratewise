@@ -321,7 +321,7 @@ Twee dingen veranderen doordat het scherm een tab wordt:
 
 ### US-143: Collectie filteren op formaattype
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
 
 **Priority: Medium · 2 SP**
 
@@ -424,6 +424,8 @@ Afgesplitst uit US-137 en US-138. Dit kan alleen in de consoles en hoort bij het
 ---
 
 ### US-147: Verlanglijst filteren op formaattype
+
+**Status: In Progress**
 
 **Priority: Low · 1 SP**
 
