@@ -55,6 +55,8 @@ Versie: sprint 1 levert 1.1.0 (Minor per ADR-0003: featurebatch plus een verwijd
 
 ### US-133: Zoekresultaten sorteren op releasedatum
 
+**Status: In Progress**
+
 **Priority: High · 3 SP**
 
 > Als verzamelaar,
@@ -227,7 +229,7 @@ Na US-135 is het scherm onbereikbaar. Wat overblijft:
 
 ### US-140: Collectiestatistieken als item in het hoofdmenu
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-16)**
 
 **Priority: High · 3 SP**
 
