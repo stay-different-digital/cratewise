@@ -39,4 +39,3 @@ String encodeCsv(List<String> headers, List<List<String>> rows) {
     for (final row in rows) row.map(escapeCsvCell).toList(),
   ]);
 }
-
