@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- Discogs API. Declared explicitly (US-137): until 1.0.4 this came in
+         only through the barcode scanner's ML Kit dependency, so removing
+         the scanner would otherwise ship a release build without network. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="Cratewise"
         android:name="${applicationName}"
