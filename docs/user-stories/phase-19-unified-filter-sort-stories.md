@@ -96,7 +96,7 @@ De sortering (US-133) is nu een apart menu (`_SearchSortMenu`) en sorteert Nieuw
 
 ### US-165: DJ-velden BPM, Key, Energy en gig crates uit de app verwijderen
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-17)** — schema 13; CHANGELOG/README volgen bij de versie-bump aan het eind van de fase.
 
 **Priority: High · 5 SP**
 
