@@ -47,13 +47,14 @@ The Discogs API client should handle:
 ## Search parameters (verified)
 
 `GET /database/search` accepts these parameters although the public API docs
-don't list them. Verified 2026-11-16 with real requests (`label=Blue Note`,
+don't list them. Verified 2026-11-16 and 2026-11-17 with real requests (`label=Blue Note`,
 `type=release`):
 
 | Parameter | Effect | Used by |
 |---|---|---|
-| `sort=year&sort_order=desc` | Newest first (2026 at the top); later pages continue the same order | US-133 |
-| `sort=year&sort_order=asc` | Oldest first (1939 at the top) | US-133 |
+| `sort=year&sort_order=desc\|asc` | By release year; later pages continue the same order (used by US-133 until US-162) | — |
+| `sort=date_added&sort_order=desc` | Most recently added to Discogs first (highest release IDs). Verified 2026-11-17 | US-162 |
+| `sort=date_added&sort_order=asc` | Earliest added to Discogs first (lowest release IDs) | US-162 |
 | `format=Vinyl` | Only releases with a vinyl format: 13,790 of 32,777 results, no `File` releases | US-142 |
 
 `format=Vinyl` matches a release when any of its formats is vinyl: all 14
@@ -85,3 +86,5 @@ The app should:
 - Do not log tokens.
 - Do not expose raw API errors to users.
 - Do not store API secrets in source code.
+
+`sort=added` is silently ignored (relevance order); the parameter must be `date_added`.

@@ -19,6 +19,7 @@ import 'package:cratewise/domain/repositories/wishlist_repository.dart';
 import 'package:cratewise/infrastructure/discogs/discogs_api_client.dart';
 import 'package:cratewise/l10n/app_localizations.dart';
 import 'package:cratewise/presentation/screens/search_screen.dart';
+import 'package:cratewise/presentation/widgets/search_filter_sheet.dart';
 import 'package:cratewise/presentation/widgets/release_search_result_card.dart';
 import 'package:cratewise/shared/errors/app_error.dart';
 import 'package:cratewise/shared/route_observer.dart';
@@ -419,6 +420,88 @@ Future<void> submitSearch(WidgetTester tester, String query) async {
   await tester.testTextInput.receiveAction(TextInputAction.search);
   await tester.pump();
   await tester.pump();
+}
+
+// ---------------------------------------------------------------------------
+// Filter sheet helpers (US-161 / US-162)
+// ---------------------------------------------------------------------------
+
+// pump + a fixed step instead of pumpAndSettle: a running search shows a
+// spinner that never settles.
+Future<void> _settleSheet(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
+/// State of the open filter sheet.
+SearchFilterSettings _openSheetState(WidgetTester tester) {
+  bool chipOn(String key) =>
+      tester.widget<ChoiceChip>(find.byKey(Key(key))).selected;
+  final filter = [
+    SearchFilter.release,
+    SearchFilter.artist,
+    SearchFilter.label,
+  ].where((f) => chipOn('search-filter-chip-${f.name}')).firstOrNull;
+  final sort = SearchSort.values.firstWhere(
+    (s) => chipOn('sort-option-${s.name}'),
+  );
+  return SearchFilterSettings(
+    filter: filter ?? SearchFilter.all,
+    vinylOnly: tester
+        .widget<SwitchListTile>(
+          find.byKey(const Key('search-vinyl-only-switch')),
+        )
+        .value,
+    sort: sort,
+  );
+}
+
+/// Opens the filter sheet, sets the given options and taps Apply.
+Future<void> applySearchFilters(
+  WidgetTester tester, {
+  SearchFilter? scope,
+  bool? vinylOnly,
+  SearchSort? sort,
+}) async {
+  await tester.tap(find.byKey(const Key('search-filter-button')));
+  await _settleSheet(tester);
+  final now = _openSheetState(tester);
+  if (sort != null && sort != now.sort) {
+    await tester.tap(find.byKey(Key('sort-option-${sort.name}')));
+    await tester.pump();
+  }
+  if (scope != null && scope != now.filter) {
+    // Tapping the active scope chip clears it back to "everything".
+    final target = scope == SearchFilter.all ? now.filter : scope;
+    await tester.tap(find.byKey(Key('search-filter-chip-${target.name}')));
+    await tester.pump();
+  }
+  if (vinylOnly != null && vinylOnly != now.vinylOnly) {
+    await tester.tap(find.byKey(const Key('search-vinyl-only-switch')));
+    await tester.pump();
+  }
+  await tester.tap(find.byKey(const Key('apply-filter-button')));
+  await _settleSheet(tester);
+}
+
+/// Opens the filter sheet, reads its state and closes it without applying.
+Future<SearchFilterSettings> readSearchFilters(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('search-filter-button')));
+  await _settleSheet(tester);
+  final state = _openSheetState(tester);
+  Navigator.of(tester.element(find.byType(SearchFilterSheet))).pop();
+  await _settleSheet(tester);
+  return state;
+}
+
+int _badgeCount(WidgetTester tester) {
+  final badge = tester.widget<Badge>(
+    find.descendant(
+      of: find.byKey(const Key('search-filter-button')),
+      matching: find.byType(Badge),
+    ),
+  );
+  return badge.isLabelVisible ? int.parse((badge.label! as Text).data!) : 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -1363,102 +1446,114 @@ void main() {
     });
   });
 
-  group('SearchScreen — filter chips (US-84)', () {
-    Finder chip(String name) => find.byKey(Key('search-filter-chip-$name'));
-    bool isSelected(WidgetTester tester, String name) =>
-        tester.widget<FilterChip>(chip(name)).selected;
-
-    testWidgets('renders Release / Artist / Label chips in the idle state', (
+  group('SearchScreen — filter button and sheet (US-161)', () {
+    testWidgets('one filter button, no chip row or sort menu on the screen', (
       tester,
     ) async {
       await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
       await tester.pump();
 
-      expect(chip('release'), findsOneWidget);
-      expect(chip('artist'), findsOneWidget);
-      expect(chip('label'), findsOneWidget);
+      expect(find.byKey(const Key('search-filter-button')), findsOneWidget);
+      expect(find.byType(ChoiceChip), findsNothing);
+      expect(find.byType(FilterChip), findsNothing);
+      expect(find.byKey(const Key('search-sort-button')), findsNothing);
+      expect(_badgeCount(tester), 0);
+    });
+
+    testWidgets('the sheet offers scope, vinyl only and sort; defaults', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('search-filter-button')));
+      await _settleSheet(tester);
+
       expect(find.text('Release'), findsOneWidget);
       expect(find.text('Artist'), findsOneWidget);
       expect(find.text('Label'), findsOneWidget);
+      expect(find.text('Vinyl only'), findsOneWidget);
+      final state = _openSheetState(tester);
+      expect(state.filter, SearchFilter.all);
+      expect(state.vinylOnly, isFalse);
+      expect(state.sort, SearchSort.relevance);
     });
 
-    testWidgets('All is the default — no chip selected on open', (
+    testWidgets('one scope at a time; tapping the active one returns to All', (
       tester,
     ) async {
       await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
       await tester.pump();
+      await tester.tap(find.byKey(const Key('search-filter-button')));
+      await _settleSheet(tester);
 
-      expect(isSelected(tester, 'release'), isFalse);
-      expect(isSelected(tester, 'artist'), isFalse);
-      expect(isSelected(tester, 'label'), isFalse);
+      await tester.tap(find.byKey(const Key('search-filter-chip-artist')));
+      await tester.pump();
+      expect(_openSheetState(tester).filter, SearchFilter.artist);
+      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
+      await tester.pump();
+      expect(_openSheetState(tester).filter, SearchFilter.label);
+      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
+      await tester.pump();
+      expect(_openSheetState(tester).filter, SearchFilter.all);
     });
 
-    testWidgets('selecting a chip highlights it and deselects the others', (
-      tester,
-    ) async {
-      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
-      await tester.pump();
-
-      await tester.tap(chip('artist'));
-      await tester.pump();
-
-      expect(isSelected(tester, 'artist'), isTrue);
-      expect(isSelected(tester, 'release'), isFalse);
-      expect(isSelected(tester, 'label'), isFalse);
-
-      // Switching to another chip moves the single selection.
-      await tester.tap(chip('label'));
-      await tester.pump();
-
-      expect(isSelected(tester, 'label'), isTrue);
-      expect(isSelected(tester, 'artist'), isFalse);
-    });
-
-    testWidgets('tapping the active chip returns to All', (tester) async {
-      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
-      await tester.pump();
-
-      await tester.tap(chip('release'));
-      await tester.pump();
-      expect(isSelected(tester, 'release'), isTrue);
-
-      await tester.tap(chip('release'));
-      await tester.pump();
-      expect(isSelected(tester, 'release'), isFalse);
-    });
-
-    testWidgets('chips are shown in the narrow layout too', (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
-      await tester.pump();
-
-      expect(chip('release'), findsOneWidget);
-      expect(chip('artist'), findsOneWidget);
-      expect(chip('label'), findsOneWidget);
-    });
-
-    testWidgets('selecting a chip with an empty search box runs no search', (
-      tester,
-    ) async {
+    testWidgets('Apply updates the badge; closing without Apply changes '
+        'nothing', (tester) async {
       final service = _CountingSearchService(results: [_kindOfBlue]);
       await tester.pumpWidget(_buildScreen(service));
       await tester.pump();
 
-      await tester.tap(chip('artist'));
+      // Choose a scope but close the sheet without applying.
+      await tester.tap(find.byKey(const Key('search-filter-button')));
+      await _settleSheet(tester);
+      await tester.tap(find.byKey(const Key('search-filter-chip-artist')));
+      Navigator.of(tester.element(find.byType(SearchFilterSheet))).pop();
+      await _settleSheet(tester);
+      expect(_badgeCount(tester), 0);
+      expect((await readSearchFilters(tester)).filter, SearchFilter.all);
+
+      await applySearchFilters(tester, scope: SearchFilter.artist);
+      expect(_badgeCount(tester), 1);
+      // An empty search box runs no search.
+      expect(service.callCount, 0);
+    });
+
+    testWidgets('Clear all resets scope, vinyl only and sort', (tester) async {
+      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
+      await tester.pump();
+      await applySearchFilters(
+        tester,
+        scope: SearchFilter.label,
+        vinylOnly: true,
+        sort: SearchSort.oldestFirst,
+      );
+      expect(_badgeCount(tester), 3);
+
+      await tester.tap(find.byKey(const Key('search-filter-button')));
+      await _settleSheet(tester);
+      await tester.tap(find.byKey(const Key('clear-all-button')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('apply-filter-button')));
+      await _settleSheet(tester);
+
+      expect(_badgeCount(tester), 0);
+    });
+
+    testWidgets('fits the narrow phone layout', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(_buildScreen(_FakeSearchService(results: [])));
       await tester.pump();
 
-      expect(service.callCount, 0);
-      expect(isSelected(tester, 'artist'), isTrue);
+      await tester.tap(find.byKey(const Key('search-filter-button')));
+      await _settleSheet(tester);
+      expect(find.byKey(const Key('apply-filter-button')), findsOneWidget);
     });
   });
 
   group('SearchScreen — filter scoping (US-85)', () {
-    Finder chip(String name) => find.byKey(Key('search-filter-chip-$name'));
-
     testWidgets('the initial search runs under the All filter by default', (
       tester,
     ) async {
@@ -1472,24 +1567,24 @@ void main() {
       expect(service.filters, [SearchFilter.all]);
     });
 
-    testWidgets('changing the chip re-issues the search under the new filter', (
-      tester,
-    ) async {
-      final service = _RecordingSearchService(
-        page1: [_kindOfBlue],
-        page2: const [],
-      );
-      await tester.pumpWidget(_buildScreen(service));
-      await submitSearch(tester, 'blue');
-      expect(service.filters, [SearchFilter.all]);
+    testWidgets(
+      'applying another scope re-issues the search under the new filter',
+      (tester) async {
+        final service = _RecordingSearchService(
+          page1: [_kindOfBlue],
+          page2: const [],
+        );
+        await tester.pumpWidget(_buildScreen(service));
+        await submitSearch(tester, 'blue');
+        expect(service.filters, [SearchFilter.all]);
 
-      await tester.tap(chip('artist'));
-      await tester.pump();
-      await tester.pump();
+        await applySearchFilters(tester, scope: SearchFilter.artist);
+        await tester.pumpAndSettle();
 
-      // A second call was made, scoped to Artist, with the same text.
-      expect(service.filters, [SearchFilter.all, SearchFilter.artist]);
-    });
+        // A second call was made, scoped to Artist, with the same text.
+        expect(service.filters, [SearchFilter.all, SearchFilter.artist]);
+      },
+    );
 
     testWidgets('pagination preserves the originating filter', (tester) async {
       // page2 is non-empty, so _ResultsList auto-prefetches page 2 (the first
@@ -1510,7 +1605,7 @@ void main() {
 
       // Switch to Artist — re-runs page 1, then page 2 is prefetched again,
       // still scoped to Artist.
-      await tester.tap(chip('artist'));
+      await applySearchFilters(tester, scope: SearchFilter.artist);
       await tester.pumpAndSettle();
 
       expect(service.pages.last, 2);
@@ -1526,9 +1621,8 @@ void main() {
       );
       await tester.pumpWidget(_buildScreen(service, queryCache: cache));
       await submitSearch(tester, 'blue');
-      await tester.tap(chip('artist'));
-      await tester.pump();
-      await tester.pump();
+      await applySearchFilters(tester, scope: SearchFilter.artist);
+      await tester.pumpAndSettle();
 
       // Distinct cache keys were written for the two scopes.
       expect(cache.get(SearchQueryCache.normalizeKey('blue')), isNotNull);
@@ -1623,9 +1717,8 @@ void main() {
   });
 
   group('SearchScreen — vinyl only (US-142)', () {
-    final vinylChip = find.byKey(const Key('search-vinyl-only-chip'));
-    bool isOn(WidgetTester tester) =>
-        tester.widget<FilterChip>(vinylChip).selected;
+    Future<bool> isOn(WidgetTester tester) async =>
+        (await readSearchFilters(tester)).vinylOnly;
 
     setUp(() => FlutterSecureStorage.setMockInitialValues({}));
 
@@ -1638,7 +1731,7 @@ void main() {
       await tester.pumpAndSettle();
       await submitSearch(tester, 'blue note');
 
-      expect(isOn(tester), isFalse);
+      expect(await isOn(tester), isFalse);
       expect(service.vinylOnlys, [false]);
     });
 
@@ -1653,26 +1746,26 @@ void main() {
       await tester.pumpAndSettle();
       await submitSearch(tester, 'blue note');
 
-      await tester.tap(vinylChip);
+      await applySearchFilters(tester, vinylOnly: true);
       await tester.pumpAndSettle();
 
-      expect(isOn(tester), isTrue);
       expect(service.vinylOnlys, [false, true]);
+      expect(await isOn(tester), isTrue);
       expect(service.pages.last, 1);
     });
 
-    testWidgets('combines with a scope chip and a sort; pagination keeps it', (
-      tester,
-    ) async {
+    testWidgets('combines with a scope; pagination keeps it', (tester) async {
       final service = _RecordingSearchService(
         page1: [_kindOfBlue],
         page2: [_abbeyRoad],
       );
       await tester.pumpWidget(_buildScreen(service));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
-      await tester.tap(vinylChip);
-      await tester.pump();
+      await applySearchFilters(
+        tester,
+        scope: SearchFilter.label,
+        vinylOnly: true,
+      );
       await submitSearch(tester, 'blue note');
       await tester.pumpAndSettle();
 
@@ -1688,8 +1781,7 @@ void main() {
       final service = _RecordingSearchService(page1: const [], page2: const []);
       await tester.pumpWidget(_buildScreen(service));
       await tester.pumpAndSettle();
-      await tester.tap(vinylChip);
-      await tester.pump();
+      await applySearchFilters(tester, vinylOnly: true);
       await submitSearch(tester, 'obscure');
       await tester.pumpAndSettle();
 
@@ -1697,7 +1789,7 @@ void main() {
       await tester.tap(find.byKey(const Key('search-show-all-formats-button')));
       await tester.pumpAndSettle();
 
-      expect(isOn(tester), isFalse);
+      expect(await isOn(tester), isFalse);
       expect(service.vinylOnlys.last, isFalse);
     });
 
@@ -1724,10 +1816,10 @@ void main() {
       );
       await tester.pumpWidget(_buildScreen(first));
       await tester.pumpAndSettle();
-      await tester.tap(vinylChip);
+      await applySearchFilters(tester, vinylOnly: true);
       await tester.pumpAndSettle();
 
-      // "Restart": tear the screen down and build a fresh one.
+      // "Restart: tear the screen down and build a fresh one.
       await tester.pumpWidget(const SizedBox());
       final second = _RecordingSearchService(
         page1: [_kindOfBlue],
@@ -1737,7 +1829,7 @@ void main() {
       await tester.pumpAndSettle();
       await submitSearch(tester, 'blue note');
 
-      expect(isOn(tester), isTrue);
+      expect(await isOn(tester), isTrue);
       expect(second.vinylOnlys, [true]);
     });
 
@@ -1754,7 +1846,7 @@ void main() {
       await submitSearch(tester, 'blue note');
       final callsBefore = service.vinylOnlys.length;
 
-      await tester.tap(vinylChip);
+      await applySearchFilters(tester, vinylOnly: true);
       await tester.pumpAndSettle();
 
       expect(service.vinylOnlys.length, callsBefore + 1);
@@ -1778,7 +1870,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('search-filter-button')));
+      await _settleSheet(tester);
       expect(find.text('Alleen vinyl'), findsOneWidget);
+      expect(find.text('Zoekfilters'), findsOneWidget);
     });
   });
 
@@ -1875,15 +1970,9 @@ void main() {
       expect(router.canPop(), isFalse, reason: 'no stack of detail screens');
       final field = tester.widget<TextField>(find.byType(TextField));
       expect(field.controller!.text, 'Columbia');
-      expect(
-        tester
-            .widget<FilterChip>(
-              find.byKey(const Key('search-filter-chip-label')),
-            )
-            .selected,
-        isTrue,
-      );
-      expect(find.text('Newest first'), findsOneWidget);
+      final sheet = await readSearchFilters(tester);
+      expect(sheet.filter, SearchFilter.label);
+      expect(sheet.sort, SearchSort.newestFirst);
       expect(service.filters.last, SearchFilter.label);
       expect(service.sorts.last, SearchSort.newestFirst);
     });
@@ -1984,12 +2073,12 @@ void main() {
         page2: const [],
       );
       await tester.pumpWidget(_buildScreen(service));
-      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
-      await tester.pump();
+      await applySearchFilters(
+        tester,
+        scope: SearchFilter.label,
+        sort: SearchSort.oldestFirst,
+      );
       await submitSearch(tester, 'blue note');
-      await tester.tap(find.byKey(const Key('search-sort-button')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('search-sort-option-oldestFirst')));
       await tester.pumpAndSettle();
 
       reselectSearchTab();
@@ -2068,11 +2157,9 @@ void main() {
     });
   });
 
-  group('SearchScreen — sort (US-133)', () {
+  group('SearchScreen — sort in the filter sheet (US-133 / US-162)', () {
     Future<void> pickSort(WidgetTester tester, SearchSort sort) async {
-      await tester.tap(find.byKey(const Key('search-sort-button')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(Key('search-sort-option-${sort.name}')));
+      await applySearchFilters(tester, sort: sort);
       await tester.pumpAndSettle();
     }
 
@@ -2086,12 +2173,13 @@ void main() {
       await tester.pumpWidget(_buildScreen(service));
       await submitSearch(tester, 'blue note');
       expect(service.sorts, [SearchSort.relevance]);
-      expect(find.text('Relevance'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('search-sort-button')));
-      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('search-filter-button')));
+      await _settleSheet(tester);
+      expect(find.text('Relevance'), findsOneWidget);
       expect(find.text('Newest first'), findsOneWidget);
       expect(find.text('Oldest first'), findsOneWidget);
+      expect(_openSheetState(tester).sort, SearchSort.relevance);
     });
 
     testWidgets('changing the sort re-runs the search from page 1', (
@@ -2108,7 +2196,8 @@ void main() {
 
       expect(service.sorts, [SearchSort.relevance, SearchSort.newestFirst]);
       expect(service.pages.last, 1);
-      expect(find.text('Newest first'), findsOneWidget);
+      // A non-default sort counts in the filter badge.
+      expect(_badgeCount(tester), 1);
     });
 
     testWidgets('a chip picked before typing survives focusing the field', (
@@ -2119,8 +2208,7 @@ void main() {
         page2: const [],
       );
       await tester.pumpWidget(_buildScreen(service));
-      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
-      await tester.pump();
+      await applySearchFilters(tester, scope: SearchFilter.label);
       // Tapping the empty field moves the cursor but changes no text.
       await tester.tap(find.byType(TextField));
       await tester.pump();
@@ -2135,8 +2223,7 @@ void main() {
         page2: const [],
       );
       await tester.pumpWidget(_buildScreen(service));
-      await tester.tap(find.byKey(const Key('search-filter-chip-label')));
-      await tester.pump();
+      await applySearchFilters(tester, scope: SearchFilter.label);
       await submitSearch(tester, 'blue note');
       await pickSort(tester, SearchSort.oldestFirst);
 
@@ -2214,7 +2301,11 @@ void main() {
       );
       await tester.pumpWidget(_buildScreenNl(service));
       await tester.pump();
+      await tester.tap(find.byKey(const Key('search-filter-button')));
+      await _settleSheet(tester);
       expect(find.text('Relevantie'), findsOneWidget);
+      expect(find.text('Nieuwste eerst'), findsOneWidget);
+      expect(find.text('Sorteren'), findsOneWidget);
     });
   });
 }

@@ -68,8 +68,9 @@ class DiscogsApiClient {
   /// a single field (US-85): `all` uses the general `q` parameter (default,
   /// matches every field); `release`/`artist`/`label` use the field-scoped
   /// `release_title`/`artist`/`label` parameters. `type=release` is always sent
-  /// so the response shape is unchanged. [sort] adds `sort=year` with a
-  /// `sort_order` for the year orders and nothing for relevance (US-133).
+  /// so the response shape is unchanged. [sort] adds `sort=date_added` with a
+  /// `sort_order` for newest/oldest first (when the release was added to
+  /// Discogs, US-162) and nothing for relevance.
   /// [vinylOnly] adds `format=Vinyl`; Discogs then also keeps releases that
   /// combine vinyl with another format, e.g. LP + download (US-142).
   Future<DiscogsSearchPageDto> searchReleases(
@@ -99,10 +100,13 @@ class DiscogsApiClient {
         ...switch (sort) {
           SearchSort.relevance => const <String, String>{},
           SearchSort.newestFirst => const {
-            'sort': 'year',
+            'sort': 'date_added',
             'sort_order': 'desc',
           },
-          SearchSort.oldestFirst => const {'sort': 'year', 'sort_order': 'asc'},
+          SearchSort.oldestFirst => const {
+            'sort': 'date_added',
+            'sort_order': 'asc',
+          },
         },
       },
     );

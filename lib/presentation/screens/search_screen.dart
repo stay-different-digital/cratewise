@@ -30,6 +30,7 @@ import '../../shared/route_observer.dart';
 import '../../shared/tab_reselect_notifier.dart';
 import '../widgets/rate_limit_retry_button.dart';
 import '../widgets/release_search_result_card.dart';
+import '../widgets/search_filter_sheet.dart';
 import 'release_detail_screen.dart';
 
 const _kWideBreakpoint = 700.0;
@@ -287,6 +288,31 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
     final vinylOnly = await (widget.loadVinylOnly ?? loadVinylOnlyPreference)();
     if (!mounted || _vinylOnlyTouched || vinylOnly == _vinylOnly) return;
     setState(() => _vinylOnly = vinylOnly);
+    final text = _controller.text.trim();
+    if (text.isNotEmpty) _onSubmit(text);
+  }
+
+  SearchFilterSettings get _filterSettings =>
+      SearchFilterSettings(filter: _filter, vinylOnly: _vinylOnly, sort: _sort);
+
+  /// Opens the filter sheet (US-161 / US-162). Apply re-runs the current
+  /// search from page 1; closing the sheet otherwise changes nothing.
+  Future<void> _openFilterSheet() async {
+    final result = await showModalBottomSheet<SearchFilterSettings>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => SearchFilterSheet(current: _filterSettings),
+    );
+    if (result == null || !mounted) return;
+    if (result.vinylOnly != _vinylOnly) {
+      _vinylOnlyTouched = true;
+      (widget.saveVinylOnly ?? saveVinylOnlyPreference)(result.vinylOnly);
+    }
+    setState(() {
+      _filter = result.filter;
+      _vinylOnly = result.vinylOnly;
+      _sort = result.sort;
+    });
     final text = _controller.text.trim();
     if (text.isNotEmpty) _onSubmit(text);
   }
@@ -632,6 +658,17 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
                   ),
                 ),
               ),
+              // One button for scope, vinyl-only and sort (US-161 / US-162).
+              IconButton(
+                key: const Key('search-filter-button'),
+                icon: Badge(
+                  isLabelVisible: _filterSettings.activeCount > 0,
+                  label: Text('${_filterSettings.activeCount}'),
+                  child: const Icon(Icons.filter_list_outlined),
+                ),
+                tooltip: AppLocalizations.of(context)!.filterButtonTooltip,
+                onPressed: _openFilterSheet,
+              ),
               if (hasQuery)
                 IconButton(
                   key: const Key('save-search-button'),
@@ -647,37 +684,6 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
               ),
             ],
           ),
-        ),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _SearchFilterChips(
-                vinylOnly: _vinylOnly,
-                onVinylOnlyChanged: _setVinylOnly,
-                selected: _filter,
-                onChanged: (f) {
-                  setState(() => _filter = f);
-                  // Re-run the current search immediately under the new scope
-                  // (US-85) — the user shouldn't have to re-type. The
-                  // skip-guard compares the filter, so identical text still
-                  // re-searches.
-                  final text = _controller.text.trim();
-                  if (text.isNotEmpty) _onSubmit(text);
-                },
-              ),
-            ),
-            _SearchSortMenu(
-              selected: _sort,
-              onChanged: (s) {
-                setState(() => _sort = s);
-                // Same as a filter change: re-run from page 1 in the new
-                // order (US-133).
-                final text = _controller.text.trim();
-                if (text.isNotEmpty) _onSubmit(text);
-              },
-            ),
-          ],
         ),
         Expanded(child: _buildBody(isWide: isWide)),
       ],
@@ -754,141 +760,6 @@ class _SearchScreenState extends State<SearchScreen> with RouteAware {
             : () => _onSubmit(_lastQuery),
       ),
     };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Filter chips (US-84)
-// ---------------------------------------------------------------------------
-
-/// Release / Artist / Label scope chips shown under the search field. Single-
-/// choice: selecting one deselects the others; tapping the active chip returns
-/// to "All" (no chip selected). The row wraps rather than overflowing on a
-/// narrow phone or in the 320dp wide-layout search pane.
-class _SearchFilterChips extends StatelessWidget {
-  const _SearchFilterChips({
-    required this.selected,
-    required this.onChanged,
-    required this.vinylOnly,
-    required this.onVinylOnlyChanged,
-  });
-
-  final SearchFilter selected;
-  final ValueChanged<SearchFilter> onChanged;
-  // Independent on/off toggle (US-142), combinable with any scope chip.
-  final bool vinylOnly;
-  final ValueChanged<bool> onVinylOnlyChanged;
-
-  static const _choices = [
-    SearchFilter.release,
-    SearchFilter.artist,
-    SearchFilter.label,
-  ];
-
-  String _filterLabel(BuildContext context, SearchFilter filter) {
-    final l10n = AppLocalizations.of(context)!;
-    return switch (filter) {
-      SearchFilter.release => l10n.searchFilterRelease,
-      SearchFilter.artist => l10n.searchFilterArtist,
-      SearchFilter.label => l10n.searchFilterLabel,
-      SearchFilter.all => '',
-    };
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 4,
-        children: [
-          for (final filter in _choices)
-            FilterChip(
-              key: Key('search-filter-chip-${filter.name}'),
-              label: Text(_filterLabel(context, filter)),
-              selected: selected == filter,
-              onSelected: (isSelected) =>
-                  onChanged(isSelected ? filter : SearchFilter.all),
-            ),
-          FilterChip(
-            key: const Key('search-vinyl-only-chip'),
-            avatar: vinylOnly ? null : const Icon(Icons.album, size: 18),
-            label: Text(AppLocalizations.of(context)!.searchVinylOnly),
-            selected: vinylOnly,
-            onSelected: onVinylOnlyChanged,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Sort menu (US-133)
-// ---------------------------------------------------------------------------
-
-/// Compact menu next to the filter chips that picks the result order. Shows
-/// the current order as text so a non-default sort is visible at a glance.
-class _SearchSortMenu extends StatelessWidget {
-  const _SearchSortMenu({required this.selected, required this.onChanged});
-
-  final SearchSort selected;
-  final ValueChanged<SearchSort> onChanged;
-
-  static String label(AppLocalizations l10n, SearchSort sort) => switch (sort) {
-    SearchSort.relevance => l10n.searchSortRelevance,
-    SearchSort.newestFirst => l10n.searchSortNewestFirst,
-    SearchSort.oldestFirst => l10n.searchSortOldestFirst,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: PopupMenuButton<SearchSort>(
-        key: const Key('search-sort-button'),
-        tooltip: l10n.searchSortTooltip,
-        initialValue: selected,
-        onSelected: (s) {
-          if (s != selected) onChanged(s);
-        },
-        itemBuilder: (_) => [
-          for (final sort in SearchSort.values)
-            CheckedPopupMenuItem(
-              key: Key('search-sort-option-${sort.name}'),
-              value: sort,
-              checked: sort == selected,
-              child: Text(label(l10n, sort)),
-            ),
-        ],
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 48),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.swap_vert,
-                  size: 20,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  label(l10n, selected),
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }
 

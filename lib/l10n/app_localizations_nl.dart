@@ -61,7 +61,22 @@ class AppLocalizationsNl extends AppLocalizations {
   String get searchFilterLabel => 'Label';
 
   @override
-  String get searchSortTooltip => 'Sorteren';
+  String get filterButtonTooltip => 'Filter';
+
+  @override
+  String get searchFilterSheetTitle => 'Zoekfilters';
+
+  @override
+  String get searchScopeTitle => 'Zoeken in';
+
+  @override
+  String get sortTitle => 'Sorteren';
+
+  @override
+  String get filtersClearAll => 'Alles wissen';
+
+  @override
+  String get filtersApply => 'Toepassen';
 
   @override
   String get searchSortRelevance => 'Relevantie';

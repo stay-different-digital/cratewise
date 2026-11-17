@@ -391,7 +391,7 @@ void main() {
       expect(captured.url.queryParameters['type'], 'release');
     });
 
-    test('sends sort=year with the right order, nothing for relevance '
+    test('sends sort=date_added with the right order, nothing for relevance '
         '(US-133)', () async {
       late http.Request captured;
       final client = DiscogsApiClient(
@@ -412,7 +412,7 @@ void main() {
         sort: SearchSort.newestFirst,
         page: 2,
       );
-      expect(captured.url.queryParameters['sort'], 'year');
+      expect(captured.url.queryParameters['sort'], 'date_added');
       expect(captured.url.queryParameters['sort_order'], 'desc');
       expect(captured.url.queryParameters['label'], 'blue note');
       expect(captured.url.queryParameters['page'], '2');
@@ -422,7 +422,7 @@ void main() {
         _fakeToken,
         sort: SearchSort.oldestFirst,
       );
-      expect(captured.url.queryParameters['sort'], 'year');
+      expect(captured.url.queryParameters['sort'], 'date_added');
       expect(captured.url.queryParameters['sort_order'], 'asc');
     });
 
@@ -447,7 +447,7 @@ void main() {
       );
       expect(captured.url.queryParameters['format'], 'Vinyl');
       expect(captured.url.queryParameters['label'], 'blue note');
-      expect(captured.url.queryParameters['sort'], 'year');
+      expect(captured.url.queryParameters['sort'], 'date_added');
     });
 
     test('throws InvalidTokenError on 401', () async {

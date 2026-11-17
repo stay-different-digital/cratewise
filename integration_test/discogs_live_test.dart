@@ -89,19 +89,20 @@ void main() {
       await tester.tap(tabs.at(index));
       await tester.pump(const Duration(seconds: 1));
     }
-    expect(find.byKey(const Key('search-filter-chip-label')), findsOneWidget);
+    expect(find.byKey(const Key('search-filter-button')), findsOneWidget);
 
-    // Search: Label scope, vinyl only, newest first — real results.
-    await tester.tap(find.byKey(const Key('search-filter-chip-label')));
-    await tester.pump();
-    final vinyl = find.byKey(const Key('search-vinyl-only-chip'));
-    if (!tester.widget<FilterChip>(vinyl).selected) {
-      await tester.tap(vinyl);
-      await tester.pump();
-    }
-    await tester.tap(find.byKey(const Key('search-sort-button')));
+    // Search: Label scope, vinyl only, newest first via the filter sheet
+    // (US-161 / US-162) — real results.
+    await tester.tap(find.byKey(const Key('search-filter-button')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('search-sort-option-newestFirst')));
+    await tester.tap(find.byKey(const Key('sort-option-newestFirst')));
+    await tester.tap(find.byKey(const Key('search-filter-chip-label')));
+    final vinyl = find.byKey(const Key('search-vinyl-only-switch'));
+    if (!tester.widget<SwitchListTile>(vinyl).value) {
+      await tester.tap(vinyl);
+    }
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('apply-filter-button')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Blue Note');
     await tester.testTextInput.receiveAction(TextInputAction.search);

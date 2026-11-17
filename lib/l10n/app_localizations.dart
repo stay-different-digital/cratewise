@@ -201,11 +201,41 @@ abstract class AppLocalizations {
   /// **'Label'**
   String get searchFilterLabel;
 
-  /// No description provided for @searchSortTooltip.
+  /// No description provided for @filterButtonTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filterButtonTooltip;
+
+  /// No description provided for @searchFilterSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter search'**
+  String get searchFilterSheetTitle;
+
+  /// No description provided for @searchScopeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search in'**
+  String get searchScopeTitle;
+
+  /// No description provided for @sortTitle.
   ///
   /// In en, this message translates to:
   /// **'Sort'**
-  String get searchSortTooltip;
+  String get sortTitle;
+
+  /// No description provided for @filtersClearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get filtersClearAll;
+
+  /// No description provided for @filtersApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get filtersApply;
 
   /// No description provided for @searchSortRelevance.
   ///

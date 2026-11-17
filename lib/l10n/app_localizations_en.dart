@@ -61,7 +61,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchFilterLabel => 'Label';
 
   @override
-  String get searchSortTooltip => 'Sort';
+  String get filterButtonTooltip => 'Filter';
+
+  @override
+  String get searchFilterSheetTitle => 'Filter search';
+
+  @override
+  String get searchScopeTitle => 'Search in';
+
+  @override
+  String get sortTitle => 'Sort';
+
+  @override
+  String get filtersClearAll => 'Clear all';
+
+  @override
+  String get filtersApply => 'Apply';
 
   @override
   String get searchSortRelevance => 'Relevance';
