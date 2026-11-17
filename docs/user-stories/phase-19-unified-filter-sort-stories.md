@@ -10,7 +10,7 @@ Doel: gebruikersfeedback verwerken. Op alle drie de lijstschermen werkt filteren
 |---|---|---|---|---|
 | US-161 | Zoeken: filters in een bottom sheet achter één filterknop | High | 3 | — |
 | US-162 | Zoeken: sortering bovenaan in de sheet; Nieuwste/Oudste eerst op datum toegevoegd aan Discogs | High | 2 | US-161 |
-| US-165 | DJ-velden BPM, Key en Energy uit de app verwijderen | High | 5 | — |
+| US-165 | DJ-velden BPM, Key, Energy en gig crates uit de app verwijderen | High | 5 | — |
 | US-166 | Collectie en Verlanglijst: datum toegevoegd overnemen bij import van Discogs | Medium | 2 | — |
 | US-163 | Collectie: sorteericoon weg, Nieuwste/Oudste eerst bovenaan in "Filter collection" | High | 2 | US-162, US-165, US-166 |
 | US-164 | Verlanglijst: Nieuwste/Oudste eerst bovenaan in het filter | Medium | 2 | US-162, US-166 |
@@ -23,7 +23,7 @@ Totaal: 16 SP. Volgorde: US-161 → US-162 → US-165 → US-166 → US-163 → 
 - **Sorteeropties per scherm.**
   - Zoeken: Relevantie (standaard), Nieuwste eerst, Oudste eerst. Nieuwste/Oudste eerst gaat over **wanneer de release aan Discogs is toegevoegd**, niet over het releasejaar.
   - Collectie en Verlanglijst: alleen Nieuwste eerst (standaard) en Oudste eerst, op **de datum waarop je de plaat aan je eigen collectie/verlanglijst toevoegde**; niet de bewerkingsdatum op Discogs. Geen Relevantie.
-- **DJ-velden weg.** BPM, Key en Energy verdwijnen uit de hele app (eigen story, US-165). Reden: gebruikers kunnen op Discogs zelf velden toevoegen; deze velden in Cratewise maken het ingewikkeld.
+- **DJ-velden weg.** BPM, Key, Energy en gig crates verdwijnen uit de hele app (eigen story, US-165). Reden: gebruikers kunnen op Discogs zelf velden toevoegen; deze velden in Cratewise maken het ingewikkeld.
 
 **Uit de grooming (product, ontwikkeling, test, UX; voorstellen tot Fred ze bevestigt):**
 - **Eén opzet voor drie schermen.** Elke sheet: (1) Sorteren, (2) de filters van dat scherm, (3) "Alles wissen" en "Toepassen". De sorteersectie is één gedeelde widget die per scherm een lijst opties krijgt (Zoeken drie, Collectie/Verlanglijst twee).
@@ -33,10 +33,10 @@ Totaal: 16 SP. Volgorde: US-161 → US-162 → US-165 → US-166 → US-163 → 
 - **"Zoeken, Collectie en Filter pagina"** in de feedback is gelezen als Zoeken, Collectie en Verlanglijst.
 - **Buiten scope:** sortering bewaren tussen sessies of in opgeslagen filters/zoekopdrachten (US-117); nieuwe sorteeropties.
 
-## Open punten voor Fred
+## Besloten open punten (Fred, 2026-11-17)
 
-1. **Datum toegevoegd bij geïmporteerde platen (US-166).** Platen die uit Discogs zijn geïmporteerd krijgen nu het moment van importeren als "toegevoegd"-datum; een in één keer geïmporteerde collectie heeft dan voor alle platen dezelfde datum en sorteren heeft geen zin. Voorstel: bij import de datum overnemen waarop je de plaat **aan je collectie op Discogs** toevoegde (Discogs levert die mee). Dat is nog steeds "wanneer heb ik hem aan mijn collectie toegevoegd", alleen op Discogs gedaan. Akkoord?
-2. **Gig crates (US-165).** Bij de DJ-velden hoort ook "gig crates" (US-121). De feedback noemt alleen BPM, Key en Energy. Gig crates blijven tenzij je zegt dat ze ook weg mogen.
+1. **Datum toegevoegd bij geïmporteerde platen:** akkoord. Bij import wordt de datum overgenomen waarop de plaat aan de collectie/wantlist op Discogs is toegevoegd (US-166).
+2. **Gig crates:** mogen ook weg; meegenomen in US-165.
 
 ---
 
@@ -89,23 +89,23 @@ De sortering (US-133) is nu een apart menu (`_SearchSortMenu`) en sorteert Nieuw
 
 ---
 
-### US-165: DJ-velden BPM, Key en Energy uit de app verwijderen
+### US-165: DJ-velden BPM, Key, Energy en gig crates uit de app verwijderen
 
 **Priority: High · 5 SP**
 
 > Als verzamelaar,
-> wil ik geen BPM-, Key- en Energy-velden meer in Cratewise,
+> wil ik geen BPM-, Key-, Energy- en gig-crate-velden meer in Cratewise,
 > zodat de app eenvoudiger is; wie zulke gegevens wil bijhouden, doet dat met eigen velden op Discogs.
 
 **Context:**
-Toegevoegd in US-121. De velden zitten in het domeinmodel (`CollectionItem.bpm`, `musicalKey`, `energyLevel`), de database (kolommen sinds schema v11), het collectiedetail (bewerkblad en weergave), de filters (BPM min/max, Key, Energy), de sortering (BPM, Key, Energy in `CollectionSort`), en CSV-import/-export (`collection_csv_mapper`, `collection_csv_validator`). Gig crates horen ook bij US-121 maar vallen buiten deze story (zie open punt 2).
+Toegevoegd in US-121. De velden zitten in het domeinmodel (`CollectionItem.bpm`, `musicalKey`, `energyLevel`, `gigCrates`), de database (kolommen sinds schema v11), het collectiedetail (bewerkblad en weergave), de filters (BPM min/max, Key, Energy, Gig crate), de sortering (BPM, Key, Energy in `CollectionSort`), en CSV-import/-export (`collection_csv_mapper`, `collection_csv_validator`). Gig crates zijn op verzoek van Fred meegenomen (2026-11-17).
 
 **Acceptance criteria:**
-- Nergens in de app nog BPM, Key of Energy: niet in het collectiedetail, niet in het filter, niet in de sortering, niet in de CSV-export.
-- `CollectionItem`, `CollectionFilterSet` en `CollectionSort` hebben de velden en opties niet meer; `MusicalKey` is verwijderd als niets anders het gebruikt.
-- **Database:** de kolommen worden verwijderd met een schemamigratie (`schemaVersion` + 1, nieuwe schema-dump in `drift_schemas/`, gegenereerde testhelpers volgens `migration_test.dart`). De migratietest bewijst dat alle andere velden van bestaande items intact blijven. De ingevoerde DJ-waarden gaan daarbij bewust verloren.
-- **Oude bestanden blijven werken:** een CSV-import met de oude kolommen BPM/Key/Energy slaagt; die kolommen worden genegeerd. Opgeslagen filtersets (US-117) met BPM/Key/Energy-waarden laden zonder fout; die waarden vallen weg.
-- CHANGELOG (onder "Removed") en README bijgewerkt; de opmerking in de CHANGELOG zegt dat eerder ingevoerde BPM/Key/Energy-waarden verdwijnen.
+- Nergens in de app nog BPM, Key, Energy of gig crates: niet in het collectiedetail, niet in het filter, niet in de sortering, niet in de CSV-export.
+- `CollectionItem`, `CollectionFilterSet` en `CollectionSort` hebben de velden en opties (inclusief `gigCrates`) niet meer; `MusicalKey` is verwijderd als niets anders het gebruikt.
+- **Database:** de kolommen worden verwijderd met een schemamigratie (`schemaVersion` + 1, nieuwe schema-dump in `drift_schemas/`, gegenereerde testhelpers volgens `migration_test.dart`). De migratietest bewijst dat alle andere velden van bestaande items intact blijven. De ingevoerde DJ-waarden en gig crates gaan daarbij bewust verloren.
+- **Oude bestanden blijven werken:** een CSV-import met de oude kolommen BPM/Key/Energy/gig crates slaagt; die kolommen worden genegeerd. Opgeslagen filtersets (US-117) met die waarden laden zonder fout; die waarden vallen weg.
+- CHANGELOG (onder "Removed") en README bijgewerkt; de opmerking in de CHANGELOG zegt dat eerder ingevoerde BPM/Key/Energy-waarden en gig crates verdwijnen.
 - Tests: bestaande DJ-tests verwijderd of herschreven; nieuwe tests voor CSV met oude DJ-kolommen en voor oude filtersets; migratietest naar de nieuwe schemaversie; upgrade-test (`integration_test/app_upgrade_test.dart`) slaagt op Android en iOS.
 
 ---
@@ -119,7 +119,7 @@ Toegevoegd in US-121. De velden zitten in het domeinmodel (`CollectionItem.bpm`,
 > zodat sorteren ook zin heeft voor platen die in één keer zijn geïmporteerd.
 
 **Context:**
-Voorwaarde voor US-163 en US-164, onder voorbehoud van open punt 1. De Discogs-import zet nu `createdAt: now` ([execute_collection_import_use_case.dart:85](lib/application/use_cases/execute_collection_import_use_case.dart#L85), wishlist-tegenhanger idem), terwijl de Discogs-collectie en -wantlist per plaat `date_added` meeleveren (al in de DTO's: `DiscogsCollectionItemDto.dateAdded`, `DiscogsWantlistItemDto.dateAdded`).
+Voorwaarde voor US-163 en US-164; akkoord van Fred 2026-11-17. De Discogs-import zet nu `createdAt: now` ([execute_collection_import_use_case.dart:85](lib/application/use_cases/execute_collection_import_use_case.dart#L85), wishlist-tegenhanger idem), terwijl de Discogs-collectie en -wantlist per plaat `date_added` meeleveren (al in de DTO's: `DiscogsCollectionItemDto.dateAdded`, `DiscogsWantlistItemDto.dateAdded`).
 
 **Acceptance criteria:**
 - Nieuwe imports (handmatig en automatisch, US-149) zetten `createdAt` op de `date_added` van Discogs; als die ontbreekt of niet te lezen is, op het importmoment.
