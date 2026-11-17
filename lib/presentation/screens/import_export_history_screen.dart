@@ -129,6 +129,9 @@ class _ImportExportHistoryScreenState extends State<ImportExportHistoryScreen> {
         .showSnackBar(
           SnackBar(
             content: const Text('Entry deleted'),
+            // Must expire by itself (US-167): the delete is only final once
+            // this bar closes, which never happened while it persisted.
+            persist: false,
             action: SnackBarAction(label: 'Undo', onPressed: () {}),
           ),
         )

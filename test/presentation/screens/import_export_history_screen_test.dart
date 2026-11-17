@@ -729,6 +729,26 @@ void main() {
       },
     );
 
+    testWidgets('delete becomes final when the undo bar times out (US-167)', (
+      tester,
+    ) async {
+      final repo = _FakeJobRepository(jobs: [makeJob(id: 'j1')]);
+      await tester.pumpWidget(_buildSubject(repository: repo));
+      await tester.pump();
+      await tester.drag(
+        find.byKey(const ValueKey('j1')),
+        const Offset(-800, 0),
+      );
+      await tester.pumpAndSettle();
+
+      // No manual dismissal: the bar must expire by itself.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Undo'), findsNothing);
+      expect(repo.removedIds, contains('j1'));
+    });
+
     testWidgets('count header decrements immediately after swipe', (
       tester,
     ) async {

@@ -79,6 +79,9 @@ class _SavedSearchesScreenState extends State<SavedSearchesScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('"${item.name}" deleted'),
+        // Since Flutter 3.29 a SnackBar with an action persists by default;
+        // the undo offer must expire by itself (US-167).
+        persist: false,
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () async {

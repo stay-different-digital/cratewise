@@ -125,6 +125,43 @@ void main() {
       expect(repo.lastDeletedId, '42');
     });
 
+    // US-167: since Flutter 3.29 a SnackBar with an action persists unless
+    // told otherwise; the undo bar must still go away by itself.
+    testWidgets('undo bar after delete disappears by itself (US-167)', (
+      tester,
+    ) async {
+      final repo = _FakeRepo(
+        items: [_search(id: '42', name: 'To delete')],
+      );
+      await tester.pumpWidget(_wrap(SavedSearchesScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.drag(find.text('To delete'), const Offset(-500, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Undo'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Undo'), findsNothing);
+    });
+
+    testWidgets('undo within the time restores the search (US-167)', (
+      tester,
+    ) async {
+      final repo = _FakeRepo(
+        items: [_search(id: '42', name: 'To delete')],
+      );
+      await tester.pumpWidget(_wrap(SavedSearchesScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      await tester.drag(find.text('To delete'), const Offset(-500, 0));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('To delete'), findsOneWidget);
+    });
+
     testWidgets('rename updates name via menu', (tester) async {
       final item = _search(id: '7', name: 'Old name');
       final repo = _FakeRepo(items: [item]);
