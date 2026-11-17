@@ -21,10 +21,12 @@ not affiliated with or endorsed by Discogs.
 
 ## Features
 
-- **Search** Discogs for releases, artists, and labels (with filter chips), sort
-  newest or oldest first, limit to vinyl, and jump from a release to its label.
+- **Search** Discogs for releases, artists, and labels, limit to vinyl, and sort
+  by relevance or by when a release was added to Discogs — all from one filter
+  button; jump from a release to its label.
 - **Collection & wishlist** management with membership indicators across search
-  and detail screens; filters by format type, decade, label, genre and more.
+  and detail screens; one filter button with sorting by date added (newest or
+  oldest first) and filters by format type, decade, label, genre and more.
 - **Collection statistics** in their own tab.
 - **Discogs import/export** — sync your collection and wantlist both ways,
   including opt-in deletion sync.

@@ -10,6 +10,42 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.4.0] — 2026-11-17
+
+Filtering and sorting work the same on Search, Collection and Wishlist
+(phase 19).
+
+### Changed
+
+- **Search: one filter button (US-161, US-162)** — the Release/Artist/Label
+  chips, "Vinyl only" and the sort menu moved into one bottom sheet behind a
+  filter button with a badge. Sort is at the top: Relevance, Newest first,
+  Oldest first. Newest/Oldest first now order by **when the release was added
+  to Discogs**, no longer by release year.
+- **Collection: sort in the filter (US-163)** — the separate sort icon is
+  gone; "Filter collection" starts with Newest first / Oldest first, by the
+  date the record was added to your collection.
+- **Wishlist: sort in the filter (US-164)** — the same Newest first / Oldest
+  first by date added.
+- **Imported records keep their Discogs date (US-166)** — records imported
+  from Discogs get the date you added them on Discogs as their "added" date,
+  not the moment of import. A manual import also corrects records imported
+  earlier.
+
+### Removed
+
+- **DJ fields (US-165)** — BPM, Key, Energy and gig crates are gone from the
+  collection detail, filters, sorting and the CSV export. **Values you entered
+  for these fields are deleted** when updating. Old CSV files and saved
+  filters with those fields still load; the DJ values are ignored.
+
+### Fixed
+
+- **"Undo" bar stayed on screen (US-167)** — after deleting a saved search,
+  the Undo bar no longer stays visible on Search, Collection and Wishlist; in
+  the import/export history a deleted entry is now really deleted after the
+  bar closes.
+
 ## [1.3.0] — 2026-11-16
 
 Cratewise on Flutter 3.50 (phases 17–18 wrapped up). Bundles 1.2.1 – 1.2.4:
