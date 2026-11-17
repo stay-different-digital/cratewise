@@ -1,5 +1,7 @@
 import 'package:uuid/uuid.dart';
 
+import 'execute_collection_import_use_case.dart' show earlierAdded;
+
 import '../../domain/models/import_export_job.dart';
 import '../../domain/models/import_export_job_type.dart';
 import '../../domain/models/import_export_row_result.dart';
@@ -140,6 +142,10 @@ class ExecuteWishlistImportUseCase {
                   await _wishlistRepository.update(
                     existing.copyWith(
                       syncStatus: SyncStatus.synced,
+                      createdAt: earlierAdded(
+                        existing.createdAt,
+                        row.dateAdded,
+                      ),
                       updatedAt: DateTime.now(),
                     ),
                   );
@@ -163,6 +169,16 @@ class ExecuteWishlistImportUseCase {
                   failed++;
                 }
               } else {
+                // Already synced: only move the added date back to when it
+                // was added on Discogs, if that's earlier (US-166).
+                if (existing != null) {
+                  final added = earlierAdded(existing.createdAt, row.dateAdded);
+                  if (added != existing.createdAt) {
+                    await _wishlistRepository.update(
+                      existing.copyWith(createdAt: added),
+                    );
+                  }
+                }
                 await _rowResultRepository.addResult(
                   jobId,
                   SkippedRow(rowIndex: i, reason: 'Already linked to Discogs'),
@@ -246,7 +262,8 @@ class ExecuteWishlistImportUseCase {
       coverUrl: row.thumbUrl,
       priority: WishlistPriority.medium,
       syncStatus: SyncStatus.synced,
-      createdAt: now,
+      // When the user added it on Discogs (US-166), not the import moment.
+      createdAt: row.dateAdded?.toLocal() ?? now,
       updatedAt: now,
     );
   }

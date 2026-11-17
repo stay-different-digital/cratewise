@@ -673,6 +673,35 @@ void main() {
       });
     });
   });
+
+  group('added date from Discogs (US-166)', () {
+    test(
+      'a new wish gets the date it was added to the Discogs wantlist',
+      () async {
+        final repo = _FakeWishlistRepository();
+        final useCase = ExecuteWishlistImportUseCase(
+          wishlistRepository: repo,
+          jobRepository: _FakeJobRepository(),
+          rowResultRepository: _FakeRowResultRepository(),
+        );
+        final addedOnDiscogs = DateTime.utc(2021, 7, 4, 12);
+        await useCase.execute(
+          WishlistImportPreview(
+            rows: [
+              NewWishlistRow(
+                releaseId: 1,
+                title: 'T',
+                artist: 'A',
+                dateAdded: addedOnDiscogs,
+              ),
+            ],
+          ),
+        );
+        final all = repo.added;
+        expect(all.single.createdAt.isAtSameMomentAs(addedOnDiscogs), isTrue);
+      },
+    );
+  });
 }
 
 // ---------------------------------------------------------------------------

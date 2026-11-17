@@ -18,6 +18,8 @@ class _FakeCollectionRepository implements CollectionRepository {
   @override
   Future<void> deleteAll() async {}
   final List<CollectionItem> added = [];
+  final List<CollectionItem> existing = [];
+  final List<CollectionItem> updated = [];
 
   @override
   Future<void> add(CollectionItem item) async => added.add(item);
@@ -26,13 +28,13 @@ class _FakeCollectionRepository implements CollectionRepository {
   Future<bool> containsRelease(int id) async => false;
 
   @override
-  Future<List<CollectionItem>> getAll() async => [];
+  Future<List<CollectionItem>> getAll() async => List.of(existing);
 
   @override
   Future<CollectionItem?> getById(String id) async => null;
 
   @override
-  Future<void> update(CollectionItem item) async {}
+  Future<void> update(CollectionItem item) async => updated.add(item);
 
   @override
   Future<void> remove(String id) async {}
@@ -666,6 +668,134 @@ void main() {
         expect(result.linked, 1);
         expect(job?.validItems, 2);
       });
+    });
+  });
+
+  group('added date from Discogs (US-166)', () {
+    test('a new item gets the date it was added on Discogs', () async {
+      final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+          makeUseCase();
+      final addedOnDiscogs = DateTime.utc(2019, 3, 2, 9, 15);
+      await useCase.execute(
+        CollectionImportPreview(
+          rows: [
+            NewCollectionRow(
+              releaseId: 1,
+              title: 'T',
+              artist: 'A',
+              dateAdded: addedOnDiscogs,
+            ),
+          ],
+        ),
+      );
+      final item = collectionRepo.added.single;
+      expect(item.createdAt.isAtSameMomentAs(addedOnDiscogs), isTrue);
+      // The edit time is still the import moment.
+      expect(item.updatedAt.isAfter(addedOnDiscogs), isTrue);
+    });
+
+    test('without a Discogs date it falls back to the import moment', () async {
+      final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+          makeUseCase();
+      final before = DateTime.now();
+      await useCase.execute(
+        CollectionImportPreview(
+          rows: const [NewCollectionRow(releaseId: 1, title: 'T', artist: 'A')],
+        ),
+      );
+      expect(collectionRepo.added.single.createdAt.isBefore(before), isFalse);
+    });
+
+    test('an already-linked item gets the earlier Discogs date, nothing '
+        'else changes', () async {
+      final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+          makeUseCase();
+      final importedAt = DateTime(2026, 6, 1);
+      collectionRepo.existing.add(
+        CollectionItem(
+          id: 'local-1',
+          discogsReleaseId: 1,
+          discogsInstanceId: 777,
+          artist: 'A',
+          title: 'T',
+          notes: 'mine',
+          mediaCondition: RecordCondition.nearMint,
+          sleeveCondition: RecordCondition.veryGood,
+          tags: const ['jazz'],
+          syncStatus: SyncStatus.synced,
+          createdAt: importedAt,
+          updatedAt: importedAt,
+        ),
+      );
+      final addedOnDiscogs = DateTime.utc(2018, 2, 3);
+
+      await useCase.execute(
+        CollectionImportPreview(
+          rows: [
+            DuplicateCollectionRow(
+              releaseId: 1,
+              title: 'T',
+              artist: 'A',
+              instanceId: 777,
+              dateAdded: addedOnDiscogs,
+            ),
+          ],
+        ),
+      );
+
+      final fixed = collectionRepo.updated.single;
+      expect(fixed.createdAt.isAtSameMomentAs(addedOnDiscogs), isTrue);
+      expect(fixed.notes, 'mine');
+      expect(fixed.tags, ['jazz']);
+      expect(fixed.mediaCondition, RecordCondition.nearMint);
+      expect(fixed.updatedAt, importedAt);
+    });
+
+    test(
+      'an already-linked item with an earlier local date is untouched',
+      () async {
+        final (:useCase, :collectionRepo, :jobRepo, :rowResultRepo) =
+            makeUseCase();
+        collectionRepo.existing.add(
+          CollectionItem(
+            id: 'local-1',
+            discogsReleaseId: 1,
+            discogsInstanceId: 777,
+            artist: 'A',
+            title: 'T',
+            mediaCondition: RecordCondition.veryGood,
+            sleeveCondition: RecordCondition.veryGood,
+            tags: const [],
+            syncStatus: SyncStatus.synced,
+            createdAt: DateTime(2015),
+            updatedAt: DateTime(2015),
+          ),
+        );
+        await useCase.execute(
+          CollectionImportPreview(
+            rows: [
+              DuplicateCollectionRow(
+                releaseId: 1,
+                title: 'T',
+                artist: 'A',
+                instanceId: 777,
+                dateAdded: DateTime.utc(2020),
+              ),
+            ],
+          ),
+        );
+        expect(collectionRepo.updated, isEmpty);
+      },
+    );
+
+    test('linking keeps the earliest added date', () {
+      final local = DateTime(2026, 11, 1);
+      expect(
+        earlierAdded(local, DateTime.utc(2020, 5, 1)),
+        DateTime.utc(2020, 5, 1).toLocal(),
+      );
+      expect(earlierAdded(local, DateTime.utc(2026, 11, 10)), local);
+      expect(earlierAdded(local, null), local);
     });
   });
 }

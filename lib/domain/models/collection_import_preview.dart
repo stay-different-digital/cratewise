@@ -8,6 +8,7 @@ sealed class CollectionImportRow {
     this.year,
     this.thumbUrl,
     this.instanceId,
+    this.dateAdded,
   });
 
   final int releaseId;
@@ -19,6 +20,10 @@ sealed class CollectionImportRow {
   /// Discogs collection instance id for this row (US-72), carried through so
   /// imported and linked items can later be removed from Discogs.
   final int? instanceId;
+
+  /// When the user added this release to their Discogs collection (US-166);
+  /// becomes the local "added" date. Null when Discogs gave none.
+  final DateTime? dateAdded;
 }
 
 /// Item is not yet in the local collection and has valid metadata.
@@ -30,6 +35,7 @@ class NewCollectionRow extends CollectionImportRow {
     super.year,
     super.thumbUrl,
     super.instanceId,
+    super.dateAdded,
   });
 }
 
@@ -42,6 +48,7 @@ class DuplicateCollectionRow extends CollectionImportRow {
     super.year,
     super.thumbUrl,
     super.instanceId,
+    super.dateAdded,
     this.linkTargetId,
   });
 
@@ -77,6 +84,7 @@ class ConflictCollectionRow extends CollectionImportRow {
     super.year,
     super.thumbUrl,
     super.instanceId,
+    super.dateAdded,
   });
 }
 

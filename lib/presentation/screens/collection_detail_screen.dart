@@ -981,7 +981,7 @@ class _CollectionDetailBody extends StatelessWidget {
                   if (item.notes != null && item.notes!.isNotEmpty)
                     _NotesSection(notes: item.notes!),
                   if (item.tags.isNotEmpty) _TagsSection(tags: item.tags),
-                        if (_hasTracklist)
+                  if (_hasTracklist)
                     ReleaseTracklistSection(tracks: releaseDetail!.tracklist),
                   if (_hasReleaseNotes)
                     ReleaseNotesSection(notes: releaseDetail!.notes!),

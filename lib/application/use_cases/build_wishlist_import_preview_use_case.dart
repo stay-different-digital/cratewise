@@ -64,6 +64,7 @@ class BuildWishlistImportPreviewUseCase {
         artist: item.artist,
         year: item.year,
         thumbUrl: item.thumbUrl,
+        dateAdded: DateTime.tryParse(item.dateAdded),
       );
     }
     return NewWishlistRow(
@@ -72,6 +73,7 @@ class BuildWishlistImportPreviewUseCase {
       artist: item.artist,
       year: item.year,
       thumbUrl: item.thumbUrl,
+      dateAdded: DateTime.tryParse(item.dateAdded),
     );
   }
 

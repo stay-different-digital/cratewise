@@ -89,6 +89,7 @@ class BuildCollectionImportPreviewUseCase {
         year: item.year,
         thumbUrl: item.thumbUrl,
         instanceId: item.instanceId,
+        dateAdded: DateTime.tryParse(item.dateAdded),
       );
     }
     final alreadyLinked =
@@ -102,6 +103,7 @@ class BuildCollectionImportPreviewUseCase {
         year: item.year,
         thumbUrl: item.thumbUrl,
         instanceId: item.instanceId,
+        dateAdded: DateTime.tryParse(item.dateAdded),
         linkTargetId: alreadyLinked ? null : unlinked!.removeAt(0),
       );
     }
@@ -112,6 +114,7 @@ class BuildCollectionImportPreviewUseCase {
       year: item.year,
       thumbUrl: item.thumbUrl,
       instanceId: item.instanceId,
+      dateAdded: DateTime.tryParse(item.dateAdded),
     );
   }
 }

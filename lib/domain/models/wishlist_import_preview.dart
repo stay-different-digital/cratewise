@@ -7,6 +7,7 @@ sealed class WishlistImportRow {
     required this.artist,
     this.year,
     this.thumbUrl,
+    this.dateAdded,
   });
 
   final int releaseId;
@@ -14,6 +15,9 @@ sealed class WishlistImportRow {
   final String artist;
   final int? year;
   final String? thumbUrl;
+
+  /// When the user added this release to their Discogs wantlist (US-166).
+  final DateTime? dateAdded;
 }
 
 /// Item is not yet in the local wishlist and has valid metadata.
@@ -24,6 +28,7 @@ class NewWishlistRow extends WishlistImportRow {
     required super.artist,
     super.year,
     super.thumbUrl,
+    super.dateAdded,
   });
 }
 
@@ -35,6 +40,7 @@ class DuplicateWishlistRow extends WishlistImportRow {
     required super.artist,
     super.year,
     super.thumbUrl,
+    super.dateAdded,
   });
 }
 
@@ -48,6 +54,7 @@ class InvalidWishlistRow extends WishlistImportRow {
     required this.reason,
     super.year,
     super.thumbUrl,
+    super.dateAdded,
   });
 
   final String reason;
@@ -64,6 +71,7 @@ class ConflictWishlistRow extends WishlistImportRow {
     required super.artist,
     super.year,
     super.thumbUrl,
+    super.dateAdded,
   });
 }
 

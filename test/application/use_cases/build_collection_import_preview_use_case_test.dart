@@ -522,6 +522,18 @@ void main() {
       expect(preview.rows[1], isA<DuplicateCollectionRow>());
     });
   });
+
+  group('date added on Discogs (US-166)', () {
+    test('is read from the Discogs notation with its time zone', () async {
+      final preview = await makeUseCase(
+        FakeCollectionRepository(),
+      ).execute([makeItem()]);
+      final row = preview.rows.single as NewCollectionRow;
+      // 2023-01-15T10:30:00-08:00 is 18:30 UTC.
+      expect(row.dateAdded!.isUtc, isTrue);
+      expect(row.dateAdded, DateTime.utc(2023, 1, 15, 18, 30));
+    });
+  });
 }
 
 class _ItemsRepository extends FakeCollectionRepository {

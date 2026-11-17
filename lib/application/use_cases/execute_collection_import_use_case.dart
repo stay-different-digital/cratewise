@@ -95,14 +95,19 @@ class ExecuteCollectionImportUseCase {
       await _maybeTransaction(() async {
         await _jobRepository.add(job);
 
-        // Local items the preview chose as link targets (US-129).
-        final hasLinks = preview.rows.any(
-          (r) => r is DuplicateCollectionRow && r.linkTargetId != null,
+        // Local items the preview chose as link targets (US-129), and
+        // already-linked items by instance id (to correct their added date,
+        // US-166).
+        final hasDuplicates = preview.rows.any(
+          (r) => r is DuplicateCollectionRow,
         );
-        final existingById = {
-          if (hasLinks)
-            for (final item in await _collectionRepository.getAll())
-              item.id: item,
+        final localItems = hasDuplicates
+            ? await _collectionRepository.getAll()
+            : const <CollectionItem>[];
+        final existingById = {for (final item in localItems) item.id: item};
+        final existingByInstance = {
+          for (final item in localItems)
+            if (item.discogsInstanceId != null) item.discogsInstanceId!: item,
         };
 
         for (var i = 0; i < preview.rows.length; i++) {
@@ -139,6 +144,10 @@ class ExecuteCollectionImportUseCase {
                     existing.copyWith(
                       syncStatus: SyncStatus.synced,
                       discogsInstanceId: row.instanceId,
+                      createdAt: earlierAdded(
+                        existing.createdAt,
+                        row.dateAdded,
+                      ),
                       updatedAt: DateTime.now(),
                     ),
                   );
@@ -162,6 +171,18 @@ class ExecuteCollectionImportUseCase {
                   failed++;
                 }
               } else {
+                // Already linked: only move the added date back to when it
+                // was added on Discogs, if that's earlier (US-166). Nothing
+                // else about the local item changes.
+                final linked = existingByInstance[row.instanceId];
+                if (linked != null) {
+                  final added = earlierAdded(linked.createdAt, row.dateAdded);
+                  if (added != linked.createdAt) {
+                    await _collectionRepository.update(
+                      linked.copyWith(createdAt: added),
+                    );
+                  }
+                }
                 await _rowResultRepository.addResult(
                   jobId,
                   SkippedRow(rowIndex: i, reason: 'Already linked to Discogs'),
@@ -248,8 +269,14 @@ class ExecuteCollectionImportUseCase {
       tags: const [],
       syncStatus: SyncStatus.synced,
       discogsInstanceId: row.instanceId,
-      createdAt: now,
+      // When the user added it on Discogs (US-166), not the import moment.
+      createdAt: row.dateAdded?.toLocal() ?? now,
       updatedAt: now,
     );
   }
 }
+
+/// The "added" date to keep when linking a local item to its Discogs entry
+/// (US-166): the Discogs date if it's earlier, otherwise the local one.
+DateTime earlierAdded(DateTime local, DateTime? discogs) =>
+    discogs != null && discogs.isBefore(local) ? discogs.toLocal() : local;
