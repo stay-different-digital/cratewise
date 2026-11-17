@@ -119,6 +119,8 @@ Toegevoegd in US-121. De velden zitten in het domeinmodel (`CollectionItem.bpm`,
 
 ### US-166: Collectie en Verlanglijst: datum toegevoegd overnemen bij import van Discogs
 
+**Status: In Progress**
+
 **Priority: Medium · 2 SP**
 
 > Als verzamelaar die zijn collectie uit Discogs heeft geïmporteerd,
