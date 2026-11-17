@@ -174,6 +174,8 @@ De verlanglijst heeft een filterknop (`wishlist-filter-button`) en opgeslagen fi
 
 ### US-167: Bug: "Ongedaan maken"-balk na verwijderen van een opgeslagen zoekopdracht verdwijnt niet
 
+**Status: In Progress**
+
 **Priority: High · 1 SP**
 
 > Als gebruiker,
