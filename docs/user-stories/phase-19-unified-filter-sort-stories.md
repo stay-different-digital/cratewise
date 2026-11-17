@@ -14,8 +14,9 @@ Doel: gebruikersfeedback verwerken. Op alle drie de lijstschermen werkt filteren
 | US-166 | Collectie en Verlanglijst: datum toegevoegd overnemen bij import van Discogs | Medium | 2 | — |
 | US-163 | Collectie: sorteericoon weg, Nieuwste/Oudste eerst bovenaan in "Filter collection" | High | 2 | US-162, US-165, US-166 |
 | US-164 | Verlanglijst: Nieuwste/Oudste eerst bovenaan in het filter | Medium | 2 | US-162, US-166 |
+| US-167 | Bug: "Ongedaan maken"-balk na verwijderen van een opgeslagen zoekopdracht verdwijnt niet | High | 1 | — |
 
-Totaal: 16 SP. Volgorde: US-161 → US-162 → US-165 → US-166 → US-163 → US-164.
+Totaal: 17 SP. Volgorde: US-167 eerst (bug, los van de rest), daarna US-161 → US-162 → US-165 → US-166 → US-163 → US-164.
 
 ## Besluiten
 
@@ -168,3 +169,23 @@ De verlanglijst heeft een filterknop (`wishlist-filter-button`) en opgeslagen fi
 - Sorteren op `createdAt` gebruikt dezelfde code als US-163 (geen tweede implementatie).
 - Vertaald in alle vijf talen.
 - Tests: unit-test dat de gedeelde sortering op `WishlistItem` werkt; widget-test dat Oudste eerst de lijst omdraait en de badge bijwerkt.
+
+---
+
+### US-167: Bug: "Ongedaan maken"-balk na verwijderen van een opgeslagen zoekopdracht verdwijnt niet
+
+**Priority: High · 1 SP**
+
+> Als gebruiker,
+> wil ik dat de balk "… deleted · Undo" na het verwijderen van een opgeslagen zoekopdracht na een paar seconden vanzelf verdwijnt,
+> zodat hij niet blijft hangen over Zoeken, Collectie en Verlanglijst.
+
+**Context:**
+Gebruikersfeedback (2026-11-17): na het verwijderen van een saved search blijft de undo-balk permanent in beeld, op Zoeken, Collectie en Verlanglijst. Waarschijnlijke oorzaak: sinds Flutter 3.29 sluit een `SnackBar` met een actie niet meer vanzelf (`persist` is dan standaard `true`). [`_delete` in saved_searches_screen.dart](lib/presentation/screens/saved_searches_screen.dart#L75) toont zo'n snackbar zonder `duration` of `persist`. Hij hangt aan de app-brede `ScaffoldMessenger`, dus hij blijft ook staan na terugkeren naar het lijstscherm. Hetzelfde patroon staat in [import_export_history_screen.dart:132](lib/presentation/screens/import_export_history_screen.dart#L132) (Undo-actie zonder werking). Eerst de oorzaak bevestigen met een test die het probleem laat zien.
+
+**Acceptance criteria:**
+- De undo-balk na het verwijderen van een opgeslagen zoekopdracht verdwijnt na ongeveer 4 seconden vanzelf, ook als de gebruiker intussen teruggaat naar Zoeken, Collectie of Verlanglijst.
+- "Undo" binnen die tijd zet de opgeslagen zoekopdracht terug (bestaand gedrag).
+- Dezelfde fix voor alle snackbars met een actie in de app (ten minste `import_export_history_screen.dart`); een Undo-knop die niets doet wordt weggehaald of laten werken.
+- Tests: widget-test die faalt vóór de fix (balk blijft staan) en slaagt erna (balk weg na de duur); test dat Undo binnen de tijd herstelt; controle op de andere snackbar(s) met een actie.
+
