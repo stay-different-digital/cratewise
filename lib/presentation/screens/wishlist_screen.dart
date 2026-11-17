@@ -8,6 +8,7 @@ import 'package:sensors_plus/sensors_plus.dart';
 import '../../app/app_repositories.dart';
 import '../../app/router.dart';
 import '../../application/services/thumbnail_cache_service.dart';
+import '../../domain/models/added_date_sort.dart';
 import '../../domain/models/cached_release_metadata.dart';
 import '../../domain/models/saved_search.dart';
 import '../../domain/models/wishlist_filter_set.dart';
@@ -80,6 +81,11 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
   _WishlistState _state = const _Loading();
   List<CachedReleaseMetadata> _metadata = const [];
   WishlistFilterSet _filter = const WishlistFilterSet();
+  AddedDateSort _sort = AddedDateSort.newestFirst;
+
+  /// Badge count: active filters plus a non-default sort (US-164).
+  int get _activeCount =>
+      _filter.activeCount + (_sort != AddedDateSort.newestFirst ? 1 : 0);
   final _searchController = TextEditingController();
   Timer? _debounce;
   String _debouncedQuery = '';
@@ -205,17 +211,23 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
     final items = _state is _Loaded
         ? (_state as _Loaded).items
         : <WishlistItem>[];
-    final result = await showModalBottomSheet<WishlistFilterSet>(
+    final result = await showModalBottomSheet<WishlistFilterResult>(
       context: context,
       isScrollControlled: true,
       builder: (_) => WishlistFilterSheet(
         current: _filter,
+        sort: _sort,
         items: items,
         metadata: _metadata,
         savedSearchRepository: _savedSearchRepository,
       ),
     );
-    if (result != null && mounted) setState(() => _filter = result);
+    if (result != null && mounted) {
+      setState(() {
+        _filter = result.filter;
+        _sort = result.sort;
+      });
+    }
   }
 
   Future<void> _openSavedSearches() async {
@@ -244,6 +256,7 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
     if (!_filter.isEmpty) {
       filtered = _filter.apply(filtered, metadata: _metadata);
     }
+    filtered = _sort.apply(filtered, (i) => i.createdAt);
 
     if (filtered.isEmpty) {
       return _NoSearchResults(query: _debouncedQuery.trim());
@@ -350,8 +363,8 @@ class _WishlistScreenState extends State<WishlistScreen> with RouteAware {
               IconButton(
                 key: const Key('wishlist-filter-button'),
                 icon: Badge(
-                  isLabelVisible: !_filter.isEmpty,
-                  label: Text('${_filter.activeCount}'),
+                  isLabelVisible: _activeCount > 0,
+                  label: Text('$_activeCount'),
                   child: const Icon(Icons.filter_list_outlined),
                 ),
                 tooltip: 'Filter',

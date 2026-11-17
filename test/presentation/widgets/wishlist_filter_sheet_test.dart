@@ -1,4 +1,6 @@
+import 'package:cratewise/app/localization_delegates.dart';
 import 'package:cratewise/domain/models/wishlist_filter_set.dart';
+import 'package:cratewise/l10n/app_localizations.dart';
 import 'package:cratewise/domain/models/wishlist_item.dart';
 import 'package:cratewise/presentation/widgets/wishlist_filter_sheet.dart';
 import 'package:material_ui/material_ui.dart';
@@ -22,9 +24,11 @@ void main() {
       _item('v', 'Vinyl, 12", 33 ⅓ RPM'),
       _item('f', 'File, MP3, 320 kbps'),
     ];
-    late Future<WishlistFilterSet?> result;
+    late Future<WishlistFilterResult?> result;
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: Builder(
             builder: (context) => Center(
@@ -64,8 +68,8 @@ void main() {
     await tester.tap(apply);
     await tester.pumpAndSettle();
 
-    final filter = (await result)!;
-    expect(filter.formats, {'Vinyl'});
-    expect(filter.apply(items).map((i) => i.id), ['v']);
+    final applied = (await result)!;
+    expect(applied.filter.formats, {'Vinyl'});
+    expect(applied.filter.apply(items).map((i) => i.id), ['v']);
   });
 }

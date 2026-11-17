@@ -166,6 +166,7 @@ WishlistItem _makeItem({
   int? year,
   String? format,
   double? targetPrice,
+  DateTime? createdAt,
 }) => WishlistItem(
   id: id,
   discogsReleaseId: releaseId,
@@ -176,7 +177,7 @@ WishlistItem _makeItem({
   year: year,
   format: format,
   targetPrice: targetPrice,
-  createdAt: DateTime(2026, 1, 1),
+  createdAt: createdAt ?? DateTime(2026, 1, 1),
   updatedAt: DateTime(2026, 1, 1),
 );
 
@@ -938,6 +939,43 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Je verlanglijst is leeg'), findsOneWidget);
+    });
+  });
+
+  group('WishlistScreen — sort in the filter sheet (US-164)', () {
+    testWidgets('oldest first reverses the list and shows in the badge', (
+      tester,
+    ) async {
+      final repo = _FakeWishlistRepository(
+        items: [
+          _makeItem(id: 'n', title: 'Newest', createdAt: DateTime(2026, 3)),
+          _makeItem(id: 'o', title: 'Oldest', createdAt: DateTime(2019)),
+        ],
+      );
+      await tester.pumpWidget(_wrap(WishlistScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      List<String> titles() => tester
+          .widgetList<WishlistItemCard>(find.byType(WishlistItemCard))
+          .map((c) => c.item.title)
+          .toList();
+      expect(titles(), ['Newest', 'Oldest']);
+
+      await tester.tap(find.byKey(const Key('wishlist-filter-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('sort-option-oldestFirst')));
+      await tester.pump();
+      await tester.ensureVisible(find.byKey(const Key('apply-filter-button')));
+      await tester.tap(find.byKey(const Key('apply-filter-button')));
+      await tester.pumpAndSettle();
+
+      expect(titles(), ['Oldest', 'Newest']);
+      final badge = tester.widget<Badge>(
+        find.descendant(
+          of: find.byKey(const Key('wishlist-filter-button')),
+          matching: find.byType(Badge),
+        ),
+      );
+      expect((badge.label! as Text).data, '1');
     });
   });
 }

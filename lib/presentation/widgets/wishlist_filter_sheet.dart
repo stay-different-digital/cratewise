@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../domain/models/added_date_sort.dart';
 import '../../domain/models/cached_release_metadata.dart';
 import '../../domain/models/format_types.dart';
 import '../../domain/models/saved_search.dart';
@@ -8,6 +9,12 @@ import '../../domain/models/sync_status.dart';
 import '../../domain/models/wishlist_filter_set.dart';
 import '../../domain/models/wishlist_item.dart';
 import '../../domain/repositories/saved_search_repository.dart';
+import '../../l10n/app_localizations.dart';
+import 'filter_sheet_parts.dart';
+
+/// What the wishlist filter sheet returns on Apply: the filters and the sort
+/// order (US-164).
+typedef WishlistFilterResult = ({WishlistFilterSet filter, AddedDateSort sort});
 
 class WishlistFilterSheet extends StatefulWidget {
   const WishlistFilterSheet({
@@ -15,10 +22,12 @@ class WishlistFilterSheet extends StatefulWidget {
     required this.current,
     required this.items,
     required this.metadata,
+    this.sort = AddedDateSort.newestFirst,
     this.savedSearchRepository,
   });
 
   final WishlistFilterSet current;
+  final AddedDateSort sort;
   final List<WishlistItem> items;
   final List<CachedReleaseMetadata> metadata;
   final SavedSearchRepository? savedSearchRepository;
@@ -85,6 +94,7 @@ class _Chip extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _WishlistFilterSheetState extends State<WishlistFilterSheet> {
+  late AddedDateSort _sort = widget.sort;
   late Set<int> _decades;
   late Set<String> _formats;
   late Set<String> _labels;
@@ -236,6 +246,7 @@ class _WishlistFilterSheetState extends State<WishlistFilterSheet> {
                 TextButton(
                   key: const Key('clear-all-button'),
                   onPressed: () => setState(() {
+                    _sort = AddedDateSort.newestFirst;
                     _decades.clear();
                     _formats.clear();
                     _labels.clear();
@@ -257,6 +268,22 @@ class _WishlistFilterSheetState extends State<WishlistFilterSheet> {
               controller: scrollController,
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               children: [
+                // Same sort section as Search and Collection (US-164).
+                SortSection<AddedDateSort>(
+                  title: AppLocalizations.of(context)!.sortTitle,
+                  options: [
+                    (
+                      value: AddedDateSort.newestFirst,
+                      label: AppLocalizations.of(context)!.sortNewestFirst,
+                    ),
+                    (
+                      value: AddedDateSort.oldestFirst,
+                      label: AppLocalizations.of(context)!.sortOldestFirst,
+                    ),
+                  ],
+                  selected: _sort,
+                  onChanged: (s) => setState(() => _sort = s),
+                ),
                 if (_availableDecades.isNotEmpty)
                   _Section(
                     title: 'Decade',
@@ -431,7 +458,9 @@ class _WishlistFilterSheetState extends State<WishlistFilterSheet> {
               width: double.infinity,
               child: FilledButton(
                 key: const Key('apply-filter-button'),
-                onPressed: () => Navigator.of(context).pop(_current),
+                onPressed: () => Navigator.of(
+                  context,
+                ).pop<WishlistFilterResult>((filter: _current, sort: _sort)),
                 child: const Text('Apply'),
               ),
             ),
