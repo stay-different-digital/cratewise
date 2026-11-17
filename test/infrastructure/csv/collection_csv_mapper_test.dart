@@ -22,10 +22,6 @@ CollectionItem _fullItem() => CollectionItem(
   syncStatus: SyncStatus.synced,
   createdAt: DateTime.utc(2024, 1, 15, 10, 0, 0),
   updatedAt: DateTime.utc(2024, 6, 1, 12, 30, 0),
-  bpm: 128,
-  musicalKey: MusicalKey.aMajor,
-  energyLevel: 4,
-  gigCrates: ['Summer Set', 'Techno Night'],
 );
 
 CollectionItem _minimalItem() => CollectionItem(
@@ -45,16 +41,20 @@ void main() {
   const mapper = CollectionCsvMapper();
 
   group('collectionCsvHeaders', () {
-    test('contains 19 headers', () {
-      expect(collectionCsvHeaders.length, 19);
+    test('contains 15 headers, none of the removed DJ columns (US-165)', () {
+      expect(collectionCsvHeaders.length, 15);
+      expect(
+        collectionCsvHeaders,
+        isNot(anyOf(contains('BPM'), contains('Musical Key'))),
+      );
+      expect(
+        collectionCsvHeaders,
+        isNot(anyOf(contains('Energy'), contains('Gig Crates'))),
+      );
     });
 
     test('first header is Artist', () {
       expect(collectionCsvHeaders.first, 'Artist');
-    });
-
-    test('last header is Gig Crates', () {
-      expect(collectionCsvHeaders.last, 'Gig Crates');
     });
 
     test('contains expected fields', () {
@@ -65,10 +65,6 @@ void main() {
       expect(collectionCsvHeaders, contains('Storage Location'));
       expect(collectionCsvHeaders, contains('Created Date'));
       expect(collectionCsvHeaders, contains('Updated Date'));
-      expect(collectionCsvHeaders, contains('BPM'));
-      expect(collectionCsvHeaders, contains('Musical Key'));
-      expect(collectionCsvHeaders, contains('Energy'));
-      expect(collectionCsvHeaders, contains('Gig Crates'));
     });
   });
 
@@ -142,22 +138,6 @@ void main() {
     test('updatedAt maps to column 14 as ISO 8601', () {
       expect(row[14], '2024-06-01T12:30:00.000Z');
     });
-
-    test('bpm maps to column 15', () {
-      expect(row[15], '128');
-    });
-
-    test('musicalKey maps to column 16 as label', () {
-      expect(row[16], 'A major');
-    });
-
-    test('energyLevel maps to column 17', () {
-      expect(row[17], '4');
-    });
-
-    test('gigCrates are pipe-joined in column 18', () {
-      expect(row[18], 'Summer Set|Techno Night');
-    });
   });
 
   group('CollectionCsvMapper.toRow — optional fields absent', () {
@@ -205,22 +185,6 @@ void main() {
 
     test('mediaCondition notSet maps to Not set label', () {
       expect(row[8], 'Not set');
-    });
-
-    test('null bpm becomes empty string', () {
-      expect(row[15], '');
-    });
-
-    test('null musicalKey becomes empty string', () {
-      expect(row[16], '');
-    });
-
-    test('null energyLevel becomes empty string', () {
-      expect(row[17], '');
-    });
-
-    test('empty gigCrates becomes empty string', () {
-      expect(row[18], '');
     });
   });
 

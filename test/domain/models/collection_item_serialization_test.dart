@@ -112,68 +112,29 @@ void main() {
     test('tryFromJson returns null for JSON missing required fields', () {
       expect(CollectionItem.tryFromJson('{"id":"x"}'), isNull);
     });
+  });
 
-    test('round-trips DJ fields (US-121)', () {
-      final item = CollectionItem(
-        id: 'dj-1',
-        discogsReleaseId: 11111,
-        artist: 'Daft Punk',
-        title: 'Around the World',
-        mediaCondition: RecordCondition.nearMint,
-        sleeveCondition: RecordCondition.veryGoodPlus,
-        tags: const [],
-        createdAt: DateTime(2026, 1, 1),
-        updatedAt: DateTime(2026, 1, 2),
-        bpm: 121,
-        musicalKey: MusicalKey.aMajor,
-        energyLevel: 5,
-        gigCrates: ['House Night', 'Summer Set'],
-      );
-      final decoded = CollectionItem.fromJson(item.toJson());
-      expect(decoded.bpm, 121);
-      expect(decoded.musicalKey, MusicalKey.aMajor);
-      expect(decoded.energyLevel, 5);
-      expect(decoded.gigCrates, ['House Night', 'Summer Set']);
-    });
-
-    test('fromJson with missing DJ fields defaults to null/empty (US-121)', () {
-      final item = _makeItem();
-      final json = item.toJson()
-        ..remove('bpm')
-        ..remove('musicalKey')
-        ..remove('energyLevel')
-        ..remove('gigCrates');
-      final decoded = CollectionItem.fromJson(json);
-      expect(decoded.bpm, isNull);
-      expect(decoded.musicalKey, isNull);
-      expect(decoded.energyLevel, isNull);
-      expect(decoded.gigCrates, isEmpty);
-    });
-
-    test('copyWith keeps DJ fields when omitted and clears via closure', () {
-      final item = _makeItem().copyWith(
-        bpm: () => 128,
-        musicalKey: () => MusicalKey.gbMinor,
-        energyLevel: () => 4,
-        gigCrates: ['Warmup'],
-      );
-
-      final untouched = item.copyWith(notes: 'other edit');
-      expect(untouched.bpm, 128);
-      expect(untouched.musicalKey, MusicalKey.gbMinor);
-      expect(untouched.energyLevel, 4);
-      expect(untouched.gigCrates, ['Warmup']);
-
-      final cleared = item.copyWith(
-        bpm: () => null,
-        musicalKey: () => null,
-        energyLevel: () => null,
-        gigCrates: [],
-      );
-      expect(cleared.bpm, isNull);
-      expect(cleared.musicalKey, isNull);
-      expect(cleared.energyLevel, isNull);
-      expect(cleared.gigCrates, isEmpty);
+  group('CollectionItem JSON stored before US-165', () {
+    test('DJ keys in old payloads are ignored', () {
+      final json = {
+        'id': 'x',
+        'discogsReleaseId': 1,
+        'artist': 'A',
+        'title': 'T',
+        'mediaCondition': 'veryGood',
+        'sleeveCondition': 'veryGood',
+        'tags': <String>[],
+        'syncStatus': 'localOnly',
+        'createdAt': '2026-01-01T00:00:00.000',
+        'updatedAt': '2026-01-01T00:00:00.000',
+        'bpm': 128,
+        'musicalKey': 'aMinor',
+        'energyLevel': 4,
+        'gigCrates': ['Warmup'],
+      };
+      final item = CollectionItem.fromJson(json);
+      expect(item.id, 'x');
+      expect(item.toJson().keys, isNot(contains('bpm')));
     });
   });
 }

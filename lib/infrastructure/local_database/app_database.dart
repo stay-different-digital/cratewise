@@ -127,16 +127,6 @@ class RetryActionTypeConverter extends TypeConverter<RetryActionType, String> {
   String toSql(RetryActionType value) => value.name;
 }
 
-class MusicalKeyConverter extends TypeConverter<MusicalKey, String> {
-  const MusicalKeyConverter();
-
-  @override
-  MusicalKey fromSql(String fromDb) => MusicalKey.values.byName(fromDb);
-
-  @override
-  String toSql(MusicalKey value) => value.name;
-}
-
 class RetryActionEntityTypeConverter
     extends TypeConverter<RetryActionEntityType, String> {
   const RetryActionEntityTypeConverter();
@@ -211,13 +201,6 @@ class CollectionItems extends Table {
   TextColumn get syncStatus =>
       text().nullable().map(const SyncStatusConverter())();
   IntColumn get discogsInstanceId => integer().nullable()();
-  // DJ metadata (US-121) — local only, never synced to Discogs.
-  IntColumn get bpm => integer().nullable()();
-  TextColumn get musicalKey =>
-      text().nullable().map(const MusicalKeyConverter())();
-  IntColumn get energyLevel => integer().nullable()();
-  TextColumn get gigCrates =>
-      text().nullable().map(const StringListConverter())();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -383,7 +366,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 13;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -424,14 +407,16 @@ class AppDatabase extends _$AppDatabase {
       if (from < 10) {
         await m.createTable(pendingDiscogsDeletions);
       }
-      if (from < 11) {
-        await m.addColumn(collectionItems, collectionItems.bpm);
-        await m.addColumn(collectionItems, collectionItems.musicalKey);
-        await m.addColumn(collectionItems, collectionItems.energyLevel);
-        await m.addColumn(collectionItems, collectionItems.gigCrates);
-      }
+      // v11 added the DJ columns (bpm, musical_key, energy_level,
+      // gig_crates); v13 removed them again (US-165). Databases older than
+      // v11 simply never get them.
       if (from < 12) {
         await m.createTable(savedSearches);
+      }
+      if (from >= 11 && from < 13) {
+        // Rebuild collection_items with the current columns, copying all
+        // remaining data (SQLite can't drop columns reliably everywhere).
+        await m.alterTable(TableMigration(collectionItems));
       }
     },
   );

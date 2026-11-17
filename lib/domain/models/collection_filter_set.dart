@@ -18,11 +18,6 @@ class CollectionFilterSet {
     this.storageLocation,
     this.syncStatuses = const {},
     this.hasCover,
-    this.bpmMin,
-    this.bpmMax,
-    this.musicalKeys = const {},
-    this.energyLevels = const {},
-    this.gigCrates = const {},
   });
 
   final Set<int> decades;
@@ -37,13 +32,6 @@ class CollectionFilterSet {
   final Set<SyncStatus> syncStatuses;
   final bool? hasCover;
 
-  // DJ fields (US-121)
-  final int? bpmMin;
-  final int? bpmMax;
-  final Set<MusicalKey> musicalKeys;
-  final Set<int> energyLevels;
-  final Set<String> gigCrates;
-
   bool get isEmpty =>
       decades.isEmpty &&
       formats.isEmpty &&
@@ -55,12 +43,7 @@ class CollectionFilterSet {
       tags.isEmpty &&
       storageLocation == null &&
       syncStatuses.isEmpty &&
-      hasCover == null &&
-      bpmMin == null &&
-      bpmMax == null &&
-      musicalKeys.isEmpty &&
-      energyLevels.isEmpty &&
-      gigCrates.isEmpty;
+      hasCover == null;
 
   int get activeCount =>
       (decades.isNotEmpty ? 1 : 0) +
@@ -73,11 +56,7 @@ class CollectionFilterSet {
       (tags.isNotEmpty ? 1 : 0) +
       (storageLocation != null ? 1 : 0) +
       (syncStatuses.isNotEmpty ? 1 : 0) +
-      (hasCover != null ? 1 : 0) +
-      ((bpmMin != null || bpmMax != null) ? 1 : 0) +
-      (musicalKeys.isNotEmpty ? 1 : 0) +
-      (energyLevels.isNotEmpty ? 1 : 0) +
-      (gigCrates.isNotEmpty ? 1 : 0);
+      (hasCover != null ? 1 : 0);
 
   List<CollectionItem> apply(
     List<CollectionItem> items, {
@@ -128,24 +107,6 @@ class CollectionFilterSet {
         final has = item.coverUrl != null && item.coverUrl!.isNotEmpty;
         if (has != hasCover) return false;
       }
-      if (bpmMin != null && (item.bpm == null || item.bpm! < bpmMin!)) {
-        return false;
-      }
-      if (bpmMax != null && (item.bpm == null || item.bpm! > bpmMax!)) {
-        return false;
-      }
-      if (musicalKeys.isNotEmpty &&
-          (item.musicalKey == null || !musicalKeys.contains(item.musicalKey))) {
-        return false;
-      }
-      if (energyLevels.isNotEmpty &&
-          (item.energyLevel == null ||
-              !energyLevels.contains(item.energyLevel))) {
-        return false;
-      }
-      if (gigCrates.isNotEmpty && !item.gigCrates.any(gigCrates.contains)) {
-        return false;
-      }
       return true;
     }).toList();
   }
@@ -163,11 +124,6 @@ class CollectionFilterSet {
     'storageLocation': storageLocation,
     'syncStatuses': syncStatuses.map((s) => s.name).toList(),
     'hasCover': hasCover,
-    'bpmMin': bpmMin,
-    'bpmMax': bpmMax,
-    'musicalKeys': musicalKeys.map((k) => k.name).toList(),
-    'energyLevels': (energyLevels.toList()..sort()),
-    'gigCrates': gigCrates.toList(),
   };
 
   static CollectionFilterSet fromJson(Map<String, dynamic> json) =>
@@ -198,20 +154,8 @@ class CollectionFilterSet {
             .map((n) => SyncStatus.values.byName(n))
             .toSet(),
         hasCover: json['hasCover'] as bool?,
-        // DJ keys are absent in payloads saved before US-121; default them
-        // so old saved searches keep loading.
-        bpmMin: json['bpmMin'] as int?,
-        bpmMax: json['bpmMax'] as int?,
-        musicalKeys: ((json['musicalKeys'] as List?) ?? const [])
-            .cast<String>()
-            .map((n) => MusicalKey.values.byName(n))
-            .toSet(),
-        energyLevels: ((json['energyLevels'] as List?) ?? const [])
-            .cast<int>()
-            .toSet(),
-        gigCrates: ((json['gigCrates'] as List?) ?? const [])
-            .cast<String>()
-            .toSet(),
+        // Sets saved between US-121 and US-165 also hold bpmMin, bpmMax,
+        // musicalKeys, energyLevels and gigCrates; they are ignored.
       );
 
   String toJsonString() => jsonEncode(toJson());

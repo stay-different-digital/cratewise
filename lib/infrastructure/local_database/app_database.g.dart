@@ -178,46 +178,6 @@ class $CollectionItemsTable extends CollectionItems
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _bpmMeta = const VerificationMeta('bpm');
-  @override
-  late final GeneratedColumn<int> bpm = GeneratedColumn<int>(
-    'bpm',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  @override
-  late final GeneratedColumnWithTypeConverter<MusicalKey?, String> musicalKey =
-      GeneratedColumn<String>(
-        'musical_key',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      ).withConverter<MusicalKey?>($CollectionItemsTable.$convertermusicalKeyn);
-  static const VerificationMeta _energyLevelMeta = const VerificationMeta(
-    'energyLevel',
-  );
-  @override
-  late final GeneratedColumn<int> energyLevel = GeneratedColumn<int>(
-    'energy_level',
-    aliasedName,
-    true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-  );
-  @override
-  late final GeneratedColumnWithTypeConverter<List<String>?, String> gigCrates =
-      GeneratedColumn<String>(
-        'gig_crates',
-        aliasedName,
-        true,
-        type: DriftSqlType.string,
-        requiredDuringInsert: false,
-      ).withConverter<List<String>?>(
-        $CollectionItemsTable.$convertergigCratesn,
-      );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -259,10 +219,6 @@ class $CollectionItemsTable extends CollectionItems
     storageLocation,
     syncStatus,
     discogsInstanceId,
-    bpm,
-    musicalKey,
-    energyLevel,
-    gigCrates,
     createdAt,
     updatedAt,
   ];
@@ -370,21 +326,6 @@ class $CollectionItemsTable extends CollectionItems
         ),
       );
     }
-    if (data.containsKey('bpm')) {
-      context.handle(
-        _bpmMeta,
-        bpm.isAcceptableOrUnknown(data['bpm']!, _bpmMeta),
-      );
-    }
-    if (data.containsKey('energy_level')) {
-      context.handle(
-        _energyLevelMeta,
-        energyLevel.isAcceptableOrUnknown(
-          data['energy_level']!,
-          _energyLevelMeta,
-        ),
-      );
-    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -486,26 +427,6 @@ class $CollectionItemsTable extends CollectionItems
         DriftSqlType.int,
         data['${effectivePrefix}discogs_instance_id'],
       ),
-      bpm: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}bpm'],
-      ),
-      musicalKey: $CollectionItemsTable.$convertermusicalKeyn.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}musical_key'],
-        ),
-      ),
-      energyLevel: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}energy_level'],
-      ),
-      gigCrates: $CollectionItemsTable.$convertergigCratesn.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}gig_crates'],
-        ),
-      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -532,14 +453,6 @@ class $CollectionItemsTable extends CollectionItems
       const SyncStatusConverter();
   static TypeConverter<SyncStatus?, String?> $convertersyncStatusn =
       NullAwareTypeConverter.wrap($convertersyncStatus);
-  static TypeConverter<MusicalKey, String> $convertermusicalKey =
-      const MusicalKeyConverter();
-  static TypeConverter<MusicalKey?, String?> $convertermusicalKeyn =
-      NullAwareTypeConverter.wrap($convertermusicalKey);
-  static TypeConverter<List<String>, String> $convertergigCrates =
-      const StringListConverter();
-  static TypeConverter<List<String>?, String?> $convertergigCratesn =
-      NullAwareTypeConverter.wrap($convertergigCrates);
 }
 
 class CollectionRow extends DataClass implements Insertable<CollectionRow> {
@@ -560,10 +473,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
   final String? storageLocation;
   final SyncStatus? syncStatus;
   final int? discogsInstanceId;
-  final int? bpm;
-  final MusicalKey? musicalKey;
-  final int? energyLevel;
-  final List<String>? gigCrates;
   final DateTime createdAt;
   final DateTime updatedAt;
   const CollectionRow({
@@ -584,10 +493,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     this.storageLocation,
     this.syncStatus,
     this.discogsInstanceId,
-    this.bpm,
-    this.musicalKey,
-    this.energyLevel,
-    this.gigCrates,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -645,22 +550,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     if (!nullToAbsent || discogsInstanceId != null) {
       map['discogs_instance_id'] = Variable<int>(discogsInstanceId);
     }
-    if (!nullToAbsent || bpm != null) {
-      map['bpm'] = Variable<int>(bpm);
-    }
-    if (!nullToAbsent || musicalKey != null) {
-      map['musical_key'] = Variable<String>(
-        $CollectionItemsTable.$convertermusicalKeyn.toSql(musicalKey),
-      );
-    }
-    if (!nullToAbsent || energyLevel != null) {
-      map['energy_level'] = Variable<int>(energyLevel);
-    }
-    if (!nullToAbsent || gigCrates != null) {
-      map['gig_crates'] = Variable<String>(
-        $CollectionItemsTable.$convertergigCratesn.toSql(gigCrates),
-      );
-    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -703,16 +592,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       discogsInstanceId: discogsInstanceId == null && nullToAbsent
           ? const Value.absent()
           : Value(discogsInstanceId),
-      bpm: bpm == null && nullToAbsent ? const Value.absent() : Value(bpm),
-      musicalKey: musicalKey == null && nullToAbsent
-          ? const Value.absent()
-          : Value(musicalKey),
-      energyLevel: energyLevel == null && nullToAbsent
-          ? const Value.absent()
-          : Value(energyLevel),
-      gigCrates: gigCrates == null && nullToAbsent
-          ? const Value.absent()
-          : Value(gigCrates),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -745,10 +624,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       storageLocation: serializer.fromJson<String?>(json['storageLocation']),
       syncStatus: serializer.fromJson<SyncStatus?>(json['syncStatus']),
       discogsInstanceId: serializer.fromJson<int?>(json['discogsInstanceId']),
-      bpm: serializer.fromJson<int?>(json['bpm']),
-      musicalKey: serializer.fromJson<MusicalKey?>(json['musicalKey']),
-      energyLevel: serializer.fromJson<int?>(json['energyLevel']),
-      gigCrates: serializer.fromJson<List<String>?>(json['gigCrates']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -774,10 +649,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       'storageLocation': serializer.toJson<String?>(storageLocation),
       'syncStatus': serializer.toJson<SyncStatus?>(syncStatus),
       'discogsInstanceId': serializer.toJson<int?>(discogsInstanceId),
-      'bpm': serializer.toJson<int?>(bpm),
-      'musicalKey': serializer.toJson<MusicalKey?>(musicalKey),
-      'energyLevel': serializer.toJson<int?>(energyLevel),
-      'gigCrates': serializer.toJson<List<String>?>(gigCrates),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -801,10 +672,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     Value<String?> storageLocation = const Value.absent(),
     Value<SyncStatus?> syncStatus = const Value.absent(),
     Value<int?> discogsInstanceId = const Value.absent(),
-    Value<int?> bpm = const Value.absent(),
-    Value<MusicalKey?> musicalKey = const Value.absent(),
-    Value<int?> energyLevel = const Value.absent(),
-    Value<List<String>?> gigCrates = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => CollectionRow(
@@ -829,10 +696,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     discogsInstanceId: discogsInstanceId.present
         ? discogsInstanceId.value
         : this.discogsInstanceId,
-    bpm: bpm.present ? bpm.value : this.bpm,
-    musicalKey: musicalKey.present ? musicalKey.value : this.musicalKey,
-    energyLevel: energyLevel.present ? energyLevel.value : this.energyLevel,
-    gigCrates: gigCrates.present ? gigCrates.value : this.gigCrates,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -867,14 +730,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
       discogsInstanceId: data.discogsInstanceId.present
           ? data.discogsInstanceId.value
           : this.discogsInstanceId,
-      bpm: data.bpm.present ? data.bpm.value : this.bpm,
-      musicalKey: data.musicalKey.present
-          ? data.musicalKey.value
-          : this.musicalKey,
-      energyLevel: data.energyLevel.present
-          ? data.energyLevel.value
-          : this.energyLevel,
-      gigCrates: data.gigCrates.present ? data.gigCrates.value : this.gigCrates,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -900,10 +755,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
           ..write('storageLocation: $storageLocation, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('discogsInstanceId: $discogsInstanceId, ')
-          ..write('bpm: $bpm, ')
-          ..write('musicalKey: $musicalKey, ')
-          ..write('energyLevel: $energyLevel, ')
-          ..write('gigCrates: $gigCrates, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -911,7 +762,7 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
   }
 
   @override
-  int get hashCode => Object.hashAll([
+  int get hashCode => Object.hash(
     id,
     discogsReleaseId,
     artist,
@@ -929,13 +780,9 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
     storageLocation,
     syncStatus,
     discogsInstanceId,
-    bpm,
-    musicalKey,
-    energyLevel,
-    gigCrates,
     createdAt,
     updatedAt,
-  ]);
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -957,10 +804,6 @@ class CollectionRow extends DataClass implements Insertable<CollectionRow> {
           other.storageLocation == this.storageLocation &&
           other.syncStatus == this.syncStatus &&
           other.discogsInstanceId == this.discogsInstanceId &&
-          other.bpm == this.bpm &&
-          other.musicalKey == this.musicalKey &&
-          other.energyLevel == this.energyLevel &&
-          other.gigCrates == this.gigCrates &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -983,10 +826,6 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
   final Value<String?> storageLocation;
   final Value<SyncStatus?> syncStatus;
   final Value<int?> discogsInstanceId;
-  final Value<int?> bpm;
-  final Value<MusicalKey?> musicalKey;
-  final Value<int?> energyLevel;
-  final Value<List<String>?> gigCrates;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -1008,10 +847,6 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     this.storageLocation = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.discogsInstanceId = const Value.absent(),
-    this.bpm = const Value.absent(),
-    this.musicalKey = const Value.absent(),
-    this.energyLevel = const Value.absent(),
-    this.gigCrates = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1034,10 +869,6 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     this.storageLocation = const Value.absent(),
     this.syncStatus = const Value.absent(),
     this.discogsInstanceId = const Value.absent(),
-    this.bpm = const Value.absent(),
-    this.musicalKey = const Value.absent(),
-    this.energyLevel = const Value.absent(),
-    this.gigCrates = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -1068,10 +899,6 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     Expression<String>? storageLocation,
     Expression<String>? syncStatus,
     Expression<int>? discogsInstanceId,
-    Expression<int>? bpm,
-    Expression<String>? musicalKey,
-    Expression<int>? energyLevel,
-    Expression<String>? gigCrates,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -1094,10 +921,6 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
       if (storageLocation != null) 'storage_location': storageLocation,
       if (syncStatus != null) 'sync_status': syncStatus,
       if (discogsInstanceId != null) 'discogs_instance_id': discogsInstanceId,
-      if (bpm != null) 'bpm': bpm,
-      if (musicalKey != null) 'musical_key': musicalKey,
-      if (energyLevel != null) 'energy_level': energyLevel,
-      if (gigCrates != null) 'gig_crates': gigCrates,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1122,10 +945,6 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     Value<String?>? storageLocation,
     Value<SyncStatus?>? syncStatus,
     Value<int?>? discogsInstanceId,
-    Value<int?>? bpm,
-    Value<MusicalKey?>? musicalKey,
-    Value<int?>? energyLevel,
-    Value<List<String>?>? gigCrates,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -1148,10 +967,6 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
       storageLocation: storageLocation ?? this.storageLocation,
       syncStatus: syncStatus ?? this.syncStatus,
       discogsInstanceId: discogsInstanceId ?? this.discogsInstanceId,
-      bpm: bpm ?? this.bpm,
-      musicalKey: musicalKey ?? this.musicalKey,
-      energyLevel: energyLevel ?? this.energyLevel,
-      gigCrates: gigCrates ?? this.gigCrates,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1224,22 +1039,6 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
     if (discogsInstanceId.present) {
       map['discogs_instance_id'] = Variable<int>(discogsInstanceId.value);
     }
-    if (bpm.present) {
-      map['bpm'] = Variable<int>(bpm.value);
-    }
-    if (musicalKey.present) {
-      map['musical_key'] = Variable<String>(
-        $CollectionItemsTable.$convertermusicalKeyn.toSql(musicalKey.value),
-      );
-    }
-    if (energyLevel.present) {
-      map['energy_level'] = Variable<int>(energyLevel.value);
-    }
-    if (gigCrates.present) {
-      map['gig_crates'] = Variable<String>(
-        $CollectionItemsTable.$convertergigCratesn.toSql(gigCrates.value),
-      );
-    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1272,10 +1071,6 @@ class CollectionItemsCompanion extends UpdateCompanion<CollectionRow> {
           ..write('storageLocation: $storageLocation, ')
           ..write('syncStatus: $syncStatus, ')
           ..write('discogsInstanceId: $discogsInstanceId, ')
-          ..write('bpm: $bpm, ')
-          ..write('musicalKey: $musicalKey, ')
-          ..write('energyLevel: $energyLevel, ')
-          ..write('gigCrates: $gigCrates, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -5990,10 +5785,6 @@ typedef $$CollectionItemsTableCreateCompanionBuilder =
       Value<String?> storageLocation,
       Value<SyncStatus?> syncStatus,
       Value<int?> discogsInstanceId,
-      Value<int?> bpm,
-      Value<MusicalKey?> musicalKey,
-      Value<int?> energyLevel,
-      Value<List<String>?> gigCrates,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -6017,10 +5808,6 @@ typedef $$CollectionItemsTableUpdateCompanionBuilder =
       Value<String?> storageLocation,
       Value<SyncStatus?> syncStatus,
       Value<int?> discogsInstanceId,
-      Value<int?> bpm,
-      Value<MusicalKey?> musicalKey,
-      Value<int?> energyLevel,
-      Value<List<String>?> gigCrates,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -6122,28 +5909,6 @@ class $$CollectionItemsTableFilterComposer
   ColumnFilters<int> get discogsInstanceId => $composableBuilder(
     column: $table.discogsInstanceId,
     builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get bpm => $composableBuilder(
-    column: $table.bpm,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<MusicalKey?, MusicalKey, String>
-  get musicalKey => $composableBuilder(
-    column: $table.musicalKey,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
-
-  ColumnFilters<int> get energyLevel => $composableBuilder(
-    column: $table.energyLevel,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnWithTypeConverterFilters<List<String>?, List<String>, String>
-  get gigCrates => $composableBuilder(
-    column: $table.gigCrates,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
   );
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
@@ -6251,26 +6016,6 @@ class $$CollectionItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get bpm => $composableBuilder(
-    column: $table.bpm,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get musicalKey => $composableBuilder(
-    column: $table.musicalKey,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get energyLevel => $composableBuilder(
-    column: $table.energyLevel,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get gigCrates => $composableBuilder(
-    column: $table.gigCrates,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -6357,23 +6102,6 @@ class $$CollectionItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<int> get bpm =>
-      $composableBuilder(column: $table.bpm, builder: (column) => column);
-
-  GeneratedColumnWithTypeConverter<MusicalKey?, String> get musicalKey =>
-      $composableBuilder(
-        column: $table.musicalKey,
-        builder: (column) => column,
-      );
-
-  GeneratedColumn<int> get energyLevel => $composableBuilder(
-    column: $table.energyLevel,
-    builder: (column) => column,
-  );
-
-  GeneratedColumnWithTypeConverter<List<String>?, String> get gigCrates =>
-      $composableBuilder(column: $table.gigCrates, builder: (column) => column);
-
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -6431,10 +6159,6 @@ class $$CollectionItemsTableTableManager
                 Value<String?> storageLocation = const Value.absent(),
                 Value<SyncStatus?> syncStatus = const Value.absent(),
                 Value<int?> discogsInstanceId = const Value.absent(),
-                Value<int?> bpm = const Value.absent(),
-                Value<MusicalKey?> musicalKey = const Value.absent(),
-                Value<int?> energyLevel = const Value.absent(),
-                Value<List<String>?> gigCrates = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -6456,10 +6180,6 @@ class $$CollectionItemsTableTableManager
                 storageLocation: storageLocation,
                 syncStatus: syncStatus,
                 discogsInstanceId: discogsInstanceId,
-                bpm: bpm,
-                musicalKey: musicalKey,
-                energyLevel: energyLevel,
-                gigCrates: gigCrates,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -6483,10 +6203,6 @@ class $$CollectionItemsTableTableManager
                 Value<String?> storageLocation = const Value.absent(),
                 Value<SyncStatus?> syncStatus = const Value.absent(),
                 Value<int?> discogsInstanceId = const Value.absent(),
-                Value<int?> bpm = const Value.absent(),
-                Value<MusicalKey?> musicalKey = const Value.absent(),
-                Value<int?> energyLevel = const Value.absent(),
-                Value<List<String>?> gigCrates = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -6508,10 +6224,6 @@ class $$CollectionItemsTableTableManager
                 storageLocation: storageLocation,
                 syncStatus: syncStatus,
                 discogsInstanceId: discogsInstanceId,
-                bpm: bpm,
-                musicalKey: musicalKey,
-                energyLevel: energyLevel,
-                gigCrates: gigCrates,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

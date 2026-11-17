@@ -190,47 +190,6 @@ void main() {
       });
     });
 
-    group('DJ fields round-trip (US-121)', () {
-      test('preserves DJ fields through add and getById', () async {
-        final item = makeItem(id: 'dj').copyWith(
-          bpm: () => 128,
-          musicalKey: () => MusicalKey.abMinor,
-          energyLevel: () => 4,
-          gigCrates: ['Warmup', 'Peak Time'],
-        );
-        await repo.add(item);
-        final fetched = await repo.getById('dj');
-        expect(fetched!.bpm, 128);
-        expect(fetched.musicalKey, MusicalKey.abMinor);
-        expect(fetched.energyLevel, 4);
-        expect(fetched.gigCrates, ['Warmup', 'Peak Time']);
-      });
-
-      test('absent DJ fields read back as null and empty list', () async {
-        await repo.add(makeItem(id: 'dj-nulls'));
-        final fetched = await repo.getById('dj-nulls');
-        expect(fetched!.bpm, isNull);
-        expect(fetched.musicalKey, isNull);
-        expect(fetched.energyLevel, isNull);
-        expect(fetched.gigCrates, isEmpty);
-      });
-
-      test(
-        'updating DJ fields keeps the sync status unchanged (local-only)',
-        () async {
-          final item = makeItem(
-            id: 'dj-sync',
-          ).copyWith(syncStatus: SyncStatus.synced);
-          await repo.add(item);
-          final original = await repo.getById('dj-sync');
-          await repo.update(original!.copyWith(bpm: () => 140));
-          final fetched = await repo.getById('dj-sync');
-          expect(fetched!.bpm, 140);
-          expect(fetched.syncStatus, SyncStatus.synced);
-        },
-      );
-    });
-
     group('sync status', () {
       test('new item gets localOnly sync status by default', () async {
         await repo.add(makeItem(id: 'sync-default'));

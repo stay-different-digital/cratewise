@@ -39,11 +39,6 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
   late String? _storageLocation;
   late Set<SyncStatus> _syncStatuses;
   late bool? _hasCover;
-  late Set<MusicalKey> _musicalKeys;
-  late Set<int> _energyLevels;
-  late Set<String> _gigCrates;
-  final _bpmMinController = TextEditingController();
-  final _bpmMaxController = TextEditingController();
 
   // Facets derived from items/metadata
   late List<int> _availableDecades;
@@ -53,10 +48,6 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
   late List<String> _availableStyles;
   late List<String> _availableTags;
   late List<String> _availableLocations;
-  late List<MusicalKey> _availableKeys;
-  late List<int> _availableEnergies;
-  late List<String> _availableCrates;
-  late bool _hasBpmValues;
 
   @override
   void initState() {
@@ -73,11 +64,6 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
     _storageLocation = f.storageLocation;
     _syncStatuses = Set.from(f.syncStatuses);
     _hasCover = f.hasCover;
-    _musicalKeys = Set.from(f.musicalKeys);
-    _energyLevels = Set.from(f.energyLevels);
-    _gigCrates = Set.from(f.gigCrates);
-    _bpmMinController.text = f.bpmMin?.toString() ?? '';
-    _bpmMaxController.text = f.bpmMax?.toString() ?? '';
 
     _availableDecades =
         widget.items
@@ -121,30 +107,6 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
             .toSet()
             .toList()
           ..sort();
-    _availableKeys =
-        widget.items
-            .where((i) => i.musicalKey != null)
-            .map((i) => i.musicalKey!)
-            .toSet()
-            .toList()
-          ..sort((a, b) => a.index.compareTo(b.index));
-    _availableEnergies =
-        widget.items
-            .where((i) => i.energyLevel != null)
-            .map((i) => i.energyLevel!)
-            .toSet()
-            .toList()
-          ..sort();
-    _availableCrates = widget.items.expand((i) => i.gigCrates).toSet().toList()
-      ..sort();
-    _hasBpmValues = widget.items.any((i) => i.bpm != null);
-  }
-
-  @override
-  void dispose() {
-    _bpmMinController.dispose();
-    _bpmMaxController.dispose();
-    super.dispose();
   }
 
   CollectionFilterSet get _current => CollectionFilterSet(
@@ -159,11 +121,6 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
     storageLocation: _storageLocation,
     syncStatuses: Set.unmodifiable(_syncStatuses),
     hasCover: _hasCover,
-    bpmMin: int.tryParse(_bpmMinController.text.trim()),
-    bpmMax: int.tryParse(_bpmMaxController.text.trim()),
-    musicalKeys: Set.unmodifiable(_musicalKeys),
-    energyLevels: Set.unmodifiable(_energyLevels),
-    gigCrates: Set.unmodifiable(_gigCrates),
   );
 
   Future<void> _saveFilter() async {
@@ -231,11 +188,6 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
                     _storageLocation = null;
                     _syncStatuses.clear();
                     _hasCover = null;
-                    _musicalKeys.clear();
-                    _energyLevels.clear();
-                    _gigCrates.clear();
-                    _bpmMinController.clear();
-                    _bpmMaxController.clear();
                   }),
                   child: const Text('Clear all'),
                 ),
@@ -435,98 +387,6 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
                     ),
                   ],
                 ),
-                if (_hasBpmValues) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12, bottom: 6),
-                    child: Text(
-                      'BPM',
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 96,
-                        child: TextField(
-                          key: const Key('bpm-min-field'),
-                          controller: _bpmMinController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Min',
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Text('–'),
-                      ),
-                      SizedBox(
-                        width: 96,
-                        child: TextField(
-                          key: const Key('bpm-max-field'),
-                          controller: _bpmMaxController,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Max',
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                if (_availableKeys.isNotEmpty)
-                  _Section(
-                    title: 'Key',
-                    chips: _availableKeys
-                        .map(
-                          (k) => _Chip(
-                            label: k.label,
-                            selected: _musicalKeys.contains(k),
-                            onTap: () => setState(
-                              () => _musicalKeys.contains(k)
-                                  ? _musicalKeys.remove(k)
-                                  : _musicalKeys.add(k),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                if (_availableEnergies.isNotEmpty)
-                  _Section(
-                    title: 'Energy',
-                    chips: _availableEnergies
-                        .map(
-                          (e) => _Chip(
-                            label: '$e',
-                            selected: _energyLevels.contains(e),
-                            onTap: () => setState(
-                              () => _energyLevels.contains(e)
-                                  ? _energyLevels.remove(e)
-                                  : _energyLevels.add(e),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                if (_availableCrates.isNotEmpty)
-                  _Section(
-                    title: 'Gig crate',
-                    chips: _availableCrates
-                        .map(
-                          (c) => _Chip(
-                            label: c,
-                            selected: _gigCrates.contains(c),
-                            onTap: () => setState(
-                              () => _gigCrates.contains(c)
-                                  ? _gigCrates.remove(c)
-                                  : _gigCrates.add(c),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
               ],
             ),
           ),

@@ -166,7 +166,6 @@ CollectionItem _makeItem({
   int? year,
   String? format,
   String? storageLocation,
-  int? bpm,
 }) => CollectionItem(
   id: id,
   discogsReleaseId: releaseId,
@@ -182,7 +181,6 @@ CollectionItem _makeItem({
   storageLocation: storageLocation,
   createdAt: DateTime(2026, 1, 1),
   updatedAt: DateTime(2026, 1, 1),
-  bpm: bpm,
 );
 
 Widget _wrap(Widget child) => MaterialApp(
@@ -1060,74 +1058,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Je collectie is leeg'), findsOneWidget);
-    });
-  });
-
-  group('CollectionScreen — DJ sort (US-121)', () {
-    final items = [
-      _makeItem(id: '1', title: 'No Bpm Album'),
-      _makeItem(id: '2', title: 'Fast Album', bpm: 140),
-      _makeItem(id: '3', title: 'Slow Album', bpm: 90),
-    ];
-
-    double dy(WidgetTester tester, String title) =>
-        tester.getTopLeft(find.text(title)).dy;
-
-    testWidgets('sort menu shows the four options', (tester) async {
-      final repo = _FakeCollectionRepository(items: items);
-      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const Key('collection-sort-button')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Newest first'), findsOneWidget);
-      expect(find.text('BPM'), findsOneWidget);
-      expect(find.text('Key'), findsOneWidget);
-      expect(find.text('Energy'), findsOneWidget);
-    });
-
-    testWidgets('sorting by BPM reorders the list with empty BPM last', (
-      tester,
-    ) async {
-      // Phone width: the wide layout switches to a grid where rows share
-      // the same y-position, which would break the ordering assertions.
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-      final repo = _FakeCollectionRepository(items: items);
-      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
-      await tester.pumpAndSettle();
-
-      // Repository order first.
-      expect(dy(tester, 'No Bpm Album'), lessThan(dy(tester, 'Fast Album')));
-
-      await tester.tap(find.byKey(const Key('collection-sort-button')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('BPM'));
-      await tester.pumpAndSettle();
-
-      expect(dy(tester, 'Slow Album'), lessThan(dy(tester, 'Fast Album')));
-      expect(dy(tester, 'Fast Album'), lessThan(dy(tester, 'No Bpm Album')));
-    });
-
-    testWidgets('sort combines with the search filter', (tester) async {
-      tester.view.physicalSize = const Size(400, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.reset);
-      final repo = _FakeCollectionRepository(items: items);
-      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const Key('collection-sort-button')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('BPM'));
-      await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextField), 'Album');
-      await tester.pump(const Duration(milliseconds: 350));
-
-      expect(dy(tester, 'Slow Album'), lessThan(dy(tester, 'Fast Album')));
     });
   });
 }
