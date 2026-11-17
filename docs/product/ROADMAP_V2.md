@@ -184,9 +184,9 @@ Done criteria: geen KGP-waarschuwing in de Android-build, `flutter pub outdated`
 
 ## Phase 19: Filteren en sorteren gelijk op Zoeken, Collectie en Verlanglijst
 
-Goal: gebruikersfeedback. Eén filterknop per lijstscherm, met in de bottom sheet bovenaan dezelfde sortering (Relevantie, Nieuwste eerst, Oudste eerst) en daaronder de filters van dat scherm.
+Goal: gebruikersfeedback. Eén filterknop per lijstscherm, met in de bottom sheet bovenaan de sortering (Zoeken: Relevantie, Nieuwste eerst, Oudste eerst op datum toegevoegd aan Discogs; Collectie/Verlanglijst: Nieuwste/Oudste eerst op datum toegevoegd aan de eigen collectie) en daaronder de filters. DJ-velden BPM, Key en Energy verdwijnen.
 
-Deliverables: US-161 t/m US-164, zie `docs/user-stories/phase-19-unified-filter-sort-stories.md`.
+Deliverables: US-161 t/m US-166, zie `docs/user-stories/phase-19-unified-filter-sort-stories.md`.
 
 Done criteria: op Zoeken, Collectie en Verlanglijst staat geen los sorteer- of chipelement meer; de sorteersectie is één gedeelde widget; alle tests en de live Discogs-test groen.
 

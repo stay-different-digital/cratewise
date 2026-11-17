@@ -1,37 +1,42 @@
 # Phase 19: Filteren en sorteren gelijk op Zoeken, Collectie en Verlanglijst (november 2026)
 
-Aangemaakt: 2026-11-17 · Gegroomd: 2026-11-17
+Aangemaakt: 2026-11-17 · Gegroomd: 2026-11-17 · Bijgewerkt na besluiten Fred: 2026-11-17
 
-Doel: gebruikersfeedback verwerken. Op alle drie de lijstschermen werkt filteren en sorteren hetzelfde: één filterknop naast de zoekbalk, die een bottom sheet opent met bovenaan de sortering (Relevantie, Nieuwste eerst, Oudste eerst) en daaronder de filters van dat scherm. Nummering loopt door vanaf US-160.
+Doel: gebruikersfeedback verwerken. Op alle drie de lijstschermen werkt filteren en sorteren hetzelfde: één filterknop naast de zoekbalk, die een bottom sheet opent met bovenaan de sortering en daaronder de filters van dat scherm. Daarnaast verdwijnen de DJ-velden (BPM, Key, Energy) uit de app. Nummering loopt door vanaf US-160.
 
-## Overzicht na grooming
+## Overzicht
 
 | Story | Titel | Prio | SP | Hangt af van |
 |---|---|---|---|---|
 | US-161 | Zoeken: filters in een bottom sheet achter één filterknop | High | 3 | — |
-| US-162 | Zoeken: sortering bovenaan in dezelfde sheet (gedeelde sorteersectie) | High | 2 | US-161 |
-| US-163 | Collectie: sorteericoon weg, sortering bovenaan in "Filter collection" | High | 3 | US-162 |
-| US-164 | Verlanglijst: sortering bovenaan in het filter | Medium | 2 | US-162 |
+| US-162 | Zoeken: sortering bovenaan in de sheet; Nieuwste/Oudste eerst op datum toegevoegd aan Discogs | High | 2 | US-161 |
+| US-165 | DJ-velden BPM, Key en Energy uit de app verwijderen | High | 5 | — |
+| US-166 | Collectie en Verlanglijst: datum toegevoegd overnemen bij import van Discogs | Medium | 2 | — |
+| US-163 | Collectie: sorteericoon weg, Nieuwste/Oudste eerst bovenaan in "Filter collection" | High | 2 | US-162, US-165, US-166 |
+| US-164 | Verlanglijst: Nieuwste/Oudste eerst bovenaan in het filter | Medium | 2 | US-162, US-166 |
 
-Totaal: 10 SP. Volgorde: US-161 → US-162 → US-163 → US-164.
+Totaal: 16 SP. Volgorde: US-161 → US-162 → US-165 → US-166 → US-163 → US-164.
 
-## Groomingbesluiten
+## Besluiten
 
-Gegroomd vanuit vier invalshoeken (product, ontwikkeling, test, UX); er is geen apart team, dus dit zijn voorstellen tot Fred ze bevestigt.
+**Van Fred (2026-11-17):**
+- **Sorteeropties per scherm.**
+  - Zoeken: Relevantie (standaard), Nieuwste eerst, Oudste eerst. Nieuwste/Oudste eerst gaat over **wanneer de release aan Discogs is toegevoegd**, niet over het releasejaar.
+  - Collectie en Verlanglijst: alleen Nieuwste eerst (standaard) en Oudste eerst, op **de datum waarop je de plaat aan je eigen collectie/verlanglijst toevoegde**; niet de bewerkingsdatum op Discogs. Geen Relevantie.
+- **DJ-velden weg.** BPM, Key en Energy verdwijnen uit de hele app (eigen story, US-165). Reden: gebruikers kunnen op Discogs zelf velden toevoegen; deze velden in Cratewise maken het ingewikkeld.
 
-- **Eén opzet voor drie schermen.** Elke sheet heeft dezelfde volgorde: (1) Sorteren, (2) de filters van het scherm, (3) "Alles wissen" en "Toepassen". De sorteersectie is één gedeelde widget, gebouwd in US-162 en hergebruikt in US-163 en US-164; geen drie kopieën.
-- **Toepassen-knop, niet direct toepassen.** Het collectie- en verlanglijstfilter werken al met Toepassen; Zoeken volgt dat, zodat alle drie gelijk zijn. Bij Zoeken scheelt het ook onnodige Discogs-aanvragen bij elke tik.
-- **Zelfde betekenis op elk scherm.** "Nieuwste eerst" en "Oudste eerst" sorteren overal op **releasejaar** (zo werkt het al bij Zoeken). Platen zonder jaar staan achteraan.
-- **"Relevantie" op Collectie en Verlanglijst** is de standaardvolgorde van nu: laatst toegevoegd bovenaan. Let op: op de collectie heet die volgorde nu "Newest first" (op datum van toevoegen). Die naam verschuift dus: wat nu "Newest first" is wordt "Relevantie", en "Nieuwste eerst" gaat op releasejaar sorteren. **Te bevestigen door Fred**, zie open punt 1.
-- **DJ-sorteringen blijven.** Het sorteericoon op de collectie bevat ook BPM, Key en Energy (US-121). Die verhuizen mee naar de sorteersectie van de collectie, onder de drie standaardopties, en alleen als er DJ-gegevens zijn (zoals de DJ-filters nu). Zie open punt 2.
-- **Badge.** De filterknop telt actieve filters; een andere sortering dan Relevantie telt als één mee. Zo is zonder los sorteericoon toch zichtbaar dat de lijst gesorteerd is.
+**Uit de grooming (product, ontwikkeling, test, UX; voorstellen tot Fred ze bevestigt):**
+- **Eén opzet voor drie schermen.** Elke sheet: (1) Sorteren, (2) de filters van dat scherm, (3) "Alles wissen" en "Toepassen". De sorteersectie is één gedeelde widget die per scherm een lijst opties krijgt (Zoeken drie, Collectie/Verlanglijst twee).
+- **Toepassen-knop.** Collectie- en verlanglijstfilter werken al zo; Zoeken volgt, zodat alle drie gelijk zijn en Zoeken niet bij elke tik Discogs bevraagt.
+- **Badge.** De filterknop telt actieve filters; een sortering die niet de standaard van dat scherm is (Relevantie bij Zoeken, Nieuwste eerst bij Collectie/Verlanglijst) telt als één mee.
+- **Discogs-sortering geverifieerd.** `/database/search` accepteert `sort=date_added&sort_order=desc|asc` (getest 2026-11-17: aflopend geeft de hoogste release-ID's, oplopend de laagste). `sort=added` wordt genegeerd. Vastleggen in `docs/api/DISCOGS_API.md`.
 - **"Zoeken, Collectie en Filter pagina"** in de feedback is gelezen als Zoeken, Collectie en Verlanglijst.
-- **Buiten scope voor deze fase:** sortering bewaren tussen sessies en in opgeslagen filters/zoekopdrachten (US-117); nieuwe sorteeropties (artiest, titel).
+- **Buiten scope:** sortering bewaren tussen sessies of in opgeslagen filters/zoekopdrachten (US-117); nieuwe sorteeropties.
 
 ## Open punten voor Fred
 
-1. Akkoord dat "Nieuwste/Oudste eerst" overal op releasejaar sorteert en dat "Relevantie" op Collectie en Verlanglijst "laatst toegevoegd eerst" betekent? Alternatief: daar een eigen naam ("Laatst toegevoegd"), ten koste van de gelijke labels.
-2. Akkoord dat BPM, Key en Energy als extra sorteeropties in de collectie-sheet blijven? Alternatief: schrappen.
+1. **Datum toegevoegd bij geïmporteerde platen (US-166).** Platen die uit Discogs zijn geïmporteerd krijgen nu het moment van importeren als "toegevoegd"-datum; een in één keer geïmporteerde collectie heeft dan voor alle platen dezelfde datum en sorteren heeft geen zin. Voorstel: bij import de datum overnemen waarop je de plaat **aan je collectie op Discogs** toevoegde (Discogs levert die mee). Dat is nog steeds "wanneer heb ik hem aan mijn collectie toegevoegd", alleen op Discogs gedaan. Akkoord?
+2. **Gig crates (US-165).** Bij de DJ-velden hoort ook "gig crates" (US-121). De feedback noemt alleen BPM, Key en Energy. Gig crates blijven tenzij je zegt dat ze ook weg mogen.
 
 ---
 
@@ -61,68 +66,105 @@ De chips Release / Artiest / Label (US-84/85) en "Alleen vinyl" (US-142) staan n
 
 ---
 
-### US-162: Zoeken: sortering bovenaan in dezelfde sheet (gedeelde sorteersectie)
+### US-162: Zoeken: sortering bovenaan in de sheet; Nieuwste/Oudste eerst op datum toegevoegd aan Discogs
 
 **Priority: High · 2 SP**
 
 > Als gebruiker,
-> wil ik de sortering (Relevantie, Nieuwste eerst, Oudste eerst) bovenaan in de filter-sheet,
-> zodat ik op het zoekscherm maar één knop zie voor filteren en sorteren.
+> wil ik de sortering bovenaan in de filter-sheet, en bij Nieuwste/Oudste eerst de releases zien op volgorde van toevoegen aan Discogs,
+> zodat ik op het zoekscherm maar één knop heb en net toegevoegde releases makkelijk vind.
 
 **Context:**
-De sortering (US-133) is nu een apart menu (`_SearchSortMenu`) rechts van de chips. Deze story bouwt de sorteersectie als gedeelde widget, omdat US-163 en US-164 exact dezelfde sectie bovenaan hun sheet krijgen.
+De sortering (US-133) is nu een apart menu (`_SearchSortMenu`) en sorteert Nieuwste/Oudste eerst op **releasejaar** (`sort=year`). Dat verandert naar datum toegevoegd aan Discogs (`sort=date_added`, geverifieerd 2026-11-17). Deze story bouwt ook de gedeelde sorteersectie voor US-163 en US-164.
 
 **Acceptance criteria:**
-- Het losse sorteermenu op het zoekscherm is weg. De sheet uit US-161 begint met een sectie "Sorteren": Relevantie (standaard), Nieuwste eerst, Oudste eerst (één keuze).
-- De sectie is één herbruikbare widget (labels, volgorde, vertalingen op één plek), met ruimte voor extra opties per scherm (nodig voor US-163).
-- Toepassen met een andere sortering voert de zoekopdracht opnieuw uit vanaf pagina 1; doorscrollen houdt de sortering aan.
-- Een niet-standaard sortering telt als 1 mee in de badge; "Alles wissen" zet hem terug op Relevantie.
-- De label-link (US-134) zet nog steeds "Nieuwste eerst".
+- Het losse sorteermenu is weg. De sheet uit US-161 begint met "Sorteren": Relevantie (standaard), Nieuwste eerst, Oudste eerst (één keuze).
+- Nieuwste/Oudste eerst sturen `sort=date_added` met `sort_order=desc|asc` naar Discogs (in plaats van `sort=year`); doorscrollen houdt de sortering aan. `DISCOGS_API.md` bijgewerkt.
+- De sorteersectie is één herbruikbare widget die een lijst opties krijgt (labels en vertalingen op één plek).
+- Een andere sortering dan Relevantie telt als 1 mee in de badge; "Alles wissen" zet terug op Relevantie.
+- De label-link (US-134) opent de labelresultaten met Nieuwste eerst (nu: laatst aan Discogs toegevoegd).
 - Het zoekscherm heeft daarna precies één knop voor filteren en sorteren (naast de knoppen voor opgeslagen zoekopdrachten).
-- Tests: sortering kiezen → zoekopdracht met die sortering; badge telt mee; bestaande sorteertests herschreven; live Discogs-test aangepast.
+- CHANGELOG vermeldt dat Nieuwste/Oudste eerst bij Zoeken nu op datum toegevoegd aan Discogs sorteert in plaats van op jaar.
+- Tests: API-client stuurt `sort=date_added` met de juiste richting en niets bij Relevantie; sortering kiezen in de sheet → zoekopdracht met die sortering; badge telt mee; bestaande sorteertests herschreven; live Discogs-test aangepast.
 
 ---
 
-### US-163: Collectie: sorteericoon weg, sortering bovenaan in "Filter collection"
+### US-165: DJ-velden BPM, Key en Energy uit de app verwijderen
 
-**Priority: High · 3 SP**
+**Priority: High · 5 SP**
 
 > Als verzamelaar,
-> wil ik op de collectiepagina sorteren via het filter, met dezelfde drie opties als bij Zoeken,
-> zodat er één icoon minder staat en sorteren overal hetzelfde werkt.
+> wil ik geen BPM-, Key- en Energy-velden meer in Cratewise,
+> zodat de app eenvoudiger is; wie zulke gegevens wil bijhouden, doet dat met eigen velden op Discogs.
 
 **Context:**
-Naast de zoekbalk staan drie iconen: filter, sorteren (`collection-sort-button`, [collection_screen.dart:283](lib/presentation/screens/collection_screen.dart#L283)) en opgeslagen filters. Het middelste verdwijnt. [`CollectionSort`](lib/domain/models/collection_sort.dart) heeft nu `newestFirst` (= volgorde van toevoegen), `bpm`, `musicalKey`, `energyLevel`.
+Toegevoegd in US-121. De velden zitten in het domeinmodel (`CollectionItem.bpm`, `musicalKey`, `energyLevel`), de database (kolommen sinds schema v11), het collectiedetail (bewerkblad en weergave), de filters (BPM min/max, Key, Energy), de sortering (BPM, Key, Energy in `CollectionSort`), en CSV-import/-export (`collection_csv_mapper`, `collection_csv_validator`). Gig crates horen ook bij US-121 maar vallen buiten deze story (zie open punt 2).
+
+**Acceptance criteria:**
+- Nergens in de app nog BPM, Key of Energy: niet in het collectiedetail, niet in het filter, niet in de sortering, niet in de CSV-export.
+- `CollectionItem`, `CollectionFilterSet` en `CollectionSort` hebben de velden en opties niet meer; `MusicalKey` is verwijderd als niets anders het gebruikt.
+- **Database:** de kolommen worden verwijderd met een schemamigratie (`schemaVersion` + 1, nieuwe schema-dump in `drift_schemas/`, gegenereerde testhelpers volgens `migration_test.dart`). De migratietest bewijst dat alle andere velden van bestaande items intact blijven. De ingevoerde DJ-waarden gaan daarbij bewust verloren.
+- **Oude bestanden blijven werken:** een CSV-import met de oude kolommen BPM/Key/Energy slaagt; die kolommen worden genegeerd. Opgeslagen filtersets (US-117) met BPM/Key/Energy-waarden laden zonder fout; die waarden vallen weg.
+- CHANGELOG (onder "Removed") en README bijgewerkt; de opmerking in de CHANGELOG zegt dat eerder ingevoerde BPM/Key/Energy-waarden verdwijnen.
+- Tests: bestaande DJ-tests verwijderd of herschreven; nieuwe tests voor CSV met oude DJ-kolommen en voor oude filtersets; migratietest naar de nieuwe schemaversie; upgrade-test (`integration_test/app_upgrade_test.dart`) slaagt op Android en iOS.
+
+---
+
+### US-166: Collectie en Verlanglijst: datum toegevoegd overnemen bij import van Discogs
+
+**Priority: Medium · 2 SP**
+
+> Als verzamelaar die zijn collectie uit Discogs heeft geïmporteerd,
+> wil ik dat Nieuwste/Oudste eerst de volgorde volgt waarin ik de platen aan mijn collectie toevoegde,
+> zodat sorteren ook zin heeft voor platen die in één keer zijn geïmporteerd.
+
+**Context:**
+Voorwaarde voor US-163 en US-164, onder voorbehoud van open punt 1. De Discogs-import zet nu `createdAt: now` ([execute_collection_import_use_case.dart:85](lib/application/use_cases/execute_collection_import_use_case.dart#L85), wishlist-tegenhanger idem), terwijl de Discogs-collectie en -wantlist per plaat `date_added` meeleveren (al in de DTO's: `DiscogsCollectionItemDto.dateAdded`, `DiscogsWantlistItemDto.dateAdded`).
+
+**Acceptance criteria:**
+- Nieuwe imports (handmatig en automatisch, US-149) zetten `createdAt` op de `date_added` van Discogs; als die ontbreekt of niet te lezen is, op het importmoment.
+- Platen die je in de app toevoegt houden het moment van toevoegen (ongewijzigd).
+- Bestaande, al geïmporteerde items worden niet stilzwijgend aangepast. Bij een volgende import van een plaat die al lokaal gekoppeld is, wordt `createdAt` bijgewerkt naar de Discogs-datum als die vroeger is dan de huidige waarde; andere velden blijven ongemoeid.
+- Tests: import zet de Discogs-datum; ontbrekende datum valt terug op nu; tijdzone-notatie van Discogs (`2026-11-01T10:00:00-07:00`) wordt goed gelezen; koppeling werkt een te late datum bij en laat een vroegere staan.
+
+---
+
+### US-163: Collectie: sorteericoon weg, Nieuwste/Oudste eerst bovenaan in "Filter collection"
+
+**Priority: High · 2 SP**
+
+> Als verzamelaar,
+> wil ik op de collectiepagina sorteren via het filter,
+> zodat er één icoon minder staat en sorteren hetzelfde werkt als bij Zoeken.
+
+**Context:**
+Naast de zoekbalk staan drie iconen: filter, sorteren (`collection-sort-button`, [collection_screen.dart:283](lib/presentation/screens/collection_screen.dart#L283)) en opgeslagen filters. Het middelste verdwijnt. Na US-165 heeft `CollectionSort` geen DJ-opties meer; na US-166 betekent "toegevoegd" ook bij geïmporteerde platen iets.
 
 **Acceptance criteria:**
 - Het sorteericoon is weg; naast de zoekbalk staan nog twee iconen (filter, opgeslagen filters).
-- "Filter collection" begint met de gedeelde sectie "Sorteren": Relevantie (standaard), Nieuwste eerst, Oudste eerst.
-  - Relevantie = huidige standaardvolgorde (laatst toegevoegd eerst).
-  - Nieuwste / Oudste eerst = op releasejaar; items zonder jaar achteraan, in beide richtingen.
-- BPM, Key en Energy staan als extra opties onder de drie, alleen zichtbaar als er items met DJ-gegevens zijn; gedrag ongewijzigd (lege waarden achteraan).
-- Sortering wordt met Toepassen doorgevoerd, combineert met alle filters en het zoekveld, telt als 1 mee in de badge als hij niet Relevantie is, en "Alles wissen" zet hem terug.
-- De regel met actieve filters boven de lijst toont ook de actieve sortering, of de badge maakt dat voldoende duidelijk (kiezen bij het bouwen, gelijk aan Zoeken).
+- "Filter collection" begint met de gedeelde sectie "Sorteren" (uit US-162) met twee opties: Nieuwste eerst (standaard) en Oudste eerst, op de datum waarop de plaat aan de collectie is toegevoegd (`createdAt`). Geen Relevantie.
+- De sortering wordt met Toepassen doorgevoerd, combineert met alle filters en het zoekveld, telt als 1 mee in de badge als hij op Oudste eerst staat, en "Alles wissen" zet hem terug op Nieuwste eerst.
 - Labels vertaald in alle vijf talen (de huidige sorteerlabels zijn hardcoded Engels).
-- Tests: unit-tests voor sorteren op jaar (oplopend, aflopend, zonder jaar achteraan) en voor Relevantie = ongewijzigde volgorde; widget-tests: geen sorteericoon meer, sortering kiezen in de sheet herordent de lijst, DJ-opties alleen bij DJ-gegevens; bestaande tests op `collection-sort-button` herschreven.
+- Tests: unit-test voor oplopend en aflopend op `createdAt`; widget-tests: geen sorteericoon meer, sortering kiezen in de sheet herordent de lijst, badge telt mee; bestaande tests op `collection-sort-button` herschreven.
 
 **Buiten scope:** sortering opslaan in opgeslagen filtersets (US-117) of tussen sessies.
 
 ---
 
-### US-164: Verlanglijst: sortering bovenaan in het filter
+### US-164: Verlanglijst: Nieuwste/Oudste eerst bovenaan in het filter
 
 **Priority: Medium · 2 SP**
 
 > Als verzamelaar,
-> wil ik mijn verlanglijst kunnen sorteren met dezelfde drie opties als bij Zoeken en Collectie,
-> zodat de drie schermen hetzelfde werken.
+> wil ik mijn verlanglijst kunnen sorteren op wanneer ik platen toevoegde,
+> zodat de verlanglijst hetzelfde werkt als de collectie.
 
 **Context:**
-De verlanglijst heeft een filterknop (`wishlist-filter-button`) en opgeslagen filters, maar geen sortering. De volgorde is nu vast: laatst toegevoegd eerst.
+De verlanglijst heeft een filterknop (`wishlist-filter-button`) en opgeslagen filters, maar geen sortering; de volgorde is vast (laatst toegevoegd eerst).
 
 **Acceptance criteria:**
-- Het verlanglijstfilter begint met de gedeelde sectie "Sorteren": Relevantie (standaard, = huidige volgorde), Nieuwste eerst, Oudste eerst (op releasejaar; zonder jaar achteraan).
-- Zelfde gedrag als US-163: Toepassen, combineert met filters en zoekveld, telt mee in de badge, "Alles wissen" zet terug op Relevantie.
-- De sorteerlogica op jaar is dezelfde code als in US-163 (geen tweede implementatie).
+- Het verlanglijstfilter begint met de gedeelde sectie "Sorteren": Nieuwste eerst (standaard, = huidige volgorde) en Oudste eerst, op `createdAt`. Geen Relevantie.
+- Zelfde gedrag als US-163: Toepassen, combineert met filters en zoekveld, telt mee in de badge, "Alles wissen" zet terug op Nieuwste eerst.
+- Sorteren op `createdAt` gebruikt dezelfde code als US-163 (geen tweede implementatie).
 - Vertaald in alle vijf talen.
-- Tests: unit-test dat de gedeelde sortering op `WishlistItem` werkt; widget-test dat een gekozen sortering de lijst herordent en de badge bijwerkt.
+- Tests: unit-test dat de gedeelde sortering op `WishlistItem` werkt; widget-test dat Oudste eerst de lijst omdraait en de badge bijwerkt.
