@@ -43,6 +43,8 @@ Totaal: 17 SP. Volgorde: US-167 eerst (bug, los van de rest), daarna US-161 → 
 
 ### US-161: Zoeken: filters in een bottom sheet achter één filterknop
 
+**Status: In Progress**
+
 **Priority: High · 3 SP**
 
 > Als gebruiker,
@@ -174,7 +176,7 @@ De verlanglijst heeft een filterknop (`wishlist-filter-button`) en opgeslagen fi
 
 ### US-167: Bug: "Ongedaan maken"-balk na verwijderen van een opgeslagen zoekopdracht verdwijnt niet
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-17)** — oorzaak bevestigd: `SnackBar` met actie is sinds Flutter 3.29 standaard `persist`. Beide snackbars met een actie (opgeslagen zoekopdrachten, import/export-geschiedenis) staan op `persist: false`. In de geschiedenis werd een verwijdering daardoor ook nooit definitief; ook opgelost.
 
 **Priority: High · 1 SP**
 
