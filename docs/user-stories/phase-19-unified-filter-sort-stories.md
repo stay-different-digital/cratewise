@@ -164,7 +164,7 @@ Naast de zoekbalk staan drie iconen: filter, sorteren (`collection-sort-button`,
 
 ### US-164: Verlanglijst: Nieuwste/Oudste eerst bovenaan in het filter
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-17)**
 
 **Priority: Medium · 2 SP**
 
