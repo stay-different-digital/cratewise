@@ -43,7 +43,7 @@ Totaal: 17 SP. Volgorde: US-167 eerst (bug, los van de rest), daarna US-161 → 
 
 ### US-161: Zoeken: filters in een bottom sheet achter één filterknop
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-17)** — samen met US-162 gebouwd (één sheet). Gekozen: Toepassen-knop, zoals bij Collectie.
 
 **Priority: High · 3 SP**
 
@@ -71,6 +71,8 @@ De chips Release / Artiest / Label (US-84/85) en "Alleen vinyl" (US-142) staan n
 
 ### US-162: Zoeken: sortering bovenaan in de sheet; Nieuwste/Oudste eerst op datum toegevoegd aan Discogs
 
+**Status: ✅ Resolved (2026-11-17)** — gedeelde `SortSection` in `filter_sheet_parts.dart`; `sort=date_added` live geverifieerd en in `DISCOGS_API.md`.
+
 **Priority: High · 2 SP**
 
 > Als gebruiker,
@@ -93,6 +95,8 @@ De sortering (US-133) is nu een apart menu (`_SearchSortMenu`) en sorteert Nieuw
 ---
 
 ### US-165: DJ-velden BPM, Key, Energy en gig crates uit de app verwijderen
+
+**Status: In Progress**
 
 **Priority: High · 5 SP**
 
