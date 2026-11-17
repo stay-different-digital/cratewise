@@ -243,17 +243,17 @@ abstract class AppLocalizations {
   /// **'Relevance'**
   String get searchSortRelevance;
 
-  /// No description provided for @searchSortNewestFirst.
+  /// No description provided for @sortNewestFirst.
   ///
   /// In en, this message translates to:
   /// **'Newest first'**
-  String get searchSortNewestFirst;
+  String get sortNewestFirst;
 
-  /// No description provided for @searchSortOldestFirst.
+  /// No description provided for @sortOldestFirst.
   ///
   /// In en, this message translates to:
   /// **'Oldest first'**
-  String get searchSortOldestFirst;
+  String get sortOldestFirst;
 
   /// No description provided for @searchVinylOnly.
   ///

@@ -1,7 +1,11 @@
 import 'package:material_ui/material_ui.dart';
+
+import '../../l10n/app_localizations.dart';
+import 'filter_sheet_parts.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/models/cached_release_metadata.dart';
+import '../../domain/models/added_date_sort.dart';
 import '../../domain/models/collection_filter_set.dart';
 import '../../domain/models/collection_item.dart';
 import '../../domain/models/format_types.dart';
@@ -9,16 +13,25 @@ import '../../domain/models/saved_search.dart';
 import '../../domain/models/sync_status.dart';
 import '../../domain/repositories/saved_search_repository.dart';
 
+/// What the collection filter sheet returns on Apply: the filters and the
+/// sort order (US-163).
+typedef CollectionFilterResult = ({
+  CollectionFilterSet filter,
+  AddedDateSort sort,
+});
+
 class CollectionFilterSheet extends StatefulWidget {
   const CollectionFilterSheet({
     super.key,
     required this.current,
     required this.items,
     required this.metadata,
+    this.sort = AddedDateSort.newestFirst,
     this.savedSearchRepository,
   });
 
   final CollectionFilterSet current;
+  final AddedDateSort sort;
   final List<CollectionItem> items;
   final List<CachedReleaseMetadata> metadata;
   final SavedSearchRepository? savedSearchRepository;
@@ -28,6 +41,7 @@ class CollectionFilterSheet extends StatefulWidget {
 }
 
 class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
+  late AddedDateSort _sort = widget.sort;
   late Set<int> _decades;
   late Set<String> _formats;
   late Set<String> _labels;
@@ -177,6 +191,7 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
                 TextButton(
                   key: const Key('clear-all-button'),
                   onPressed: () => setState(() {
+                    _sort = AddedDateSort.newestFirst;
                     _decades.clear();
                     _formats.clear();
                     _labels.clear();
@@ -200,6 +215,22 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
               controller: scrollController,
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               children: [
+                // Same sort section as Search and Wishlist (US-163).
+                SortSection<AddedDateSort>(
+                  title: AppLocalizations.of(context)!.sortTitle,
+                  options: [
+                    (
+                      value: AddedDateSort.newestFirst,
+                      label: AppLocalizations.of(context)!.sortNewestFirst,
+                    ),
+                    (
+                      value: AddedDateSort.oldestFirst,
+                      label: AppLocalizations.of(context)!.sortOldestFirst,
+                    ),
+                  ],
+                  selected: _sort,
+                  onChanged: (s) => setState(() => _sort = s),
+                ),
                 if (_availableDecades.isNotEmpty)
                   _Section(
                     title: 'Decade',
@@ -402,7 +433,9 @@ class _CollectionFilterSheetState extends State<CollectionFilterSheet> {
               width: double.infinity,
               child: FilledButton(
                 key: const Key('apply-filter-button'),
-                onPressed: () => Navigator.of(context).pop(_current),
+                onPressed: () => Navigator.of(
+                  context,
+                ).pop<CollectionFilterResult>((filter: _current, sort: _sort)),
                 child: const Text('Apply'),
               ),
             ),

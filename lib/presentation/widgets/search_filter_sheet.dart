@@ -88,11 +88,11 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                     ),
                     (
                       value: SearchSort.newestFirst,
-                      label: l10n.searchSortNewestFirst,
+                      label: l10n.sortNewestFirst,
                     ),
                     (
                       value: SearchSort.oldestFirst,
-                      label: l10n.searchSortOldestFirst,
+                      label: l10n.sortOldestFirst,
                     ),
                   ],
                   selected: _sort,

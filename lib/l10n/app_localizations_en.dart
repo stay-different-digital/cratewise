@@ -82,10 +82,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get searchSortRelevance => 'Relevance';
 
   @override
-  String get searchSortNewestFirst => 'Newest first';
+  String get sortNewestFirst => 'Newest first';
 
   @override
-  String get searchSortOldestFirst => 'Oldest first';
+  String get sortOldestFirst => 'Oldest first';
 
   @override
   String get searchVinylOnly => 'Vinyl only';

@@ -166,6 +166,7 @@ CollectionItem _makeItem({
   int? year,
   String? format,
   String? storageLocation,
+  DateTime? createdAt,
 }) => CollectionItem(
   id: id,
   discogsReleaseId: releaseId,
@@ -179,7 +180,7 @@ CollectionItem _makeItem({
   sleeveCondition: RecordCondition.veryGood,
   tags: const [],
   storageLocation: storageLocation,
-  createdAt: DateTime(2026, 1, 1),
+  createdAt: createdAt ?? DateTime(2026, 1, 1),
   updatedAt: DateTime(2026, 1, 1),
 );
 
@@ -1058,6 +1059,61 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Je collectie is leeg'), findsOneWidget);
+    });
+  });
+
+  group('CollectionScreen — sort in the filter sheet (US-163)', () {
+    List<String> titles(WidgetTester tester) => tester
+        .widgetList<CollectionItemCard>(find.byType(CollectionItemCard))
+        .map((c) => c.item.title)
+        .toList();
+
+    testWidgets('no separate sort icon; filter and saved filters remain', (
+      tester,
+    ) async {
+      final repo = _FakeCollectionRepository(items: [_makeItem()]);
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('collection-sort-button')), findsNothing);
+      expect(find.byIcon(Icons.sort), findsNothing);
+      expect(find.byKey(const Key('collection-filter-button')), findsOneWidget);
+      expect(
+        find.byKey(const Key('collection-saved-searches-button')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('oldest first in the sheet reverses the list and shows in '
+        'the badge', (tester) async {
+      final repo = _FakeCollectionRepository(
+        items: [
+          _makeItem(id: 'n', title: 'Newest', createdAt: DateTime(2026, 3)),
+          _makeItem(id: 'm', title: 'Middle', createdAt: DateTime(2024)),
+          _makeItem(id: 'o', title: 'Oldest', createdAt: DateTime(2019)),
+        ],
+      );
+      await tester.pumpWidget(_wrap(CollectionScreen(repository: repo)));
+      await tester.pumpAndSettle();
+      expect(titles(tester), ['Newest', 'Middle', 'Oldest']);
+
+      await tester.tap(find.byKey(const Key('collection-filter-button')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('sort-option-oldestFirst')));
+      await tester.pump();
+      await tester.ensureVisible(find.byKey(const Key('apply-filter-button')));
+      await tester.tap(find.byKey(const Key('apply-filter-button')));
+      await tester.pumpAndSettle();
+
+      expect(titles(tester), ['Oldest', 'Middle', 'Newest']);
+      final badge = tester.widget<Badge>(
+        find.descendant(
+          of: find.byKey(const Key('collection-filter-button')),
+          matching: find.byType(Badge),
+        ),
+      );
+      expect(badge.isLabelVisible, isTrue);
+      expect((badge.label! as Text).data, '1');
     });
   });
 }
