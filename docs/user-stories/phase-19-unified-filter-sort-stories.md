@@ -119,7 +119,7 @@ Toegevoegd in US-121. De velden zitten in het domeinmodel (`CollectionItem.bpm`,
 
 ### US-166: Collectie en Verlanglijst: datum toegevoegd overnemen bij import van Discogs
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-17)** — let op: al gekoppelde platen krijgen hun Discogs-datum bij een **handmatige** import; de automatische import slaat al aanwezige platen bewust over (US-149), dus één handmatige import corrigeert een eerder geïmporteerde collectie.
 
 **Priority: Medium · 2 SP**
 
@@ -139,6 +139,8 @@ Voorwaarde voor US-163 en US-164; akkoord van Fred 2026-11-17. De Discogs-import
 ---
 
 ### US-163: Collectie: sorteericoon weg, Nieuwste/Oudste eerst bovenaan in "Filter collection"
+
+**Status: In Progress**
 
 **Priority: High · 2 SP**
 
