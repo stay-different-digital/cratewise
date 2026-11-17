@@ -140,7 +140,7 @@ Voorwaarde voor US-163 en US-164; akkoord van Fred 2026-11-17. De Discogs-import
 
 ### US-163: Collectie: sorteericoon weg, Nieuwste/Oudste eerst bovenaan in "Filter collection"
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-17)** — gedeelde `AddedDateSort`; de regel met actieve filters boven de lijst toont de sortering niet, de badge maakt hem zichtbaar (zoals bij Zoeken).
 
 **Priority: High · 2 SP**
 
@@ -163,6 +163,8 @@ Naast de zoekbalk staan drie iconen: filter, sorteren (`collection-sort-button`,
 ---
 
 ### US-164: Verlanglijst: Nieuwste/Oudste eerst bovenaan in het filter
+
+**Status: In Progress**
 
 **Priority: Medium · 2 SP**
 
