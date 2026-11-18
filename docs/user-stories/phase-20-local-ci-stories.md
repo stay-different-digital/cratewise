@@ -250,7 +250,7 @@ Besluit van Fred (2026-11-18). Afhankelijkheden van de app gebruiken vrije licen
 
 ### US-176: `CONTRIBUTING.md` herschrijven: eerst issue en akkoord, dan PR
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — `CONTRIBUTING.md` herschreven: issue → label `accepted` → fork/branch vanaf `master` → PR met `Closes #`; PR zonder geaccepteerd issue kan gesloten worden (typo's uitgezonderd); lokaal testen met `tool/ci_local.sh`; eigen Discogs-token; conventies (lagen, analyze, 5 talen in `lib/l10n`, migraties, changelog, geen geheimen); GPL-3.0. Alle verwijzingen gecontroleerd. Labels `accepted` en `technical` aangemaakt.
 
 **Priority: Medium · 2 SP**
 
@@ -281,7 +281,7 @@ De huidige `CONTRIBUTING.md` is verouderd: noemt de app "Crate", werkt vanuit `m
 
 ### US-177: Lege issues uitzetten; beveiligingsmeldingen naar `SECURITY.md`
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — `config.yml` met `blank_issues_enabled: false` en een link naar het privé-meldformulier (`security/advisories/new`, werkt zodra privé melden aan staat na US-172). Templates ingekort en bijgewerkt (geen login, Cloudflare Worker of `AGENT.md` meer; bug vraagt versie, platform, stappen). Controle van "New issue" op GitHub volgt na openbaar maken (US-172).
 
 **Priority: Low · 1 SP**
 
@@ -302,7 +302,7 @@ De huidige `CONTRIBUTING.md` is verouderd: noemt de app "Crate", werkt vanuit `m
 
 ### US-178: PR-template aanscherpen: issuenummer verplicht
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — PR-template: bovenaan `Closes #` (verplicht) met uitleg over het label `accepted`; PR zonder geaccepteerd issue kan zonder review gesloten worden; korte checklist (tests, `tool/ci_local.sh`, vertalingen, CHANGELOG, geen geheimen).
 
 **Priority: Low · 1 SP**
 
