@@ -63,7 +63,7 @@ Totaal: 15 SP. Volgorde: US-173 → US-174 (blokkeert pushen, zie daar) → US-1
 
 ### US-169: Flutter CI op GitHub alleen bij een major release of handmatig
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — `flutter-ci.yml` start alleen bij een tag `v[0-9]*.0.0` en via `workflow_dispatch` (input `ios`, standaard uit); iOS-job alleen bij handmatige start met `ios: true`; buildnummer uit `pubspec.yaml`. Gecontroleerd: met de workflow aan startte een push naar master geen run; handmatige run (ios=false) groen, iOS-job overgeslagen. De workflow staat weer aan.
 
 **Priority: High · 1 SP**
 
