@@ -207,7 +207,7 @@ Op 2026-11-18 is in deze repo al `git config user.email 2884813+stay-different-d
 
 ### US-175: GPL-3.0-licentie toevoegen
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — `LICENSE` met de officiële tekst van gnu.org (674 regels, SHA-256 `3972dc97…`). README: licentie, naam/logo vallen er niet onder, Discogs-gegevens onder de Discogs API-voorwaarden. Het "Over"-venster vermeldt "Free software under the GNU GPL v3.0" (de knop "View licenses" toont de package-licenties). Directe dependencies: MIT (`csv`, `file_picker`, `drift`, `uuid`) en BSD-3-Clause (`flutter`, `flutter_localizations`, `flutter_secure_storage`, `go_router`, `http`, `intl`, `material_ui`, `package_info_plus`, `path`, `path_provider`, `sensors_plus`, `share_plus`, `url_launcher`); alle verenigbaar met GPL-3.0.
 
 **Priority: Medium · 1 SP**
 
