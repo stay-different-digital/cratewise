@@ -12,9 +12,12 @@ Doel: GitHub Actions-minuten besparen. De repo is privé, dus elke run gaat van 
 | US-169 | Flutter CI op GitHub alleen bij een major-release-tag of handmatige start | High | 1 | US-168 |
 | US-170 | Projectdocumentatie bijwerken voor lokale CI en releases zonder stores | Medium | 2 | US-168, US-169 |
 | US-171 | Release-APK als GitHub Release publiceren | Medium | 2 | US-168 |
-| US-172 | Repo openbaar maken: voorbereiden en goed instellen | Medium | 3 | — |
+| US-172 | Repo openbaar maken: voorbereiden en goed instellen | Medium | 3 | US-173, US-174, US-175 |
+| US-173 | Commits voortaan met het GitHub-noreply-adres | High | 1 | — |
+| US-174 | Oude commits herschrijven naar het noreply-adres | High | 3 | US-173 |
+| US-175 | GPL-3.0-licentie toevoegen | Medium | 1 | — |
 
-Totaal: 10 SP. Volgorde: US-172 eerst beslissen (zie hieronder), dan US-168 → US-169 → US-171 → US-170 (documentatie als laatste, zodat die alles beschrijft).
+Totaal: 15 SP. Volgorde: US-173 → US-174 (blokkeert pushen, zie daar) → US-175 → US-172 → US-168 → US-169 → US-171 → US-170 (documentatie als laatste).
 
 ## Besluiten
 
@@ -22,6 +25,8 @@ Totaal: 10 SP. Volgorde: US-172 eerst beslissen (zie hieronder), dan US-168 → 
 - CI draait lokaal. GitHub Actions draait de Flutter-pipeline alleen bij een major release (tag `vX.0.0`) en via een handmatige start.
 - Deploy Pages blijft zoals het is: die draait alleen als `site/`, `CHANGELOG.md` of `README.md` verandert, en is nodig om de site bij te werken.
 
+- **Licentie: GPL-3.0 (2026-11-18)** (US-175).
+- **E-mailadres (2026-11-18):** voortaan `2884813+stay-different-digital@users.noreply.github.com` (US-173), en de oude commits herschrijven vóór de repo openbaar wordt (US-174). Op GitHub staan "Keep my email addresses private" en "Block command line pushes that expose my email" aan.
 - **iOS-job blijft (2026-11-18)**, maar start alleen handmatig, zodat Fred bepaalt wanneer er macOS-minuten worden gebruikt (zie US-169).
 
 **Open, voorstel tot Fred beslist:**
@@ -135,8 +140,8 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 **Acceptance criteria:**
 - **Geheimen-scan over de hele geschiedenis** met een tool (bijvoorbeeld `gitleaks detect` of `trufflehog git`), resultaat besproken met Fred. Bij een vondst: het geheim intrekken en vervangen; de geschiedenis herschrijven alleen na besluit van Fred.
 - **Inhoud nagelopen** op wat niet openbaar hoort: `docs/` (store-documenten, persoonlijke notities), `.claude/`, `.forge/`, `.serena/`, `graphify-out/`, `skills-lock.json`. Wat niet openbaar hoort: verwijderen of in `.gitignore`. Besluit van Fred per map.
-- **E-mailadres:** Fred kiest: zo laten, of voortaan het GitHub-noreply-adres gebruiken (`git config user.email`). De oude commits worden niet herschreven, tenzij Fred dat expliciet wil.
-- **Licentie:** Fred kiest er een (bijvoorbeeld MIT, of "alle rechten voorbehouden"); `LICENSE` toegevoegd en in de README genoemd.
+- **E-mailadres:** geregeld in US-173 en US-174; vóór openbaar maken gecontroleerd dat geen commit meer `hellowerecratewise@gmail.com` bevat.
+- **Licentie:** GPL-3.0, geregeld in US-175.
 - **`SECURITY.md`:** hoe je een beveiligingsprobleem meldt.
 - **Instellingen na openbaar maken:**
   - Secret scanning en push protection aan.
@@ -146,3 +151,68 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
   - Issues, Discussions en Wiki aan of uit volgens de keuze van Fred.
 - **README** geschikt voor buitenstaanders: wat de app is, hoe je hem bouwt (eigen Discogs-token, nooit in de repo), waar de releases staan (US-171).
 - **De laatste stap doet Fred zelf:** de repo op Public zetten. Daarna controleert Claude dat GitHub Pages, de tags en de releases werken.
+
+---
+
+### US-173: Commits voortaan met het GitHub-noreply-adres
+
+**Priority: High · 1 SP**
+
+> Als eigenaar,
+> wil ik dat nieuwe commits mijn noreply-adres gebruiken,
+> zodat mijn persoonlijke e-mailadres niet in openbare commits komt.
+
+**Context:**
+Op 2026-11-18 is in deze repo al `git config user.email 2884813+stay-different-digital@users.noreply.github.com` gezet (alleen deze repo). De globale git-instelling staat nog op `hellowerecratewise@gmail.com`. Omdat "Block command line pushes that expose my email" aan staat, weigert GitHub elke push met een commit op het Gmail-adres.
+
+**Acceptance criteria:**
+- `git config user.email` in deze repo geeft het noreply-adres; `git config user.name` is `Fred Duzink`.
+- Fred beslist of ook de globale instelling (`git config --global user.email`) naar het noreply-adres gaat; dat raakt al zijn andere repo's.
+- Een testcommit heeft het noreply-adres als auteur en committer.
+
+---
+
+### US-174: Oude commits herschrijven naar het noreply-adres
+
+**Priority: High · 3 SP**
+
+> Als eigenaar,
+> wil ik mijn Gmail-adres uit alle bestaande commits laten vervangen,
+> zodat het niet zichtbaar wordt als de repo openbaar is.
+
+**Context:**
+- 403 commits hebben `Fred Duzink <hellowerecratewise@gmail.com>` als auteur; 1 commit `Fred <2884813+itris@users.noreply.github.com>` (een oud noreply-adres onder de vroegere gebruikersnaam).
+- Herschrijven met `git filter-repo --mailmap` (installeren: `brew install git-filter-repo`). Een mailmap zet beide oude adressen om naar `Fred Duzink <2884813+stay-different-digital@users.noreply.github.com>`.
+- **Gevolgen:** alle commit-hashes en tags krijgen een nieuwe waarde; daarna is een force-push van `master` en alle tags nodig. Andere clones (andere computers) moeten opnieuw worden gecloned. Commit-hashes die in docs of stories staan, kloppen niet meer.
+- **Dit blokkeert pushen:** zolang er lokale commits op het Gmail-adres staan, weigert GitHub de push. Daarom vóór de andere stories.
+- Nu kan het nog goedkoop: Fred werkt alleen en er zijn geen forks.
+
+**Acceptance criteria:**
+- **Back-up eerst:** een volledige mirror-kopie (`git clone --mirror`) buiten het project, en controle dat die compleet is.
+- Herschreven met `git filter-repo --mailmap`, in een verse clone (filter-repo verwacht dat); daarna de bestaande map erop aangesloten of vervangen, zonder lokale bestanden te verliezen die niet in git staan (`.env`, `android/key.properties`, de keystore, `.claude/` enz.).
+- Na het herschrijven: `git log --all --format='%ae %ce' | sort -u` toont alleen het noreply-adres (en eventueel `noreply@github.com` voor commits die GitHub zelf maakte).
+- Alle tags (`v1.0.0` … `v1.4.2`) bestaan nog en wijzen naar dezelfde inhoud: `git diff <oude tag> <nieuwe tag>` is leeg (vergeleken met de back-up).
+- De inhoud van `master` is gelijk aan vóór het herschrijven (`git diff` tegen de back-up is leeg).
+- **De force-push alleen na expliciete toestemming van Fred** (`git push --force origin master` en `git push --force --tags`). Daarna staat dezelfde geschiedenis op GitHub, en is CI/Pages nog werkend.
+- Commit-hashes in docs en stories die naar oude commits verwijzen, zijn bijgewerkt (of als historisch gemarkeerd).
+- Oude GitHub-tags of releases zonder lokale tegenhanger zijn er niet meer.
+- Opmerking: GitHub kan oude commits nog een tijd bewaren via hun oude hash. Wil Fred die echt weg, dan kan GitHub Support dat opruimen; vóór openbaar maken is dat niet nodig zolang de repo privé is tijdens het herschrijven.
+
+---
+
+### US-175: GPL-3.0-licentie toevoegen
+
+**Priority: Medium · 1 SP**
+
+> Als eigenaar,
+> wil ik de code onder GPL-3.0 uitbrengen,
+> zodat anderen de code mogen gebruiken en aanpassen, maar een verspreide aangepaste versie ook open source moet blijven.
+
+**Context:**
+Besluit van Fred (2026-11-18). Afhankelijkheden van de app gebruiken vrije licenties (MIT, BSD, Apache-2.0) die samengaan met GPL-3.0; nagaan bij uitvoeren. De licentie gaat over de code, niet over de naam en het logo "Cratewise", en niet over Discogs-gegevens (die vallen onder de API-voorwaarden van Discogs).
+
+**Acceptance criteria:**
+- `LICENSE` in de projectroot met de officiële GPL-3.0-tekst (van gnu.org, ongewijzigd).
+- `pubspec.yaml` blijft `publish_to: none`; de README noemt de licentie en dat naam en logo er niet onder vallen.
+- Licenties van alle directe dependencies nagelopen op verenigbaarheid met GPL-3.0; resultaat in de story vastgelegd.
+- De in-app licentiepagina (`showLicensePage` of vergelijkbaar, als die er is) toont de licentie van de app; anders wordt dat als vervolgstap genoteerd.
