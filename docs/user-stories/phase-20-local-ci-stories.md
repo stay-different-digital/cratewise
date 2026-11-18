@@ -176,7 +176,7 @@ Op 2026-11-18 is in deze repo al `git config user.email 2884813+stay-different-d
 
 ### US-174: Oude commits herschrijven naar het noreply-adres
 
-**Status: In Progress**
+**Status: In Progress** — lokaal herschreven en gecontroleerd (2026-11-18); force-push wacht op toestemming van Fred. Back-up: `~/Projects/Cratewise-backup-before-US-174.git`.
 
 **Priority: High · 3 SP**
 

@@ -35,7 +35,7 @@ Cratewise is a Flutter vinyl record collection manager with local-first storage 
 
 ## Current working-tree state
 
-All changes since Phase 5 (thumbnails) are **uncommitted**. The git history ends at "cache cover thumbnails after viewing release details" (commit `62e4e2f`). The working tree contains all Phase 5–8H changes across ~100+ files, all unstaged. No commits have been made during the AI-assisted sessions.
+All changes since Phase 5 (thumbnails) are **uncommitted**. The git history ends at "cache cover thumbnails after viewing release details" (commit `25fab13`). The working tree contains all Phase 5–8H changes across ~100+ files, all unstaged. No commits have been made during the AI-assisted sessions.
 
 Files currently showing as modified in `git status` (a subset — most are from earlier phases):
 - `lib/presentation/screens/collection_detail_screen.dart` — Phase 8H (RouteAware live-reload)
