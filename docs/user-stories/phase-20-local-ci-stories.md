@@ -134,7 +134,7 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 
 ### US-172: Repo openbaar maken: voorbereiden en goed instellen
 
-**Status: In Progress** — voorbereiding klaar (2026-11-18), wacht op Fred om de repo op Public te zetten.
+**Status: ✅ Resolved (2026-11-18)** — Fred heeft de repo op Public gezet. Daarna aangezet en gecontroleerd: secret scanning en push protection (0 meldingen), privé melden van kwetsbaarheden, goedkeuring voor workflows van alle externe bijdragers, ruleset "Protect master" actief (deletion, non_fast_forward). Repo-pagina, GitHub Pages en de release-APK v1.4.3 publiek bereikbaar (HTTP 200); 7 tags. Communityprofiel 85% (geen code of conduct; issue-templates staan op GitHub, profiel nog niet bijgewerkt). Optioneel nog: GitHub Support vragen oude commits van vóór US-174 op te ruimen.
 
 **Gedaan:**
 - Gitleaks over de hele geschiedenis: 117 vondsten, allemaal vals alarm (bestandshashes in `graphify-out/cache/stat-index.json`). In de werkmap: twee iOS-certificaten (`ios/*.p12`), in `.gitignore` en nooit gecommit. `.env`, `key.properties` en de keystore nooit gecommit. Apple Team-ID staat in het Xcode-project; gangbaar, geen geheim.
