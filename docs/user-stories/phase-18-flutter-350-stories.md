@@ -99,7 +99,7 @@ Gebruikt voor de versieweergave (US-72). Changelog 9 en 10 lezen.
 
 ### US-153: `sensors_plus` 7.1 met Built-in Kotlin
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — er was geen blokker: 7.1.1 slaat KGP al over zodra Built-in Kotlin aan staat (#3950 zit in die release); het paste KGP alleen toe omdat de app `android.builtInKotlin=false` had. Opgelost samen met US-159. Schudden: `integration_test/shake_sensor_test.dart` ontvangt een echte schudbeweging van de accelerometer op de Android-emulator (sensor-simulatie via `adb emu sensor`); de reactie van Zoeken, Collectie en Verlanglijst is gedekt door widgettests.
 
 De fix staat op de main-branch van plus_plugins (fluttercommunity/plus_plugins#3902 "Add support of built-in Kotlin" en #3950 "apply KGP unless built-in Kotlin is enabled") maar zit nog niet in een release; 7.1.1 is de nieuwste op pub.dev en past KGP altijd toe. Geen git-dependency gebruikt (ongereleaseerde code). Zodra er een release na 7.1.1 is: versie ophogen, schudden testen, daarna US-159.
 
@@ -202,7 +202,7 @@ Opslag van het Discogs-token, de taalkeuze, onboarding-status, "Alleen vinyl" en
 
 ### US-159: App naar Built-in Kotlin (`android.builtInKotlin=true`)
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — `android.builtInKotlin=true`, `org.jetbrains.kotlin.android`-verklaring uit `settings.gradle.kts`. Debug- en release-APK bouwen zonder KGP-waarschuwing; CI-stap zonder `continue-on-error`.
 
 **Priority: High · 1 SP**
 
