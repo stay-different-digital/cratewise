@@ -207,6 +207,8 @@ Op 2026-11-18 is in deze repo al `git config user.email 2884813+stay-different-d
 
 ### US-175: GPL-3.0-licentie toevoegen
 
+**Status: In Progress**
+
 **Priority: Medium · 1 SP**
 
 > Als eigenaar,
