@@ -10,6 +10,15 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.4.1] — 2026-11-18
+
+### Changed
+
+- **`flutter_secure_storage` 11 (US-160)** — the newest version of the
+  package that stores your Discogs token and settings. Nothing changes for
+  you: updating from 1.4.0 keeps your token and settings (checked on Android
+  and iOS).
+
 ## [1.4.0] — 2026-11-17
 
 Filtering and sorting work the same on Search, Collection and Wishlist
