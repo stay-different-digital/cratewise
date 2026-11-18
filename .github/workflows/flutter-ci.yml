@@ -1,16 +1,18 @@
 name: Flutter CI
 
+# Day-to-day checks run locally with tool/ci_local.sh (US-168). On GitHub
+# this workflow only runs for a major release tag (vX.0.0) or when started by
+# hand, so pushes and pull requests cost no Actions minutes (US-169).
 on:
-  pull_request:
-    branches:
-      - main
-      - master
-      - develop
   push:
-    branches:
-      - main
-      - master
-      - develop
+    tags:
+      - 'v[0-9]*.0.0'
+  workflow_dispatch:
+    inputs:
+      ios:
+        description: 'Also run the iOS build (macOS runner, costs more minutes)'
+        type: boolean
+        default: false
 
 jobs:
   android:
@@ -65,7 +67,7 @@ jobs:
       # key.properties. Building both ran the runner out of disk space.
       - name: Build Android release
         run: |
-          flutter build apk --release --build-number=${{ github.run_number }} 2>&1 | tee build-release.log
+          flutter build apk --release 2>&1 | tee build-release.log
           exit ${PIPESTATUS[0]}
 
       # Flutter will stop building plugins that apply the Kotlin Gradle Plugin;
@@ -79,6 +81,8 @@ jobs:
 
   ios:
     name: iOS debug build
+    # Only when started by hand with "ios" ticked; not on release tags.
+    if: github.event_name == 'workflow_dispatch' && inputs.ios
     runs-on: macos-latest
 
     steps:
@@ -98,4 +102,4 @@ jobs:
         run: flutter pub get
 
       - name: Build iOS debug without codesigning
-        run: flutter build ios --debug --no-codesign --build-number=${{ github.run_number }}
+        run: flutter build ios --debug --no-codesign
