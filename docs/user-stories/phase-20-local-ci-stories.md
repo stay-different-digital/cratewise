@@ -85,7 +85,7 @@ Totaal: 15 SP. Volgorde: US-173 → US-174 (blokkeert pushen, zie daar) → US-1
 
 ### US-170: Projectdocumentatie bijwerken
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — nieuw `docs/release/RELEASE.md`; store- en oude release-documenten bovenaan als historisch gemarkeerd (niet verwijderd); ADR-0003-aanvulling (buildnummer uit `pubspec.yaml`, geen `github.run_number`); `STORY_CHECKLIST.md` draait `tool/ci_local.sh` (en memory-stap per fase); README: lokale CI, wanneer GitHub CI draait, apparaattests, sectie Releases, bijdragen via issues; `CLAUDE.md`: lokale CI, release, noreply-adres, beschermde `master`. `.env.example` opgeschoond (Cloudflare Worker/OAuth bestonden nooit). Geen verwijzingen meer naar CI bij elke push.
 
 **Priority: Medium · 2 SP**
 
