@@ -140,7 +140,7 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 **Acceptance criteria:**
 - **Geheimen-scan over de hele geschiedenis** met een tool (bijvoorbeeld `gitleaks detect` of `trufflehog git`), resultaat besproken met Fred. Bij een vondst: het geheim intrekken en vervangen; de geschiedenis herschrijven alleen na besluit van Fred.
 - **Inhoud nagelopen** op wat niet openbaar hoort: `docs/` (store-documenten, persoonlijke notities), `.claude/`, `.forge/`, `.serena/`, `graphify-out/`, `skills-lock.json`. Wat niet openbaar hoort: verwijderen of in `.gitignore`. Besluit van Fred per map.
-- **E-mailadres:** geregeld in US-173 en US-174; vóór openbaar maken gecontroleerd dat geen commit meer `hellowerecratewise@gmail.com` bevat.
+- **E-mailadres:** geregeld in US-173 en US-174; vóór openbaar maken gecontroleerd dat geen commit meer het persoonlijke Gmail-adres bevat.
 - **Licentie:** GPL-3.0, geregeld in US-175.
 - **`SECURITY.md`:** hoe je een beveiligingsprobleem meldt.
 - **Instellingen na openbaar maken:**
@@ -156,7 +156,7 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 
 ### US-173: Commits voortaan met het GitHub-noreply-adres
 
-**Status: ✅ Resolved (2026-11-18)** — `user.email` in deze repo is het noreply-adres; `user.name` (globaal) is `Fred Duzink`. Commit f-test: auteur en committer beide noreply. De globale instelling is bewust niet aangepast; dat beslist Fred apart (raakt al zijn repo's).
+**Status: ✅ Resolved (2026-11-18)** — `user.email` in deze repo is het noreply-adres; `user.name` (globaal) is `Fred Duzink`. Testcommit: auteur en committer beide noreply. De globale instelling is bewust niet aangepast; dat beslist Fred apart (raakt al zijn repo's).
 
 **Priority: High · 1 SP**
 
@@ -165,7 +165,7 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 > zodat mijn persoonlijke e-mailadres niet in openbare commits komt.
 
 **Context:**
-Op 2026-11-18 is in deze repo al `git config user.email 2884813+stay-different-digital@users.noreply.github.com` gezet (alleen deze repo). De globale git-instelling staat nog op `hellowerecratewise@gmail.com`. Omdat "Block command line pushes that expose my email" aan staat, weigert GitHub elke push met een commit op het Gmail-adres.
+Op 2026-11-18 is in deze repo al `git config user.email 2884813+stay-different-digital@users.noreply.github.com` gezet (alleen deze repo). De globale git-instelling staat nog op het persoonlijke Gmail-adres. Omdat "Block command line pushes that expose my email" aan staat, weigert GitHub elke push met een commit op het Gmail-adres.
 
 **Acceptance criteria:**
 - `git config user.email` in deze repo geeft het noreply-adres; `git config user.name` is `Fred Duzink`.
@@ -185,7 +185,7 @@ Op 2026-11-18 is in deze repo al `git config user.email 2884813+stay-different-d
 > zodat het niet zichtbaar wordt als de repo openbaar is.
 
 **Context:**
-- 403 commits hebben `Fred Duzink <hellowerecratewise@gmail.com>` als auteur; 1 commit `Fred <2884813+itris@users.noreply.github.com>` (een oud noreply-adres onder de vroegere gebruikersnaam).
+- 403 commits hebben het persoonlijke Gmail-adres van Fred als auteur; 1 commit `Fred <2884813+itris@users.noreply.github.com>` (een oud noreply-adres onder de vroegere gebruikersnaam).
 - Herschrijven met `git filter-repo --mailmap` (installeren: `brew install git-filter-repo`). Een mailmap zet beide oude adressen om naar `Fred Duzink <2884813+stay-different-digital@users.noreply.github.com>`.
 - **Gevolgen:** alle commit-hashes en tags krijgen een nieuwe waarde; daarna is een force-push van `master` en alle tags nodig. Andere clones (andere computers) moeten opnieuw worden gecloned. Commit-hashes die in docs of stories staan, kloppen niet meer.
 - **Dit blokkeert pushen:** zolang er lokale commits op het Gmail-adres staan, weigert GitHub de push. Daarom vóór de andere stories.
@@ -193,6 +193,7 @@ Op 2026-11-18 is in deze repo al `git config user.email 2884813+stay-different-d
 
 **Acceptance criteria:**
 - **Back-up eerst:** een volledige mirror-kopie (`git clone --mirror`) buiten het project, en controle dat die compleet is.
+- Het persoonlijke adres staat ook in bestanden (tot US-87 in app, site en docs) en in 2 commitberichten; die worden met `--replace-text`/`--replace-message` vervangen door het teamadres uit US-87.
 - Herschreven met `git filter-repo --mailmap`, in een verse clone (filter-repo verwacht dat); daarna de bestaande map erop aangesloten of vervangen, zonder lokale bestanden te verliezen die niet in git staan (`.env`, `android/key.properties`, de keystore, `.claude/` enz.).
 - Na het herschrijven: `git log --all --format='%ae %ce' | sort -u` toont alleen het noreply-adres (en eventueel `noreply@github.com` voor commits die GitHub zelf maakte).
 - Alle tags (`v1.0.0` … `v1.4.2`) bestaan nog en wijzen naar dezelfde inhoud: `git diff <oude tag> <nieuwe tag>` is leeg (vergeleken met de back-up).
