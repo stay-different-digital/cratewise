@@ -1,5 +1,7 @@
 # Publishing Cratewise — Step-by-step Guide
 
+> **Historical (since 2026-11-16):** Cratewise is no longer published to the App Store or Google Play. This document is kept for reference only. The current process is in [docs/release/RELEASE.md](RELEASE.md).
+
 How to get the app from this repo into the Google Play Store and the Apple
 App Store, starting from zero (no developer accounts yet). Written for
 Cratewise specifically; companion docs:

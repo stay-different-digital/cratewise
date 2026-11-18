@@ -3,6 +3,14 @@
 Bij elke user story: lees `docs/workflow/STORY_CHECKLIST.md` en volg alle stappen in volgorde.
 Sla geen stap over, ook niet als de story klein lijkt.
 
+## Lokale CI en releases
+
+- CI draait lokaal: `tool/ci_local.sh` (zelfde stappen als `.github/workflows/flutter-ci.yml`). Draai het vóór elke code-commit (zie `STORY_CHECKLIST.md`).
+- GitHub Actions (Flutter CI) draait alleen bij een major-tag `vX.0.0` of handmatig; de iOS-job alleen handmatig met `ios: true`. Niet zelf starten zonder dat Fred erom vraagt (kost Actions-minuten).
+- Release: zie `docs/release/RELEASE.md`. APK publiceren met `tool/release.sh <versie>` (lokaal gebouwd en ondertekend; de sleutel gaat nooit naar GitHub).
+- Commits met het noreply-adres `2884813+stay-different-digital@users.noreply.github.com` (staat in de repo-config); nooit een ander e-mailadres.
+- `master` is beschermd tegen force-push en verwijderen (ruleset "Protect master").
+
 ## Testen met een echt Discogs-account
 
 Het echte test-token van Fred staat in `.env` in de projectroot (`DISCOGS_TEST_TOKEN`, gitignored, rechten 600). Gebruik bij elke test die Discogs of een gekoppeld account nodig heeft dít token:

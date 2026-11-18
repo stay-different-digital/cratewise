@@ -1,5 +1,7 @@
 # Store Review — Pre-submission Checklist
 
+> **Historical (since 2026-11-16):** Cratewise is no longer published to the App Store or Google Play. This document is kept for reference only. The current process is in [docs/release/RELEASE.md](RELEASE.md).
+
 Known rejection traps checked before submitting Cratewise 1.0 for review,
 plus the reviewer notes to paste into App Store Connect. Listing copy lives
 in `../store/STORE_LISTINGS.md`; build steps in `RELEASE_CHECKLIST.md`.

@@ -14,6 +14,7 @@ not affiliated with or endorsed by Discogs.
 - [Project structure](#project-structure)
 - [Getting started](#getting-started)
 - [Running tests & checks](#running-tests--checks)
+- [Releases](#releases)
 - [Discogs setup](#discogs-setup)
 - [Knowledge graph (graphify)](#knowledge-graph-graphify)
 - [Contributing & conventions](#contributing--conventions)
@@ -118,18 +119,32 @@ flutter run
 
 ## Running tests & checks
 
-```bash
-dart format .            # format
-flutter analyze          # static analysis
-flutter test             # ~2400+ unit & widget tests
-```
-
-Build commands:
+One command runs the same checks as CI (format, analyze, all tests, Android
+release build with the Kotlin Gradle Plugin check, iOS build):
 
 ```bash
-flutter build apk --debug                 # Android
-flutter build ios --debug --no-codesign   # iOS (no signing)
+tool/ci_local.sh            # everything
+tool/ci_local.sh --skip-ios # without the iOS build
 ```
+
+GitHub Actions doesn't run on every push or pull request: the Flutter CI
+workflow only runs for a major release tag (`vX.0.0`) or when started by hand
+(Actions → Flutter CI → Run workflow; tick **ios** for the macOS build).
+
+Device tests (on an emulator or simulator, skipped in normal test runs):
+
+- `integration_test/app_upgrade_test.dart` — data survives an app update
+  (see the file header).
+- `integration_test/discogs_live_test.dart` — against the real Discogs API
+  with your own token in `.env` (`--dart-define-from-file=.env`; see
+  `.env.example`). Never commit `.env`.
+
+## Releases
+
+Signed Android APKs are on the
+[GitHub Releases](https://github.com/stay-different-digital/cratewise/releases)
+page. Cratewise is not published to the App Store or Google Play. How a
+release is made: [docs/release/RELEASE.md](docs/release/RELEASE.md).
 
 ## Discogs setup
 
@@ -157,10 +172,9 @@ See [CLAUDE.md](CLAUDE.md) for the full workflow.
 ## Contributing & conventions
 
 - Work on a branch; commit to it with a clear, descriptive message.
-- Before committing, run **format → analyze → test**:
-  ```bash
-  dart format . && flutter analyze && flutter test
-  ```
+- See [CONTRIBUTING.md](CONTRIBUTING.md): open an issue first and wait for
+  the `accepted` label before opening a pull request.
+- Before committing, run `tool/ci_local.sh`.
 - After changing code, refresh the knowledge graph with `graphify update .`.
 - **Never** commit secrets — no Discogs tokens, API keys, or `.env` files.
   Tokens live only in secure storage and are masked in the UI.

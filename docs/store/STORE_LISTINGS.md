@@ -1,5 +1,7 @@
 # Store Listings — Cratewise
 
+> **Historical (since 2026-11-16):** Cratewise is no longer published to the App Store or Google Play. This document is kept for reference only. The current process is in [docs/release/RELEASE.md](../release/RELEASE.md).
+
 Draft content for the Play Console and App Store Connect. Copy-paste into the
 consoles; keep this file as the source of truth.
 

@@ -63,3 +63,14 @@ Negative:
 - BuildNR in `pubspec.yaml` is a baseline only; CI overrides it at build time
   with `--build-number=${{ github.run_number }}` so every CI binary gets a
   unique, monotonically increasing number automatically.
+
+## Addendum (2026-11-18): no stores, no CI build numbers
+
+Since 2026-11-16 there are no store releases, and since US-169 CI no longer
+overrides the build number with `github.run_number`. The build number in
+`pubspec.yaml` (after `+`) is now the real one: every release bumps it by
+one, it never goes down, and local builds, CI builds and GitHub Release APKs
+of the same version carry the same number. Android uses it as `versionCode`,
+so an APK only installs as an update when its number is higher. The rule
+"reset BuildNR to 1" above no longer applies.
+

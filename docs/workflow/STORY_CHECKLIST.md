@@ -28,15 +28,15 @@ Sla geen stap over; de volgorde is bewust.
 - [ ] Geen abstracties, scaffolding of features die de AC niet vereisen (ponytail)
 - [ ] `schemaVersion` opgehoogd? Dump het nieuwe schema en genereer de testhelpers (commando's bovenaan `test/infrastructure/local_database/migration_test.dart`); bestaande `drift_schemas/*.json` nooit aanpassen
 
-## 5. Statische analyse
-
-- [ ] `flutter analyze` — nul warnings/errors
-
-## 6. Tests
+## 5. Tests schrijven
 
 - [ ] Schrijf unit-tests voor nieuwe domeinlogica
 - [ ] Schrijf widget-tests voor nieuwe UI
-- [ ] `flutter test` — alle tests groen
+
+## 6. Lokale CI
+
+- [ ] `tool/ci_local.sh` — format, analyze (nul issues), alle tests, Android release-build met KGP-check, iOS-build. Alles groen. (`--skip-ios` alleen als de story iOS niet raakt.)
+- [ ] GitHub Actions draait niet bij een push; dit is de controle.
 
 ## 7. Acceptance criteria toetsen
 
@@ -64,5 +64,4 @@ Sla geen stap over; de volgorde is bewust.
 
 ## 12. Memory bijwerken
 
-- [ ] Zet story als ✅ in `memory/project_phase14_status.md`
-- [ ] Update open-stories-lijst in datzelfde bestand
+- [ ] Werk het memory-bestand van de huidige fase bij (`project_phaseNN_status.md`): story ✅ en de lijst met open stories

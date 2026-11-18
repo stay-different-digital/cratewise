@@ -1,5 +1,7 @@
 # Store Copy — Title & Promotional Text Options
 
+> **Historical (since 2026-11-16):** Cratewise is no longer published to the App Store or Google Play. This document is kept for reference only. The current process is in [docs/release/RELEASE.md](../release/RELEASE.md).
+
 A focused set of **ready-to-paste, character-counted options** for the App
 title, subtitle/short description, and promotional text. Pick one of each,
 then copy the winner into the corresponding field in

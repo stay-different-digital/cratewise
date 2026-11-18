@@ -1,5 +1,7 @@
 # Release Checklist — Android + iOS
 
+> **Historical (since 2026-11-16):** Cratewise is no longer published to the App Store or Google Play. This document is kept for reference only. The current process is in [docs/release/RELEASE.md](RELEASE.md).
+
 Run through this list in order for every release (beta or store). Build
 details live in `RELEASE_BUILD.md`; store copy lives in
 `../store/STORE_LISTINGS.md`.
