@@ -10,6 +10,13 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.4.3] — 2026-11-18
+
+### Changed
+
+- **Open source under GPL-3.0 (US-175)** — Cratewise is now free software under
+  the GNU General Public License v3.0. The About screen mentions the license.
+
 ## [1.4.2] — 2026-11-18
 
 ### Changed
