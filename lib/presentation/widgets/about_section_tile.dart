@@ -48,6 +48,7 @@ class _AboutSectionTileState extends State<AboutSectionTile> {
         applicationName: 'Cratewise',
         applicationVersion: _version ?? '',
         applicationLegalese:
+            'Free software under the GNU GPL v3.0. '
             'Uses the Discogs API. '
             'Not affiliated with Discogs.',
       ),

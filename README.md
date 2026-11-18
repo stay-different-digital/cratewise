@@ -168,8 +168,14 @@ Questions or feedback: **hellowerecratewise@gmail.com**.
 
 ## License & status
 
-- **Version:** `1.0.0+1` (see [pubspec.yaml](pubspec.yaml)); release notes in
+- **Version:** see [pubspec.yaml](pubspec.yaml); release notes in
   [CHANGELOG.md](CHANGELOG.md).
-- **License:** proprietary — all rights reserved. No open-source license is
-  granted at this time.
+- **License:** [GNU General Public License v3.0](LICENSE). You may use, study,
+  change and share the code; if you distribute a modified version, it must be
+  released under the GPL-3.0 as well.
+- **Name and logo:** the GPL covers the code, not the name "Cratewise" or its
+  logo. Please don't publish a modified app under that name or logo.
+- **Discogs:** data from the Discogs API falls under the
+  Discogs API terms (see [discogs.com/developers](https://www.discogs.com/developers)),
+  not under this license. Cratewise is not affiliated with Discogs.
 - **Privacy:** see the [privacy policy](docs/store/PRIVACY_POLICY.md).

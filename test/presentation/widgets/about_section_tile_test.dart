@@ -35,7 +35,10 @@ void main() {
       expect(find.text('Cratewise'), findsOneWidget);
       expect(find.text('1.0.0.2'), findsOneWidget);
       expect(
-        find.text('Uses the Discogs API. Not affiliated with Discogs.'),
+        find.text(
+          'Free software under the GNU GPL v3.0. '
+          'Uses the Discogs API. Not affiliated with Discogs.',
+        ),
         findsOneWidget,
       );
     });
