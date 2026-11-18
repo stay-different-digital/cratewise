@@ -20,6 +20,7 @@ import 'package:cratewise/infrastructure/local_database/app_database.dart';
 import 'package:cratewise/infrastructure/local_database/local_collection_repository.dart';
 import 'package:cratewise/infrastructure/secure_storage/discogs_token_storage.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -66,6 +67,20 @@ void main() {
       // running after a save).
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(seconds: 3)),
+      );
+    } else {
+      // US-160: v11 reports data a direct major upgrade could not read.
+      // Android only; iOS answers `unsupported`.
+      final status = await const FlutterSecureStorage().checkUpgradeStatus();
+      expect(
+        status.state,
+        isNot(
+          anyOf(
+            SecureStorageUpgradeState.legacyDataUnreadable,
+            SecureStorageUpgradeState.legacyDataDiscarded,
+          ),
+        ),
+        reason: '$status',
       );
     }
     expect(await tokens.loadToken(), _token);
