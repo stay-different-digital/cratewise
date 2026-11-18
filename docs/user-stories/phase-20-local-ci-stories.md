@@ -85,6 +85,8 @@ Totaal: 15 SP. Volgorde: US-173 → US-174 (blokkeert pushen, zie daar) → US-1
 
 ### US-170: Projectdocumentatie bijwerken
 
+**Status: In Progress**
+
 **Priority: Medium · 2 SP**
 
 > Als ontwikkelaar (en als Claude in een volgende sessie),
