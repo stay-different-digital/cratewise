@@ -107,7 +107,7 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 
 ### US-171: Release-APK als GitHub Release publiceren
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — `tool/release.sh <versie>`: controleert dat de tag op origin staat, dat er nog geen release is, dat HEAD op de tag staat en de werkmap schoon is, en dat `pubspec.yaml` en `CHANGELOG.md` bij de versie passen; bouwt de APK, controleert versionName/versionCode en de releasesleutel (`apksigner`), en publiceert `Cratewise-<versie>.apk` met de CHANGELOG-sectie en SHA-256 als notities. Uitgevoerd voor 1.4.3 (de huidige versie; tag `v1.4.3` daarvoor aangemaakt): gedownloade APK = versie 1.4.3 (16), releasesleutel, checksum klopt. Weigert getest: onbekende tag, bestaande release.
 
 **Priority: Medium · 2 SP**
 
