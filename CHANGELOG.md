@@ -10,6 +10,14 @@ The detailed pre-1.0 development history (134 incremental entries) lives in
 
 ---
 
+## [1.4.2] — 2026-11-18
+
+### Changed
+
+- **Android: built-in Kotlin (US-153, US-159)** — the Android build uses the
+  Kotlin support built into the Android Gradle Plugin, so a next Flutter
+  version keeps building the app. Shaking (the easter eggs) works as before.
+
 ## [1.4.1] — 2026-11-18
 
 ### Changed
