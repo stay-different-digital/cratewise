@@ -156,6 +156,8 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 
 ### US-173: Commits voortaan met het GitHub-noreply-adres
 
+**Status: In Progress**
+
 **Priority: High · 1 SP**
 
 > Als eigenaar,
@@ -173,6 +175,8 @@ Op 2026-11-18 is in deze repo al `git config user.email 2884813+stay-different-d
 ---
 
 ### US-174: Oude commits herschrijven naar het noreply-adres
+
+**Status: In Progress**
 
 **Priority: High · 3 SP**
 
