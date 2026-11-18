@@ -220,7 +220,7 @@ Toegevoegd tijdens US-151 (2026-11-16). Plugins als `share_plus` 13.3 passen de 
 
 ### US-160: `flutter_secure_storage` 10 → 11
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — `flutter_secure_storage` 11.2.0, geen codewijziging nodig (de app gebruikte geen van de verwijderde opties). Upgrade-test (schrijven met v1.4.0 op versie 10, verifiëren met de 11-build) slaagt op Android-emulator en iOS-simulator, inclusief `checkUpgradeStatus()` zonder dataverlies.
 
 **Priority: Low · 1 SP**
 
