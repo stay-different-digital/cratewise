@@ -68,11 +68,9 @@ jobs:
           flutter build apk --release --build-number=${{ github.run_number }} 2>&1 | tee build-release.log
           exit ${PIPESTATUS[0]}
 
-      # Flutter will stop building plugins that apply the Kotlin Gradle
-      # Plugin. TODO(US-151–154): drop continue-on-error once the plugin
-      # upgrades are done (US-158).
+      # Flutter will stop building plugins that apply the Kotlin Gradle Plugin;
+      # fail when any plugin still does (US-159).
       - name: No plugins applying the Kotlin Gradle Plugin
-        continue-on-error: true
         run: |
           if grep -q "apply Kotlin Gradle Plugin (KGP)" build-release.log; then
             grep -A1 "apply Kotlin Gradle Plugin (KGP)" build-release.log
