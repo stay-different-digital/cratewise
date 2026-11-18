@@ -348,7 +348,13 @@ Na US-172 staat het communityprofiel van GitHub op 85%; alleen een code of condu
 
 ### US-180: Resterende npm-kwetsbaarheden in `site/` oplossen
 
-**Status: In Progress**
+**Status: ⛔ Blocked — wacht op een gepatchte `picomatch` (2026-11-18)**
+
+Uitgezocht: alle 9 meldingen komen van één advisory, [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) (ReDoS in `picomatch` via herhaalde extglobs). Kwetsbaar zijn **alle versies t/m 4.0.7**, en 4.0.7 is de nieuwste; er is nog geen gepatchte versie. `npm audit fix` meldt wel een fix, maar die bestaat niet: het hoogt Eleventy op van 3.1.6 naar 3.1.8 (site bouwt identiek) en dat geeft 10 in plaats van 9 meldingen. Teruggedraaid; er is niets gewijzigd.
+
+Risico: laag. `picomatch` draait alleen tijdens het bouwen van de site, met glob-patronen uit de eigen configuratie; er komt geen invoer van buiten bij. De gepubliceerde site en de app gebruiken het niet.
+
+Vervolg: zodra er een gepatchte `picomatch` is, maakt Dependabot zelf een PR (security updates staan aan). Dan: mergen, `npm ci && npm run build`, uitvoer vergelijken.
 
 **Priority: Medium · 1 SP**
 
