@@ -250,6 +250,8 @@ Besluit van Fred (2026-11-18). Afhankelijkheden van de app gebruiken vrije licen
 
 ### US-176: `CONTRIBUTING.md` herschrijven: eerst issue en akkoord, dan PR
 
+**Status: In Progress**
+
 **Priority: Medium · 2 SP**
 
 > Als buitenstaander die wil bijdragen,
@@ -279,6 +281,8 @@ De huidige `CONTRIBUTING.md` is verouderd: noemt de app "Crate", werkt vanuit `m
 
 ### US-177: Lege issues uitzetten; beveiligingsmeldingen naar `SECURITY.md`
 
+**Status: In Progress**
+
 **Priority: Low · 1 SP**
 
 > Als eigenaar,
@@ -297,6 +301,8 @@ De huidige `CONTRIBUTING.md` is verouderd: noemt de app "Crate", werkt vanuit `m
 ---
 
 ### US-178: PR-template aanscherpen: issuenummer verplicht
+
+**Status: In Progress**
 
 **Priority: Low · 1 SP**
 
