@@ -348,6 +348,8 @@ Na US-172 staat het communityprofiel van GitHub op 85%; alleen een code of condu
 
 ### US-180: Resterende npm-kwetsbaarheden in `site/` oplossen
 
+**Status: In Progress**
+
 **Priority: Medium · 1 SP**
 
 > Als eigenaar van een openbare repo,
