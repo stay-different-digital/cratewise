@@ -1,83 +1,25 @@
-# Pull Request
+<!--
+Every pull request needs an issue with the `accepted` label (see
+CONTRIBUTING.md). Pull requests without one may be closed without review.
+Small typo fixes in docs are the only exception.
+-->
 
-## Summary
+Closes #<!-- issue number (required) -->
 
-- Describe what changed.
+## What changed
 
-## Type of change
-
-- [ ] Feature
-- [ ] Bug fix
-- [ ] Refactor
-- [ ] Documentation
-- [ ] Test
-- [ ] Chore
-
-## Related issue or task
-
-- Closes: #
-
-## Scope
-
-What is included?
-
-- 
-
-What is out of scope?
-
-- 
+-
 
 ## Checklist
 
-- [ ] I read `AGENT.md`.
-- [ ] I checked the relevant ADRs in `docs/project/decisions/`.
-- [ ] I kept the change small and focused.
-- [ ] I used Discogs API v2.0 only.
-- [ ] I did not use Discogs API v1.0.
-- [ ] I did not scrape Discogs.
-- [ ] I did not add secrets to the Flutter app.
-- [ ] I did not commit real secrets.
-- [ ] I added or updated tests where needed.
-- [ ] I ran formatting.
-- [ ] I ran analysis.
-- [ ] I ran tests.
-- [ ] I updated the changelog when needed.
-- [ ] I updated documentation when needed.
-- [ ] I added or updated an ADR when needed.
+- [ ] The linked issue has the `accepted` label.
+- [ ] I added or updated tests where it makes sense.
+- [ ] `tool/ci_local.sh` passes (or `dart format`, `flutter analyze` and
+      `flutter test` when you can't build iOS/Android).
+- [ ] New UI text is added in all languages under `lib/l10n/`.
+- [ ] `CHANGELOG.md` is updated for user-visible changes.
+- [ ] No secrets committed (Discogs token, `.env`, keystore, certificates).
 
-## UI checklist
+## Screenshots
 
-- [ ] Loading state exists.
-- [ ] Empty state exists.
-- [ ] Error state exists.
-- [ ] Success state exists.
-- [ ] Light mode works.
-- [ ] Dark mode works.
-- [ ] Phone layout works.
-- [ ] Tablet layout works.
-- [ ] Accessibility basics are covered.
-
-## Test evidence
-
-Commands run:
-
-```bash
-flutter format .
-flutter analyze
-flutter test
-```
-
-Result:
-
-```text
-[Paste result here]
-```
-
-## Screenshots or recordings
-
-Add screenshots or recordings for UI changes.
-
-## Notes
-
-- Risks:
-- Follow-up:
+<!-- For UI changes: before and after. -->

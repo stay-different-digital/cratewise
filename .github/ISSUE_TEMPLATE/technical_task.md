@@ -1,67 +1,24 @@
 ---
 name: Technical task
-about: Technical improvement, refactor, setup, or documentation task
+about: Refactor, tooling, dependency or documentation work
 title: "[Task]: "
 labels: ["technical"]
 assignees: ""
 ---
 
-# Technical task
-
 ## Goal
 
-```text
-What should be improved?
-```
+<!-- What should change? -->
 
 ## Reason
 
-```text
-Why is this needed?
-```
+<!-- Why is this needed? -->
 
-## Scope
+## Relevant files
 
-Included:
+<!-- Paths, if you know them. -->
 
-- 
+## Done when
 
-Out of scope:
-
-- 
-
-## Related docs
-
-- [ ] `AGENT.md`
-- [ ] Roadmap
-- [ ] Backlog
-- [ ] Architecture docs
-- [ ] ADRs
-- [ ] Changelog
-
-Relevant files:
-
-```text
-Add file paths here.
-```
-
-## Acceptance criteria
-
-- [ ] 
-- [ ] 
-- [ ] 
-
-## Test notes
-
-- [ ] Unit tests
-- [ ] Widget tests
-- [ ] Integration tests
-- [ ] Manual test
-- [ ] No tests needed
-
-## Documentation
-
-- [ ] Changelog update needed
-- [ ] ADR needed
-- [ ] Architecture docs update needed
-- [ ] No docs update needed
+- [ ]
+- [ ]

@@ -1,101 +1,77 @@
-# Contributing to Crate
+# Contributing to Cratewise
 
-## Purpose
+Thanks for wanting to help! Cratewise is a small, one-person project, so
+contributions follow a few simple rules to keep everyone's work useful.
 
-This guide explains how to contribute to Crate.
+## How to contribute
 
-Crate is a Flutter app for music collectors. It uses Discogs API v2.0 and focuses first on collection management.
+1. **Open an issue first.** Pick a template: bug report, feature request or
+   technical task. Blank issues are disabled.
+2. **Wait for approval.** The maintainer replies on the issue. When the issue
+   gets the **`accepted`** label, a pull request is welcome.
+3. **Fork the repository** and create a branch from `master`.
+4. **Make a small, focused change** with tests where it makes sense.
+5. **Open a pull request** that links the issue (`Closes #123`) and fill in
+   the template.
 
-## Read First
+A pull request without an issue, or for an issue without the `accepted`
+label, may be closed without review. Small typo fixes in docs are welcome
+without an issue.
 
-Before contributing, read:
+**Security problems** don't go in an issue: see [SECURITY.md](SECURITY.md).
 
-1. `AGENT.md`
-2. `docs/project/working-agreement.md`
-3. `docs/project/definition-of-ready.md`
-4. `docs/project/definition-of-done.md`
-5. Relevant ADRs in `docs/project/decisions/`
+## Setting up
 
-## Workflow
-
-1. Pick or create an issue.
-2. Create a branch from `main`.
-3. Make a small focused change.
-4. Add or update tests.
-5. Run checks.
-6. Update docs when needed.
-7. Update changelog when needed.
-8. Open a pull request.
-
-## Branch Names
-
-Use:
-
-```text
-feature/short-description
-fix/short-description
-docs/short-description
-refactor/short-description
-test/short-description
-chore/short-description
-```
-
-## Code Rules
-
-- Use Flutter and Dart.
-- Use feature-based clean architecture.
-- Use Riverpod for state management.
-- Use go_router for navigation.
-- Keep business logic out of widgets.
-- Add tests for important logic.
-- Keep UI states complete.
-
-## API Rules
-
-- Use Discogs API v2.0 only.
-- Do not use Discogs API v1.0.
-- Do not scrape Discogs.
-- Respect rate limits.
-- Use the Cloudflare Worker where secrets or signed calls are needed.
-- Do not expose secrets in Flutter.
-
-## Checks
-
-Run before opening a PR:
+- [Flutter](https://docs.flutter.dev/get-started/install) — the version in
+  `.github/workflows/flutter-ci.yml` (`flutter-version`).
+- For iOS builds: Xcode and CocoaPods. For Android builds: Android Studio
+  (its bundled JDK is used automatically).
+- A **Discogs personal access token** of your own: on Discogs go to
+  Settings → Developers → Generate new token, and enter it in the app under
+  Settings. Never commit it.
 
 ```bash
-dart format --output=none --set-exit-if-changed .
+flutter pub get
+flutter run
+```
+
+## Checking your change
+
+Run the same checks as CI with one command:
+
+```bash
+tool/ci_local.sh            # format, analyze, tests, Android release build, iOS build
+tool/ci_local.sh --skip-ios # without the iOS build
+```
+
+If you can't build for iOS or Android, at least run:
+
+```bash
+dart format .
 flutter analyze
 flutter test
 ```
 
-## Changelog
+GitHub Actions does **not** run on every pull request; the maintainer runs
+the checks before merging.
 
-Update:
+## Conventions
 
-```text
-docs/project/changelog/changelog.md
-```
+- **Layers:** `lib/domain` (models, rules) → `lib/infrastructure` (Discogs
+  API, database, storage) → `lib/presentation` (screens, widgets). Keep logic
+  out of widgets where you can.
+- **Style:** `dart format` and the rules in `analysis_options.yaml`;
+  `flutter analyze` must report no issues.
+- **Text in the app:** add every new string to all `.arb` files in
+  `lib/l10n/` (en, nl, de, fr, es).
+- **Database changes:** see the comment at the top of
+  `test/infrastructure/local_database/migration_test.dart`.
+- **Commits:** a short, clear summary line; mention the issue number.
+- **Changelog:** add user-visible changes to `CHANGELOG.md`.
+- **Never commit secrets:** no Discogs tokens, `.env`, keystores,
+  `key.properties` or certificates.
 
-Use:
+## License
 
-- Added
-- Changed
-- Fixed
-- Removed
-- Technical
-
-## ADRs
-
-Create or update an ADR when changing:
-
-- Architecture
-- State management
-- Navigation
-- API approach
-- Auth approach
-- Storage
-- Design direction
-- Testing strategy
-- Major packages
-- MVP scope
+Cratewise is licensed under the [GNU GPL v3.0](LICENSE). By contributing, you
+agree that your contribution is released under the same license.
