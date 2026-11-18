@@ -239,6 +239,8 @@ Toegevoegd bij US-155. Versie 11 kan alleen data lezen die al door versie 10 is 
 
 ### US-158: Volledige controle op Flutter 3.50 op toestel en simulator
 
+**Status: ✅ Closed (2026-11-18)** — gesloten op verzoek van Fred: de controle op toestel en simulator is al gedaan voor een eerder uitgebrachte versie op Flutter 3.50.
+
 **Priority: Medium · 2 SP**
 
 > Als ontwikkelaar,
