@@ -220,6 +220,8 @@ Toegevoegd tijdens US-151 (2026-11-16). Plugins als `share_plus` 13.3 passen de 
 
 ### US-160: `flutter_secure_storage` 10 → 11
 
+**Status: In Progress**
+
 **Priority: Low · 1 SP**
 
 > Als ontwikkelaar,
