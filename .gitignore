@@ -134,3 +134,11 @@ app.*.symbols
 *.p12
 *.mobileprovision
 *.cer
+
+# Local tooling, not part of the project (US-172)
+graphify-out/
+.claude/
+.forge/
+.serena/
+.remember/
+skills-lock.json

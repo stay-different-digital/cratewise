@@ -1,6 +1,6 @@
 # Cratewise
 
-Cratewise is a Flutter app for vinyl collectors and DJs — search Discogs and
+Cratewise is a Flutter app for vinyl collectors — search Discogs and
 manage your record collection and wishlist, online or offline.
 
 It is an independent Discogs companion app. It uses the Discogs API, but it is
@@ -134,15 +134,16 @@ flutter build ios --debug --no-codesign   # iOS (no signing)
 ## Discogs setup
 
 Cratewise talks to Discogs with a **personal access token** you enter in-app
-under **Settings**. The token is stored with secure storage and masked in the UI
+under **Settings**. Create one on Discogs under **Settings → Developers →
+Generate new token**. The token is stored with secure storage and masked in the UI
 — it is never hardcoded or committed. See [docs/api/DISCOGS_API.md](docs/api/DISCOGS_API.md)
 for endpoint details.
 
 ## Knowledge graph (graphify)
 
-This repo carries a queryable knowledge graph under `graphify-out/` (god nodes,
-community structure, cross-file relationships). For codebase questions, prefer
-it over raw browsing:
+Optional, for local development: the `graphify` tool
+builds a queryable knowledge graph of the code in `graphify-out/` (not in the
+repository; build it yourself with `graphify update .`):
 
 ```bash
 graphify query "<question>"      # scoped subgraph for a question
