@@ -123,7 +123,18 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 
 ### US-172: Repo openbaar maken: voorbereiden en goed instellen
 
-**Status: In Progress**
+**Status: In Progress** — voorbereiding klaar (2026-11-18), wacht op Fred om de repo op Public te zetten.
+
+**Gedaan:**
+- Gitleaks over de hele geschiedenis: 117 vondsten, allemaal vals alarm (bestandshashes in `graphify-out/cache/stat-index.json`). In de werkmap: twee iOS-certificaten (`ios/*.p12`), in `.gitignore` en nooit gecommit. `.env`, `key.properties` en de keystore nooit gecommit. Apple Team-ID staat in het Xcode-project; gangbaar, geen geheim.
+- Besluiten Fred: `graphify-out/` en `.claude/settings.json` uit git (lokaal blijven ze); `.forge/`, `.serena/`, `.remember/`, `skills-lock.json` genegeerd; `docs/` blijft helemaal; alleen Issues aan (geen Wiki, Discussions, Projects).
+- E-mailadres: US-173/174. Licentie: US-175.
+- `SECURITY.md` (privé melden). README: Discogs-token aanmaken, graphify optioneel en lokaal.
+- Dependabot-meldingen en automatische security-fixes aan.
+
+**Na het openbaar maken (Claude):** secret scanning en push protection aan; privé melden van kwetsbaarheden aan; ruleset op `master` (geen force-push, niet verwijderen); Actions: goedkeuring nodig voor workflows van forks; GitHub Pages, tags en zichtbaarheid controleren.
+
+**Optioneel (Fred):** GitHub Support vragen oude, onbereikbare commits van vóór US-174 op te ruimen. Let op: de oude versies van `graphify-out/` en `.claude/settings.json` blijven in de (herschreven) geschiedenis staan; dat is bewust geaccepteerd.
 
 **Priority: Medium · 3 SP**
 
