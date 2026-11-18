@@ -123,6 +123,8 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 
 ### US-172: Repo openbaar maken: voorbereiden en goed instellen
 
+**Status: In Progress**
+
 **Priority: Medium · 3 SP**
 
 > Als eigenaar,
