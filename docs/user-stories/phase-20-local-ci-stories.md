@@ -156,7 +156,7 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 
 ### US-173: Commits voortaan met het GitHub-noreply-adres
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — `user.email` in deze repo is het noreply-adres; `user.name` (globaal) is `Fred Duzink`. Commit f-test: auteur en committer beide noreply. De globale instelling is bewust niet aangepast; dat beslist Fred apart (raakt al zijn repo's).
 
 **Priority: High · 1 SP**
 
