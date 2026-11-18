@@ -20,6 +20,8 @@ without an issue.
 
 **Security problems** don't go in an issue: see [SECURITY.md](SECURITY.md).
 
+Everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Setting up
 
 - [Flutter](https://docs.flutter.dev/get-started/install) — the version in
