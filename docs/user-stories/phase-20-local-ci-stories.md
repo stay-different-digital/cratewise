@@ -40,7 +40,7 @@ Totaal: 15 SP. Volgorde: US-173 → US-174 (blokkeert pushen, zie daar) → US-1
 
 ### US-168: Lokaal CI-script met dezelfde stappen als de pipeline
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — `tool/ci_local.sh [--skip-ios]`: dezelfde stappen als `flutter-ci.yml`, stopt bij de eerste fout met naam van de stap en exitcode 1, gebruikt de JDK van Android Studio als `JAVA_HOME` leeg is, geen tokens. Groene run in ~2 minuten (met iOS); een slecht geformatteerd testbestand faalt op "Check formatting" (daarna verwijderd).
 
 **Priority: High · 2 SP**
 
@@ -62,6 +62,8 @@ Totaal: 15 SP. Volgorde: US-173 → US-174 (blokkeert pushen, zie daar) → US-1
 ---
 
 ### US-169: Flutter CI op GitHub alleen bij een major release of handmatig
+
+**Status: In Progress**
 
 **Priority: High · 1 SP**
 
