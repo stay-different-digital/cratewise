@@ -20,6 +20,7 @@ Doel: GitHub Actions-minuten besparen. De repo is privé, dus elke run gaat van 
 | US-177 | Lege issues uitzetten; beveiligingsmeldingen naar `SECURITY.md` | Low | 1 | — |
 | US-178 | PR-template aanscherpen: issuenummer verplicht | Low | 1 | US-176 |
 | US-179 | Code of conduct toevoegen | Low | 1 | US-172 |
+| US-180 | Resterende npm-kwetsbaarheden in `site/` oplossen | Medium | 1 | — |
 
 Totaal: 15 SP. Volgorde: US-173 → US-174 (blokkeert pushen, zie daar) → US-175 → US-172 → US-168 → US-169 → US-171 → US-170 (documentatie als laatste).
 
@@ -342,3 +343,23 @@ Na US-172 staat het communityprofiel van GitHub op 85%; alleen een code of condu
 - Meldingen gaan naar het teamadres `hellowerecratewise@gmail.com` (geen persoonlijk adres).
 - `CONTRIBUTING.md` verwijst ernaar.
 - Het communityprofiel van GitHub herkent de code of conduct.
+
+---
+
+### US-180: Resterende npm-kwetsbaarheden in `site/` oplossen
+
+**Priority: Medium · 1 SP**
+
+> Als eigenaar van een openbare repo,
+> wil ik geen openstaande Dependabot-meldingen,
+> zodat echte nieuwe meldingen opvallen en de repo er verzorgd uitziet.
+
+**Context (2026-11-18):**
+De vier Dependabot-PR's (#1–#4: js-yaml, markdown-it, liquidjs, brace-expansion) zijn gemerged; de site bouwt. Daarna meldt `npm audit` in `site/` nog **9 kwetsbaarheden (high)**, allemaal via `picomatch`: `@11ty/eleventy` → `@11ty/eleventy-dev-server`/`nunjucks` → `chokidar` → `anymatch`/`readdirp`, en `tinyglobby` → `fdir`. Het gaat alleen om build-tools van de website (devDependencies), niet om de app of de gepubliceerde pagina's. npm meldt voor alle negen `fixAvailable: true`, dus waarschijnlijk is geen major-upgrade van Eleventy nodig.
+
+**Acceptance criteria:**
+- `npm audit fix` in `site/` (zonder `--force`); alleen `package-lock.json` verandert, of `package.json` alleen binnen de bestaande versiegrenzen.
+- Blijft er iets over dat alleen met `--force` of een major-upgrade weg kan: eerst aan Fred voorleggen.
+- `npm audit` meldt 0 kwetsbaarheden (of de rest is met reden vastgelegd).
+- `npm ci && npm run build` slaagt; de gebouwde pagina's (`_site/index.html`, `_site/privacy/index.html`) zijn inhoudelijk gelijk aan vóór de update.
+- Na pushen: de Pages-deploy is groen en de site laadt; Dependabot toont geen open meldingen meer voor `site/`.
