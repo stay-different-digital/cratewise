@@ -40,6 +40,8 @@ Totaal: 15 SP. Volgorde: US-173 → US-174 (blokkeert pushen, zie daar) → US-1
 
 ### US-168: Lokaal CI-script met dezelfde stappen als de pipeline
 
+**Status: In Progress**
+
 **Priority: High · 2 SP**
 
 > Als ontwikkelaar,
