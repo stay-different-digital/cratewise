@@ -16,6 +16,9 @@ Doel: GitHub Actions-minuten besparen. De repo is privé, dus elke run gaat van 
 | US-173 | Commits voortaan met het GitHub-noreply-adres | High | 1 | — |
 | US-174 | Oude commits herschrijven naar het noreply-adres | High | 3 | US-173 |
 | US-175 | GPL-3.0-licentie toevoegen | Medium | 1 | — |
+| US-176 | `CONTRIBUTING.md` herschrijven: eerst issue en akkoord, dan PR | Medium | 2 | US-168 |
+| US-177 | Lege issues uitzetten; beveiligingsmeldingen naar `SECURITY.md` | Low | 1 | — |
+| US-178 | PR-template aanscherpen: issuenummer verplicht | Low | 1 | US-176 |
 
 Totaal: 15 SP. Volgorde: US-173 → US-174 (blokkeert pushen, zie daar) → US-175 → US-172 → US-168 → US-169 → US-171 → US-170 (documentatie als laatste).
 
@@ -236,3 +239,70 @@ Besluit van Fred (2026-11-18). Afhankelijkheden van de app gebruiken vrije licen
 - `pubspec.yaml` blijft `publish_to: none`; de README noemt de licentie en dat naam en logo er niet onder vallen.
 - Licenties van alle directe dependencies nagelopen op verenigbaarheid met GPL-3.0; resultaat in de story vastgelegd.
 - De in-app licentiepagina (`showLicensePage` of vergelijkbaar, als die er is) toont de licentie van de app; anders wordt dat als vervolgstap genoteerd.
+
+---
+
+### US-176: `CONTRIBUTING.md` herschrijven: eerst issue en akkoord, dan PR
+
+**Priority: Medium · 2 SP**
+
+> Als buitenstaander die wil bijdragen,
+> wil ik in één document lezen hoe ik dat doe,
+> zodat mijn werk aansluit bij wat de eigenaar wil en niet voor niets is.
+
+**Context:**
+De huidige `CONTRIBUTING.md` is verouderd: noemt de app "Crate", werkt vanuit `main` (de branch is `master`) en verwijst naar bestanden die niet bestaan (`AGENT.md`, `docs/project/...`). GitHub kan "eerst een issue" niet afdwingen; het document en de templates (US-177, US-178) moeten het duidelijk maken.
+
+**Acceptance criteria:**
+- Werkwijze in volgorde:
+  1. Open eerst een issue met een template (bug, feature of technische taak).
+  2. Wacht op een akkoord van de eigenaar op het issue (bijvoorbeeld een label `accepted` of een reactie).
+  3. Fork en maak een branch vanaf `master`.
+  4. Maak een kleine, gerichte wijziging met tests.
+  5. Open een PR die naar het issue verwijst (`Closes #<nummer>`).
+- Duidelijk vermeld: een PR zonder issue of zonder akkoord kan worden gesloten; kleine typfouten in docs mogen zonder issue.
+- **Lokaal testen:** vereisten (Flutter-versie, CocoaPods voor iOS), `tool/ci_local.sh` (US-168) of de losse stappen (`dart format`, `flutter analyze`, `flutter test`), en dat CI op GitHub niet bij elke PR draait.
+- **Discogs-token:** gebruik je eigen persoonlijke token; nooit tokens, `.env`, keystores of certificaten committen.
+- Conventies kort: commitberichten, codestijl (`analysis_options.yaml`), lagen domain → infrastructure → presentation, nieuwe teksten in beide talen (`l10n`).
+- Beveiligingsproblemen: niet via een issue, maar volgens `SECURITY.md`.
+- Bijdragen vallen onder GPL-3.0 (`LICENSE`).
+- Geen verwijzingen naar bestanden die niet bestaan; alle links in het document gecontroleerd.
+- Label `accepted` bestaat in de repo (aanmaken als het er niet is).
+
+---
+
+### US-177: Lege issues uitzetten; beveiligingsmeldingen naar `SECURITY.md`
+
+**Priority: Low · 1 SP**
+
+> Als eigenaar,
+> wil ik dat iedereen een issue-template moet kiezen,
+> zodat meldingen compleet zijn en beveiligingsproblemen niet openbaar gemeld worden.
+
+**Context:**
+`.github/ISSUE_TEMPLATE/` heeft al `bug_report.md`, `feature_request.md` en `technical_task.md`. Er is nog geen `config.yml`, dus een leeg issue kan nog.
+
+**Acceptance criteria:**
+- `.github/ISSUE_TEMPLATE/config.yml` met `blank_issues_enabled: false`.
+- Een contactlink "Report a security vulnerability" die naar het privé-meldformulier van GitHub of naar `SECURITY.md` wijst.
+- De drie bestaande templates nagelopen: verwijzen naar de huidige app (geen "Crate", geen verouderde paden) en vragen bij een bug om versie, platform en stappen.
+- Gecontroleerd op GitHub: "New issue" toont alleen de templates en de beveiligingslink, geen leeg issue.
+
+---
+
+### US-178: PR-template aanscherpen: issuenummer verplicht
+
+**Priority: Low · 1 SP**
+
+> Als eigenaar,
+> wil ik dat elke PR naar een goedgekeurd issue verwijst,
+> zodat ik geen PR's krijg voor werk dat ik niet wil.
+
+**Context:**
+`.github/PULL_REQUEST_TEMPLATE.md` heeft al een veld `Closes: #`, maar dat is vrijblijvend.
+
+**Acceptance criteria:**
+- Bovenaan het template: "This PR closes #___ (required)", met de uitleg dat het issue een akkoord moet hebben (label `accepted`, zie `CONTRIBUTING.md`).
+- Duidelijk vermeld: een PR zonder issue of zonder akkoord kan zonder review gesloten worden.
+- Checklist: tests toegevoegd of aangepast, lokaal gecontroleerd (`tool/ci_local.sh` of losse stappen), CHANGELOG bijgewerkt bij een zichtbare wijziging, geen geheimen gecommit.
+- Het template is kort genoeg om in te vullen: geen secties die voor een kleine PR niet gelden.
