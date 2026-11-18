@@ -99,7 +99,7 @@ Gebruikt voor de versieweergave (US-72). Changelog 9 en 10 lezen.
 
 ### US-153: `sensors_plus` 7.1 met Built-in Kotlin
 
-**Status: ⛔ Blocked — wacht op upstream-release (2026-11-16)**
+**Status: In Progress**
 
 De fix staat op de main-branch van plus_plugins (fluttercommunity/plus_plugins#3902 "Add support of built-in Kotlin" en #3950 "apply KGP unless built-in Kotlin is enabled") maar zit nog niet in een release; 7.1.1 is de nieuwste op pub.dev en past KGP altijd toe. Geen git-dependency gebruikt (ongereleaseerde code). Zodra er een release na 7.1.1 is: versie ophogen, schudden testen, daarna US-159.
 
@@ -201,6 +201,8 @@ Opslag van het Discogs-token, de taalkeuze, onboarding-status, "Alleen vinyl" en
 ---
 
 ### US-159: App naar Built-in Kotlin (`android.builtInKotlin=true`)
+
+**Status: In Progress**
 
 **Priority: High · 1 SP**
 
