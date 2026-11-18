@@ -107,6 +107,8 @@ Sinds 2026-11-16 gaat er niets meer naar App Store of Google Play, en na US-168/
 
 ### US-171: Release-APK als GitHub Release publiceren
 
+**Status: In Progress**
+
 **Priority: Medium · 2 SP**
 
 > Als eigenaar,
