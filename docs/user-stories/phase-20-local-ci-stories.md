@@ -326,7 +326,7 @@ De huidige `CONTRIBUTING.md` is verouderd: noemt de app "Crate", werkt vanuit `m
 
 ### US-179: Code of conduct toevoegen
 
-**Status: In Progress**
+**Status: ✅ Resolved (2026-11-18)** — `CODE_OF_CONDUCT.md`: officiële Contributor Covenant 2.1, alleen het contact ingevuld (teamadres). `CONTRIBUTING.md` verwijst ernaar. Communityprofiel van GitHub: 100%, herkend als "Contributor Covenant".
 
 **Priority: Low · 1 SP**
 
