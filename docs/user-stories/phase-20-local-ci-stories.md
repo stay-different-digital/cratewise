@@ -22,6 +22,8 @@ Totaal: 10 SP. Volgorde: US-172 eerst beslissen (zie hieronder), dan US-168 → 
 - CI draait lokaal. GitHub Actions draait de Flutter-pipeline alleen bij een major release (tag `vX.0.0`) en via een handmatige start.
 - Deploy Pages blijft zoals het is: die draait alleen als `site/`, `CHANGELOG.md` of `README.md` verandert, en is nodig om de site bij te werken.
 
+- **iOS-job blijft (2026-11-18)**, maar start alleen handmatig, zodat Fred bepaalt wanneer er macOS-minuten worden gebruikt (zie US-169).
+
 **Open, voorstel tot Fred beslist:**
 - **Openbaar maken verandert US-169.** Voor openbare repo's is GitHub Actions op de standaard runners gratis, ook macOS. Wordt de repo openbaar (US-172), dan kost CI bij elke push geen tegoed meer. Het lokale script (US-168) blijft nuttig, maar CI bij elke push kan dan terug. Beslis US-172 daarom vóór US-169.
 - De iOS-job (macOS) bij een major release houden. Een major release komt zelden voor, dus de kosten blijven laag, en het is de enige controle op een schone machine.
@@ -64,6 +66,7 @@ Totaal: 10 SP. Volgorde: US-172 eerst beslissen (zie hieronder), dan US-168 → 
 - `flutter-ci.yml` start alleen bij een tag die op een major release past (`v*.0.0`) en via `workflow_dispatch`. Niet meer bij `push` naar branches of bij `pull_request`.
 - Het buildnummer in de workflow komt niet meer uit `github.run_number`, maar uit `pubspec.yaml`. Zo komt de APK uit CI overeen met de lokale build.
 - De jobs en stappen blijven verder gelijk, ook de strikte KGP-check.
+- De iOS-job (macOS) draait alleen bij een handmatige start, via een keuze in `workflow_dispatch` (bijvoorbeeld `ios: true/false`, standaard uit). Bij een major-tag draait alleen de Android-job; iOS start Fred zelf.
 - Gecontroleerd: een push naar master start geen Flutter CI-run. Eén handmatige start (`gh workflow run`) is groen.
 
 ---
