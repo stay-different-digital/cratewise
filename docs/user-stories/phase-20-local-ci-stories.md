@@ -19,6 +19,7 @@ Doel: GitHub Actions-minuten besparen. De repo is privé, dus elke run gaat van 
 | US-176 | `CONTRIBUTING.md` herschrijven: eerst issue en akkoord, dan PR | Medium | 2 | US-168 |
 | US-177 | Lege issues uitzetten; beveiligingsmeldingen naar `SECURITY.md` | Low | 1 | — |
 | US-178 | PR-template aanscherpen: issuenummer verplicht | Low | 1 | US-176 |
+| US-179 | Code of conduct toevoegen | Low | 1 | US-172 |
 
 Totaal: 15 SP. Volgorde: US-173 → US-174 (blokkeert pushen, zie daar) → US-175 → US-172 → US-168 → US-169 → US-171 → US-170 (documentatie als laatste).
 
@@ -320,3 +321,24 @@ De huidige `CONTRIBUTING.md` is verouderd: noemt de app "Crate", werkt vanuit `m
 - Duidelijk vermeld: een PR zonder issue of zonder akkoord kan zonder review gesloten worden.
 - Checklist: tests toegevoegd of aangepast, lokaal gecontroleerd (`tool/ci_local.sh` of losse stappen), CHANGELOG bijgewerkt bij een zichtbare wijziging, geen geheimen gecommit.
 - Het template is kort genoeg om in te vullen: geen secties die voor een kleine PR niet gelden.
+
+---
+
+### US-179: Code of conduct toevoegen
+
+**Status: In Progress**
+
+**Priority: Low · 1 SP**
+
+> Als eigenaar van een openbare repo,
+> wil ik vastleggen hoe mensen met elkaar omgaan in issues en pull requests,
+> zodat ik ongewenst gedrag kan aanspreken en het communityprofiel compleet is.
+
+**Context:**
+Na US-172 staat het communityprofiel van GitHub op 85%; alleen een code of conduct ontbreekt. De gangbare keuze is de Contributor Covenant (versie 2.1), die GitHub zelf ook aanbiedt.
+
+**Acceptance criteria:**
+- `CODE_OF_CONDUCT.md` in de projectroot met de officiële tekst van Contributor Covenant 2.1, ongewijzigd behalve de contactgegevens.
+- Meldingen gaan naar het teamadres `hellowerecratewise@gmail.com` (geen persoonlijk adres).
+- `CONTRIBUTING.md` verwijst ernaar.
+- Het communityprofiel van GitHub herkent de code of conduct.
